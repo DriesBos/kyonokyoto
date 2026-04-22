@@ -21,20 +21,20 @@ const { categories } = Astro.props;
   {
     categories.length > 0 ? (
       <>
-        <button
+        <ToggleButton
           class="site-header__filter-toggle"
-          type="button"
+          label="filter"
+          pressed={false}
           data-filter-disclosure
           aria-expanded="false"
           aria-controls="category-filter-panel"
-        >
-          filter
-        </button>
+        />
 
         <div class="category-filter" id="category-filter-panel" aria-label="Filter events by category" role="group">
           {categories.map((category) => (
             <ToggleButton
               label={category.label}
+              pressed={false}
               dataCategory={category.slug}
               dataCategoryButton={true}
             />
@@ -118,8 +118,11 @@ const { categories } = Astro.props;
     if (disclosure && filterPanel) {
       disclosure.addEventListener("click", () => {
         const expanded = disclosure.getAttribute("aria-expanded") === "true";
-        disclosure.setAttribute("aria-expanded", String(!expanded));
-        filterPanel.toggleAttribute("data-mobile-open", !expanded);
+        const nextExpanded = !expanded;
+
+        disclosure.setAttribute("aria-expanded", String(nextExpanded));
+        disclosure.setAttribute("aria-pressed", String(nextExpanded));
+        filterPanel.toggleAttribute("data-mobile-open", nextExpanded);
       });
     }
 

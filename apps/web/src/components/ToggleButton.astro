@@ -5,6 +5,8 @@ type Props = {
   type?: "button" | "submit" | "reset";
   value?: string;
   name?: string;
+  class?: string;
+  showDot?: boolean;
   dataCategory?: string;
   dataCategoryButton?: boolean;
   ariaControls?: string;
@@ -12,26 +14,34 @@ type Props = {
 
 const {
   label,
-  pressed = false,
+  pressed,
   type = "button",
   value,
   name,
+  class: className,
+  showDot = true,
   dataCategory,
   dataCategoryButton = false,
   ariaControls,
+  ...rest
 } = Astro.props;
+
+const dotTop = `${(Math.random() * 6 - 3).toFixed(2)}px`;
+const dotLeft = `${(47 + Math.random() * 6).toFixed(2)}%`;
 ---
 
 <button
-  class="toggle-button"
+  class:list={["toggle-button", className]}
+  style={`--toggle-dot-top: ${dotTop}; --toggle-dot-left: ${dotLeft};`}
   type={type}
   value={value}
   name={name}
   data-category={dataCategory}
   data-category-button={dataCategoryButton ? "" : undefined}
-  aria-pressed={String(pressed)}
+  aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
   aria-controls={ariaControls}
+  {...rest}
 >
   <span class="toggle-button__label">{label}</span>
-  <span class="toggle-button__dot" aria-hidden="true"></span>
+  {showDot ? <span class="toggle-button__dot" aria-hidden="true"></span> : null}
 </button>

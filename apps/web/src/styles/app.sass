@@ -68,7 +68,7 @@ a
   color: inherit
   text-decoration: none
 
-.debug .page-shell
+.page-shell
   width: 100%
   margin: 0 auto
   padding: var(--page-padding-y) var(--page-padding-x)
@@ -119,11 +119,11 @@ a
   align-items: center
   justify-content: flex-start
   gap: 0.625rem
-  padding: 0.25rem 0.0625rem 0
+  padding: 0.25rem 1px 0
   border: 0
   border-top: var(--stroke-width) solid var(--stroke)
   background: transparent
-  color: var(--main-color)
+  color: currentColor
   font-size: var(--type-body-size)
   letter-spacing: var(--type-body-letter-spacing)
   line-height: 1
@@ -134,8 +134,12 @@ a
   text-transform: lowercase
 
 .toggle-button__dot
-  width: 0.8rem
-  height: 0.8rem
+  position: absolute
+  left: var(--toggle-dot-left, 50%)
+  transform: translateX(-50%)
+  top: var(--toggle-dot-top, 0)
+  width: 1rem
+  height: 1rem
   border-radius: 50%
   background: #fd69ba
   opacity: 0
@@ -322,7 +326,8 @@ a
     align-items: flex-start
 
   .site-header
-    flex-direction: column
+    flex-direction: row
+    align-items: flex-start
 
   .site-header__filter-toggle
     display: inline-flex

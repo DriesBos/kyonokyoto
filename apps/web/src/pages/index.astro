@@ -133,10 +133,6 @@ const excerpt = (value: string | null) => {
     <Header categories={categories} />
 
     <section class="events-section">
-      <div class="section-heading">
-        <h2 class="section-heading__title">Current Listings</h2>
-        <p class="section-heading__count" data-event-count>{events.length} published event{events.length === 1 ? "" : "s"} in the feed</p>
-      </div>
 
       <div class="empty-state empty-state--filtered" data-filter-empty hidden>
         <h3>No events in this category</h3>
