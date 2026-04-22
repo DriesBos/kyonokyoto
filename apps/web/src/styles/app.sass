@@ -139,6 +139,7 @@ a
   letter-spacing: var(--type-body-letter-spacing)
   line-height: 1
   cursor: var(--cursor-dot)
+  pointer-events: auto
 
 .general-button__label
   position: relative
@@ -223,6 +224,9 @@ a
   border-top: var(--stroke-width) solid var(--stroke)
   cursor: var(--cursor-dot)
   transition: background-color 140ms ease
+
+  > *
+    pointer-events: none
 
   &[data-active='false'] .event-card__body__content
     display: none
@@ -314,6 +318,10 @@ a
     flex-wrap: wrap
     gap: 8px
     margin-top: 0.5rem
+    pointer-events: auto
+
+    *
+      pointer-events: auto
 
 @media (max-width: $mobile-breakpoint)
   .event-card
