@@ -136,3 +136,12 @@ create trigger set_events_updated_at
 before update on public.events
 for each row
 execute function public.set_updated_at();
+
+alter table public.events enable row level security;
+
+drop policy if exists "Public can read published events" on public.events;
+create policy "Public can read published events"
+on public.events
+for select
+to anon, authenticated
+using (status = 'published');
