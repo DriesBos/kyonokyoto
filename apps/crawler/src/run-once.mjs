@@ -184,6 +184,11 @@ function extractKacDetailUrl(listingHtml, listingUrl) {
   return new URL(match[0], listingUrl).toString();
 }
 
+function toDetailUrlList(value) {
+  const values = Array.isArray(value) ? value : [value];
+  return [...new Set(values.filter(Boolean))];
+}
+
 function extractKacEvent(detailHtml, source, detailUrl) {
   const titleMatch = detailHtml.match(/<h1 class="sectionTitle">([\s\S]*?)<\/h1>/i);
   const title = titleMatch ? stripTags(titleMatch[1]) : null;
@@ -244,18 +249,20 @@ function extractKacEvent(detailHtml, source, detailUrl) {
   };
 }
 
-function extractKyoceraDetailUrl(listingHtml, listingUrl) {
-  const match = listingHtml.match(
-    /https:\/\/kyotocity-kyocera\.museum\/en\/exhibition\/\d{8}-\d{8}/
-  );
+function extractKyoceraDetailUrls(listingHtml, listingUrl) {
+  const matches = [
+    ...listingHtml.matchAll(
+      /https:\/\/kyotocity-kyocera\.museum\/en\/exhibition\/\d{8}-\d{8}/g
+    ),
+  ].map((match) => new URL(match[0], listingUrl).toString());
 
-  if (!match) {
+  if (!matches.length) {
     throw new Error(
-      "Could not find a Kyoto City KYOCERA Museum of Art detail URL on the listing page"
+      "Could not find Kyoto City KYOCERA Museum of Art detail URLs on the listing page"
     );
   }
 
-  return new URL(match[0], listingUrl).toString();
+  return [...new Set(matches)];
 }
 
 function extractKyoceraFooterAddress(detailHtml) {
@@ -443,15 +450,17 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
 }
 
 const detailUrlExtractors = {
-  "kyoto-art-center": extractKacDetailUrl,
-  "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrl,
-  "the-national-museum-of-modern-art-kyoto": extractMomakDetailUrl,
+  "kyoto-art-center": (listingHtml, listingUrl) =>
+    toDetailUrlList(extractKacDetailUrl(listingHtml, listingUrl)),
+  "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrls,
+  "the-national-museum-of-modern-art": (listingHtml, listingUrl) =>
+    toDetailUrlList(extractMomakDetailUrl(listingHtml, listingUrl)),
 };
 
 const eventExtractors = {
   "kyoto-art-center": extractKacEvent,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
-  "the-national-museum-of-modern-art-kyoto": extractMomakEvent,
+  "the-national-museum-of-modern-art": extractMomakEvent,
 };
 
 async function fetchHtml(url, userAgent) {
@@ -615,14 +624,13 @@ async function main() {
       throw new Error(`No extractor has been implemented yet for source "${source.slug}"`);
     }
 
-    const detailUrl = detailUrlExtractor(listingPage.html, listingUrl);
-
-    const detailPage = await fetchHtml(detailUrl, userAgent);
-    pagesFetched += 1;
-    const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, "detail", detailPage);
+    const detailUrls = detailUrlExtractor(listingPage.html, listingUrl);
+    if (!detailUrls.length) {
+      throw new Error(`No detail URLs were extracted for source "${source.slug}"`);
+    }
 
     let sourceContext = {};
-    if (source.slug === "the-national-museum-of-modern-art-kyoto") {
+    if (source.slug === "the-national-museum-of-modern-art") {
       const accessPage = await fetchHtml("https://www.momak.go.jp/English/guide/access.html", userAgent);
       pagesFetched += 1;
       await upsertRawPage(env, source.id, crawlRun.id, "detail", accessPage);
@@ -634,30 +642,40 @@ async function main() {
       throw new Error(`No event extractor has been implemented yet for source "${source.slug}"`);
     }
 
-    const extractedEvent = eventExtractor(detailPage.html, source, detailUrl, sourceContext);
+    const savedEvents = [];
 
-    const savedEvent = await upsertEvent(
-      env,
-      source.id,
-      detailRawPage.id,
-      extractedEvent,
-      `${source.slug}:${detailUrl}`
-    );
+    for (const detailUrl of detailUrls) {
+      const detailPage = await fetchHtml(detailUrl, userAgent);
+      pagesFetched += 1;
+      const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, "detail", detailPage);
+      const extractedEvent = eventExtractor(detailPage.html, source, detailUrl, sourceContext);
+      const savedEvent = await upsertEvent(
+        env,
+        source.id,
+        detailRawPage.id,
+        extractedEvent,
+        `${source.slug}:${detailUrl}`
+      );
+
+      savedEvents.push({
+        detailUrl,
+        eventId: savedEvent.id,
+        title: savedEvent.title,
+      });
+    }
 
     await updateCrawlRun(env, crawlRun.id, {
       status: "success",
       finished_at: new Date().toISOString(),
-      pages_queued: pagesFetched,
+      pages_queued: detailUrls.length + 1,
       pages_fetched: pagesFetched,
-      pages_parsed: 1,
-      events_created: 1,
+      pages_parsed: savedEvents.length,
+      events_created: savedEvents.length,
       events_updated: 0,
-      logs: [
-        {
-          level: "info",
-          message: `Stored event ${savedEvent.id} from ${detailUrl}`,
-        },
-      ],
+      logs: savedEvents.map((savedEvent) => ({
+        level: "info",
+        message: `Stored event ${savedEvent.eventId} from ${savedEvent.detailUrl}`,
+      })),
     });
 
     console.log(
@@ -665,9 +683,8 @@ async function main() {
         {
           crawlRunId: crawlRun.id,
           source: source.slug,
-          detailUrl,
-          eventId: savedEvent.id,
-          title: savedEvent.title,
+          detailUrls,
+          events: savedEvents,
         },
         null,
         2

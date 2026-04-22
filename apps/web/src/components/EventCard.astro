@@ -68,8 +68,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         <span>{event.date_text}</span>
       </div>
       <div class="event-card__actions">
-        <GeneralButton label="Source" href={event.source_url} target="_blank" rel="noreferrer" />
-        <GeneralButton label="Directions" href={mapsUrl} target="_blank" rel="noreferrer" />
+      
         {calendarStartDate ? (
           <GeneralButton
             label="Apple Calendar"
@@ -88,6 +87,8 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         ) : (
           <GeneralButton label="Google Calendar soon" disabled={true} />
         )}
+        <GeneralButton label="Directions" href={mapsUrl} target="_blank" rel="noreferrer" />
+        <GeneralButton label="Website" href={event.source_url} target="_blank" rel="noreferrer" />
       </div>
     </div>
 
@@ -131,20 +132,30 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 <script>
   if (!window.__eventCardToggleBound) {
     const interactiveSelector = "a, button, input, select, textarea, summary, [role='button']";
+    const cardSelector = "[data-event-card-toggle]";
+
+    const setCardActiveState = (card, isActive) => {
+      card.setAttribute("data-active", String(isActive));
+      card.setAttribute("aria-pressed", String(isActive));
+    };
 
     const toggleCard = (card) => {
       const isActive = card.getAttribute("data-active") === "true";
       const next = !isActive;
 
-      card.setAttribute("data-active", String(next));
-      card.setAttribute("aria-pressed", String(next));
+      document.querySelectorAll(cardSelector).forEach((otherCard) => {
+        if (!(otherCard instanceof HTMLElement) || otherCard === card) return;
+        setCardActiveState(otherCard, false);
+      });
+
+      setCardActiveState(card, next);
     };
 
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
-      const card = target.closest("[data-event-card-toggle]");
+      const card = target.closest(cardSelector);
       if (!(card instanceof HTMLElement)) return;
       if (target.closest(interactiveSelector) && target !== card) return;
 
@@ -154,7 +165,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     document.addEventListener("keydown", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
-      if (!target.matches("[data-event-card-toggle]")) return;
+      if (!target.matches(cardSelector)) return;
       if (event.key !== "Enter" && event.key !== " ") return;
 
       event.preventDefault();

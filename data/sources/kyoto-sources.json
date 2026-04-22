@@ -12,21 +12,15 @@
         "https://www.kac.or.jp/events/",
         "https://www.kac.or.jp/en/events/"
       ],
-      "allowed_domains": [
-        "www.kac.or.jp",
-        "kac.or.jp"
-      ],
+      "allowed_domains": ["www.kac.or.jp", "kac.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/events/",
-        "/en/events/"
-      ],
+      "event_page_patterns": ["/events/", "/en/events/"],
       "notes": "Good mixed source for exhibitions, performances, talks, and workshops.",
       "is_active": true
     },
     {
-      "slug": "rohm-theatre-kyoto",
-      "name": "ROHM Theatre Kyoto",
+      "slug": "rohm-theatre",
+      "name": "ROHM Theatre",
       "source_type": "theatre",
       "language": "ja",
       "base_url": "https://rohmtheatrekyoto.jp",
@@ -34,20 +28,15 @@
         "https://rohmtheatrekyoto.jp/event/",
         "https://rohmtheatrekyoto.jp/en/event/"
       ],
-      "allowed_domains": [
-        "rohmtheatrekyoto.jp"
-      ],
+      "allowed_domains": ["rohmtheatrekyoto.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/event/",
-        "/en/event/"
-      ],
+      "event_page_patterns": ["/event/", "/en/event/"],
       "notes": "Broad performing arts source with many date-rich event pages.",
       "is_active": true
     },
     {
-      "slug": "kyoto-international-manga-museum",
-      "name": "Kyoto International Manga Museum",
+      "slug": "international-manga-museum",
+      "name": "International Manga Museum",
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://kyotomm.jp",
@@ -55,14 +44,9 @@
         "https://kyotomm.jp/en/exhibitions/",
         "https://kyotomm.jp/event/"
       ],
-      "allowed_domains": [
-        "kyotomm.jp"
-      ],
+      "allowed_domains": ["kyotomm.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/event/",
-        "/exhibitions/"
-      ],
+      "event_page_patterns": ["/event/", "/exhibitions/"],
       "notes": "Useful for recurring exhibitions and museum programming.",
       "is_active": true
     },
@@ -76,14 +60,9 @@
         "https://www.kyohaku.go.jp/eng/exhibitions/",
         "https://www.kyohaku.go.jp/jp/exhibitions/"
       ],
-      "allowed_domains": [
-        "www.kyohaku.go.jp",
-        "kyohaku.go.jp"
-      ],
+      "allowed_domains": ["www.kyohaku.go.jp", "kyohaku.go.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibitions/"
-      ],
+      "event_page_patterns": ["/exhibitions/"],
       "notes": "Strong candidate for larger exhibitions with structured metadata.",
       "is_active": true
     },
@@ -97,15 +76,9 @@
         "https://www.bunpaku.or.jp/exhi_special/",
         "https://www.bunpaku.or.jp/en/"
       ],
-      "allowed_domains": [
-        "www.bunpaku.or.jp",
-        "bunpaku.or.jp"
-      ],
+      "allowed_domains": ["www.bunpaku.or.jp", "bunpaku.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhi_",
-        "/en/"
-      ],
+      "event_page_patterns": ["/exhi_", "/en/"],
       "notes": "May need custom extraction for date formatting and image selection.",
       "is_active": true
     },
@@ -119,14 +92,9 @@
         "https://www.kyotographie.jp/en/programs/",
         "https://www.kyotographie.jp/programs/"
       ],
-      "allowed_domains": [
-        "www.kyotographie.jp",
-        "kyotographie.jp"
-      ],
+      "allowed_domains": ["www.kyotographie.jp", "kyotographie.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/programs/"
-      ],
+      "event_page_patterns": ["/programs/"],
       "notes": "Festival source with program pages that may map to one or many event records.",
       "is_active": true
     },
@@ -136,17 +104,10 @@
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://www.hosoogallery.jp/",
-      "start_urls": [
-        "https://www.hosoogallery.jp/"
-      ],
-      "allowed_domains": [
-        "www.hosoogallery.jp",
-        "hosoogallery.jp"
-      ],
+      "start_urls": ["https://www.hosoogallery.jp/"],
+      "allowed_domains": ["www.hosoogallery.jp", "hosoogallery.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/"
-      ],
+      "event_page_patterns": ["/"],
       "notes": "Likely requires manual discovery of exhibition or news URLs from the homepage structure.",
       "is_active": true
     },
@@ -156,16 +117,10 @@
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://huko.jp/",
-      "start_urls": [
-        "https://huko.jp/"
-      ],
-      "allowed_domains": [
-        "huko.jp"
-      ],
+      "start_urls": ["https://huko.jp/"],
+      "allowed_domains": ["huko.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/"
-      ],
+      "event_page_patterns": ["/"],
       "notes": "Seed source added from manual curation. Site structure may need inspection before automated extraction.",
       "is_active": true
     },
@@ -175,16 +130,10 @@
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://gallery-yamahon.com/",
-      "start_urls": [
-        "https://gallery-yamahon.com/"
-      ],
-      "allowed_domains": [
-        "gallery-yamahon.com"
-      ],
+      "start_urls": ["https://gallery-yamahon.com/"],
+      "allowed_domains": ["gallery-yamahon.com"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/"
-      ],
+      "event_page_patterns": ["/"],
       "notes": "Added once even though the source list contained this URL twice.",
       "is_active": true
     },
@@ -194,18 +143,10 @@
       "source_type": "festival",
       "language": "ja",
       "base_url": "https://kyotophonie.jp/",
-      "start_urls": [
-        "https://kyotophonie.jp/"
-      ],
-      "allowed_domains": [
-        "kyotophonie.jp"
-      ],
+      "start_urls": ["https://kyotophonie.jp/"],
+      "allowed_domains": ["kyotophonie.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/program",
-        "/programs",
-        "/en/"
-      ],
+      "event_page_patterns": ["/program", "/programs", "/en/"],
       "notes": "Festival source that may behave similarly to KYOTOGRAPHIE with program-style pages.",
       "is_active": true
     },
@@ -215,18 +156,10 @@
       "source_type": "cultural-guide",
       "language": "ja",
       "base_url": "https://soto-kyoto.jp/",
-      "start_urls": [
-        "https://soto-kyoto.jp/"
-      ],
-      "allowed_domains": [
-        "soto-kyoto.jp"
-      ],
+      "start_urls": ["https://soto-kyoto.jp/"],
+      "allowed_domains": ["soto-kyoto.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/event",
-        "/news",
-        "/journal"
-      ],
+      "event_page_patterns": ["/event", "/news", "/journal"],
       "notes": "More editorial than institutional. Good candidate for selective event extraction rather than broad crawling.",
       "is_active": true
     },
@@ -236,16 +169,10 @@
       "source_type": "cafe-venue",
       "language": "ja",
       "base_url": "https://ooyacoffeeassociees.com/navi/kafekosen/",
-      "start_urls": [
-        "https://ooyacoffeeassociees.com/navi/kafekosen/"
-      ],
-      "allowed_domains": [
-        "ooyacoffeeassociees.com"
-      ],
+      "start_urls": ["https://ooyacoffeeassociees.com/navi/kafekosen/"],
+      "allowed_domains": ["ooyacoffeeassociees.com"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/kafekosen/"
-      ],
+      "event_page_patterns": ["/kafekosen/"],
       "notes": "Likely venue-specific and may need manual checks for event relevance.",
       "is_active": true
     },
@@ -255,19 +182,10 @@
       "source_type": "venue",
       "language": "ja",
       "base_url": "http://www.bungei.jp/",
-      "start_urls": [
-        "http://www.bungei.jp/"
-      ],
-      "allowed_domains": [
-        "www.bungei.jp",
-        "bungei.jp"
-      ],
+      "start_urls": ["http://www.bungei.jp/"],
+      "allowed_domains": ["www.bungei.jp", "bungei.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/schedule",
-        "/event",
-        "/"
-      ],
+      "event_page_patterns": ["/schedule", "/event", "/"],
       "notes": "Legacy HTTP site; likely worth special handling and URL normalization.",
       "is_active": true
     },
@@ -277,18 +195,10 @@
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://www.takaishiigallery.com/",
-      "start_urls": [
-        "https://www.takaishiigallery.com/"
-      ],
-      "allowed_domains": [
-        "www.takaishiigallery.com",
-        "takaishiigallery.com"
-      ],
+      "start_urls": ["https://www.takaishiigallery.com/"],
+      "allowed_domains": ["www.takaishiigallery.com", "takaishiigallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibitions",
-        "/news"
-      ],
+      "event_page_patterns": ["/exhibitions", "/news"],
       "notes": "Gallery source that may span multiple locations, so Kyoto filtering may be needed downstream.",
       "is_active": true
     },
@@ -298,16 +208,10 @@
       "source_type": "temple",
       "language": "ja",
       "base_url": "https://komyoin.jp/",
-      "start_urls": [
-        "https://komyoin.jp/"
-      ],
-      "allowed_domains": [
-        "komyoin.jp"
-      ],
+      "start_urls": ["https://komyoin.jp/"],
+      "allowed_domains": ["komyoin.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/"
-      ],
+      "event_page_patterns": ["/"],
       "notes": "Temple source; may contain seasonal openings or exhibitions rather than frequent event listings.",
       "is_active": true
     },
@@ -317,18 +221,10 @@
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://essencekyoto.com/",
-      "start_urls": [
-        "https://essencekyoto.com/"
-      ],
-      "allowed_domains": [
-        "essencekyoto.com"
-      ],
+      "start_urls": ["https://essencekyoto.com/"],
+      "allowed_domains": ["essencekyoto.com"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibition",
-        "/news",
-        "/"
-      ],
+      "event_page_patterns": ["/exhibition", "/news", "/"],
       "notes": "May combine shop, design, and exhibition content, so page filtering will matter.",
       "is_active": true
     },
@@ -338,16 +234,10 @@
       "source_type": "temple",
       "language": "ja",
       "base_url": "https://ryosokuin.com/",
-      "start_urls": [
-        "https://ryosokuin.com/"
-      ],
-      "allowed_domains": [
-        "ryosokuin.com"
-      ],
+      "start_urls": ["https://ryosokuin.com/"],
+      "allowed_domains": ["ryosokuin.com"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/"
-      ],
+      "event_page_patterns": ["/"],
       "notes": "Temple source likely to require selective event detection rather than broad extraction.",
       "is_active": true
     },
@@ -357,58 +247,36 @@
       "source_type": "shop-gallery",
       "language": "ja",
       "base_url": "https://arts-science.com/",
-      "start_urls": [
-        "https://arts-science.com/"
-      ],
-      "allowed_domains": [
-        "arts-science.com"
-      ],
+      "start_urls": ["https://arts-science.com/"],
+      "allowed_domains": ["arts-science.com"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/journal",
-        "/news",
-        "/"
-      ],
+      "event_page_patterns": ["/journal", "/news", "/"],
       "notes": "May include mixed editorial and shop content; good candidate for selective crawling.",
       "is_active": true
     },
     {
-      "slug": "sibasi-live",
-      "name": "Sibasi Live",
+      "slug": "sibasi",
+      "name": "Sibasi",
       "source_type": "music-venue",
       "language": "ja",
       "base_url": "https://sibasi.jp/category/live/",
-      "start_urls": [
-        "https://sibasi.jp/category/live/"
-      ],
-      "allowed_domains": [
-        "sibasi.jp"
-      ],
+      "start_urls": ["https://sibasi.jp/category/live/"],
+      "allowed_domains": ["sibasi.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/category/live/"
-      ],
+      "event_page_patterns": ["/category/live/"],
       "notes": "Already points at a likely event category page, which should be crawler-friendly.",
       "is_active": true
     },
     {
-      "slug": "kojin-kyoto",
-      "name": "Kojin Kyoto",
+      "slug": "kojin",
+      "name": "Kojin",
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://kojin-kyoto.com/",
-      "start_urls": [
-        "https://kojin-kyoto.com/"
-      ],
-      "allowed_domains": [
-        "kojin-kyoto.com"
-      ],
+      "start_urls": ["https://kojin-kyoto.com/"],
+      "allowed_domains": ["kojin-kyoto.com"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibition",
-        "/news",
-        "/"
-      ],
+      "event_page_patterns": ["/exhibition", "/news", "/"],
       "notes": "Likely a gallery or art space source with exhibition pages.",
       "is_active": true
     },
@@ -418,18 +286,10 @@
       "source_type": "festival",
       "language": "ja",
       "base_url": "https://kyoto-art-month.jp/",
-      "start_urls": [
-        "https://kyoto-art-month.jp/"
-      ],
-      "allowed_domains": [
-        "kyoto-art-month.jp"
-      ],
+      "start_urls": ["https://kyoto-art-month.jp/"],
+      "allowed_domains": ["kyoto-art-month.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/program",
-        "/event",
-        "/"
-      ],
+      "event_page_patterns": ["/program", "/event", "/"],
       "notes": "Likely umbrella event source with many partner venues and date-rich program pages.",
       "is_active": true
     },
@@ -439,18 +299,10 @@
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://zenbi.kagizen.com/",
-      "start_urls": [
-        "https://zenbi.kagizen.com/"
-      ],
-      "allowed_domains": [
-        "zenbi.kagizen.com"
-      ],
+      "start_urls": ["https://zenbi.kagizen.com/"],
+      "allowed_domains": ["zenbi.kagizen.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibition",
-        "/news",
-        "/"
-      ],
+      "event_page_patterns": ["/exhibition", "/news", "/"],
       "notes": "Museum-style source with likely exhibition detail pages.",
       "is_active": true
     },
@@ -460,24 +312,16 @@
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://mtkcontemporaryart.com/",
-      "start_urls": [
-        "https://mtkcontemporaryart.com/"
-      ],
-      "allowed_domains": [
-        "mtkcontemporaryart.com"
-      ],
+      "start_urls": ["https://mtkcontemporaryart.com/"],
+      "allowed_domains": ["mtkcontemporaryart.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibition",
-        "/news",
-        "/"
-      ],
+      "event_page_patterns": ["/exhibition", "/news", "/"],
       "notes": "Contemporary art source likely suited to exhibition-style extraction rules.",
       "is_active": true
     },
     {
       "slug": "kyoto-city-kyocera-museum-of-art",
-      "name": "Kyoto City KYOCERA Museum of Art",
+      "name": "KYOCERA Museum",
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://kyotocity-kyocera.museum/",
@@ -485,19 +329,15 @@
         "https://kyotocity-kyocera.museum/en/exhibition/",
         "https://kyotocity-kyocera.museum/exhibition/"
       ],
-      "allowed_domains": [
-        "kyotocity-kyocera.museum"
-      ],
+      "allowed_domains": ["kyotocity-kyocera.museum"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibition/"
-      ],
+      "event_page_patterns": ["/exhibition/"],
       "notes": "Strong institutional source with likely structured exhibition pages.",
       "is_active": true
     },
     {
-      "slug": "the-national-museum-of-modern-art-kyoto",
-      "name": "The National Museum of Modern Art, Kyoto",
+      "slug": "the-national-museum-of-modern-art",
+      "name": "The National Museum of Modern Art",
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://www.momak.go.jp/",
@@ -505,16 +345,9 @@
         "https://www.momak.go.jp/English/exhibitionArchive/",
         "https://www.momak.go.jp/Japanese/exhibitionArchive/"
       ],
-      "allowed_domains": [
-        "www.momak.go.jp",
-        "momak.go.jp"
-      ],
+      "allowed_domains": ["www.momak.go.jp", "momak.go.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibition",
-        "/English/",
-        "/Japanese/"
-      ],
+      "event_page_patterns": ["/exhibition", "/English/", "/Japanese/"],
       "notes": "Major institutional source that may need custom handling for archive versus current exhibition pages.",
       "is_active": true
     },
@@ -524,19 +357,10 @@
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://kmtc.jp/",
-      "start_urls": [
-        "https://kmtc.jp/",
-        "https://kmtc.jp/en/"
-      ],
-      "allowed_domains": [
-        "kmtc.jp"
-      ],
+      "start_urls": ["https://kmtc.jp/", "https://kmtc.jp/en/"],
+      "allowed_domains": ["kmtc.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhibition",
-        "/event",
-        "/en/"
-      ],
+      "event_page_patterns": ["/exhibition", "/event", "/en/"],
       "notes": "Institutional museum source with likely exhibitions and craft-related programs.",
       "is_active": true
     },
@@ -546,17 +370,10 @@
       "source_type": "gallery",
       "language": "ja",
       "base_url": "https://www.dnpfcp.jp/gallery/ddd_e/",
-      "start_urls": [
-        "https://www.dnpfcp.jp/gallery/ddd_e/"
-      ],
-      "allowed_domains": [
-        "www.dnpfcp.jp",
-        "dnpfcp.jp"
-      ],
+      "start_urls": ["https://www.dnpfcp.jp/gallery/ddd_e/"],
+      "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/gallery/ddd_e/"
-      ],
+      "event_page_patterns": ["/gallery/ddd_e/"],
       "notes": "Likely structured exhibition source with English pages suitable for detail-page extraction.",
       "is_active": true
     }
