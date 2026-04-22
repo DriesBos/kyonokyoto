@@ -1,0 +1,62 @@
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Node / Astro
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.astro/
+**/.astro/
+.npm/
+.pnpm-store/
+.yarn/
+.turbo/
+
+# Python / crawler
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.python-version
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# macOS
+.DS_Store
+**/.DS_Store
+._*
+
+# Editors / IDEs
+.idea/
+.vscode/settings.json
+.vscode/tasks.json
+
+# Local build and cache artifacts
+.cache/
+tmp/
+temp/
+
+# Deployment tooling
+.netlify/
+
+# Local databases
+*.sqlite
+*.sqlite3
