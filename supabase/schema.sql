@@ -58,7 +58,7 @@ create table if not exists public.events (
   source_id uuid not null references public.sources(id) on delete restrict,
   raw_page_id uuid references public.raw_pages(id) on delete set null,
   external_id text,
-  dedupe_key text,
+  dedupe_key text not null,
 
   -- Core list item content
   title text not null,
@@ -113,7 +113,7 @@ create index if not exists events_start_date_idx on public.events (start_date);
 create index if not exists events_last_seen_at_idx on public.events (last_seen_at desc);
 create index if not exists events_institution_name_idx on public.events (institution_name);
 create index if not exists events_categories_gin_idx on public.events using gin (categories);
-create unique index if not exists events_dedupe_key_idx on public.events (dedupe_key) where dedupe_key is not null;
+create unique index if not exists events_dedupe_key_idx on public.events (dedupe_key);
 
 create or replace function public.set_updated_at()
 returns trigger

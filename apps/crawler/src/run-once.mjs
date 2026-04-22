@@ -1,0 +1,399 @@
+import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const appRoot = resolve(__dirname, "..");
+const envPath = resolve(appRoot, ".env");
+
+function parseEnvFile(contents) {
+  const env = {};
+
+  for (const rawLine of contents.split("\n")) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+
+    const separatorIndex = line.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const key = line.slice(0, separatorIndex).trim();
+    const value = line.slice(separatorIndex + 1).trim();
+    env[key] = value;
+  }
+
+  return env;
+}
+
+function getArg(name, fallback = null) {
+  const prefix = `--${name}=`;
+  const match = process.argv.find((arg) => arg.startsWith(prefix));
+  return match ? match.slice(prefix.length) : fallback;
+}
+
+function decodeHtml(value) {
+  return value
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", "\"")
+    .replaceAll("&#8211;", "–")
+    .replaceAll("&#8217;", "'")
+    .replaceAll("&#038;", "&")
+    .replaceAll("&#8212;", "—")
+    .replaceAll("&#8220;", "\"")
+    .replaceAll("&#8221;", "\"")
+    .replaceAll("&#8230;", "…")
+    .replaceAll("&#039;", "'");
+}
+
+function stripTags(value) {
+  return decodeHtml(
+    value
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim()
+  );
+}
+
+function extractMeta(html, property) {
+  const pattern = new RegExp(
+    `<meta[^>]+(?:property|name)="${property}"[^>]+content="([^"]+)"`,
+    "i"
+  );
+  return html.match(pattern)?.[1] ?? null;
+}
+
+function extractSectionValue(html, dtText) {
+  const escaped = dtText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    `<dt>${escaped}</dt>\\s*<dd>([\\s\\S]*?)</dd>`,
+    "i"
+  );
+  const match = html.match(pattern)?.[1];
+  return match ? stripTags(match) : null;
+}
+
+function parseJapaneseDateRange(dateText) {
+  const pattern =
+    /(\d{4})年(\d{1,2})月(\d{1,2})日.*?[～〜\-－]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/u;
+  const match = dateText.match(pattern);
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, sy, sm, sd, ey, em, ed] = match;
+  const startDate = `${sy}-${sm.padStart(2, "0")}-${sd.padStart(2, "0")}`;
+  const endDate = `${ey}-${em.padStart(2, "0")}-${ed.padStart(2, "0")}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T00:00:00+09:00`,
+    calendarEndsAt: `${endDate}T23:59:00+09:00`,
+  };
+}
+
+function extractKacDetailUrl(listingHtml, listingUrl) {
+  const match = listingHtml.match(/https:\/\/www\.kac\.or\.jp\/events\/\d+\//);
+  if (!match) {
+    throw new Error("Could not find a Kyoto Art Center event detail URL on the listing page");
+  }
+
+  return new URL(match[0], listingUrl).toString();
+}
+
+function extractKacEvent(detailHtml, source, detailUrl) {
+  const titleMatch = detailHtml.match(/<h1 class="sectionTitle">([\s\S]*?)<\/h1>/i);
+  const title = titleMatch ? stripTags(titleMatch[1]) : null;
+
+  if (!title) {
+    throw new Error("Could not extract event title from Kyoto Art Center detail page");
+  }
+
+  const dateText = extractSectionValue(detailHtml, "開催日時") ?? "See source page";
+  const venueName = extractSectionValue(detailHtml, "会場");
+  const genre = extractSectionValue(detailHtml, "ジャンル");
+  const category = extractSectionValue(detailHtml, "カテゴリー");
+  const descriptionBlock =
+    detailHtml.match(/<p><br>([\s\S]*?)<\/p>/i)?.[1] ??
+    extractMeta(detailHtml, "og:description") ??
+    "";
+
+  const imageMatches = [
+    ...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi),
+  ].map((match) => match[1]);
+
+  const imageUrls = [...new Set(imageMatches)];
+  const primaryImageUrl = extractMeta(detailHtml, "og:image") ?? imageUrls[0] ?? null;
+
+  const categories = [...new Set([genre, category]
+    .flatMap((value) => (value ? value.split(/[／/、,]/) : []))
+    .map((value) => value.trim())
+    .filter(Boolean))];
+
+  const artistSeed = title.split("個展")[0] ?? "";
+  const artistName = artistSeed.replace(/^[A-ZＡ-Ｚ0-9０-９#＃\s]+/u, "").trim() || null;
+
+  const parsedDates = parseJapaneseDateRange(dateText);
+  const addressText = venueName ?? source.name;
+  const directionsQuery = `${addressText} Kyoto`;
+
+  return {
+    title,
+    artist_name: artistName,
+    categories,
+    description: stripTags(descriptionBlock),
+    institution_name: source.name,
+    venue_name: venueName,
+    address_text: addressText,
+    directions_query: directionsQuery,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: "Asia/Tokyo",
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: primaryImageUrl,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+async function fetchHtml(url, userAgent) {
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": userAgent,
+      accept: "text/html,application/xhtml+xml",
+    },
+  });
+
+  const html = await response.text();
+
+  return {
+    url,
+    response,
+    html,
+    title: html.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null,
+    contentType: response.headers.get("content-type"),
+  };
+}
+
+async function supabaseRequest({ env, path, method = "GET", body = null }) {
+  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      Prefer: "return=representation,resolution=merge-duplicates",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Supabase request failed (${response.status}) for ${path}: ${errorText}`);
+  }
+
+  return response.status === 204 ? null : response.json();
+}
+
+async function getSourceBySlug(env, slug) {
+  const rows = await supabaseRequest({
+    env,
+    path: `sources?slug=eq.${encodeURIComponent(slug)}&select=*`,
+  });
+
+  if (!rows?.length) {
+    throw new Error(`Could not find source with slug "${slug}" in public.sources`);
+  }
+
+  return rows[0];
+}
+
+async function createCrawlRun(env, sourceId) {
+  const rows = await supabaseRequest({
+    env,
+    path: "crawl_runs",
+    method: "POST",
+    body: [
+      {
+        source_id: sourceId,
+        status: "running",
+        trigger_type: "manual",
+        started_at: new Date().toISOString(),
+      },
+    ],
+  });
+
+  return rows[0];
+}
+
+async function updateCrawlRun(env, crawlRunId, patch) {
+  const rows = await supabaseRequest({
+    env,
+    path: `crawl_runs?id=eq.${crawlRunId}`,
+    method: "PATCH",
+    body: patch,
+  });
+
+  return rows?.[0] ?? null;
+}
+
+async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
+  const contentHash = createHash("sha256").update(fetched.html).digest("hex");
+  const rows = await supabaseRequest({
+    env,
+    path: "raw_pages?on_conflict=source_id,url,content_hash",
+    method: "POST",
+    body: [
+      {
+        source_id: sourceId,
+        crawl_run_id: crawlRunId,
+        url: fetched.url,
+        canonical_url: fetched.response.url,
+        page_kind: pageKind,
+        http_status: fetched.response.status,
+        content_type: fetched.contentType,
+        title: fetched.title,
+        raw_html: fetched.html,
+        extracted_text: stripTags(fetched.html).slice(0, 5000),
+        metadata: {
+          final_url: fetched.response.url,
+          fetched_via: "fetch",
+        },
+        content_hash: contentHash,
+        fetched_at: new Date().toISOString(),
+      },
+    ],
+  });
+
+  return rows[0];
+}
+
+async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
+  const rows = await supabaseRequest({
+    env,
+    path: "events?on_conflict=dedupe_key",
+    method: "POST",
+    body: [
+      {
+        source_id: sourceId,
+        raw_page_id: rawPageId,
+        dedupe_key: dedupeKey,
+        status: "draft",
+        extraction_confidence: 0.6,
+        ...eventData,
+      },
+    ],
+  });
+
+  return rows[0];
+}
+
+async function main() {
+  const envContents = await readFile(envPath, "utf8");
+  const env = parseEnvFile(envContents);
+  const sourceSlug = getArg("source", "kyoto-art-center");
+  const userAgent = env.CRAWLER_USER_AGENT ?? "kyo-no-kyoto-bot/0.1";
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
+  }
+
+  const source = await getSourceBySlug(env, sourceSlug);
+  const crawlRun = await createCrawlRun(env, source.id);
+
+  try {
+    const listingUrl = source.start_urls?.[0];
+    if (!listingUrl) {
+      throw new Error(`Source "${source.slug}" does not have a start URL`);
+    }
+
+    const listingPage = await fetchHtml(listingUrl, userAgent);
+    await upsertRawPage(env, source.id, crawlRun.id, "listing", listingPage);
+
+    let detailUrl;
+    let extractedEvent;
+
+    switch (source.slug) {
+      case "kyoto-art-center":
+        detailUrl = extractKacDetailUrl(listingPage.html, listingUrl);
+        break;
+      default:
+        throw new Error(`No extractor has been implemented yet for source "${source.slug}"`);
+    }
+
+    const detailPage = await fetchHtml(detailUrl, userAgent);
+    const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, "detail", detailPage);
+
+    switch (source.slug) {
+      case "kyoto-art-center":
+        extractedEvent = extractKacEvent(detailPage.html, source, detailUrl);
+        break;
+      default:
+        throw new Error(`No event extractor has been implemented yet for source "${source.slug}"`);
+    }
+
+    const savedEvent = await upsertEvent(
+      env,
+      source.id,
+      detailRawPage.id,
+      extractedEvent,
+      `${source.slug}:${detailUrl}`
+    );
+
+    await updateCrawlRun(env, crawlRun.id, {
+      status: "success",
+      finished_at: new Date().toISOString(),
+      pages_queued: 2,
+      pages_fetched: 2,
+      pages_parsed: 1,
+      events_created: 1,
+      events_updated: 0,
+      logs: [
+        {
+          level: "info",
+          message: `Stored event ${savedEvent.id} from ${detailUrl}`,
+        },
+      ],
+    });
+
+    console.log(
+      JSON.stringify(
+        {
+          crawlRunId: crawlRun.id,
+          source: source.slug,
+          detailUrl,
+          eventId: savedEvent.id,
+          title: savedEvent.title,
+        },
+        null,
+        2
+      )
+    );
+  } catch (error) {
+    await updateCrawlRun(env, crawlRun.id, {
+      status: "failed",
+      finished_at: new Date().toISOString(),
+      error_message: error instanceof Error ? error.message : String(error),
+    });
+
+    throw error;
+  }
+}
+
+await main();
