@@ -103,6 +103,78 @@ function parseJapaneseDateRange(dateText) {
   };
 }
 
+function parseSlashDateRange(dateText) {
+  const pattern =
+    /(\d{4})\/(\d{1,2})\/(\d{1,2})\s*[-–—]\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/;
+  const match = dateText.match(pattern);
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, sy, sm, sd, ey, em, ed] = match;
+  const startDate = `${sy}-${sm.padStart(2, "0")}-${sd.padStart(2, "0")}`;
+  const endDate = `${ey}-${em.padStart(2, "0")}-${ed.padStart(2, "0")}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
+function parseMomakDateRange(dateText) {
+  const pattern =
+    /(\d{4})\.(\d{2})\.(\d{2})\s*[a-z]{3}\.\s*-\s*(?:(\d{4})\.)?(\d{2})\.(\d{2})\s*[a-z]{3}\./i;
+  const match = dateText.match(pattern);
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, sy, sm, sd, explicitEy, em, ed] = match;
+  const ey = explicitEy ?? sy;
+  const startDate = `${sy}-${sm}-${sd}`;
+  const endDate = `${ey}-${em}-${ed}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
+function extractClassBlock(html, className, tagName = "[a-z0-9]+") {
+  const pattern = new RegExp(
+    `<${tagName}[^>]*class="[^"]*${className}[^"]*"[^>]*>([\\s\\S]*?)<\\/${tagName}>`,
+    "i"
+  );
+
+  return html.match(pattern)?.[1] ?? null;
+}
+
+function extractDefinitionValue(html, term) {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    `<dt>${escaped}</dt>\\s*<dd>([\\s\\S]*?)</dd>`,
+    "i"
+  );
+
+  return html.match(pattern)?.[1] ?? null;
+}
+
 function extractKacDetailUrl(listingHtml, listingUrl) {
   const match = listingHtml.match(/https:\/\/www\.kac\.or\.jp\/events\/\d+\//);
   if (!match) {
@@ -171,6 +243,216 @@ function extractKacEvent(detailHtml, source, detailUrl) {
     source_url: detailUrl,
   };
 }
+
+function extractKyoceraDetailUrl(listingHtml, listingUrl) {
+  const match = listingHtml.match(
+    /https:\/\/kyotocity-kyocera\.museum\/en\/exhibition\/\d{8}-\d{8}/
+  );
+
+  if (!match) {
+    throw new Error(
+      "Could not find a Kyoto City KYOCERA Museum of Art detail URL on the listing page"
+    );
+  }
+
+  return new URL(match[0], listingUrl).toString();
+}
+
+function extractKyoceraFooterAddress(detailHtml) {
+  const footerInfo = detailHtml.match(/<p class="footer_info">([\s\S]*?)<\/p>/i)?.[1];
+  if (!footerInfo) return null;
+
+  const lines = stripTags(footerInfo)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return lines.find((line) => /\bKyoto\b/.test(line) && /\d{3}-\d{4}/.test(line)) ?? null;
+}
+
+function extractKyoceraEvent(detailHtml, source, detailUrl) {
+  const titleBlock = extractClassBlock(detailHtml, "exhibition_title", "h1");
+  const titleLines = titleBlock
+    ? stripTags(titleBlock)
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+    : [];
+  const title = titleLines[0] ?? null;
+
+  if (!title) {
+    throw new Error("Could not extract event title from Kyoto City KYOCERA Museum of Art page");
+  }
+
+  const subtitleBlocks = [
+    ...detailHtml.matchAll(/<p class="exhibition_subTitle">([\s\S]*?)<\/p>/gi),
+  ].map((match) => stripTags(match[1])).filter(Boolean);
+
+  const dateText =
+    stripTags(extractClassBlock(detailHtml, "exhibition_date", "p") ?? "") || "See source page";
+  const venueName =
+    stripTags(extractClassBlock(detailHtml, "exhibition_venue", "p") ?? "")
+      .replace(/^Venue\s*\[/i, "")
+      .replace(/\]$/i, "")
+      .trim() || null;
+  const heading = stripTags(extractClassBlock(detailHtml, "cont_heading", "h3") ?? "");
+  const descriptionHtml =
+    detailHtml.match(
+      /<div class="tab_cont_inner cont_col2 post_catch">[\s\S]*?<div class="cont_desc">([\s\S]*?)<\/div>/i
+    )?.[1] ??
+    extractDefinitionValue(detailHtml, "Period") ??
+    extractMeta(detailHtml, "og:description") ??
+    "";
+
+  const timeText = stripTags(extractDefinitionValue(detailHtml, "Time") ?? "") || null;
+  const artistSection = detailHtml.match(
+    /<div class="tab_cont_inner post_artist">([\s\S]*?)<\/div>\s*<\/div>/i
+  )?.[1];
+  const artistNames = artistSection
+    ? [...artistSection.matchAll(/<h4 class="frame_heading">([\s\S]*?)<\/h4>/gi)]
+        .map((match) => stripTags(match[1]))
+        .filter(Boolean)
+    : titleLines.slice(1).flatMap((line) =>
+        line
+          .split(/\s*,\s*/)
+          .map((value) => value.trim())
+          .filter(Boolean)
+      );
+
+  const imageMatches = [
+    ...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi),
+  ].map((match) => match[1]);
+  const imageUrls = [...new Set(imageMatches)];
+  const primaryImageUrl = extractMeta(detailHtml, "og:image") ?? imageUrls[0] ?? null;
+
+  const normalizedCategories = [
+    "exhibition",
+    "museum",
+    ...subtitleBlocks.map((value) => value.toLowerCase()),
+  ];
+  const categories = [...new Set(normalizedCategories.filter(Boolean))];
+  const parsedDates = parseSlashDateRange(dateText);
+  const addressText = extractKyoceraFooterAddress(detailHtml) ?? source.name;
+  const directionsQuery = venueName
+    ? `${venueName}, ${source.name}, Kyoto`
+    : `${source.name}, Kyoto`;
+
+  return {
+    title,
+    artist_name: artistNames.length ? artistNames.join(", ") : null,
+    categories,
+    description: stripTags(`${heading}\n\n${descriptionHtml}`),
+    institution_name: source.name,
+    venue_name: venueName,
+    address_text: addressText,
+    directions_query: directionsQuery,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: timeText,
+    end_time_text: null,
+    is_all_day: !timeText,
+    timezone: "Asia/Tokyo",
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: primaryImageUrl,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractMomakDetailUrl(listingHtml, listingUrl) {
+  const match = listingHtml.match(
+    /<a href="(https:\/\/www\.momak\.go\.jp\/English\/\?p=\d+)" class="btn-default">Read More<\/a>/i
+  );
+
+  if (!match) {
+    throw new Error("Could not find a MoMAK detail URL on the listing page");
+  }
+
+  return new URL(match[1], listingUrl).toString();
+}
+
+function extractMomakAddress(accessHtml) {
+  const match = accessHtml.match(
+    /<h3 class="access">The National Museum of Modern Art, Kyoto<\/h3>\s*<p>([\s\S]*?)<\/p>/i
+  );
+
+  if (!match) return null;
+  return stripTags(match[1]);
+}
+
+function extractMomakGoogleMapsUrl(accessHtml) {
+  return (
+    accessHtml.match(/<a class="map-link" href="([^"]+)"/i)?.[1] ??
+    "https://www.google.com/maps/place/National+Museum+of+Modern+Art,+Kyoto"
+  );
+}
+
+function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
+  const title = stripTags(
+    detailHtml.match(/<section id="scTitle"[\s\S]*?<p><i>([\s\S]*?)<\/i><\/p>/i)?.[1] ??
+      ""
+  );
+
+  if (!title) {
+    throw new Error("Could not extract event title from MoMAK detail page");
+  }
+
+  const dateText = stripTags(
+    detailHtml.match(/<section id="scTitle"[\s\S]*?<p>(\d{4}\.\d{2}\.\d{2}[\s\S]*?)<\/p>/i)?.[1] ??
+      ""
+  ) || "See source page";
+
+  const description = stripTags(
+    detailHtml.match(/<div class="description">[\s\S]*?<p>([\s\S]*?)<\/p>/i)?.[1] ?? ""
+  );
+
+  const imageUrls = [
+    detailHtml.match(/<section id="scMainImg"[\s\S]*?<img src="([^"]+)"/i)?.[1],
+    ...[...detailHtml.matchAll(/<img src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => match[1]),
+  ].filter(Boolean);
+  const uniqueImageUrls = [...new Set(imageUrls)];
+
+  const parsedDates = parseMomakDateRange(dateText);
+  const addressText = context.accessHtml ? extractMomakAddress(context.accessHtml) : source.name;
+  const directionsQuery = extractMomakGoogleMapsUrl(context.accessHtml ?? "");
+
+  return {
+    title,
+    artist_name: null,
+    categories: ["exhibition", "museum", "modern-art"],
+    description,
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: addressText,
+    directions_query: directionsQuery,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: "10:00-18:00",
+    end_time_text: null,
+    is_all_day: false,
+    timezone: "Asia/Tokyo",
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: uniqueImageUrls[0] ?? null,
+    image_urls: uniqueImageUrls,
+    source_url: detailUrl,
+  };
+}
+
+const detailUrlExtractors = {
+  "kyoto-art-center": extractKacDetailUrl,
+  "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrl,
+  "the-national-museum-of-modern-art-kyoto": extractMomakDetailUrl,
+};
+
+const eventExtractors = {
+  "kyoto-art-center": extractKacEvent,
+  "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
+  "the-national-museum-of-modern-art-kyoto": extractMomakEvent,
+};
 
 async function fetchHtml(url, userAgent) {
   const response = await fetch(url, {
@@ -323,30 +605,36 @@ async function main() {
       throw new Error(`Source "${source.slug}" does not have a start URL`);
     }
 
+    let pagesFetched = 0;
     const listingPage = await fetchHtml(listingUrl, userAgent);
+    pagesFetched += 1;
     await upsertRawPage(env, source.id, crawlRun.id, "listing", listingPage);
 
-    let detailUrl;
-    let extractedEvent;
-
-    switch (source.slug) {
-      case "kyoto-art-center":
-        detailUrl = extractKacDetailUrl(listingPage.html, listingUrl);
-        break;
-      default:
-        throw new Error(`No extractor has been implemented yet for source "${source.slug}"`);
+    const detailUrlExtractor = detailUrlExtractors[source.slug];
+    if (!detailUrlExtractor) {
+      throw new Error(`No extractor has been implemented yet for source "${source.slug}"`);
     }
+
+    const detailUrl = detailUrlExtractor(listingPage.html, listingUrl);
 
     const detailPage = await fetchHtml(detailUrl, userAgent);
+    pagesFetched += 1;
     const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, "detail", detailPage);
 
-    switch (source.slug) {
-      case "kyoto-art-center":
-        extractedEvent = extractKacEvent(detailPage.html, source, detailUrl);
-        break;
-      default:
-        throw new Error(`No event extractor has been implemented yet for source "${source.slug}"`);
+    let sourceContext = {};
+    if (source.slug === "the-national-museum-of-modern-art-kyoto") {
+      const accessPage = await fetchHtml("https://www.momak.go.jp/English/guide/access.html", userAgent);
+      pagesFetched += 1;
+      await upsertRawPage(env, source.id, crawlRun.id, "detail", accessPage);
+      sourceContext = { accessHtml: accessPage.html };
     }
+
+    const eventExtractor = eventExtractors[source.slug];
+    if (!eventExtractor) {
+      throw new Error(`No event extractor has been implemented yet for source "${source.slug}"`);
+    }
+
+    const extractedEvent = eventExtractor(detailPage.html, source, detailUrl, sourceContext);
 
     const savedEvent = await upsertEvent(
       env,
@@ -359,8 +647,8 @@ async function main() {
     await updateCrawlRun(env, crawlRun.id, {
       status: "success",
       finished_at: new Date().toISOString(),
-      pages_queued: 2,
-      pages_fetched: 2,
+      pages_queued: pagesFetched,
+      pages_fetched: pagesFetched,
       pages_parsed: 1,
       events_created: 1,
       events_updated: 0,

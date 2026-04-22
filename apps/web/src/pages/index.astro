@@ -34,6 +34,7 @@ const events = (data ?? []) as EventRow[];
 
 const mapsUrl = (event: EventRow) => {
   const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
+  if (/^https?:\/\//i.test(query)) return query;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 };
 
