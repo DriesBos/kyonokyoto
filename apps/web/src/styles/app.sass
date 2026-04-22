@@ -113,18 +113,19 @@ a
 
 .category-filter
   display: flex
-  flex: 0 1 21.3125rem
   flex-wrap: wrap
   justify-content: flex-end
   gap: 0.75rem
   margin-left: auto
-  max-width: 21.3125rem
+  max-width: 15rem
 
 .site-header__filter-toggle
-  display: none
+  @media (min-width: $mobile-breakpoint)
+    display: none !important
 
 .general-button
   position: relative
+  isolation: isolate
   display: inline-flex
   align-items: center
   justify-content: flex-start
@@ -140,11 +141,14 @@ a
   cursor: var(--cursor-dot)
 
 .general-button__label
+  position: relative
+  z-index: 1
   display: inline-block
   text-transform: lowercase
 
 .general-button__dot
   position: absolute
+  z-index: 0
   left: var(--general-button-dot-left, 50%)
   transform: translateX(-50%)
   top: var(--general-button-dot-top, 0)
@@ -337,10 +341,6 @@ a
   .site-header__filter-toggle
     display: inline-flex
     align-items: center
-    justify-content: flex-start
-
-  .category-filter
-    width: 100%
     justify-content: flex-start
 
   .site-header__filter-toggle
