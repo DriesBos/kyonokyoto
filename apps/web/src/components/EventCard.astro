@@ -1,4 +1,6 @@
 ---
+import GeneralButton from "./GeneralButton.astro";
+
 type EventRow = {
   id: string;
   title: string;
@@ -39,12 +41,21 @@ const imageUrls = (event.image_urls ?? []).filter(Boolean);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
 ---
 
-<article class="event-card" data-event-card data-categories={categorySlugs.join("|")}>
+<article
+  class="event-card"
+  data-event-card
+  data-event-card-toggle
+  data-active="false"
+  data-categories={categorySlugs.join("|")}
+  role="button"
+  tabindex="0"
+  aria-pressed="false"
+>
 
   <div class="event-card__body">
     <div class="event-card__body__header">
       <h2 class="event-card__title">{event.title}</h2>
-      {event.artist_name ? <p class="event-card__artist">{event.artist_name}</p> : null}
+      {event.artist_name ? <h3 class="event-card__artist">{event.artist_name}</h3> : null}
     </div>
     <div class="event-card__body__content">
       <p class="event-card__description">{excerpt}</p>
@@ -52,6 +63,17 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
         <span>{event.institution_name}</span>
         <span>{event.date_text}</span>
       </div>
+          <div class="event-card__actions">
+      <GeneralButton label="Source" href={event.source_url} target="_blank" rel="noreferrer" />
+      <GeneralButton label="Directions" href={mapsUrl} target="_blank" rel="noreferrer" />
+      {
+        calendarUrl ? (
+          <GeneralButton label="Add to Calendar" href={calendarUrl} target="_blank" rel="noreferrer" />
+        ) : (
+          <GeneralButton label="Calendar soon" disabled={true} />
+        )
+      }
+    </div>
     </div>
 
     <!-- {
@@ -73,17 +95,6 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
 
 
 
-    <div class="event-card__actions">
-      <a class="button-link" href={event.source_url} target="_blank" rel="noreferrer">Source</a>
-      <a class="button-link" href={mapsUrl} target="_blank" rel="noreferrer">Directions</a>
-      {
-        calendarUrl ? (
-          <a class="button-link" href={calendarUrl} target="_blank" rel="noreferrer">Add to Calendar</a>
-        ) : (
-          <span class="button-link button-link--disabled">Calendar soon</span>
-        )
-      }
-    </div>
   </div>
     <div class="event-card__media">
     {images.length > 0 ? (
@@ -101,3 +112,40 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
     )}
   </div>
 </article>
+
+<script>
+  if (!window.__eventCardToggleBound) {
+    const interactiveSelector = "a, button, input, select, textarea, summary, [role='button']";
+
+    const toggleCard = (card) => {
+      const isActive = card.getAttribute("data-active") === "true";
+      const next = !isActive;
+
+      card.setAttribute("data-active", String(next));
+      card.setAttribute("aria-pressed", String(next));
+    };
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const card = target.closest("[data-event-card-toggle]");
+      if (!(card instanceof HTMLElement)) return;
+      if (target.closest(interactiveSelector) && target !== card) return;
+
+      toggleCard(card);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.matches("[data-event-card-toggle]")) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+
+      event.preventDefault();
+      toggleCard(target);
+    });
+
+    window.__eventCardToggleBound = true;
+  }
+</script>

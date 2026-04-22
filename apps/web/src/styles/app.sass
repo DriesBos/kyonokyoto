@@ -27,11 +27,6 @@ $image-placeholder: #dcdcdc
   --type-title-letter-spacing: -0.01em
 
   --font-body: 'GT Walsheim', 'Helvetica Neue', Helvetica, Arial, sans-serif
-  --space-1: 0.5rem
-  --space-2: 0.75rem
-  --space-3: 1rem
-  --space-4: 1.5rem
-  --space-5: 2rem
   --page-padding-x: 0.5rem
   --page-padding-y: 0.5rem
 
@@ -39,6 +34,7 @@ $image-placeholder: #dcdcdc
 *::before,
 *::after
   box-sizing: border-box
+  user-select: none
 
 html
   font-size: clamp(16px, calc(16px + (20 - 16) * (((100vw - #{$fluid-type-min-width}) / (#{$fluid-type-max-width} - #{$fluid-type-min-width})))), 20px)
@@ -64,6 +60,15 @@ img
   display: block
   max-width: 100%
 
+h1,
+h2,
+h3,
+h4
+  margin: 0
+  font-size: var(--type-title-size)
+  line-height: 1.2
+  letter-spacing: var(--type-title-letter-spacing)
+
 a
   color: inherit
   text-decoration: none
@@ -75,13 +80,13 @@ a
 
 .site-header,
 .site-footer
-  padding: var(--space-3) 0
+  padding: 1rem 0
 
 .site-header
   display: flex
   justify-content: space-between
   align-items: flex-start
-  gap: var(--space-4)
+  gap: 1.5rem
 
   &__logo
     flex: 0 0 auto
@@ -106,7 +111,7 @@ a
 .site-header__filter-toggle
   display: none
 
-.toggle-button
+.general-button
   position: relative
   display: inline-flex
   align-items: center
@@ -122,15 +127,15 @@ a
   line-height: 1
   cursor: pointer
 
-.toggle-button__label
+.general-button__label
   display: inline-block
   text-transform: lowercase
 
-.toggle-button__dot
+.general-button__dot
   position: absolute
-  left: var(--toggle-dot-left, 50%)
+  left: var(--general-button-dot-left, 50%)
   transform: translateX(-50%)
-  top: var(--toggle-dot-top, 0)
+  top: var(--general-button-dot-top, 0)
   width: 1rem
   height: 1rem
   border-radius: 50%
@@ -138,17 +143,21 @@ a
   opacity: 0
   transition: opacity 140ms ease
 
-.toggle-button[aria-pressed='true'] .toggle-button__dot
+.general-button[aria-pressed='true'] .general-button__dot
   opacity: 1
 
-.toggle-button:hover,
-.toggle-button:focus-visible
+.general-button:hover,
+.general-button:focus-visible
   outline: none
+
+.general-button--disabled
+  opacity: 0.55
+  cursor: default
 
 .page-edge-strokes
   display: grid
   gap: var(--stroke-gap)
-  padding: var(--space-3) 0
+  padding: 1rem 0
 
   span
     display: block
@@ -164,15 +173,9 @@ a
 .section-heading
   display: flex
   justify-content: space-between
-  gap: var(--space-2)
+  gap: 0.75rem
   align-items: flex-end
-  padding: var(--space-3) 0
-
-  &__title
-    margin: 0
-    font-size: var(--type-title-size)
-    line-height: 1.2
-    letter-spacing: var(--type-title-letter-spacing)
+  padding: 1rem 0
 
   &__count
     margin: 0
@@ -180,61 +183,81 @@ a
     text-transform: uppercase
 
 .empty-state
-  padding: var(--space-4) 0
+  padding: 1.5rem 0
 
   h3,
   p
     margin: 0
 
   p
-    margin-top: var(--space-2)
+    margin-top: 0.75rem
 
 .empty-state--filtered
   border-top: 0
   padding-top: 0
 
 .event-card
+  --event-card-media-row-height: 9.375rem
+  --event-card-media-gap: 0.5rem
   display: flex
-  gap: var(--space-3)
+  gap: 1rem
   align-items: flex-start
   padding: 0.5rem 0 2rem
   border-top: var(--stroke-width) solid var(--stroke)
+  cursor: pointer
+  transition: background-color 140ms ease
+
+  &[data-active='false'] .event-card__body__content
+    display: none
+
+  &[data-active='false'] .event-card__media
+    max-height: var(--event-card-media-row-height)
+
+  &[data-active='true']
+    background: rgba(19, 142, 0, 0.06)
+
+  &[data-active='true'] .event-card__media
+    max-height: calc(var(--event-card-media-row-height) * 3 + var(--event-card-media-gap) * 2)
 
   &__media
-    display: grid
-    gap: 0.5rem
-    flex: 0 0 13.75rem
+    flex: 1 1 auto
+    display: flex
+    flex-wrap: wrap
+    justify-content: flex-end
+    align-content: flex-start
+    gap: var(--event-card-media-gap)
     min-width: 0
+    overflow: hidden
 
   &__image
-    width: 100%
-    height: 150px
-    object-fit: cover
+    width: auto
+    max-width: 100%
+    height: var(--event-card-media-row-height)
+    flex: 0 0 auto
     background: $image-placeholder
 
     &--placeholder
       display: grid
       place-items: center
+      width: 100%
 
   &__body
     flex: 1 1 auto
     display: grid
-    gap: var(--space-2)
+    gap: 0.75rem
     min-width: 0
+
+    &__header
+      display: flex
+      flex-direction: column
+      gap: 0.25rem
 
   &__meta
     display: flex
     justify-content: space-between
-    gap: var(--space-2)
+    gap: 0.75rem
     font-size: var(--type-body-size)
     text-transform: uppercase
-
-  &__title
-    margin: 0
-    font-size: var(--type-title-size)
-    line-height: 1.25
-    letter-spacing: var(--type-title-letter-spacing)
-    font-weight: 700
 
   &__artist,
   &__description
@@ -251,14 +274,14 @@ a
     li
       border: var(--stroke-width) solid var(--stroke)
       padding: 4px 8px
-      font-size: 12px
+      // font-size: 12px
       letter-spacing: 0
       text-transform: uppercase
 
   &__facts
     display: grid
     grid-template-columns: repeat(2, minmax(0, 1fr))
-    gap: var(--space-2)
+    gap: 0.75rem
     margin: 0
 
     div
@@ -276,28 +299,7 @@ a
     display: flex
     flex-wrap: wrap
     gap: 8px
-    margin-top: var(--space-1)
-
-.button-link
-  display: inline-flex
-  align-items: center
-  justify-content: center
-  min-height: 34px
-  padding: 0 12px
-  border: var(--stroke-width) solid var(--stroke)
-  background: transparent
-  font-size: var(--type-body-size)
-  letter-spacing: var(--type-body-letter-spacing)
-  text-transform: uppercase
-
-  &:hover,
-  &:focus-visible
-    background: var(--main-color)
-    color: var(--main-background)
-    outline: none
-
-  &--disabled
-    opacity: 0.55
+    margin-top: 0.5rem
 
 @media (max-width: $mobile-breakpoint)
   .event-card

@@ -1,6 +1,6 @@
 ---
 import Logo from "./Logo.astro";
-import ToggleButton from "./ToggleButton.astro";
+import GeneralButton from "./GeneralButton.astro";
 
 type CategoryOption = {
   slug: string;
@@ -22,18 +22,20 @@ const { categories } = Astro.props;
   {
     categories.length > 0 ? (
         <div class="category-filter" id="category-filter-panel" aria-label="Filter events by category" role="group">
-          <ToggleButton
+          <GeneralButton
             class="site-header__filter-toggle"
             label="filter"
             pressed={false}
+            showDot={true}
             data-filter-disclosure
             aria-expanded="false"
             aria-controls="category-filter-panel"
           />
           {categories.map((category) => (
-            <ToggleButton
+            <GeneralButton
               label={category.label}
               pressed={false}
+              showDot={true}
               dataCategory={category.slug}
               dataCategoryButton={true}
             />
@@ -90,7 +92,7 @@ const { categories } = Astro.props;
       });
 
       const activeButton = buttons.find((button) => button.dataset.category === activeCategory);
-      const activeLabel = activeButton?.querySelector(".toggle-button__label")?.textContent || "";
+      const activeLabel = activeButton?.querySelector(".general-button__label")?.textContent || "";
 
       if (filteredEmptyState) {
         filteredEmptyState.toggleAttribute("hidden", visibleCount > 0 || !activeCategory);

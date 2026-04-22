@@ -1,0 +1,91 @@
+---
+type Props = {
+  label: string;
+  href?: string;
+  pressed?: boolean;
+  type?: "button" | "submit" | "reset";
+  value?: string;
+  name?: string;
+  class?: string;
+  showDot?: boolean;
+  disabled?: boolean;
+  target?: string;
+  rel?: string;
+  dataCategory?: string;
+  dataCategoryButton?: boolean;
+  ariaControls?: string;
+};
+
+const {
+  label,
+  href,
+  pressed,
+  type = "button",
+  value,
+  name,
+  class: className,
+  showDot = false,
+  disabled = false,
+  target,
+  rel,
+  dataCategory,
+  dataCategoryButton = false,
+  ariaControls,
+  ...rest
+} = Astro.props;
+
+const dotTop = `${(Math.random() * 6 - 3).toFixed(2)}px`;
+const dotLeft = `${(47 + Math.random() * 6).toFixed(2)}%`;
+const classes = ["general-button", disabled && "general-button--disabled", className];
+const style = `--general-button-dot-top: ${dotTop}; --general-button-dot-left: ${dotLeft};`;
+---
+
+{
+  href && !disabled ? (
+    <a
+      class:list={classes}
+      style={style}
+      href={href}
+      target={target}
+      rel={rel}
+      data-category={dataCategory}
+      data-category-button={dataCategoryButton ? "" : undefined}
+      aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
+      aria-controls={ariaControls}
+      {...rest}
+    >
+      <span class="general-button__label">{label}</span>
+      {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
+    </a>
+  ) : disabled ? (
+    <span
+      class:list={classes}
+      style={style}
+      aria-disabled="true"
+      data-category={dataCategory}
+      data-category-button={dataCategoryButton ? "" : undefined}
+      aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
+      aria-controls={ariaControls}
+      {...rest}
+    >
+      <span class="general-button__label">{label}</span>
+      {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
+    </span>
+  ) : (
+    <button
+      class:list={classes}
+      style={style}
+      type={type}
+      value={value}
+      name={name}
+      data-category={dataCategory}
+      data-category-button={dataCategoryButton ? "" : undefined}
+      aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
+      aria-controls={ariaControls}
+      {...rest}
+    >
+      <span class="general-button__label">{label}</span>
+      {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
+    </button>
+  )
+}
