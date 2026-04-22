@@ -1,0 +1,36 @@
+name: Fallow
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/fallow.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/fallow.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-web:
+    name: Analyze apps/web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Fallow
+        uses: fallow-rs/fallow@main
+        with:
+          root: apps/web
+          format: json
+          auto-changed-since: true
+          annotations: true
+          fail-on-issues: false
