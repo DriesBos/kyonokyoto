@@ -22,11 +22,11 @@ type EventRow = {
 type Props = {
   event: EventRow;
   mapsUrl: string;
-  calendarUrl: string | null;
+  googleCalendarUrl: string | null;
   excerpt: string;
 };
 
-const { event, mapsUrl, calendarUrl, excerpt } = Astro.props;
+const { event, mapsUrl, googleCalendarUrl, excerpt } = Astro.props;
 
 const normalizeCategory = (value: string) =>
   value
@@ -39,6 +39,10 @@ const normalizeCategory = (value: string) =>
 const categorySlugs = event.categories.map(normalizeCategory);
 const imageUrls = (event.image_urls ?? []).filter(Boolean);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
+const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? "";
+const calendarEndDate = event.calendar_ends_at?.slice(0, 10) ?? "";
+const calendarDetails = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
+const calendarLocation = event.address_text ?? event.venue_name ?? event.institution_name;
 ---
 
 <article
@@ -63,17 +67,28 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
         <span>{event.institution_name}</span>
         <span>{event.date_text}</span>
       </div>
-          <div class="event-card__actions">
-      <GeneralButton label="Source" href={event.source_url} target="_blank" rel="noreferrer" />
-      <GeneralButton label="Directions" href={mapsUrl} target="_blank" rel="noreferrer" />
-      {
-        calendarUrl ? (
-          <GeneralButton label="Add to Calendar" href={calendarUrl} target="_blank" rel="noreferrer" />
+      <div class="event-card__actions">
+        <GeneralButton label="Source" href={event.source_url} target="_blank" rel="noreferrer" />
+        <GeneralButton label="Directions" href={mapsUrl} target="_blank" rel="noreferrer" />
+        {calendarStartDate ? (
+          <GeneralButton
+            label="Add Apple Calendar"
+            data-apple-calendar-button
+            data-calendar-title={event.title}
+            data-calendar-start={calendarStartDate}
+            data-calendar-end={calendarEndDate}
+            data-calendar-details={calendarDetails}
+            data-calendar-location={calendarLocation}
+          />
         ) : (
-          <GeneralButton label="Calendar soon" disabled={true} />
-        )
-      }
-    </div>
+          <GeneralButton label="Apple Calendar soon" disabled={true} />
+        )}
+        {googleCalendarUrl ? (
+          <GeneralButton label="Google Calendar" href={googleCalendarUrl} target="_blank" rel="noreferrer" />
+        ) : (
+          <GeneralButton label="Google Calendar soon" disabled={true} />
+        )}
+      </div>
     </div>
 
     <!-- {
@@ -147,5 +162,71 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
     });
 
     window.__eventCardToggleBound = true;
+  }
+
+  if (!window.__appleCalendarBound) {
+    const toIcsDate = (value) => value.replaceAll("-", "");
+    const addDays = (value, days) => {
+      const date = new Date(`${value}T00:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + days);
+      return date.toISOString().slice(0, 10);
+    };
+    const escapeIcsText = (value) =>
+      String(value ?? "")
+        .replaceAll("\\", "\\\\")
+        .replaceAll("\n", "\\n")
+        .replaceAll(",", "\\,")
+        .replaceAll(";", "\\;");
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const button = target.closest("[data-apple-calendar-button]");
+      if (!(button instanceof HTMLElement)) return;
+
+      event.preventDefault();
+
+      const start = button.dataset.calendarStart;
+      if (!start) return;
+
+      const end = button.dataset.calendarEnd || start;
+      const exclusiveEnd = addDays(end, 1);
+      const title = escapeIcsText(button.dataset.calendarTitle);
+      const details = escapeIcsText(button.dataset.calendarDetails);
+      const location = escapeIcsText(button.dataset.calendarLocation);
+      const uid = `${crypto.randomUUID()}@kyonokyoto`;
+      const dtStamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+
+      const ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Kyo no Kyoto//Events//EN",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${dtStamp}`,
+        `DTSTART;VALUE=DATE:${toIcsDate(start)}`,
+        `DTEND;VALUE=DATE:${toIcsDate(exclusiveEnd)}`,
+        `SUMMARY:${title}`,
+        `DESCRIPTION:${details}`,
+        `LOCATION:${location}`,
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n");
+
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `${(button.dataset.calendarTitle || "event").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.ics`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    window.__appleCalendarBound = true;
   }
 </script>

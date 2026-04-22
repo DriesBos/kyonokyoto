@@ -23,6 +23,16 @@ type EventRow = {
   description: string | null;
 };
 
+type CalendarEvent = {
+  title: string;
+  description: string | null;
+  institution_name: string;
+  venue_name: string | null;
+  address_text: string | null;
+  calendar_starts_at: string | null;
+  calendar_ends_at: string | null;
+};
+
 const { data, error } = await supabase
   .from("events")
   .select(
@@ -94,31 +104,33 @@ const mapsUrl = (event: EventRow) => {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 };
 
-const toGoogleCalendarStamp = (value: string) => {
-  const date = new Date(value);
-  const pad = (part: number) => String(part).padStart(2, "0");
+const toDateOnly = (value: string | null) => {
+  if (!value) return null;
 
-  return [
-    date.getUTCFullYear(),
-    pad(date.getUTCMonth() + 1),
-    pad(date.getUTCDate()),
-    "T",
-    pad(date.getUTCHours()),
-    pad(date.getUTCMinutes()),
-    pad(date.getUTCSeconds()),
-    "Z",
-  ].join("");
+  const match = value.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+
+  return null;
 };
 
-const calendarUrl = (event: EventRow) => {
-  const start = event.calendar_starts_at;
+const addDays = (value: string, days: number) => {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+const toGoogleCalendarStamp = (value: string) => value.replaceAll("-", "");
+
+const googleCalendarUrl = (event: CalendarEvent) => {
+  const start = toDateOnly(event.calendar_starts_at);
   if (!start) return null;
 
-  const end = event.calendar_ends_at ?? start;
+  const end = toDateOnly(event.calendar_ends_at);
+  const exclusiveEnd = addDays(end ?? start, 1);
   const details = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
   const location = event.address_text ?? event.venue_name ?? event.institution_name;
 
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(end)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(exclusiveEnd)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
 };
 
 const excerpt = (value: string | null) => {
@@ -191,7 +203,7 @@ const formattedEvents = events.map((event) => ({
               <EventCard
                 event={event}
                 mapsUrl={mapsUrl(event)}
-                calendarUrl={calendarUrl(event)}
+                googleCalendarUrl={googleCalendarUrl(event)}
                 excerpt={excerpt(event.description)}
               />
             ))}
