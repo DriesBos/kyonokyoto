@@ -38,6 +38,9 @@ Build a Kyoto cultural events app that crawls museums, galleries, festival pages
 - Frontend: Astro, hosted on Netlify
 - Database: Postgres via Supabase, hosted on a Supabase free tier
 - Crawler worker: Crawl4AI, hosted on a Hetzner VPS, using Docker and a cron scheduler
+- Git: GitHub
+- Design: Figma
+- Other: Fallow (codebase analysis)
 
 ## First Milestone
 
