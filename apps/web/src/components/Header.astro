@@ -20,17 +20,15 @@ const { categories } = Astro.props;
 
   {
     categories.length > 0 ? (
-      <>
-        <ToggleButton
-          class="site-header__filter-toggle"
-          label="filter"
-          pressed={false}
-          data-filter-disclosure
-          aria-expanded="false"
-          aria-controls="category-filter-panel"
-        />
-
         <div class="category-filter" id="category-filter-panel" aria-label="Filter events by category" role="group">
+          <ToggleButton
+            class="site-header__filter-toggle"
+            label="filter"
+            pressed={false}
+            data-filter-disclosure
+            aria-expanded="false"
+            aria-controls="category-filter-panel"
+          />
           {categories.map((category) => (
             <ToggleButton
               label={category.label}
@@ -40,7 +38,6 @@ const { categories } = Astro.props;
             />
           ))}
         </div>
-      </>
     ) : null
   }
 </header>
