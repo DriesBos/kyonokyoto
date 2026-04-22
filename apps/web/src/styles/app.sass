@@ -1,0 +1,341 @@
+$mobile-breakpoint: 768px
+$fluid-type-min-width: 768px
+$fluid-type-max-width: 1440px
+$image-placeholder: #dcdcdc
+
+@font-face
+  font-family: 'GT Walsheim'
+  src: url('/fonts/GT-Walsheim-Regular.woff2') format('woff2')
+  font-weight: 400
+  font-style: normal
+  font-display: swap
+
+:root
+  --color-green: #138e00
+  --color-beige: #efefef
+
+  --main-color: var(--color-green)
+  --main-background: var(--color-beige)
+
+  --stroke-width: 2px
+  --stroke: var(--color-green)
+  --stroke-gap: 0.75rem
+
+  --type-body-size: 14px
+  --type-body-letter-spacing: -0.01em
+  --type-title-size: 16px
+  --type-title-letter-spacing: -0.01em
+
+  --font-body: 'GT Walsheim', 'Helvetica Neue', Helvetica, Arial, sans-serif
+  --space-1: 0.5rem
+  --space-2: 0.75rem
+  --space-3: 1rem
+  --space-4: 1.5rem
+  --space-5: 2rem
+  --page-padding-x: 0.5rem
+  --page-padding-y: 0.5rem
+
+*,
+*::before,
+*::after
+  box-sizing: border-box
+
+html
+  font-size: clamp(16px, calc(16px + (20 - 16) * (((100vw - #{$fluid-type-min-width}) / (#{$fluid-type-max-width} - #{$fluid-type-min-width})))), 20px)
+  background: var(--main-background)
+
+body
+  margin: 0
+  background: var(--main-background)
+  color: var(--main-color)
+  font-family: var(--font-body)
+  font-size: var(--type-body-size)
+  letter-spacing: var(--type-body-letter-spacing)
+  line-height: 1.4
+  text-rendering: optimizeLegibility
+
+button,
+input,
+select,
+textarea
+  font: inherit
+
+img
+  display: block
+  max-width: 100%
+
+a
+  color: inherit
+  text-decoration: none
+
+.debug .page-shell
+  width: 100%
+  margin: 0 auto
+  padding: var(--page-padding-y) var(--page-padding-x)
+
+.site-header,
+.site-footer
+  padding: var(--space-3) 0
+
+.site-header
+  display: flex
+  justify-content: space-between
+  align-items: flex-start
+  gap: var(--space-4)
+
+  &__logo
+    flex: 0 0 auto
+
+  &__logo img
+    width: 10.625rem
+    height: auto
+
+  &__filter-toggle
+    display: none
+    padding: 0.25rem 0.0625rem 0
+    border: 0
+    border-top: var(--stroke-width) solid var(--stroke)
+    background: transparent
+    color: var(--main-color)
+    font-size: var(--type-body-size)
+    letter-spacing: var(--type-body-letter-spacing)
+    line-height: 1
+    text-transform: lowercase
+    cursor: pointer
+
+.site-footer__label
+  margin: 0
+
+.category-filter
+  display: flex
+  flex: 0 1 21.3125rem
+  flex-wrap: wrap
+  justify-content: flex-end
+  gap: 0.75rem
+
+.toggle-button
+  position: relative
+  display: inline-flex
+  align-items: center
+  justify-content: flex-start
+  gap: 0.625rem
+  padding: 0.25rem 0.0625rem 0
+  border: 0
+  border-top: var(--stroke-width) solid var(--stroke)
+  background: transparent
+  color: var(--main-color)
+  font-size: var(--type-body-size)
+  letter-spacing: var(--type-body-letter-spacing)
+  line-height: 1
+  cursor: pointer
+
+.toggle-button__label
+  display: inline-block
+  text-transform: lowercase
+
+.toggle-button__dot
+  width: 0.8rem
+  height: 0.8rem
+  border-radius: 50%
+  background: #fd69ba
+  opacity: 0
+  transition: opacity 140ms ease
+
+.toggle-button[aria-pressed='true'] .toggle-button__dot
+  opacity: 1
+
+.toggle-button:hover,
+.toggle-button:focus-visible
+  outline: none
+
+.page-edge-strokes
+  display: grid
+  gap: var(--stroke-gap)
+  padding: var(--space-3) 0
+
+  span
+    display: block
+    width: 100%
+    border-top: var(--stroke-width) solid var(--stroke)
+
+.page-edge-strokes--top
+  padding-top: 0
+
+.page-edge-strokes--bottom
+  padding-bottom: 0
+
+.events-section
+  border-top: var(--stroke-width) solid var(--stroke)
+
+.section-heading
+  display: flex
+  justify-content: space-between
+  gap: var(--space-2)
+  align-items: flex-end
+  padding: var(--space-3) 0
+
+  &__title
+    margin: 0
+    font-size: var(--type-title-size)
+    line-height: 1.2
+    letter-spacing: var(--type-title-letter-spacing)
+
+  &__count
+    margin: 0
+    font-size: var(--type-body-size)
+    text-transform: uppercase
+
+.event-list,
+.empty-state
+  border-top: var(--stroke-width) solid var(--stroke)
+
+.empty-state
+  padding: var(--space-4) 0
+
+  h3,
+  p
+    margin: 0
+
+  p
+    margin-top: var(--space-2)
+
+.empty-state--filtered
+  border-top: 0
+  padding-top: 0
+
+.event-card
+  display: grid
+  grid-template-columns: minmax(180px, 280px) 1fr
+  gap: var(--space-3)
+  padding: var(--space-3) 0
+  border-bottom: var(--stroke-width) solid var(--stroke)
+
+  &__media
+    min-width: 0
+
+  &__image
+    width: 100%
+    aspect-ratio: 4 / 3
+    object-fit: cover
+    border: var(--stroke-width) solid var(--stroke)
+    background: $image-placeholder
+
+    &--placeholder
+      display: grid
+      place-items: center
+
+  &__body
+    display: grid
+    gap: var(--space-2)
+    min-width: 0
+
+  &__meta
+    display: flex
+    justify-content: space-between
+    gap: var(--space-2)
+    font-size: var(--type-body-size)
+    text-transform: uppercase
+
+  &__title
+    margin: 0
+    font-size: var(--type-title-size)
+    line-height: 1.25
+    letter-spacing: var(--type-title-letter-spacing)
+    font-weight: 700
+
+  &__artist,
+  &__description
+    margin: 0
+
+  &__categories
+    display: flex
+    flex-wrap: wrap
+    gap: 6px
+    margin: 0
+    padding: 0
+    list-style: none
+
+    li
+      border: var(--stroke-width) solid var(--stroke)
+      padding: 4px 8px
+      font-size: 12px
+      letter-spacing: 0
+      text-transform: uppercase
+
+  &__facts
+    display: grid
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+    gap: var(--space-2)
+    margin: 0
+
+    div
+      display: grid
+      gap: 4px
+
+    dt,
+    dd
+      margin: 0
+
+    dt
+      text-transform: uppercase
+
+  &__actions
+    display: flex
+    flex-wrap: wrap
+    gap: 8px
+    margin-top: var(--space-1)
+
+.button-link
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-height: 34px
+  padding: 0 12px
+  border: var(--stroke-width) solid var(--stroke)
+  background: transparent
+  font-size: var(--type-body-size)
+  letter-spacing: var(--type-body-letter-spacing)
+  text-transform: uppercase
+
+  &:hover,
+  &:focus-visible
+    background: var(--main-color)
+    color: var(--main-background)
+    outline: none
+
+  &--disabled
+    opacity: 0.55
+
+@media (max-width: $mobile-breakpoint)
+  .event-card
+    grid-template-columns: 1fr
+
+    &__facts
+      grid-template-columns: 1fr
+
+    &__meta
+      flex-direction: column
+      align-items: flex-start
+
+  .section-heading
+    flex-direction: column
+    align-items: flex-start
+
+  .site-header
+    flex-direction: column
+
+  .site-header__filter-toggle
+    display: inline-flex
+    align-items: center
+    justify-content: flex-start
+
+  .category-filter
+    flex-basis: auto
+    width: 100%
+    justify-content: flex-start
+
+  .site-header__filter-toggle[aria-expanded="false"] + .category-filter
+    display: none
+
+  .site-header__filter-toggle[aria-expanded="true"] + .category-filter
+    display: flex

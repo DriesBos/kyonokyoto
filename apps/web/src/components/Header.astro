@@ -1,0 +1,128 @@
+---
+import ToggleButton from "./ToggleButton.astro";
+
+type CategoryOption = {
+  slug: string;
+  label: string;
+};
+
+type Props = {
+  categories: CategoryOption[];
+};
+
+const { categories } = Astro.props;
+---
+
+<header class="site-header" data-category-filter>
+  <a class="site-header__logo" href="/" aria-label="Kyoto Today home">
+    <img src="/logo.svg" alt="Kyoto Today" width="170" height="37" />
+  </a>
+
+  {
+    categories.length > 0 ? (
+      <>
+        <button
+          class="site-header__filter-toggle"
+          type="button"
+          data-filter-disclosure
+          aria-expanded="false"
+          aria-controls="category-filter-panel"
+        >
+          filter
+        </button>
+
+        <div class="category-filter" id="category-filter-panel" aria-label="Filter events by category" role="group">
+          {categories.map((category) => (
+            <ToggleButton
+              label={category.label}
+              dataCategory={category.slug}
+              dataCategoryButton={true}
+            />
+          ))}
+        </div>
+      </>
+    ) : null
+  }
+</header>
+
+<script>
+  const normalizeCategory = (value) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  const root = document.querySelector("[data-category-filter]");
+
+  if (root) {
+    const buttons = Array.from(root.querySelectorAll("[data-category-button]"));
+    const disclosure = root.querySelector("[data-filter-disclosure]");
+    const filterPanel = root.querySelector("#category-filter-panel");
+    const cards = Array.from(document.querySelectorAll("[data-event-card]"));
+    const filteredEmptyState = document.querySelector("[data-filter-empty]");
+    const countLabel = document.querySelector("[data-event-count]");
+
+    const total = cards.length;
+    let activeCategory = "";
+
+    const updateCount = (visibleCount, activeLabel) => {
+      if (!countLabel) return;
+
+      const noun = visibleCount === 1 ? "event" : "events";
+      countLabel.textContent = activeLabel
+        ? `${visibleCount} published ${noun} in ${activeLabel}`
+        : `${visibleCount} published ${noun} in the feed`;
+    };
+
+    const applyFilter = () => {
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const categories = (card.getAttribute("data-categories") || "")
+          .split("|")
+          .filter(Boolean)
+          .map(normalizeCategory);
+        const matches = !activeCategory || categories.includes(activeCategory);
+
+        card.toggleAttribute("hidden", !matches);
+
+        if (matches) visibleCount += 1;
+      });
+
+      const activeButton = buttons.find((button) => button.dataset.category === activeCategory);
+      const activeLabel = activeButton?.querySelector(".toggle-button__label")?.textContent || "";
+
+      if (filteredEmptyState) {
+        filteredEmptyState.toggleAttribute("hidden", visibleCount > 0 || !activeCategory);
+      }
+
+      updateCount(visibleCount || (activeCategory ? 0 : total), activeLabel);
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextCategory = button.dataset.category || "";
+        activeCategory = activeCategory === nextCategory ? "" : nextCategory;
+
+        buttons.forEach((item) => {
+          const isActive = item.dataset.category === activeCategory;
+          item.setAttribute("aria-pressed", String(isActive));
+        });
+
+        applyFilter();
+      });
+    });
+
+    if (disclosure && filterPanel) {
+      disclosure.addEventListener("click", () => {
+        const expanded = disclosure.getAttribute("aria-expanded") === "true";
+        disclosure.setAttribute("aria-expanded", String(!expanded));
+        filterPanel.toggleAttribute("data-mobile-open", !expanded);
+      });
+    }
+
+    updateCount(total, "");
+  }
+</script>

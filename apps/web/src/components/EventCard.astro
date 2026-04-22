@@ -24,9 +24,19 @@ type Props = {
 };
 
 const { event, mapsUrl, calendarUrl, excerpt } = Astro.props;
+
+const normalizeCategory = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const categorySlugs = event.categories.map(normalizeCategory);
 ---
 
-<article class="event-card">
+<article class="event-card" data-event-card data-categories={categorySlugs.join("|")}>
   <div class="event-card__media">
     {
       event.primary_image_url ? (

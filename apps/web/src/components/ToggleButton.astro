@@ -1,0 +1,37 @@
+---
+type Props = {
+  label: string;
+  pressed?: boolean;
+  type?: "button" | "submit" | "reset";
+  value?: string;
+  name?: string;
+  dataCategory?: string;
+  dataCategoryButton?: boolean;
+  ariaControls?: string;
+};
+
+const {
+  label,
+  pressed = false,
+  type = "button",
+  value,
+  name,
+  dataCategory,
+  dataCategoryButton = false,
+  ariaControls,
+} = Astro.props;
+---
+
+<button
+  class="toggle-button"
+  type={type}
+  value={value}
+  name={name}
+  data-category={dataCategory}
+  data-category-button={dataCategoryButton ? "" : undefined}
+  aria-pressed={String(pressed)}
+  aria-controls={ariaControls}
+>
+  <span class="toggle-button__label">{label}</span>
+  <span class="toggle-button__dot" aria-hidden="true"></span>
+</button>

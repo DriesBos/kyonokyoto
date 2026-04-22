@@ -1,5 +1,6 @@
 ---
 import EventCard from "../components/EventCard.astro";
+import Header from "../components/Header.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageEdgeStrokes from "../components/PageEdgeStrokes.astro";
 import { supabase } from "../lib/supabase";
@@ -34,6 +35,57 @@ if (error) {
 }
 
 const events = (data ?? []) as EventRow[];
+
+const normalizeCategory = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const titleCaseCategory = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+const preferredCategoryOrder = [
+  "exhibition",
+  "museum",
+  "event",
+  "music",
+  "mingei",
+  "ceramics",
+  "workshop",
+  "festival",
+  "fair",
+];
+
+const categoryMap = new Map<string, string>();
+
+for (const event of events) {
+  for (const category of event.categories) {
+    const slug = normalizeCategory(category);
+    if (!slug || categoryMap.has(slug)) continue;
+    categoryMap.set(slug, titleCaseCategory(category));
+  }
+}
+
+const categories = [...categoryMap.entries()]
+  .map(([slug, label]) => ({ slug, label: label.toLowerCase() }))
+  .sort((a, b) => {
+    const aIndex = preferredCategoryOrder.indexOf(a.slug);
+    const bIndex = preferredCategoryOrder.indexOf(b.slug);
+
+    if (aIndex === -1 && bIndex === -1) return a.label.localeCompare(b.label);
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
 
 const mapsUrl = (event: EventRow) => {
   const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
@@ -78,20 +130,17 @@ const excerpt = (value: string | null) => {
   <main class="page-shell">
     <PageEdgeStrokes position="top" />
 
-    <header class="site-header">
-      <section class="hero">
-        <p class="hero__eyebrow">Kyoto Today</p>
-        <h1 class="hero__title">Kyo no Kyoto</h1>
-        <p class="hero__intro">
-          A one-page cultural calendar for exhibitions, talks, performances, and seasonal programs happening across Kyoto.
-        </p>
-      </section>
-    </header>
+    <Header categories={categories} />
 
     <section class="events-section">
       <div class="section-heading">
         <h2 class="section-heading__title">Current Listings</h2>
-        <p class="section-heading__count">{events.length} published event{events.length === 1 ? "" : "s"} in the feed</p>
+        <p class="section-heading__count" data-event-count>{events.length} published event{events.length === 1 ? "" : "s"} in the feed</p>
+      </div>
+
+      <div class="empty-state empty-state--filtered" data-filter-empty hidden>
+        <h3>No events in this category</h3>
+        <p>Choose another filter or click the active one again to show everything.</p>
       </div>
 
       {
@@ -119,6 +168,6 @@ const excerpt = (value: string | null) => {
       <p class="site-footer__label">Kyoto cultural listings, continuously updated.</p>
     </footer>
 
-    <PageEdgeStrokes position="bottom" />
+    <PageEdgeStrokes position="bottom" lines={24} />
   </main>
 </BaseLayout>

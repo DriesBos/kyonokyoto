@@ -1,15 +1,13 @@
 ---
 type Props = {
   position: "top" | "bottom";
+  lines?: number;
 };
 
-const { position } = Astro.props;
+const { position, lines = 4 } = Astro.props;
+const strokeCount = Math.max(0, Math.floor(lines));
 ---
 
 <div class:list={["page-edge-strokes", `page-edge-strokes--${position}`]} aria-hidden="true">
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
+  {Array.from({ length: strokeCount }).map(() => <span></span>)}
 </div>
