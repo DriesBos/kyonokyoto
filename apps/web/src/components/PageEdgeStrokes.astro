@@ -1,0 +1,15 @@
+---
+type Props = {
+  position: "top" | "bottom";
+};
+
+const { position } = Astro.props;
+---
+
+<div class:list={["page-edge-strokes", `page-edge-strokes--${position}`]} aria-hidden="true">
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+</div>

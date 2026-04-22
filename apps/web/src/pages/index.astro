@@ -1,6 +1,7 @@
 ---
 import EventCard from "../components/EventCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import PageEdgeStrokes from "../components/PageEdgeStrokes.astro";
 import { supabase } from "../lib/supabase";
 
 type EventRow = {
@@ -75,13 +76,17 @@ const excerpt = (value: string | null) => {
 
 <BaseLayout>
   <main class="page-shell">
-    <section class="hero">
-      <p class="hero__eyebrow">Kyoto Today</p>
-      <h1 class="hero__title">Kyo no Kyoto</h1>
-      <p class="hero__intro">
-        A one-page cultural calendar for exhibitions, talks, performances, and seasonal programs happening across Kyoto.
-      </p>
-    </section>
+    <PageEdgeStrokes position="top" />
+
+    <header class="site-header">
+      <section class="hero">
+        <p class="hero__eyebrow">Kyoto Today</p>
+        <h1 class="hero__title">Kyo no Kyoto</h1>
+        <p class="hero__intro">
+          A one-page cultural calendar for exhibitions, talks, performances, and seasonal programs happening across Kyoto.
+        </p>
+      </section>
+    </header>
 
     <section class="events-section">
       <div class="section-heading">
@@ -109,5 +114,11 @@ const excerpt = (value: string | null) => {
         )
       }
     </section>
+
+    <footer class="site-footer">
+      <p class="site-footer__label">Kyoto cultural listings, continuously updated.</p>
+    </footer>
+
+    <PageEdgeStrokes position="bottom" />
   </main>
 </BaseLayout>
