@@ -126,17 +126,43 @@ const excerpt = (value: string | null) => {
   return value.length > 220 ? `${value.slice(0, 217)}...` : value;
 };
 
-const formatEventDate = (value: string) => {
-  const match = value.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) return value;
+const formatEventDate = (value: string | null) => {
+  if (!value) return "";
 
-  const [, year, month, day] = match;
-  return `${year}-${month}-${day}`;
+  const isoLikeMatch = value.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (isoLikeMatch) {
+    const [, year, month, day] = isoLikeMatch;
+    return `${year}.${month}.${day}`;
+  }
+
+  const dottedMatch = value.match(/(\d{4})\.(\d{2})\.(\d{2})/);
+  if (dottedMatch) {
+    const [, year, month, day] = dottedMatch;
+    return `${year}.${month}.${day}`;
+  }
+
+  const japaneseMatch = value.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/);
+  if (japaneseMatch) {
+    const [, year, month, day] = japaneseMatch;
+    return `${year}.${month.padStart(2, "0")}.${day.padStart(2, "0")}`;
+  }
+
+  return value;
+};
+
+const formatEventDateRange = (start: string | null, end: string | null, fallback: string) => {
+  const formattedStart = formatEventDate(start ?? fallback);
+  const formattedEnd = formatEventDate(end);
+
+  if (!formattedStart) return fallback;
+  if (!formattedEnd || formattedEnd === formattedStart) return formattedStart;
+
+  return `${formattedStart} - ${formattedEnd}`;
 };
 
 const formattedEvents = events.map((event) => ({
   ...event,
-  date_text: formatEventDate(event.date_text),
+  date_text: formatEventDateRange(event.calendar_starts_at, event.calendar_ends_at, event.date_text),
 }));
 ---
 
