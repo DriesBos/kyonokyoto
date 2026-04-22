@@ -42,16 +42,19 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
 <article class="event-card" data-event-card data-categories={categorySlugs.join("|")}>
 
   <div class="event-card__body">
-    <div class="event-card__meta">
-      <span>{event.institution_name}</span>
-      <span>{event.date_text}</span>
+    <div class="event-card__body__header">
+      <h2 class="event-card__title">{event.title}</h2>
+      {event.artist_name ? <p class="event-card__artist">{event.artist_name}</p> : null}
+    </div>
+    <div class="event-card__body__content">
+      <p class="event-card__description">{excerpt}</p>
+      <div class="event-card__meta">
+        <span>{event.institution_name}</span>
+        <span>{event.date_text}</span>
+      </div>
     </div>
 
-    <h2 class="event-card__title">{event.title}</h2>
-
-    {event.artist_name ? <p class="event-card__artist">Artist: {event.artist_name}</p> : null}
-
-    {
+    <!-- {
       event.categories.length > 0 ? (
         <ul class="event-card__categories" aria-label="Categories">
           {event.categories.map((category) => (
@@ -59,16 +62,16 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
           ))}
         </ul>
       ) : null
-    }
+    } -->
 
-    <dl class="event-card__facts">
+    <!-- <dl class="event-card__facts">
       <div>
         <dt>Venue</dt>
         <dd>{event.venue_name ?? event.institution_name}</dd>
       </div>
-    </dl>
+    </dl> -->
 
-    <p class="event-card__description">{excerpt}</p>
+
 
     <div class="event-card__actions">
       <a class="button-link" href={event.source_url} target="_blank" rel="noreferrer">Source</a>

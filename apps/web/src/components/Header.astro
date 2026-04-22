@@ -1,4 +1,5 @@
 ---
+import Logo from "./Logo.astro";
 import ToggleButton from "./ToggleButton.astro";
 
 type CategoryOption = {
@@ -15,7 +16,7 @@ const { categories } = Astro.props;
 
 <header class="site-header" data-category-filter>
   <a class="site-header__logo" href="/" aria-label="Kyoto Today home">
-    <img src="/logo.svg" alt="Kyoto Today" width="170" height="37" />
+    <Logo />
   </a>
 
   {
