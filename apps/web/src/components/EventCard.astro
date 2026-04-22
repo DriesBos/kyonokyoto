@@ -1,0 +1,85 @@
+---
+type EventRow = {
+  id: string;
+  title: string;
+  artist_name: string | null;
+  categories: string[];
+  date_text: string;
+  institution_name: string;
+  venue_name: string | null;
+  address_text: string | null;
+  directions_query: string | null;
+  calendar_starts_at: string | null;
+  calendar_ends_at: string | null;
+  primary_image_url: string | null;
+  source_url: string;
+  description: string | null;
+};
+
+type Props = {
+  event: EventRow;
+  mapsUrl: string;
+  calendarUrl: string | null;
+  excerpt: string;
+};
+
+const { event, mapsUrl, calendarUrl, excerpt } = Astro.props;
+---
+
+<article class="event-card">
+  <div class="event-card__media">
+    {
+      event.primary_image_url ? (
+        <img class="event-card__image" src={event.primary_image_url} alt={event.title} loading="lazy" />
+      ) : (
+        <div class="event-card__image event-card__image--placeholder">Kyoto</div>
+      )
+    }
+  </div>
+
+  <div class="event-card__body">
+    <div class="event-card__meta">
+      <span>{event.institution_name}</span>
+      <span>{event.date_text}</span>
+    </div>
+
+    <h2 class="event-card__title">{event.title}</h2>
+
+    {event.artist_name ? <p class="event-card__artist">Artist: {event.artist_name}</p> : null}
+
+    {
+      event.categories.length > 0 ? (
+        <ul class="event-card__categories" aria-label="Categories">
+          {event.categories.map((category) => (
+            <li>{category}</li>
+          ))}
+        </ul>
+      ) : null
+    }
+
+    <dl class="event-card__facts">
+      <div>
+        <dt>Venue</dt>
+        <dd>{event.venue_name ?? event.institution_name}</dd>
+      </div>
+      <div>
+        <dt>Address</dt>
+        <dd>{event.address_text ?? "See source page"}</dd>
+      </div>
+    </dl>
+
+    <p class="event-card__description">{excerpt}</p>
+
+    <div class="event-card__actions">
+      <a class="button-link" href={event.source_url} target="_blank" rel="noreferrer">Source</a>
+      <a class="button-link" href={mapsUrl} target="_blank" rel="noreferrer">Directions</a>
+      {
+        calendarUrl ? (
+          <a class="button-link" href={calendarUrl} target="_blank" rel="noreferrer">Add to Calendar</a>
+        ) : (
+          <span class="button-link button-link--disabled">Calendar soon</span>
+        )
+      }
+    </div>
+  </div>
+</article>
