@@ -18,6 +18,7 @@ type EventRow = {
   calendar_starts_at: string | null;
   calendar_ends_at: string | null;
   primary_image_url: string | null;
+  image_urls: string[] | null;
   source_url: string;
   description: string | null;
 };
@@ -25,7 +26,7 @@ type EventRow = {
 const { data, error } = await supabase
   .from("events")
   .select(
-    "id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, calendar_starts_at, calendar_ends_at, primary_image_url, source_url, description"
+    "id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description"
   )
   .eq("status", "published")
   .order("start_date", { ascending: true, nullsFirst: false });

@@ -200,20 +200,22 @@ a
   padding-top: 0
 
 .event-card
-  display: grid
-  grid-template-columns: minmax(180px, 280px) 1fr
+  display: flex
   gap: var(--space-3)
-  padding: var(--space-3) 0
-  border-bottom: var(--stroke-width) solid var(--stroke)
+  align-items: flex-start
+  padding: 0.5rem 0 2rem
+  border-top: var(--stroke-width) solid var(--stroke)
 
   &__media
+    display: grid
+    gap: 0.5rem
+    flex: 0 0 13.75rem
     min-width: 0
 
   &__image
     width: 100%
-    aspect-ratio: 4 / 3
+    height: 150px
     object-fit: cover
-    border: var(--stroke-width) solid var(--stroke)
     background: $image-placeholder
 
     &--placeholder
@@ -221,6 +223,7 @@ a
       place-items: center
 
   &__body
+    flex: 1 1 auto
     display: grid
     gap: var(--space-2)
     min-width: 0
@@ -304,7 +307,7 @@ a
 
 @media (max-width: $mobile-breakpoint)
   .event-card
-    grid-template-columns: 1fr
+    flex-direction: column
 
     &__facts
       grid-template-columns: 1fr
@@ -312,6 +315,10 @@ a
     &__meta
       flex-direction: column
       align-items: flex-start
+
+    &__media
+      flex-basis: auto
+      width: 100%
 
   .section-heading
     flex-direction: column
