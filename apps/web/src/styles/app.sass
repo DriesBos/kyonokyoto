@@ -8,16 +8,16 @@ $image-placeholder: #dcdcdc
   scrollbar-color: var(--stroke) transparent
   scrollbar-width: thin
 
-  // &::-webkit-scrollbar
-  //   width: calc(var(--stroke-width) + 4px)
-  //   height: calc(var(--stroke-width) + 4px)
+  &::-webkit-scrollbar
+    width: calc(var(--stroke-width) + 4px)
+    height: calc(var(--stroke-width) + 4px)
 
   &::-webkit-scrollbar-track
     background: transparent
 
   &::-webkit-scrollbar-thumb
     background-color: var(--stroke)
-    // border: 2px solid transparent
+    border: 2px solid transparent
     background-clip: content-box
 
 @font-face
@@ -69,6 +69,10 @@ html
   overscroll-behavior: none
   overscroll-behavior-x: none
   +thin-scrollbar
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track
+  margin-block-start: var(--page-padding-y)
 
 body
   position: relative
@@ -344,6 +348,7 @@ a
   --event-card-media-row-height-active: var(--event-card-media-row-height-active-desktop, 20rem)
   --event-card-media-row-height-current: var(--event-card-media-row-height)
   --event-card-media-gap: 0.5rem
+  --event-card-media-scrollbar-size: calc(var(--stroke-width) + 4px)
   position: relative
   display: flex
   gap: 1rem
@@ -388,7 +393,11 @@ a
     pointer-events: auto
     -webkit-overflow-scrolling: touch
     +thin-scrollbar
-      
+
+    &[data-scrollable='true']
+      max-height: calc(var(--event-card-media-row-height-current) + var(--event-card-media-scrollbar-size))
+      overflow-x: scroll
+      scrollbar-gutter: stable
 
   &__image
     width: auto

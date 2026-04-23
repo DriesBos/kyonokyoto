@@ -215,6 +215,20 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
     const canScrollMedia = (media) => media.scrollWidth > media.clientWidth + 1;
 
+    const syncMediaScrollableState = (media) => {
+      media.setAttribute("data-scrollable", String(canScrollMedia(media)));
+    };
+
+    const syncAllMediaScrollableStates = () => {
+      document.querySelectorAll(mediaSelector).forEach((media) => {
+        if (media instanceof HTMLElement) syncMediaScrollableState(media);
+      });
+    };
+
+    const queueMediaScrollableSync = () => {
+      window.requestAnimationFrame(syncAllMediaScrollableStates);
+    };
+
     const releaseMediaPointer = (pointerId, state) => {
       if (!state?.capturedPointer) return;
       if (typeof state.media.hasPointerCapture !== "function") return;
@@ -351,6 +365,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             card.style.overflow = "";
             card.toggleAttribute("data-height-transitioning", false);
             content.style.height = "auto";
+            queueMediaScrollableSync();
           },
         });
 
@@ -377,6 +392,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
           card.style.overflow = "";
           card.toggleAttribute("data-height-transitioning", false);
           content.style.height = "0px";
+          queueMediaScrollableSync();
         },
       });
 
@@ -407,6 +423,26 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       if (!(card instanceof HTMLElement)) return;
       setContentState(card, card.getAttribute("data-active") === "true");
     });
+    queueMediaScrollableSync();
+
+    if (typeof ResizeObserver === "function") {
+      const mediaResizeObserver = new ResizeObserver(queueMediaScrollableSync);
+      document.querySelectorAll(mediaSelector).forEach((media) => {
+        if (media instanceof HTMLElement) mediaResizeObserver.observe(media);
+      });
+      window.__eventCardMediaResizeObserver = mediaResizeObserver;
+    }
+
+    window.addEventListener("resize", queueMediaScrollableSync, { passive: true });
+    window.addEventListener("load", queueMediaScrollableSync, { once: true });
+    document.addEventListener(
+      "load",
+      (event) => {
+        const target = event.target;
+        if (target instanceof HTMLImageElement && target.closest(mediaSelector)) queueMediaScrollableSync();
+      },
+      true
+    );
 
     document.addEventListener("pointerdown", (event) => {
       const target = event.target;
