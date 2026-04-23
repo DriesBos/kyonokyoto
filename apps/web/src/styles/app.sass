@@ -260,6 +260,7 @@ a
 
 .event-card
   --event-card-media-row-height: var(--event-card-media-row-height-desktop, 10rem)
+  --event-card-media-row-height-active: var(--event-card-media-row-height-active-desktop, 20rem)
   --event-card-media-gap: 0.5rem
   display: flex
   gap: 1rem
@@ -279,7 +280,10 @@ a
     max-height: var(--event-card-media-row-height)
 
   &[data-active='true'] .event-card__media
-    max-height: calc(var(--event-card-media-row-height) * 3 + var(--event-card-media-gap) * 2)
+    max-height: var(--event-card-media-row-height-active)
+
+  &[data-active='true'] .event-card__image
+    height: var(--event-card-media-row-height-active)
 
   &__media
     flex: 1 1 auto
@@ -384,6 +388,7 @@ a
 @media (max-width: $mobile-breakpoint)
   .event-card
     --event-card-media-row-height: var(--event-card-media-row-height-mobile, 5rem)
+    --event-card-media-row-height-active: var(--event-card-media-row-height-active-mobile, 10rem)
 
     flex-direction: column
 

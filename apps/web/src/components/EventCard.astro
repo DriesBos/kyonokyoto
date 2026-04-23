@@ -8,6 +8,7 @@ type EventRow = {
   artist_name: string | null;
   categories: string[];
   date_text: string;
+  timing?: "ongoing" | "upcoming" | "past";
   institution_name: string;
   venue_name: string | null;
   address_text: string | null;
@@ -54,6 +55,8 @@ const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [eve
 const rootFontSizePx = 16;
 const desktopImageHeightRem = 10;
 const mobileImageHeightRem = 5;
+const desktopImageHeightActiveRem = 20;
+const mobileImageHeightActiveRem = 10;
 const desktopImageHeightPx = desktopImageHeightRem * rootFontSizePx;
 const mobileImageHeightPx = mobileImageHeightRem * rootFontSizePx;
 
@@ -94,8 +97,9 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   data-elastic-lift="18"
   data-reveal-state="pending"
   data-active="false"
+  data-timing={event.timing}
   data-categories={categorySlugs.join("|")}
-  style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem;`}
+  style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem; --event-card-media-row-height-active-desktop: ${desktopImageHeightActiveRem}rem; --event-card-media-row-height-active-mobile: ${mobileImageHeightActiveRem}rem;`}
   role="button"
   tabindex="0"
   aria-pressed="false"
