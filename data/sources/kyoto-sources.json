@@ -103,13 +103,13 @@
       "slug": "taka-ishii-gallery",
       "name": "Taka Ishii Gallery",
       "source_type": "gallery",
-      "language": "ja",
-      "base_url": "https://www.takaishiigallery.com/en/exhibitions/",
-      "start_urls": ["https://www.takaishiigallery.com/en/exhibitions/"],
+      "language": "en",
+      "base_url": "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
+      "start_urls": ["https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"],
       "allowed_domains": ["www.takaishiigallery.com", "takaishiigallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
-      "notes": "Use the English exhibitions listing page. The gallery spans multiple locations, so Kyoto relevance may still need downstream filtering.",
+      "event_page_patterns": ["/en/exhibitions/kyoto-yada-cho/", "/en/archives/"],
+      "notes": "Use the Kyoto (Yada-cho) location page directly and extract only the linked Kyoto exhibition archive detail pages.",
       "is_active": true
     },
     {
@@ -136,19 +136,6 @@
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/"],
       "notes": "The exhibition is surfaced directly on the homepage beneath the hero. Extract only the top homepage exhibition rows and ignore the storefront content below.",
-      "is_active": true
-    },
-    {
-      "slug": "ryosokuin",
-      "name": "Ryosokuin",
-      "source_type": "temple",
-      "language": "ja",
-      "base_url": "https://ryosokuin.com/",
-      "start_urls": ["https://ryosokuin.com/"],
-      "allowed_domains": ["ryosokuin.com"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/"],
-      "notes": "Temple source likely to require selective event detection rather than broad extraction.",
       "is_active": true
     },
     {
@@ -262,19 +249,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/English/", "/Japanese/"],
       "notes": "Major institutional source that may need custom handling for archive versus ongoing exhibition pages.",
-      "is_active": true
-    },
-    {
-      "slug": "kyoto-museum-of-crafts-and-design",
-      "name": "Kyoto Museum of Crafts and Design",
-      "source_type": "museum",
-      "language": "en",
-      "base_url": "https://kmtc.jp/en/display-en/special_exhibition/",
-      "start_urls": ["https://kmtc.jp/en/display-en/special_exhibition/"],
-      "allowed_domains": ["kmtc.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/display-en/special_exhibition/"],
-      "notes": "Low-frequency source. Use the English special exhibitions page directly and expect many runs to have no current or scheduled exhibitions.",
       "is_active": true
     },
     {

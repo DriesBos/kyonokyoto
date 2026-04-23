@@ -196,17 +196,29 @@ function parseDottedDateRange(dateText) {
 function parseEnglishMonthDateRange(dateText) {
   const months = {
     january: "01",
+    jan: "01",
     february: "02",
+    feb: "02",
     march: "03",
+    mar: "03",
     april: "04",
+    apr: "04",
     may: "05",
     june: "06",
+    jun: "06",
     july: "07",
+    jul: "07",
     august: "08",
+    aug: "08",
     september: "09",
+    sep: "09",
+    sept: "09",
     october: "10",
+    oct: "10",
     november: "11",
+    nov: "11",
     december: "12",
+    dec: "12",
   };
 
   const match = dateText.match(
@@ -243,6 +255,77 @@ function parseEnglishMonthDateRange(dateText) {
     endDate,
     calendarStartsAt: `${startDate}T09:00:00+09:00`,
     calendarEndsAt: `${endDate}T17:30:00+09:00`,
+  };
+}
+
+function parseEnglishMonthDateRangeWithOptionalStartYear(dateText) {
+  const months = {
+    january: "01",
+    jan: "01",
+    february: "02",
+    feb: "02",
+    march: "03",
+    mar: "03",
+    april: "04",
+    apr: "04",
+    may: "05",
+    june: "06",
+    jun: "06",
+    july: "07",
+    jul: "07",
+    august: "08",
+    aug: "08",
+    september: "09",
+    sep: "09",
+    sept: "09",
+    october: "10",
+    oct: "10",
+    november: "11",
+    nov: "11",
+    december: "12",
+    dec: "12",
+  };
+
+  const cleaned = dateText
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const match = cleaned.match(
+    /([A-Za-z]+)\s+(\d{1,2})(?:,\s*(\d{4}))?\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/
+  );
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, startMonthName, startDay, maybeStartYear, endMonthName, endDay, endYear] = match;
+  const startMonth = months[startMonthName.toLowerCase()];
+  const endMonth = months[endMonthName.toLowerCase()];
+  const startYear = maybeStartYear ?? endYear;
+
+  if (!startMonth || !endMonth) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const startDate = `${startYear}-${startMonth}-${String(startDay).padStart(2, "0")}`;
+  const endDate = `${endYear}-${endMonth}-${String(endDay).padStart(2, "0")}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T11:00:00+09:00`,
+    calendarEndsAt: `${endDate}T19:00:00+09:00`,
   };
 }
 
@@ -692,6 +775,19 @@ function extractZenbiDetailUrls(listingHtml, listingUrl) {
   return urls;
 }
 
+function extractTakaIshiiDetailUrls(listingHtml, listingUrl) {
+  const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean)
+    .filter((url) => /\/en\/archives\/\d+\/?$/.test(new URL(url).pathname));
+
+  if (!matches.length) {
+    throw new Error("Could not find Taka Ishii Gallery Kyoto detail URLs on the listing page");
+  }
+
+  return [...new Set(matches)];
+}
+
 function extractKyohakuDetailUrls(listingHtml, listingUrl) {
   const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
     .map((match) => ({
@@ -1011,6 +1107,61 @@ function extractZenbiEvent(detailHtml, source, detailUrl) {
     start_time_text: hoursText,
     end_time_text: null,
     is_all_day: !hoursText,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
+  const title = stripTags(
+    detailHtml.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ??
+      extractMeta(detailHtml, "og:title") ??
+      ""
+  )
+    .replace(/\s*[|｜/].*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!title) {
+    throw new Error("Could not extract event title from Taka Ishii Gallery detail page");
+  }
+
+  const pageText = stripTags(detailHtml);
+  const dateText = pageText.match(/Dates:\s*([^\n]+)/i)?.[1]?.trim() ?? "See source page";
+  const locationText = pageText.match(/Location:\s*([^\n]+)/i)?.[1]?.trim() ?? source.name;
+  const appointmentText = pageText.match(/Appointment required\.[^\n]*/i)?.[0] ?? null;
+  const description = extractGenericDescription(detailHtml);
+  const imageUrls = finalizeImageUrls([
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
+  const parsedDates = parseEnglishMonthDateRangeWithOptionalStartYear(dateText);
+
+  return {
+    title,
+    artist_name: null,
+    categories: ["exhibition", "gallery"],
+    description: appointmentText ? `${appointmentText}\n\n${description}`.trim() : description,
+    institution_name: source.name,
+    venue_name: locationText,
+    address_text: source.address_text ?? locationText,
+    directions_query: source.directions_query ?? `${locationText}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
     timezone: "Asia/Tokyo",
     ...buildScheduleFields({
       startDate: parsedDates.startDate,
@@ -1474,6 +1625,7 @@ const detailUrlExtractors = {
   "kyoto-art-center": extractKacDetailUrls,
   "kyoto-national-museum": extractKyohakuDetailUrls,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrls,
+  "taka-ishii-gallery": extractTakaIshiiDetailUrls,
   "zenbi": extractZenbiDetailUrls,
   "the-national-museum-of-modern-art": extractMomakDetailUrls,
   "sen-oku-hakukokan-museum": extractSenOkuDetailUrls,
@@ -1486,6 +1638,7 @@ const eventExtractors = {
   "kyoto-national-museum": extractKyohakuEvent,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
   "sibasi": extractSibasiEvent,
+  "taka-ishii-gallery": extractTakaIshiiEvent,
   "zenbi": extractZenbiEvent,
   "the-national-museum-of-modern-art": extractMomakEvent,
   "sen-oku-hakukokan-museum": extractSenOkuEvent,
