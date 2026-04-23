@@ -108,36 +108,39 @@ main
   z-index: 0
   top: 0
   left: 0
-  min-width: 100%
-  min-height: 100%
+  width: 100%
+  height: 0
   pointer-events: none
-  overflow: hidden
+  overflow: visible
+  contain: layout style
   transform: translateZ(0)
 
 .ambient-bloom-dot
   position: absolute
+  top: 0
+  left: 0
   width: var(--ambient-dot-size, 4rem)
   height: var(--ambient-dot-size, 4rem)
   border-radius: 50%
   background: hsl(var(--ambient-dot-hue, 328deg) 100% 70%)
   opacity: 0
-  mix-blend-mode: multiply
-  transform: translate(-50%, -50%) scale(0.12)
+  transform: translate3d(var(--ambient-dot-x, 50vw), var(--ambient-dot-y, 50vh), 0) translate(-50%, -50%) scale(0.12)
   animation: ambient-bloom-pulse var(--ambient-dot-duration, 6s) ease-out forwards
+  backface-visibility: hidden
   will-change: opacity, transform
 
 @keyframes ambient-bloom-pulse
   0%
     opacity: 0
-    transform: translate(-50%, -50%) scale(0.12)
+    transform: translate3d(var(--ambient-dot-x, 50vw), var(--ambient-dot-y, 50vh), 0) translate(-50%, -50%) scale(0.12)
 
   16%
     opacity: var(--ambient-dot-opacity, 0.28)
-    transform: translate(-50%, -50%) scale(0.76)
+    transform: translate3d(var(--ambient-dot-x, 50vw), var(--ambient-dot-y, 50vh), 0) translate(-50%, -50%) scale(0.76)
 
   100%
     opacity: 0
-    transform: translate(-50%, -50%) scale(var(--ambient-dot-scale, 3))
+    transform: translate3d(var(--ambient-dot-x, 50vw), var(--ambient-dot-y, 50vh), 0) translate(-50%, -50%) scale(var(--ambient-dot-scale, 3))
 
 button,
 input,

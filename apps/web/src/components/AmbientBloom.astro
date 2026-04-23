@@ -21,16 +21,8 @@
       return field instanceof HTMLElement ? field : null;
     };
 
-    const syncFieldSize = () => {
-      const target = getField();
-      if (!target) return;
-
-      target.style.width = `${Math.max(document.documentElement.scrollWidth, window.innerWidth)}px`;
-      target.style.height = `${Math.max(document.documentElement.scrollHeight, window.innerHeight)}px`;
-    };
-
     const removeOldDots = (target: HTMLElement) => {
-      const dots = Array.from(target.querySelectorAll(".ambient-bloom-dot"));
+      const dots = Array.from(target.children);
       const overflow = dots.length - 42;
       if (overflow <= 0) return;
 
@@ -41,8 +33,6 @@
       const target = getField();
       if (!target) return;
 
-      syncFieldSize();
-
       const x = window.scrollX + note.viewportX * window.innerWidth;
       const y = window.scrollY + note.viewportY * window.innerHeight;
       const dot = document.createElement("span");
@@ -51,8 +41,8 @@
       const opacity = 0.16 + note.loudness * 0.26;
 
       dot.className = "ambient-bloom-dot";
-      dot.style.left = `${x}px`;
-      dot.style.top = `${y}px`;
+      dot.style.setProperty("--ambient-dot-x", `${x}px`);
+      dot.style.setProperty("--ambient-dot-y", `${y}px`);
       dot.style.setProperty("--ambient-dot-size", `${size}rem`);
       dot.style.setProperty("--ambient-dot-scale", String(scale));
       dot.style.setProperty("--ambient-dot-opacity", String(opacity));
@@ -99,10 +89,6 @@
       }
     });
 
-    syncFieldSize();
-    window.addEventListener("resize", syncFieldSize);
-    window.addEventListener("scroll", syncFieldSize, { passive: true });
-    document.addEventListener("astro:page-load", syncFieldSize);
     ambientWindow.__ambientBloomBound = true;
   }
 </script>

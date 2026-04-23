@@ -119,7 +119,7 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     oscillator.type = Math.random() > 0.35 ? "sine" : "triangle";
     oscillator.frequency.setValueAtTime(selected.frequency, now);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.052 * velocity, now + 0.08);
+    gain.gain.exponentialRampToValueAtTime(0.07 * velocity, now + 0.08);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     panner.pan.setValueAtTime(pan, now);
 
@@ -166,7 +166,7 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     if (masterGain) {
       const now = audioContext.currentTime;
       masterGain.gain.cancelScheduledValues(now);
-      masterGain.gain.setTargetAtTime(0.34, now, 0.42);
+      masterGain.gain.setTargetAtTime(0.56, now, 0.42);
     }
 
     window.clearTimeout(timer);
