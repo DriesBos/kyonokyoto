@@ -46,5 +46,225 @@ const appName = "KyōNoKyōto";
   </head>
   <body>
     <slot />
+    <script>
+      if (!window.__elasticLinesBound) {
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const supportsFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+        const lineSelector = "[data-elastic-line='top']";
+        const activeLines = new Set();
+        const instances = new WeakMap();
+        let animationFrame = 0;
+        let previousTime = 0;
+
+        const parseNumber = (value, fallback) => {
+          const parsed = Number.parseFloat(value ?? "");
+          return Number.isFinite(parsed) ? parsed : fallback;
+        };
+
+        const shouldEnhance = () => supportsFinePointer.matches && !prefersReducedMotion.matches;
+
+        const buildPath = (width, baseline, x, y) => {
+          const centerOffset = x - width * 0.5;
+          const controlX1 = width * 0.24 + centerOffset * 0.18;
+          const controlX2 = width * 0.76 + centerOffset * 0.18;
+          const handleX = Math.max(0, Math.min(width, x));
+          const handleY = baseline + y;
+
+          return `M 0 ${baseline} C ${controlX1} ${baseline}, ${handleX} ${handleY}, ${width * 0.5} ${handleY} S ${controlX2} ${baseline}, ${width} ${baseline}`;
+        };
+
+        class ElasticLine {
+          constructor(element) {
+            this.element = element;
+            this.pointerInside = false;
+            this.pointerX = 0;
+            this.pointerY = 0;
+            this.currentX = 0;
+            this.currentY = 0;
+            this.velocityX = 0;
+            this.velocityY = 0;
+            this.targetX = 0;
+            this.targetY = 0;
+            this.width = 1;
+            this.hoverRadius = parseNumber(this.element.dataset.elasticRadius, 72);
+            this.maxLift = parseNumber(this.element.dataset.elasticLift, 16);
+            this.strength = parseNumber(this.element.dataset.elasticStrength, 1);
+            this.svgHeight = Math.max(28, this.maxLift * 3);
+            this.baseline = Math.max(2, parseNumber(getComputedStyle(this.element).getPropertyValue("--stroke-width"), 2));
+
+            this.handlePointerEnter = this.handlePointerEnter.bind(this);
+            this.handlePointerMove = this.handlePointerMove.bind(this);
+            this.handlePointerLeave = this.handlePointerLeave.bind(this);
+            this.handleResize = this.handleResize.bind(this);
+
+            this.mount();
+          }
+
+          mount() {
+            if (this.element.dataset.elasticReady === "true") return;
+
+            const namespace = "http://www.w3.org/2000/svg";
+            this.svg = document.createElementNS(namespace, "svg");
+            this.path = document.createElementNS(namespace, "path");
+            this.svg.setAttribute("class", "elastic-line");
+            this.svg.setAttribute("aria-hidden", "true");
+            this.svg.style.setProperty("--elastic-line-height", `${this.svgHeight}px`);
+            this.svg.append(this.path);
+            this.element.append(this.svg);
+            this.element.dataset.elasticReady = "true";
+
+            this.resizeObserver = new ResizeObserver(this.handleResize);
+            this.resizeObserver.observe(this.element);
+
+            this.element.addEventListener("pointerenter", this.handlePointerEnter);
+            this.element.addEventListener("pointermove", this.handlePointerMove);
+            this.element.addEventListener("pointerleave", this.handlePointerLeave);
+
+            this.handleResize();
+          }
+
+          destroy() {
+            this.pointerInside = false;
+            activeLines.delete(this);
+            this.resizeObserver?.disconnect();
+            this.element.removeEventListener("pointerenter", this.handlePointerEnter);
+            this.element.removeEventListener("pointermove", this.handlePointerMove);
+            this.element.removeEventListener("pointerleave", this.handlePointerLeave);
+            this.element.removeAttribute("data-elastic-ready");
+            this.svg?.remove();
+          }
+
+          handleResize() {
+            this.width = Math.max(1, this.element.clientWidth);
+            this.currentX = this.width * 0.5;
+            this.targetX = this.width * 0.5;
+            this.svg.setAttribute("viewBox", `0 0 ${this.width} ${this.svgHeight}`);
+            this.svg.setAttribute("width", String(this.width));
+            this.svg.setAttribute("height", String(this.svgHeight));
+            this.render();
+          }
+
+          handlePointerEnter(event) {
+            this.pointerInside = true;
+            this.updateFromPointer(event);
+            this.activate();
+          }
+
+          handlePointerMove(event) {
+            this.updateFromPointer(event);
+            this.activate();
+          }
+
+          handlePointerLeave() {
+            this.pointerInside = false;
+            this.targetX = this.width * 0.5;
+            this.targetY = 0;
+            this.activate();
+          }
+
+          updateFromPointer(event) {
+            const rect = this.element.getBoundingClientRect();
+            this.pointerX = event.clientX - rect.left;
+            this.pointerY = event.clientY - rect.top;
+
+            const verticalDistance = Math.abs(this.pointerY);
+            const inRange = verticalDistance <= this.hoverRadius;
+            const pull = inRange ? 1 - verticalDistance / this.hoverRadius : 0;
+            const easedPull = pull * pull;
+
+            this.targetX = Math.max(0, Math.min(this.width, this.pointerX));
+            this.targetY = Math.min(this.maxLift, easedPull * this.maxLift * this.strength);
+
+            if (this.pointerY > this.hoverRadius * 0.95) {
+              this.targetY = 0;
+            }
+          }
+
+          activate() {
+            activeLines.add(this);
+
+            if (!animationFrame) {
+              animationFrame = window.requestAnimationFrame(tick);
+            }
+          }
+
+          step(deltaSeconds) {
+            const spring = 28;
+            const damping = 15;
+            const offsetX = this.targetX - this.currentX;
+            const offsetY = this.targetY - this.currentY;
+
+            this.velocityX += (offsetX * spring - this.velocityX * damping) * deltaSeconds;
+            this.velocityY += (offsetY * spring - this.velocityY * damping) * deltaSeconds;
+            this.currentX += this.velocityX * deltaSeconds * 60;
+            this.currentY += this.velocityY * deltaSeconds * 60;
+
+            this.render();
+
+            const settled =
+              Math.abs(offsetX) < 0.2 &&
+              Math.abs(offsetY) < 0.2 &&
+              Math.abs(this.velocityX) < 0.2 &&
+              Math.abs(this.velocityY) < 0.2;
+
+            if (!this.pointerInside && settled) {
+              this.currentX = this.width * 0.5;
+              this.currentY = 0;
+              this.velocityX = 0;
+              this.velocityY = 0;
+              this.render();
+              activeLines.delete(this);
+            }
+          }
+
+          render() {
+            this.path.setAttribute("d", buildPath(this.width, this.baseline, this.currentX, this.currentY));
+          }
+        }
+
+        const setup = () => {
+          document.querySelectorAll(lineSelector).forEach((element) => {
+            if (!(element instanceof HTMLElement) || instances.has(element)) return;
+            instances.set(element, new ElasticLine(element));
+          });
+        };
+
+        const teardown = () => {
+          document.querySelectorAll(lineSelector).forEach((element) => {
+            const instance = instances.get(element);
+            if (!instance) return;
+            instance.destroy();
+            instances.delete(element);
+          });
+        };
+
+        const tick = (time) => {
+          const deltaSeconds = previousTime ? Math.min((time - previousTime) / 1000, 0.033) : 1 / 60;
+          previousTime = time;
+
+          activeLines.forEach((instance) => instance.step(deltaSeconds));
+
+          if (activeLines.size > 0) {
+            animationFrame = window.requestAnimationFrame(tick);
+          } else {
+            animationFrame = 0;
+            previousTime = 0;
+          }
+        };
+
+        const syncEnhancement = () => {
+          if (shouldEnhance()) {
+            setup();
+          } else {
+            teardown();
+          }
+        };
+
+        syncEnhancement();
+        prefersReducedMotion.addEventListener("change", syncEnhancement);
+        supportsFinePointer.addEventListener("change", syncEnhancement);
+        window.__elasticLinesBound = true;
+      }
+    </script>
   </body>
 </html>

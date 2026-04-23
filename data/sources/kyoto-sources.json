@@ -348,7 +348,7 @@
       "allowed_domains": ["www.momak.go.jp", "momak.go.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/English/", "/Japanese/"],
-      "notes": "Major institutional source that may need custom handling for archive versus current exhibition pages.",
+      "notes": "Major institutional source that may need custom handling for archive versus ongoing exhibition pages.",
       "is_active": true
     },
     {
@@ -390,7 +390,7 @@
       "allowed_domains": ["www.sen-oku.or.jp", "sen-oku.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program/"],
-      "notes": "Kyoto museum homepage surfaces current and upcoming exhibition program pages.",
+      "notes": "Kyoto museum homepage surfaces ongoing and upcoming exhibition program pages.",
       "is_active": true
     }
   ]

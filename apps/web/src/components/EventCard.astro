@@ -89,6 +89,9 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   class="event-card"
   data-event-card
   data-event-card-toggle
+  data-elastic-line="top"
+  data-elastic-strength="1.15"
+  data-elastic-lift="18"
   data-active="false"
   data-categories={categorySlugs.join("|")}
   style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem;`}

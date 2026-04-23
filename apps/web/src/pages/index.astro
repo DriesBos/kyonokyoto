@@ -25,7 +25,7 @@ type EventRow = {
 
 type ClassifiedEvent = EventRow & {
   date_text: string;
-  timing: "current" | "upcoming" | "past";
+  timing: "ongoing" | "upcoming" | "past";
 };
 
 type CalendarEvent = {
@@ -138,7 +138,7 @@ const classifyEventTiming = (event: EventRow): ClassifiedEvent["timing"] => {
   if (start && start > today) return "upcoming";
   if (end && end < today) return "past";
 
-  return "current";
+  return "ongoing";
 };
 
 const formattedEvents: ClassifiedEvent[] = events.map((event) => ({
@@ -148,7 +148,7 @@ const formattedEvents: ClassifiedEvent[] = events.map((event) => ({
 }));
 
 const displayEvents = formattedEvents.filter((event) => event.timing !== "past");
-const currentEvents = displayEvents.filter((event) => event.timing === "current");
+const ongoingEvents = displayEvents.filter((event) => event.timing === "ongoing");
 const upcomingEvents = displayEvents.filter((event) => event.timing === "upcoming");
 
 const categoryMap = new Map<string, string>();
@@ -215,22 +215,22 @@ const excerpt = (value: string | null) => {
     <section class="events-section">
 
       <div class="empty-state empty-state--filtered" data-filter-empty hidden>
-        <h3>No events in this category</h3>
-        <p>Choose another filter or click the active one again to show everything.</p>
+        <h3>No events match these filters</h3>
+        <p>Choose another filter or click an active one again to show everything.</p>
       </div>
 
       {
         displayEvents.length === 0 ? (
           <div class="empty-state">
-            <h3>No current or upcoming events yet</h3>
-            <p>The crawler is connected. Once current or upcoming events are available, they’ll appear here automatically.</p>
+            <h3>No ongoing or upcoming events yet</h3>
+            <p>The crawler is connected. Once ongoing or upcoming events are available, they’ll appear here automatically.</p>
           </div>
         ) : (
           <>
-            <section class="event-group" data-event-group data-event-group-name="current" hidden={currentEvents.length === 0}>
-              <h2 class="event-group__title">Current</h2>
+            <section class="event-group" data-event-group data-event-group-name="ongoing" hidden={ongoingEvents.length === 0}>
+              <h2 class="event-group__title">Ongoing</h2>
               <div class="event-list">
-                {currentEvents.map((event) => (
+                {ongoingEvents.map((event) => (
                   <EventCard
                     event={event}
                     mapsUrl={mapsUrl(event)}
@@ -241,7 +241,7 @@ const excerpt = (value: string | null) => {
               </div>
             </section>
 
-            <div class="events-divider" data-event-divider hidden={currentEvents.length === 0 || upcomingEvents.length === 0}>
+            <div class="events-divider" data-event-divider hidden={ongoingEvents.length === 0 || upcomingEvents.length === 0}>
               <PageEdgeStrokes position="top" lines={4} />
             </div>
 

@@ -9,5 +9,7 @@ const strokeCount = Math.max(0, Math.floor(lines));
 ---
 
 <div class:list={["page-edge-strokes", `page-edge-strokes--${position}`]} aria-hidden="true">
-  {Array.from({ length: strokeCount }).map(() => <span></span>)}
+  {Array.from({ length: strokeCount }).map(() => (
+    <span data-elastic-line="top" data-elastic-strength="0.55" data-elastic-lift="10"></span>
+  ))}
 </div>

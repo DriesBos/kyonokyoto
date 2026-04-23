@@ -171,6 +171,27 @@ a
   opacity: 0.55
   cursor: var(--cursor-dot)
 
+[data-elastic-line='top']
+  position: relative
+
+[data-elastic-ready='true']
+  border-top-color: transparent !important
+
+.elastic-line
+  position: absolute
+  top: calc(var(--stroke-width) * -1)
+  left: 0
+  width: 100%
+  height: var(--elastic-line-height, 2.5rem)
+  overflow: visible
+  pointer-events: none
+
+  path
+    fill: none
+    stroke: var(--stroke)
+    stroke-width: var(--stroke-width)
+    vector-effect: non-scaling-stroke
+
 .page-edge-strokes
   display: grid
   gap: var(--stroke-gap)
@@ -374,8 +395,8 @@ a
   .site-header__filter-toggle
     display: inline-flex
 
-  .category-filter [data-category-button]
+  .category-filter [data-filter-button]
     display: none
 
-  .category-filter[data-mobile-open] [data-category-button]
+  .category-filter[data-mobile-open] [data-filter-button]
     display: inline-flex
