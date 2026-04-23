@@ -243,23 +243,35 @@ a
   padding: var(--page-padding-y) var(--page-padding-x)
 
 .site-header
+  position: sticky
+  top: 0
+  z-index: 12
   display: flex
   justify-content: space-between
   align-items: flex-start
   gap: 1.5rem
+  padding: var(--stroke-gap) 0
+  background: var(--main-background)
+
+  &::after
+    content: ""
+    position: absolute
+    inset-inline: 0.5rem
+    bottom: 0
+    border-top: var(--stroke-width) solid var(--stroke)
+    opacity: 0
+    pointer-events: none
+    transition: opacity 180ms ease
+
+  &[data-stuck]
+    &::after
+      opacity: 1
 
   &__logo
-    position: absolute
-    z-index: 3
-    top: calc(var(--page-padding-y) + .2rem)
-    left: calc(var(--page-padding-x) + 2rem)
     flex: 0 0 auto
     display: block
-    padding: 0 0.25rem
     background: var(--main-background)
-    @media (max-width: $mobile-breakpoint)
-      left: calc(var(--page-padding-x) + 1.25rem)
-      top: calc(var(--page-padding-y) + 1.13rem)
+    padding: 0.125rem 0.25rem 0 0
 
   &__logo svg
     width: auto
@@ -270,24 +282,33 @@ a
   margin: 0
 
 .category-filter
-  display: inline-flex
-  flex-wrap: wrap
-  justify-content: flex-end
-  gap: 0.75rem
+  display: flex
+  flex-direction: column
+  align-items: flex-end
+  gap: var(--stroke-gap)
   margin-left: auto
-  max-width: 15rem
+  min-width: 0
   overflow: visible
 
-  &__options
+  &__toolbar
     display: inline-flex
+    align-items: flex-start
+    justify-content: flex-end
+    flex-wrap: wrap
+    gap: 0.75rem
+
+  &__options
+    display: flex
     flex-wrap: wrap
     justify-content: flex-end
     gap: 0.75rem
-    overflow: visible !important
+    width: min(100%, 48rem)
+    height: 0
+    overflow: hidden !important
+    pointer-events: none
 
-.site-header__filter-toggle
-  @media (min-width: $mobile-breakpoint)
-    display: none !important
+    &[data-mobile-open]
+      pointer-events: auto
 
 .general-button
   position: relative
@@ -382,6 +403,7 @@ a
 
 .page-edge-strokes--top
   padding-top: 0
+  margin-bottom: var(--stroke-gap)
 
 .page-edge-strokes--bottom
   padding-bottom: 0
@@ -745,6 +767,23 @@ a
   .event-card
     &__description
       -webkit-line-clamp: 3
+
+@media (max-width: $mobile-breakpoint)
+  .site-header
+    gap: 1rem
+
+    &::after
+      inset-inline: 0.25rem
+
+    &__logo svg
+      height: calc(var(--type-logo-size) * 0.96)
+
+  .category-filter
+    flex: 1 1 auto
+
+    &__toolbar,
+    &__options
+      width: 100%
 
 .event-card-dot
   position: absolute

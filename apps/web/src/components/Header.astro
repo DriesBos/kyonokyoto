@@ -25,7 +25,8 @@ const timingFilters = [
 
   {
     categories.length > 0 || timingFilters.length > 0 ? (
-        <div class="category-filter" aria-label="Filter events by category" role="group">
+      <div class="category-filter" aria-label="Filter events by category" role="group">
+        <div class="category-filter__toolbar">
           <GeneralButton
             class="site-header__filter-toggle"
             label="filter"
@@ -42,29 +43,30 @@ const timingFilters = [
             showDot={true}
             dataAmbientSoundButton={true}
           />
-          <div class="category-filter__options" id="category-filter-options" data-filter-options>
-            {timingFilters.map((filter) => (
-              <GeneralButton
-                label={filter.label}
-                pressed={false}
-                showDot={true}
-                dataTiming={filter.slug}
-                dataTimingButton={true}
-                dataFilterButton={true}
-              />
-            ))}
-            {categories.map((category) => (
-              <GeneralButton
-                label={category.label}
-                pressed={false}
-                showDot={true}
-                dataCategory={category.slug}
-                dataCategoryButton={true}
-                dataFilterButton={true}
-              />
-            ))}
-          </div>
         </div>
+        <div class="category-filter__options" id="category-filter-options" data-filter-options>
+          {timingFilters.map((filter) => (
+            <GeneralButton
+              label={filter.label}
+              pressed={false}
+              showDot={true}
+              dataTiming={filter.slug}
+              dataTimingButton={true}
+              dataFilterButton={true}
+            />
+          ))}
+          {categories.map((category) => (
+            <GeneralButton
+              label={category.label}
+              pressed={false}
+              showDot={true}
+              dataCategory={category.slug}
+              dataCategoryButton={true}
+              dataFilterButton={true}
+            />
+          ))}
+        </div>
+      </div>
     ) : null
   }
 </header>
@@ -98,7 +100,6 @@ const timingFilters = [
     const total = cards.length;
     let activeCategory = "";
     let activeTiming = "";
-    const mobileDisclosure = window.matchMedia("(max-width: 767.98px)");
     const filterButtons = buttons.filter((button): button is HTMLElement => button instanceof HTMLElement);
 
     const setFilterPanelInteractivity = (isInteractive) => {
@@ -120,13 +121,6 @@ const timingFilters = [
     const animateFilterDisclosure = (nextExpanded) => {
       if (!(filterPanel instanceof HTMLElement)) {
         filterPanel?.toggleAttribute("data-mobile-open", nextExpanded);
-        return;
-      }
-
-      if (!mobileDisclosure.matches) {
-        filterPanel.toggleAttribute("data-mobile-open", nextExpanded);
-        setFadeVisible(filterButtons);
-        setFilterPanelInteractivity(true);
         return;
       }
 
@@ -159,19 +153,10 @@ const timingFilters = [
       }
     };
 
-    const syncFilterPanelForViewport = () => {
+    const syncFilterPanelState = () => {
       if (!(filterPanel instanceof HTMLElement) || !(disclosure instanceof HTMLElement)) return;
 
       killHeightTransitionTweens(filterPanel);
-
-      if (!mobileDisclosure.matches) {
-        filterPanel.style.height = "";
-        filterPanel.style.overflow = "";
-        filterPanel.toggleAttribute("data-mobile-open", false);
-        setFadeVisible(filterButtons);
-        setFilterPanelInteractivity(true);
-        return;
-      }
 
       const isExpanded = disclosure.getAttribute("aria-expanded") === "true";
       filterPanel.toggleAttribute("data-mobile-open", isExpanded);
@@ -274,12 +259,7 @@ const timingFilters = [
     });
 
     if (disclosure && filterPanel) {
-      syncFilterPanelForViewport();
-      if ("addEventListener" in mobileDisclosure) {
-        mobileDisclosure.addEventListener("change", syncFilterPanelForViewport);
-      } else {
-        mobileDisclosure.addListener(syncFilterPanelForViewport);
-      }
+      syncFilterPanelState();
 
       disclosure.addEventListener("click", () => {
         const expanded = disclosure.getAttribute("aria-expanded") === "true";
@@ -292,5 +272,22 @@ const timingFilters = [
     }
 
     updateCount(total, "");
+
+    const stickyOffset = () => {
+      const pagePaddingY = Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--page-padding-y")
+      );
+      return Number.isFinite(pagePaddingY) ? pagePaddingY : 0;
+    };
+
+    const syncStickyState = () => {
+      if (!(root instanceof HTMLElement)) return;
+      const isStuck = root.getBoundingClientRect().top <= stickyOffset() + 0.5;
+      root.toggleAttribute("data-stuck", isStuck);
+    };
+
+    syncStickyState();
+    window.addEventListener("scroll", syncStickyState, { passive: true });
+    window.addEventListener("resize", syncStickyState);
   }
 </script>
