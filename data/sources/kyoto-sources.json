@@ -57,7 +57,7 @@
       "allowed_domains": ["www.hosoogallery.jp", "hosoogallery.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
-      "notes": "Use the English exhibitions listing page, which links to individual exhibition detail pages under /en/exhibitions/<slug>/.",
+      "notes": "Use the English exhibitions archive and only extract links from the exhibition article cards, so research pages and section indexes do not leak into the crawl.",
       "is_active": true
     },
     {
@@ -216,7 +216,7 @@
       "allowed_domains": ["zenbi.kagizen.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
-      "notes": "Exhibitions are listed on the dedicated exhibition index, with detail pages under /exhibition/<slug>/.",
+      "notes": "Exhibitions are listed on the dedicated exhibition index. Prefer current and upcoming exhibition cards and ignore linked news posts surfaced inside exhibition pages.",
       "is_active": true
     },
     {

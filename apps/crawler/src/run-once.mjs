@@ -256,6 +256,65 @@ function parseEnglishMonthDateRangeWithWeekdays(dateText) {
   return parseEnglishMonthDateRange(cleaned);
 }
 
+function parseEnglishDayMonthYearRange(dateText) {
+  const months = {
+    january: "01",
+    february: "02",
+    march: "03",
+    april: "04",
+    may: "05",
+    june: "06",
+    july: "07",
+    august: "08",
+    september: "09",
+    october: "10",
+    november: "11",
+    december: "12",
+  };
+
+  const cleaned = dateText
+    .replace(/\([^)]*\)/g, "")
+    .replace(/&#8211;|–|—/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const match = cleaned.match(
+    /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\s*-\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/
+  );
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, startDay, startMonthName, startYear, endDay, endMonthName, endYear] = match;
+  const startMonth = months[startMonthName.toLowerCase()];
+  const endMonth = months[endMonthName.toLowerCase()];
+
+  if (!startMonth || !endMonth) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const startDate = `${startYear}-${startMonth}-${String(startDay).padStart(2, "0")}`;
+  const endDate = `${endYear}-${endMonth}-${String(endDay).padStart(2, "0")}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:30:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
 function toJapanDate(value) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Tokyo",
@@ -594,6 +653,45 @@ function extractEssenceDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
 
+function extractHosooDetailUrls(listingHtml, listingUrl) {
+  const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean)
+    .filter((url) => /\/(?:en\/)?exhibitions\/[^/]+\/?$/.test(new URL(url).pathname));
+
+  if (!matches.length) {
+    throw new Error("Could not find HOSOO exhibition detail URLs on the listing page");
+  }
+
+  return [...new Set(matches)];
+}
+
+function extractZenbiDetailUrls(listingHtml, listingUrl) {
+  const blocks = [...listingHtml.matchAll(
+    /<article id="exhibition-\d+"[\s\S]*?<\/article>/gi
+  )].map((match) => match[0]);
+
+  const matches = blocks
+    .map((block) => ({
+      url: normalizeUrl(block.match(/<a href="([^"]+)"/i)?.[1] ?? "", listingUrl),
+      term: stripTags(block.match(/<div class="exTerm[\s\S]*?>([\s\S]*?)<\/div>/i)?.[1] ?? "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase(),
+    }))
+    .filter((entry) => entry.url)
+    .filter((entry) => /\/exhibition\//.test(new URL(entry.url).pathname));
+
+  const preferred = matches.filter((entry) => /current|upcoming|開催中|開催予定/.test(entry.term));
+  const urls = [...new Set((preferred.length ? preferred : matches.slice(0, 2)).map((entry) => entry.url))];
+
+  if (!urls.length) {
+    throw new Error("Could not find ZENBI exhibition detail URLs on the listing page");
+  }
+
+  return urls;
+}
+
 function extractKyohakuDetailUrls(listingHtml, listingUrl) {
   const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
     .map((match) => ({
@@ -788,6 +886,131 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
     start_time_text: openText,
     end_time_text: null,
     is_all_day: !openText,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractHosooEvent(detailHtml, source, detailUrl) {
+  const title = stripTags(
+    detailHtml.match(/<div class="c-title">[\s\S]*?<h3 class="title">([\s\S]*?)<\/h3>/i)?.[1] ??
+      extractMeta(detailHtml, "og:title") ??
+      ""
+  )
+    .replace(/\s*[|｜-]\s*HOSOO GALLERY$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!title) {
+    throw new Error("Could not extract event title from HOSOO detail page");
+  }
+
+  const subtitle = stripTags(detailHtml.match(/<p class="subtitle">([\s\S]*?)<\/p>/i)?.[1] ?? "");
+  const dateText = stripTags(
+    detailHtml.match(/<dt class="term">Dates<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i)?.[1] ?? ""
+  ) || "See source page";
+  const hoursText = stripTags(
+    detailHtml.match(/<dt class="term">Hours<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i)?.[1] ?? ""
+  ) || null;
+  const venueName = stripTags(
+    detailHtml.match(/<dt class="term">Venue<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i)?.[1] ?? ""
+  ) || source.name;
+
+  const description = [...detailHtml.matchAll(/<p class="cmt">([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, 4)
+    .join("\n\n");
+
+  const imageUrls = finalizeImageUrls([
+    { url: extractMeta(detailHtml, "og:image"), source: "og:image" },
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*\/img\/exhibitions\/[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
+
+  const parsedDates = parseEnglishDayMonthYearRange(dateText);
+  const categories = ["exhibition", "gallery"];
+  if (subtitle) categories.push(subtitle.toLowerCase());
+
+  return {
+    title,
+    artist_name: null,
+    categories: [...new Set(categories.filter(Boolean))],
+    description: description || extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: venueName,
+    address_text: venueName,
+    directions_query: source.directions_query ?? `${venueName}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: hoursText,
+    end_time_text: null,
+    is_all_day: !hoursText,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractZenbiEvent(detailHtml, source, detailUrl) {
+  const titleJa = stripTags(detailHtml.match(/<span class="exTitle">([\s\S]*?)<\/span>/i)?.[1] ?? "");
+  const titleEn = stripTags(detailHtml.match(/<span class="exTitle_en">([\s\S]*?)<\/span>/i)?.[1] ?? "");
+  const subtitleEn = stripTags(detailHtml.match(/<span class="exSubtitle_en">([\s\S]*?)<\/span>/i)?.[1] ?? "");
+  const exhibitionType = stripTags(detailHtml.match(/<span class="exCat_en">([\s\S]*?)<\/span>/i)?.[1] ?? "");
+  const title = [titleEn, subtitleEn].filter(Boolean).join(": ") || titleJa;
+
+  if (!title) {
+    throw new Error("Could not extract event title from ZENBI detail page");
+  }
+
+  const dateText = stripTags(detailHtml.match(/<span class="exPeriod">([\s\S]*?)<\/span>/i)?.[1] ?? "") || "See source page";
+  const description = stripTags(
+    detailHtml.match(/<div class="exIntro(?:_en)?[^"]*">([\s\S]*?)<\/div>/i)?.[1] ??
+      detailHtml.match(/<div class="exIntro[^"]*">([\s\S]*?)<\/div>/i)?.[1] ??
+      ""
+  );
+  const hoursText = stripTags(detailHtml.match(/<p class="exOpen en">([\s\S]*?)<\/p>/i)?.[1] ?? "") || null;
+  const imageUrls = finalizeImageUrls([
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
+  const parsedDates = parseDottedDateRange(dateText);
+
+  return {
+    title,
+    artist_name: null,
+    categories: [...new Set(["exhibition", "museum", exhibitionType.toLowerCase()].filter(Boolean))],
+    description: description || extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: hoursText,
+    end_time_text: null,
+    is_all_day: !hoursText,
     timezone: "Asia/Tokyo",
     ...buildScheduleFields({
       startDate: parsedDates.startDate,
@@ -1247,19 +1470,23 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
 
 const detailUrlExtractors = {
   "essence-kyoto": extractEssenceDetailUrls,
+  "hosoo-gallery": extractHosooDetailUrls,
   "kyoto-art-center": extractKacDetailUrls,
   "kyoto-national-museum": extractKyohakuDetailUrls,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrls,
+  "zenbi": extractZenbiDetailUrls,
   "the-national-museum-of-modern-art": extractMomakDetailUrls,
   "sen-oku-hakukokan-museum": extractSenOkuDetailUrls,
 };
 
 const eventExtractors = {
   "essence-kyoto": extractEssenceEvent,
+  "hosoo-gallery": extractHosooEvent,
   "kyoto-art-center": extractKacEvent,
   "kyoto-national-museum": extractKyohakuEvent,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
   "sibasi": extractSibasiEvent,
+  "zenbi": extractZenbiEvent,
   "the-national-museum-of-modern-art": extractMomakEvent,
   "sen-oku-hakukokan-museum": extractSenOkuEvent,
 };
