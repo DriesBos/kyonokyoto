@@ -242,6 +242,18 @@ a
   margin: 0 auto
   padding: var(--page-padding-y) var(--page-padding-x)
 
+@keyframes site-header-logo-shrink
+  from
+    height: calc(var(--type-logo-size) * 1.22)
+  to
+    height: calc(var(--type-title-size) * 1.22)
+
+@keyframes site-header-border-appear
+  from
+    opacity: 0
+  to
+    opacity: 1
+
 .site-header
   position: sticky
   top: 0
@@ -260,13 +272,18 @@ a
     border-top: var(--stroke-width) solid var(--stroke)
     opacity: 0
     pointer-events: none
-    transition: opacity 165ms ease
+    @supports not (animation-timeline: scroll())
+      transition: opacity 165ms ease
+    @supports (animation-timeline: scroll())
+      animation: site-header-border-appear linear both
+      animation-timeline: scroll(root)
+      animation-range: 0px 64px
   &[data-stuck]
-    .site-header__logo svg
-      height: 1rem * 1.22
-      transition: height 165ms ease
-    &::after
-      opacity: 1
+    @supports not (animation-timeline: scroll())
+      .site-header__logo svg
+        height: calc(var(--type-title-size) * 1.22)
+      &::after
+        opacity: 1
 
   &__logo
     flex: 0 0 auto
@@ -278,6 +295,12 @@ a
     width: auto
     height: calc(var(--type-logo-size) * 1.22)
     display: block
+    @supports not (animation-timeline: scroll())
+      transition: height 165ms ease
+    @supports (animation-timeline: scroll())
+      animation: site-header-logo-shrink linear both
+      animation-timeline: scroll(root)
+      animation-range: 0px 64px
 
 .site-header + *
   margin-top: calc(2rem + 0.5rem)
@@ -733,6 +756,12 @@ a
       -webkit-line-clamp: 3
 
 @media (max-width: $mobile-breakpoint)
+  @keyframes site-header-logo-shrink
+    from
+      height: calc(var(--type-logo-size) * 0.96)
+    to
+      height: calc(var(--type-title-size) * 1.22)
+
   .site-header
     gap: 1rem
 
@@ -740,7 +769,8 @@ a
       inset-inline: 0.25rem
 
     &__logo svg
-      height: calc(var(--type-logo-size) * 0.96)
+      @supports not (animation-timeline: scroll())
+        height: calc(var(--type-logo-size) * 0.96)
 
   .category-filter
     flex: 1 1 auto
