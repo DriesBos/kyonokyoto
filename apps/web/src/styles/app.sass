@@ -47,9 +47,9 @@ $image-placeholder: #dcdcdc
   --page-padding-x: 0.5rem
   --page-padding-y: 0.5rem
 
-  --dot-cursor: url('/cursor-dot.svg') 8 8, auto
+  --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%23fd69ba'/%3E%3C/svg%3E") 8 8, auto
   --dot-button: 1.5rem
-  --dot-card: 2.5rem
+  --dot-card: 5vmin
 
 *,
 *::before,
@@ -141,12 +141,14 @@ a
   gap: 0.75rem
   margin-left: auto
   max-width: 15rem
+  overflow: visible
 
   &__options
     display: flex
     flex-wrap: wrap
     justify-content: flex-end
     gap: 0.75rem
+    overflow: visible !important
 
 .site-header__filter-toggle
   @media (min-width: $mobile-breakpoint)
@@ -180,13 +182,13 @@ a
   position: absolute
   z-index: 0
   left: var(--general-button-dot-left, 50%)
-  transform: translateX(-50%)
-  top: var(--general-button-dot-top, 0)
+  top: var(--general-button-dot-top, 50%)
   width: var(--dot-button)
   height: var(--dot-button)
   border-radius: 50%
   background: #fd69ba
   opacity: 0
+  transform: translate(-50%, -50%)
   transition: opacity 140ms ease
 
 .general-button[aria-pressed='true'] .general-button__dot
@@ -312,22 +314,6 @@ a
   &[data-active='true'] [data-event-card-fade]
     pointer-events: auto
 
-  &[data-active='true'] .event-card__dot
-    opacity: 1
-
-  &__dot
-    position: absolute
-    z-index: 1
-    top: var(--event-card-dot-top, 50%)
-    left: var(--event-card-dot-left, 50%)
-    width: var(--dot-card)
-    height: var(--dot-card)
-    border-radius: 50%
-    background: #fd69ba
-    opacity: 0
-    transform: translate(-50%, -50%)
-    pointer-events: none
-
   &__media
     flex: 1 1 auto
     display: flex
@@ -429,6 +415,16 @@ a
     pointer-events: auto
     *
       pointer-events: auto
+
+.event-card-dot
+  position: fixed
+  z-index: 20
+  width: var(--dot-card)
+  height: var(--dot-card)
+  border-radius: 50%
+  background: #fd69ba
+  transform: translate(-50%, -50%)
+  pointer-events: none
 
 @media (min-width: $desktop-breakpoint)
   .event-card
