@@ -1,15 +1,51 @@
 ---
+import Icon from "./Icon.astro";
+
 type Props = {
   position: "top" | "bottom";
   lines?: number;
+  showScrollTop?: boolean;
 };
 
-const { position, lines = 4 } = Astro.props;
+const { position, lines = 4, showScrollTop = false } = Astro.props;
 const strokeCount = Math.max(0, Math.floor(lines));
+const hasScrollTop = position === "bottom" && showScrollTop;
 ---
 
-<div class:list={["page-edge-strokes", `page-edge-strokes--${position}`]} aria-hidden="true">
+<div class:list={["page-edge-strokes", `page-edge-strokes--${position}`, hasScrollTop && "page-edge-strokes--interactive"]}>
   {Array.from({ length: strokeCount }).map(() => (
-    <span data-elastic-line="top" data-elastic-strength="0.55" data-elastic-lift="10"></span>
+    <span data-elastic-line="top" data-elastic-strength="0.55" data-elastic-lift="10" aria-hidden="true"></span>
   ))}
+
+  {
+    hasScrollTop ? (
+      <button class="page-edge-strokes__scroll-top" type="button" aria-label="Scroll to top" data-scroll-top-button>
+        <Icon name="arrow-long" rotation="top" />
+      </button>
+    ) : null
+  }
 </div>
+
+<script>
+  type ScrollTopWindow = Window &
+    typeof globalThis & {
+      __scrollTopButtonBound?: boolean;
+    };
+
+  const scrollTopWindow = window as ScrollTopWindow;
+
+  if (!scrollTopWindow.__scrollTopButtonBound) {
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const button = target.closest("[data-scroll-top-button]");
+      if (!(button instanceof HTMLElement)) return;
+
+      event.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    scrollTopWindow.__scrollTopButtonBound = true;
+  }
+</script>

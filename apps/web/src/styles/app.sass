@@ -58,6 +58,7 @@ $type-scale-ratio: 1.618
   --stroke-width: 2px
   --stroke: var(--color-green)
   --stroke-gap: 0.75rem
+  --icon-size: 1.5625rem
 
   --type-scale-ratio: #{$type-scale-ratio}
   --type-step-0: #{type-step(0)}
@@ -179,6 +180,42 @@ img
   display: block
   max-width: 100%
 
+.icon
+  display: block
+  flex: 0 0 auto
+  width: var(--icon-width, var(--icon-size))
+  height: var(--icon-height, var(--icon-size))
+  color: currentColor
+  overflow: visible
+  transform-origin: center
+
+.icon--long
+  --icon-height: calc(var(--icon-size) * 2)
+
+.icon--arrow.icon--top
+  transform: rotate(90deg)
+
+.icon--arrow.icon--right
+  transform: rotate(180deg)
+
+.icon--arrow.icon--bottom
+  transform: rotate(270deg)
+
+.icon--arrow.icon--left
+  transform: rotate(0deg)
+
+.icon--arrow-long.icon--top
+  transform: rotate(0deg)
+
+.icon--arrow-long.icon--right
+  transform: rotate(90deg)
+
+.icon--arrow-long.icon--bottom
+  transform: rotate(180deg)
+
+.icon--arrow-long.icon--left
+  transform: rotate(270deg)
+
 h1,
 h2,
 h3,
@@ -275,6 +312,11 @@ a
   text-transform: lowercase
   overflow: visible
 
+.general-button__icon
+  position: relative
+  z-index: 1
+  --icon-size: 1em
+
 .general-button__dot
   position: absolute
   z-index: 0
@@ -324,6 +366,7 @@ a
     vector-effect: non-scaling-stroke
 
 .page-edge-strokes
+  position: relative
   display: grid
   gap: var(--stroke-gap)
 
@@ -337,6 +380,34 @@ a
 
 .page-edge-strokes--bottom
   padding-bottom: 0
+
+.page-edge-strokes--interactive
+  min-height: calc(var(--icon-size) * 2)
+
+.page-edge-strokes__scroll-top
+  position: absolute
+  right: 0
+  bottom: 0
+  display: grid
+  place-items: center
+  width: calc(var(--icon-size) + 1rem)
+  height: calc(var(--icon-size) * 2 + 1rem)
+  padding: 0.5rem
+  border: 0
+  appearance: none
+  -webkit-tap-highlight-color: transparent
+  background: var(--main-background)
+  color: currentColor
+  cursor: var(--dot-cursor)
+
+  &:hover,
+  &:active,
+  &:focus-visible
+    outline: none
+    background: var(--main-background)
+
+  &:focus-visible
+    box-shadow: inset 0 0 0 var(--stroke-width) var(--stroke)
 
 .section-heading
   display: flex
@@ -601,15 +672,12 @@ a
     flex-wrap: wrap
     gap: 0.75rem
     font-size: var(--type-button-size)
-    pointer-events: auto
+    pointer-events: none
     overflow: visible
 
     .general-button
       font-size: var(--type-button-size)
       overflow: visible
-
-    *
-      pointer-events: auto
 
 @media (orientation: landscape)
   .event-card

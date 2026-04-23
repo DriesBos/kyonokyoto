@@ -9,6 +9,11 @@
       __ambientBloomBound?: boolean;
     };
 
+  type AmbientInteractionDetail = {
+    viewportX?: number;
+    velocity?: number;
+  };
+
   const ambientWindow = window as AmbientBloomWindow;
 
   if (!ambientWindow.__ambientBloomBound) {
@@ -57,6 +62,14 @@
 
     const engine = createAmbientBloomEngine({ onNote: spawnDot });
 
+    const playInteractionSound = (event: Event) => {
+      const detail = event instanceof CustomEvent ? (event.detail as AmbientInteractionDetail | undefined) : undefined;
+      engine.playInteraction({
+        viewportX: detail?.viewportX,
+        velocity: detail?.velocity,
+      });
+    };
+
     const syncButtons = (isActive: boolean) => {
       document.querySelectorAll(buttonSelector).forEach((button) => {
         if (!(button instanceof HTMLElement)) return;
@@ -88,6 +101,8 @@
         button.removeAttribute("disabled");
       }
     });
+
+    document.addEventListener("ambient-sound:interaction", playInteractionSound);
 
     ambientWindow.__ambientBloomBound = true;
   }

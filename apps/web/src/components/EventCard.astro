@@ -120,6 +120,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         {calendarStartDate ? (
           <GeneralButton
             label="Apple Cal"
+            icon="calendar"
             data-apple-calendar-button
             data-calendar-title={event.title}
             data-calendar-start={calendarStartDate}
@@ -128,12 +129,12 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             data-calendar-location={calendarLocation}
           />
         ) : (
-          <GeneralButton label="Apple Cal soon" disabled={true} />
+          <GeneralButton label="Apple Cal soon" icon="calendar" disabled={true} />
         )}
         {googleCalendarUrl ? (
-          <GeneralButton label="Google Cal" href={googleCalendarUrl} target="_blank" rel="noreferrer" />
+          <GeneralButton label="Google Cal" icon="calendar" href={googleCalendarUrl} target="_blank" rel="noreferrer" />
         ) : (
-          <GeneralButton label="Google Cal soon" disabled={true} />
+          <GeneralButton label="Google Cal soon" icon="calendar" disabled={true} />
         )}
         <GeneralButton label="Directions" href={mapsUrl} target="_blank" rel="noreferrer" />
         <GeneralButton label="Website" href={event.source_url} target="_blank" rel="noreferrer" />
@@ -279,6 +280,17 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     const hideCardDot = () => {
       const dot = document.querySelector(`.${cardDotClass}`);
       if (dot instanceof HTMLElement) dot.hidden = true;
+    };
+
+    const playAmbientInteractionSound = (clientX) => {
+      document.dispatchEvent(
+        new CustomEvent("ambient-sound:interaction", {
+          detail: {
+            viewportX: clientX / Math.max(1, window.innerWidth),
+            velocity: 0.9,
+          },
+        })
+      );
     };
 
     const getMediaHeight = (card, isActive) => {
@@ -528,6 +540,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         hideCardDot();
       } else {
         setCardDotPosition(card, event.clientX, event.clientY, hasActiveCardBefore(card));
+        playAmbientInteractionSound(event.clientX);
       }
       toggleCard(card);
     });

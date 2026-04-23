@@ -1,6 +1,13 @@
 ---
+import Icon from "./Icon.astro";
+
+type IconName = "arrow" | "arrow-long" | "calendar";
+type IconDirection = "top" | "right" | "bottom" | "left";
+
 type Props = {
   label: string;
+  icon?: IconName;
+  iconRotation?: IconDirection;
   href?: string;
   pressed?: boolean;
   type?: "button" | "submit" | "reset";
@@ -22,6 +29,8 @@ type Props = {
 
 const {
   label,
+  icon,
+  iconRotation,
   href,
   pressed,
   type = "button",
@@ -62,6 +71,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       aria-controls={ariaControls}
       {...rest}
     >
+      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       <span class="general-button__label">{label}</span>
       {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
     </a>
@@ -79,6 +89,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       aria-controls={ariaControls}
       {...rest}
     >
+      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       <span class="general-button__label">{label}</span>
       {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
     </span>
@@ -98,6 +109,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       aria-controls={ariaControls}
       {...rest}
     >
+      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       <span class="general-button__label">{label}</span>
       {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
     </button>
@@ -108,11 +120,23 @@ const classes = ["general-button", disabled && "general-button--disabled", class
   if (!window.__generalButtonDotBound) {
     const buttonSelector = ".general-button";
     const dotSelector = ".general-button__dot";
+    const pressedStateBeforeClick = new WeakMap();
 
     const setButtonDotPosition = (button, clientX, clientY) => {
       const rect = button.getBoundingClientRect();
       button.style.setProperty("--general-button-dot-left", `${clientX - rect.left - button.clientLeft}px`);
       button.style.setProperty("--general-button-dot-top", `${clientY - rect.top - button.clientTop}px`);
+    };
+
+    const playAmbientInteractionSound = (clientX, velocity = 0.62) => {
+      document.dispatchEvent(
+        new CustomEvent("ambient-sound:interaction", {
+          detail: {
+            viewportX: clientX / Math.max(1, window.innerWidth),
+            velocity,
+          },
+        })
+      );
     };
 
     document.addEventListener("pointerdown", (event) => {
@@ -123,7 +147,26 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       if (!(button instanceof HTMLElement)) return;
       if (!button.querySelector(dotSelector)) return;
 
+      pressedStateBeforeClick.set(button, button.getAttribute("aria-pressed") === "true");
       setButtonDotPosition(button, event.clientX, event.clientY);
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const button = target.closest(buttonSelector);
+      if (!(button instanceof HTMLElement)) return;
+      if (!button.querySelector(dotSelector)) return;
+
+      const wasPressed = pressedStateBeforeClick.get(button) === true;
+      pressedStateBeforeClick.delete(button);
+
+      window.requestAnimationFrame(() => {
+        if (wasPressed || button.getAttribute("aria-pressed") !== "true") return;
+
+        playAmbientInteractionSound(event.clientX, button.hasAttribute("data-ambient-sound-button") ? 0.78 : 0.62);
+      });
     });
 
     window.__generalButtonDotBound = true;
