@@ -136,8 +136,8 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         ) : (
           <GeneralButton label="Google Cal soon" icon="calendar" disabled={true} />
         )}
-        <GeneralButton label="Directions" href={mapsUrl} target="_blank" rel="noreferrer" />
-        <GeneralButton label="Website" href={event.source_url} target="_blank" rel="noreferrer" />
+        <GeneralButton label="Directions" icon="map" href={mapsUrl} target="_blank" rel="noreferrer" />
+        <GeneralButton label="Website" icon="exit" href={event.source_url} target="_blank" rel="noreferrer" />
       </div>
     </div>
 
