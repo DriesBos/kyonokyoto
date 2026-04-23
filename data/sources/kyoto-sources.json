@@ -40,10 +40,7 @@
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://kyotomm.jp",
-      "start_urls": [
-        "https://kyotomm.jp/en/",
-        "https://kyotomm.jp/event/"
-      ],
+      "start_urls": ["https://kyotomm.jp/en/", "https://kyotomm.jp/event/"],
       "allowed_domains": ["kyotomm.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/ee/"],
@@ -64,34 +61,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Strong candidate for larger exhibitions with structured metadata.",
-      "is_active": true
-    },
-    {
-      "slug": "the-museum-of-kyoto",
-      "name": "The Museum of Kyoto",
-      "source_type": "museum",
-      "language": "ja",
-      "base_url": "https://www.bunpaku.or.jp",
-      "start_urls": [
-        "https://www.bunpaku.or.jp/exhi_special/schedule/",
-        "https://www.bunpaku.or.jp/exhi_sogo/schedule/",
-        "https://www.bunpaku.or.jp/exhi_film/schedule/",
-        "https://www.bunpaku.or.jp/museum-event/this_month",
-        "https://www.bunpaku.or.jp/museum-event/next_month"
-      ],
-      "allowed_domains": ["www.bunpaku.or.jp", "bunpaku.or.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/exhi_special/schedule/",
-        "/exhi_sogo/schedule/",
-        "/exhi_film/schedule/",
-        "/museum-event/this_month",
-        "/museum-event/next_month",
-        "/museum-event/art-craft-market",
-        "/museum-event/classroom",
-        "/museum-event/roji"
-      ],
-      "notes": "May need custom extraction for date formatting and image selection.",
       "is_active": true
     },
     {
@@ -385,7 +354,10 @@
       "start_urls": ["https://www.dnpfcp.jp/gallery/ddd_e/"],
       "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/CGI/gallery/schedule/detail.cgi", "/gallery/ddd/eng/"],
+      "event_page_patterns": [
+        "/CGI/gallery/schedule/detail.cgi",
+        "/gallery/ddd/eng/"
+      ],
       "notes": "Likely structured exhibition source with English pages suitable for detail-page extraction.",
       "is_active": true
     },
