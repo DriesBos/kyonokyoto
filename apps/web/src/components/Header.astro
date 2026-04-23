@@ -100,7 +100,26 @@ const timingFilters = [
     const total = cards.length;
     let activeCategory = "";
     let activeTiming = "";
+    let filterExpandedScrollOrigin = null;
     const filterButtons = buttons.filter((button): button is HTMLElement => button instanceof HTMLElement);
+
+    const isFilterExpanded = () =>
+      disclosure instanceof HTMLElement && disclosure.getAttribute("aria-expanded") === "true";
+
+    const setFilterDisclosureExpanded = (nextExpanded) => {
+      if (!(disclosure instanceof HTMLElement)) return;
+
+      disclosure.setAttribute("aria-expanded", String(nextExpanded));
+      disclosure.setAttribute("aria-pressed", String(nextExpanded));
+      filterExpandedScrollOrigin = nextExpanded ? window.scrollY : null;
+      animateFilterDisclosure(nextExpanded);
+    };
+
+    const closeFilterDisclosure = () => {
+      if (!isFilterExpanded()) return;
+
+      setFilterDisclosureExpanded(false);
+    };
 
     const setFilterPanelInteractivity = (isInteractive) => {
       if (!(filterPanel instanceof HTMLElement)) return;
@@ -260,14 +279,10 @@ const timingFilters = [
 
     if (disclosure && filterPanel) {
       syncFilterPanelState();
+      filterExpandedScrollOrigin = isFilterExpanded() ? window.scrollY : null;
 
       disclosure.addEventListener("click", () => {
-        const expanded = disclosure.getAttribute("aria-expanded") === "true";
-        const nextExpanded = !expanded;
-
-        disclosure.setAttribute("aria-expanded", String(nextExpanded));
-        disclosure.setAttribute("aria-pressed", String(nextExpanded));
-        animateFilterDisclosure(nextExpanded);
+        setFilterDisclosureExpanded(!isFilterExpanded());
       });
     }
 
@@ -286,8 +301,30 @@ const timingFilters = [
       root.toggleAttribute("data-stuck", isStuck);
     };
 
+    const maybeCloseFilterOnScroll = () => {
+      if (filterExpandedScrollOrigin === null) return;
+
+      const scrollDelta = Math.abs(window.scrollY - filterExpandedScrollOrigin);
+      if (scrollDelta > window.innerHeight * 0.5) {
+        closeFilterDisclosure();
+      }
+    };
+
     syncStickyState();
+    document.addEventListener("click", (event) => {
+      if (!isFilterExpanded()) return;
+      if (!(event.target instanceof Node)) return;
+      if (root.contains(event.target)) return;
+
+      closeFilterDisclosure();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+
+      closeFilterDisclosure();
+    });
     window.addEventListener("scroll", syncStickyState, { passive: true });
+    window.addEventListener("scroll", maybeCloseFilterOnScroll, { passive: true });
     window.addEventListener("resize", syncStickyState);
   }
 </script>

@@ -603,6 +603,14 @@ a
   &[data-active='true'] [data-event-card-fade]
     pointer-events: auto
 
+  &[data-active='false'] .event-card__actions,
+  &[data-active='false'] .event-card__actions .general-button
+    pointer-events: none
+
+  &[data-active='true'] .event-card__actions,
+  &[data-active='true'] .event-card__actions .general-button
+    pointer-events: auto
+
   &[data-height-transitioning]
     will-change: height
 
@@ -687,7 +695,7 @@ a
     text-transform: uppercase
     user-select: auto
     padding: 0 var(--page-padding-x)
-    @media (orientation: portrait)
+    @media (max-width: $mobile-breakpoint)
       flex-direction: row
       gap: 1rem
 

@@ -597,9 +597,43 @@ function pathnameMatchesPattern(pathname, pattern) {
   const normalizedPattern = pattern.toLowerCase().replace(/\/+$/, "") || "/";
   return normalizedPathname.includes(normalizedPattern) && normalizedPathname !== normalizedPattern;
 }
+
+function getGenericDetailUrlRecencyHint(url) {
+  const parsed = new URL(url);
+  const haystack = `${parsed.pathname} ${parsed.search}`;
+  const hints = [];
+
+  for (const match of haystack.matchAll(/(20\d{2})[./_-](\d{1,2})(?:[./_-](\d{1,2}))?/g)) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3] ?? "1");
+
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      hints.push(year * 10000 + month * 100 + day);
+    }
+  }
+
+  for (const match of haystack.matchAll(/(?:^|[\/=_-])(20\d{2})(?:[\/._-]|$)/g)) {
+    hints.push(Number(match[1]) * 10000);
+  }
+
+  const postId = Number(parsed.searchParams.get("p") ?? "0");
+  if (Number.isFinite(postId) && postId > 0) hints.push(postId);
+
+  const pageId = Number(parsed.searchParams.get("page_id") ?? "0");
+  if (Number.isFinite(pageId) && pageId > 0) hints.push(pageId);
+
+  for (const match of haystack.matchAll(/(?:^|[\/=_-])(\d{5,})(?:[\/._-]|$)/g)) {
+    hints.push(Number(match[1]));
+  }
+
+  return hints.length ? Math.max(...hints) : 0;
+}
+
 function scoreGenericDetailUrl(source, url) {
   const parsed = new URL(url);
   const pathname = parsed.pathname.toLowerCase();
+  const search = parsed.search.toLowerCase();
   if (/\.(?:jpe?g|png|gif|webp|svg|pdf|zip|css|js)$/i.test(pathname)) return 0;
   if (
     /\/(?:archive|archives|category|event_category|access|about|contact|privacy|guide|faq|feed|form)(?:\/|$)/.test(pathname) ||
@@ -612,16 +646,26 @@ function scoreGenericDetailUrl(source, url) {
   ) {
     return 0;
   }
+  if (
+    parsed.searchParams.has("rest_route") ||
+    parsed.searchParams.has("feed") ||
+    parsed.searchParams.has("author")
+  ) {
+    return 0;
+  }
 
   const patterns = (source.event_page_patterns ?? []).filter((pattern) => pattern && pattern !== "/");
   const patternScore = patterns.some((pattern) => pathnameMatchesPattern(pathname, pattern)) ? 8 : 0;
-  const keywordScore = /event|exhibition|exhibit|program|live|schedule|news|journal|show|artist|展|催|公演/i.test(pathname)
+  const keywordScore = /event|exhibition|exhibit|program|live|schedule|news|journal|show|artist|展|催|公演/i.test(
+    `${pathname} ${search}`
+  )
     ? 4
     : 0;
-  const dateScore = /20\d{2}|202\d|\d{4}[./-]\d{1,2}/.test(pathname) ? 2 : 0;
+  const dateScore = /20\d{2}|202\d|\d{4}[./-]\d{1,2}/.test(`${pathname} ${search}`) ? 2 : 0;
   const depthScore = pathname.split("/").filter(Boolean).length > 1 ? 1 : 0;
+  const queryScore = parsed.searchParams.has("p") ? 6 : 0;
 
-  return patternScore + keywordScore + dateScore + depthScore;
+  return patternScore + keywordScore + dateScore + depthScore + queryScore;
 }
 
 function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
@@ -636,10 +680,16 @@ function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
     .map((url) => ({
       url,
       score: scoreGenericDetailUrl(source, url),
+      recencyHint: getGenericDetailUrlRecencyHint(url),
       matchesPattern: patterns.some((pattern) => pathnameMatchesPattern(new URL(url).pathname, pattern)),
     }))
     .filter((entry) => entry.score > 0)
-    .sort((left, right) => right.score - left.score || left.url.localeCompare(right.url))
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        right.recencyHint - left.recencyHint ||
+        left.url.localeCompare(right.url)
+    )
     .slice(0, limit * 4);
 
   const preferredUrls = scoredUrls.filter((entry) => entry.matchesPattern);
@@ -2091,6 +2141,19 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
           });
           continue;
         }
+      }
+
+      const hasImage =
+        Boolean(extractedEvent.primary_image_url) ||
+        (Array.isArray(extractedEvent.image_urls) && extractedEvent.image_urls.some(Boolean));
+
+      if (!hasImage) {
+        skippedEvents.push({
+          detailUrl,
+          title: extractedEvent.title,
+          reason: "missing image",
+        });
+        continue;
       }
 
       const dedupeKey = buildEventDedupeKey(extractedEvent);

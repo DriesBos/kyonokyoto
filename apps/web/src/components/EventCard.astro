@@ -208,6 +208,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
   if (!window.__eventCardToggleBound) {
     const actionSelector = ".event-card__actions .general-button";
+    const actionContainerSelector = ".event-card__actions";
     const cardSelector = "[data-event-card-toggle]";
     const cardDotClass = "event-card-dot";
     const contentSelector = ".event-card__body__content";
@@ -325,6 +326,37 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       return measuredHeight;
     };
 
+    const syncActionInteractivity = (card, isActive) => {
+      const actions = card.querySelector(actionContainerSelector);
+      if (!(actions instanceof HTMLElement)) return;
+
+      actions.toggleAttribute("inert", !isActive);
+      actions.setAttribute("aria-hidden", String(!isActive));
+
+      actions.querySelectorAll("a, button").forEach((control) => {
+        if (!(control instanceof HTMLElement)) return;
+
+        if (isActive) {
+          const storedTabIndex = control.dataset.eventCardInactiveTabindex;
+
+          if (storedTabIndex === "__none__") {
+            control.removeAttribute("tabindex");
+          } else if (typeof storedTabIndex === "string") {
+            control.setAttribute("tabindex", storedTabIndex);
+          }
+
+          delete control.dataset.eventCardInactiveTabindex;
+          return;
+        }
+
+        if (control.dataset.eventCardInactiveTabindex === undefined) {
+          control.dataset.eventCardInactiveTabindex = control.getAttribute("tabindex") ?? "__none__";
+        }
+
+        control.setAttribute("tabindex", "-1");
+      });
+    };
+
     const setContentState = (card, isActive) => {
       const content = card.querySelector(contentSelector);
       if (!(content instanceof HTMLElement)) return;
@@ -334,6 +366,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       killHeightTransitionTweens([card, content]);
       killFadeTransitionTweens(fadeTargets);
+      syncActionInteractivity(card, isActive);
 
       if (isActive) {
         content.style.height = "auto";
@@ -349,6 +382,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     const setCardActiveState = (card, isActive) => {
       card.setAttribute("data-active", String(isActive));
       card.setAttribute("aria-pressed", String(isActive));
+      syncActionInteractivity(card, isActive);
     };
 
     const animateCardState = (card, isActive) => {

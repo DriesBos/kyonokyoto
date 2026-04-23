@@ -80,7 +80,7 @@
       "allowed_domains": ["gallery-yamahon.com"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/"],
-      "notes": "Added once even though the source list contained this URL twice.",
+      "notes": "Homepage currently exposes the newest exhibition as a WordPress post-style `?p=` link. Prefer post links and ignore `?page_id=` navigation pages.",
       "is_active": true
     },
     {
@@ -124,8 +124,8 @@
       "allowed_domains": ["komyoin.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/"],
-      "notes": "Temple source; may contain seasonal openings or exhibitions rather than frequent event listings.",
-      "is_active": true
+      "notes": "Current site is a JS-rendered homepage with no stable crawlable event detail URLs in the server-rendered HTML. Keep inactive until a source-specific extractor exists.",
+      "is_active": false
     },
     {
       "slug": "essence-kyoto",
@@ -145,12 +145,12 @@
       "name": "Arts & Science",
       "source_type": "shop-gallery",
       "language": "ja",
-      "base_url": "https://arts-science.com/",
-      "start_urls": ["https://arts-science.com/"],
+      "base_url": "https://arts-science.com/events/",
+      "start_urls": ["https://arts-science.com/events/"],
       "allowed_domains": ["arts-science.com"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/journal", "/news", "/"],
-      "notes": "May include mixed editorial and shop content; good candidate for selective crawling.",
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/events/"],
+      "notes": "Use the dedicated events listing and ignore collection, products, editorial, and store pages.",
       "is_active": true
     },
     {
@@ -174,12 +174,12 @@
       "name": "Kojin",
       "source_type": "gallery",
       "language": "ja",
-      "base_url": "https://kojin-kyoto.com/",
-      "start_urls": ["https://kojin-kyoto.com/"],
+      "base_url": "https://kojin-kyoto.com/event/",
+      "start_urls": ["https://kojin-kyoto.com/event/"],
       "allowed_domains": ["kojin-kyoto.com"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/news", "/"],
-      "notes": "Likely a gallery or art space source with exhibition pages.",
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event/"],
+      "notes": "Use the dedicated event listing. The homepage event rail links into `/event/<slug>/` detail pages.",
       "is_active": true
     },
     {
@@ -192,8 +192,8 @@
       "allowed_domains": ["kyoto-art-month.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program", "/event", "/"],
-      "notes": "Likely umbrella event source with many partner venues and date-rich program pages.",
-      "is_active": true
+      "notes": "Current homepage behaves as an off-domain directory linking straight to partner venues rather than hosting stable on-domain program detail pages. Keep inactive until we add a source-specific aggregator.",
+      "is_active": false
     },
     {
       "slug": "zenbi",
@@ -288,8 +288,8 @@
       "start_urls": ["http://www.hakusasonso.jp/exhibition/index.html"],
       "allowed_domains": ["www.hakusasonso.jp", "hakusasonso.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition/"],
-      "notes": "Historic villa and museum of Japanese painter Hashimoto Kansetsu; exhibition index is at /exhibition/index.html.",
+      "event_page_patterns": ["/exhibition/detail/"],
+      "notes": "Use the exhibition index and prefer linked detail pages under `/exhibition/detail/` over archive and index links.",
       "is_active": true
     },
     {
@@ -313,12 +313,18 @@
       "name": "Gallery Morning Kyoto",
       "source_type": "gallery",
       "language": "en",
-      "base_url": "https://gallerymorningkyoto.com/",
-      "start_urls": ["https://gallerymorningkyoto.com/"],
-      "allowed_domains": ["gallerymorningkyoto.com"],
+      "base_url": "https://gallerymorningkyoto.blogspot.com/",
+      "start_urls": [
+        "https://gallerymorningkyoto.com/",
+        "https://gallerymorningkyoto.blogspot.com/"
+      ],
+      "allowed_domains": [
+        "gallerymorningkyoto.com",
+        "gallerymorningkyoto.blogspot.com"
+      ],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/"],
-      "notes": "Only extract the first two exhibition items from the homepage.",
+      "event_page_patterns": ["/20"],
+      "notes": "Homepage cards point to Blogspot post URLs like `/2026/04/...html`. Allow the Blogspot domain and prefer dated post URLs over archive pages.",
       "is_active": true
     },
     {
@@ -343,8 +349,8 @@
       "start_urls": ["https://gallery.kcua.ac.jp/en/exhibitions-en/"],
       "allowed_domains": ["gallery.kcua.ac.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibitions-en/", "/exhibitions"],
-      "notes": "Kyoto City University of Arts gallery; only extract the first (most recent) exhibition item.",
+      "event_page_patterns": ["/en/archives/", "/archives/"],
+      "notes": "The English exhibitions landing page links into detail pages under `/en/archives/<year>/<id>/`. Prefer those archive detail URLs over menu and news links.",
       "is_active": true
     },
     {
@@ -422,8 +428,8 @@
       "allowed_domains": ["www.anewal.gallery", "anewal.gallery"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/"],
-      "notes": "Small gallery; exhibitions surfaced on the homepage.",
-      "is_active": true
+      "notes": "Current schedule is homepage-only and mostly points to PDFs, social posts, and external event pages. Keep inactive until we add a source-specific homepage extractor.",
+      "is_active": false
     },
     {
       "slug": "kusakabe-gallery",
@@ -447,8 +453,8 @@
       "start_urls": ["https://insho-domoto.com/schedule/"],
       "allowed_domains": ["insho-domoto.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/schedule/"],
-      "notes": "Only extract the first three items from the schedule listing.",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Use the schedule listing as the entry point, but prefer linked exhibition detail pages under `/exhibitions/<id>/`.",
       "is_active": true
     },
     {
@@ -486,8 +492,8 @@
       "start_urls": ["https://www.kankakari.com/news"],
       "allowed_domains": ["www.kankakari.com", "kankakari.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/news"],
-      "notes": "News/events listing used for exhibition announcements.",
+      "event_page_patterns": ["/single-post/"],
+      "notes": "Use the Wix news listing as the index and follow exhibition posts under `/single-post/`.",
       "is_active": true
     },
     {
@@ -538,11 +544,14 @@
       "source_type": "museum",
       "language": "en",
       "base_url": "https://www.miho.jp/en/current_exhibition/",
-      "start_urls": ["https://www.miho.jp/en/current_exhibition/"],
+      "start_urls": [
+        "https://www.miho.jp/en/current_exhibition/",
+        "https://www.miho.jp/en/upcoming_exhibition/"
+      ],
       "allowed_domains": ["www.miho.jp", "miho.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/current_exhibition/", "/current_exhibition/"],
-      "notes": "English current exhibition page.",
+      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "notes": "Use the current and upcoming exhibition landing pages, which link into exhibition detail pages under `/en/exhibition/<slug>/`.",
       "is_active": true
     }
   ]
