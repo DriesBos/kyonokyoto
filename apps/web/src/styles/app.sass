@@ -280,18 +280,14 @@ a
   &__media
     flex: 1 1 auto
     display: flex
-    flex-wrap: wrap
     justify-content: flex-end
-    align-content: flex-start
     gap: var(--event-card-media-gap)
     min-width: 0
-    overflow: hidden
     max-height: var(--event-card-media-row-height-current)
     // border: 1px solid purple
-    @media (max-width: $mobile-breakpoint)
-      overflow-x: auto
-      flex-wrap: nowrap
-      pointer-events: auto
+    overflow-x: auto
+    flex-wrap: nowrap
+    pointer-events: auto
       
 
   &__image
