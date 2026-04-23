@@ -134,12 +134,19 @@ PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:all -- --generi
 PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/run-crawl-cycle.mjs
 ```
 
+Create or reuse the Netlify build hook and write it into `apps/crawler/.env`:
+
+```bash
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/create-netlify-build-hook.mjs
+```
+
 Useful flags:
 
 ```bash
 node scripts/run-crawl-cycle.mjs --skip-deploy
 node scripts/run-crawl-cycle.mjs --skip-sync
 node scripts/run-crawl-cycle.mjs --generic-limit=8
+node scripts/create-netlify-build-hook.mjs --name="Daily crawler deploy"
 ```
 
 How to tune effectively:
