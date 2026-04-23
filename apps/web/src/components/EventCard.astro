@@ -194,6 +194,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 </article>
 
 <script>
+  import { fadeIn, fadeOut, killFadeTransitionTweens, setFadeHidden, setFadeVisible } from "../lib/fadeTransition";
   import {
     createHeightTransitionTimeline,
     getHeightTransitionDuration,
@@ -205,6 +206,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     const interactiveSelector = "a, button, input, select, textarea, summary, [role='button']";
     const cardSelector = "[data-event-card-toggle]";
     const contentSelector = ".event-card__body__content";
+    const fadeSelector = "[data-event-card-fade]";
     const mediaHeightProperty = "--event-card-media-row-height-current";
 
     const getMediaHeight = (card, isActive) => {
@@ -239,16 +241,20 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       const content = card.querySelector(contentSelector);
       if (!(content instanceof HTMLElement)) return;
 
+      const fadeTargets = Array.from(content.querySelectorAll(fadeSelector));
       card.dataset.toggleReady = "true";
 
       killHeightTransitionTweens([card, content]);
+      killFadeTransitionTweens(fadeTargets);
 
       if (isActive) {
         content.style.height = "auto";
         card.style.setProperty(mediaHeightProperty, getMediaHeight(card, true));
+        setFadeVisible(fadeTargets);
       } else {
         content.style.height = "0px";
         card.style.setProperty(mediaHeightProperty, getMediaHeight(card, false));
+        setFadeHidden(fadeTargets);
       }
     };
 
@@ -266,8 +272,10 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       const startHeight = card.offsetHeight;
       const targetMediaHeight = getMediaHeight(card, isActive);
+      const fadeTargets = Array.from(content.querySelectorAll(fadeSelector));
 
       killHeightTransitionTweens([card, content]);
+      killFadeTransitionTweens(fadeTargets);
       card.style.overflow = "hidden";
 
       if (isActive) {
@@ -276,6 +284,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         const expandedCardHeight = measureCardHeight(card, content, "auto", targetMediaHeight);
         content.style.height = "0px";
         card.style.height = `${startHeight}px`;
+        setFadeHidden(fadeTargets);
 
         const timeline = createHeightTransitionTimeline({
           onComplete: () => {
@@ -288,10 +297,12 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         toHeight(timeline, card, expandedCardHeight, true, 0);
         timeline.to(card, { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(true) }, 0);
         toHeight(timeline, content, targetContentHeight, true, 0);
+        fadeIn(fadeTargets, { delay: 0.06 });
         return;
       }
 
       setCardActiveState(card, false);
+      fadeOut(fadeTargets);
       const collapsedCardHeight = measureCardHeight(card, content, "0px", targetMediaHeight);
       card.style.height = `${startHeight}px`;
       content.style.height = `${content.offsetHeight}px`;

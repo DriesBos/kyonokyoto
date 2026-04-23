@@ -22,9 +22,6 @@ $image-placeholder: #dcdcdc
   --stroke: var(--color-green)
   --stroke-gap: 0.75rem
 
-  --fade-transition-duration: 165ms
-  --fade-transition-ease: ease
-
   --type-body-size: 14px
   --type-body-letter-spacing: -0.01em
   --type-title-size: 16px
@@ -278,7 +275,7 @@ a
   padding: 0.5rem 0 2rem
   border-top: var(--stroke-width) solid var(--stroke)
   cursor: var(--cursor-dot)
-  transition: background-color 140ms ease, opacity var(--fade-transition-duration) var(--fade-transition-ease)
+  transition: background-color 140ms ease
 
   > *
     pointer-events: none
@@ -289,10 +286,8 @@ a
   [data-event-card-fade]
     opacity: 0
     pointer-events: none
-    transition: opacity var(--fade-transition-duration) var(--fade-transition-ease)
 
   &[data-active='true'] [data-event-card-fade]
-    opacity: 1
     pointer-events: auto
 
   &__media
@@ -442,11 +437,9 @@ a
     [data-filter-button]
       opacity: 0
       pointer-events: none
-      transition: opacity var(--fade-transition-duration) var(--fade-transition-ease)
 
   .category-filter__options[data-mobile-open]
     pointer-events: auto
 
     [data-filter-button]
-      opacity: 1
       pointer-events: auto

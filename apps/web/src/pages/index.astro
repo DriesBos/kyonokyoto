@@ -259,6 +259,7 @@ const excerpt = (value: string | null) => {
 <script>
   import { gsap } from "gsap";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { fadeIn, setFadeHidden, setFadeVisible } from "../lib/fadeTransition";
 
   if (!window.__eventCardRevealBound) {
     const cards = Array.from(document.querySelectorAll("[data-event-card]"));
@@ -296,10 +297,12 @@ const excerpt = (value: string | null) => {
 
         if (isAlreadyReady || hasEnteredViewport) {
           markReady(card);
+          setFadeVisible(card);
           return;
         }
 
         markQueued(card);
+        setFadeHidden(card);
 
         ScrollTrigger.create({
           id: revealTriggerId,
@@ -308,6 +311,7 @@ const excerpt = (value: string | null) => {
           once: true,
           onEnter: () => {
             markReady(card);
+            fadeIn(card, { stagger: 0 });
           },
         });
       });

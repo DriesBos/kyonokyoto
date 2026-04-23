@@ -63,6 +63,7 @@ const timingFilters = [
 </header>
 
 <script>
+  import { fadeIn, fadeOut, killFadeTransitionTweens, setFadeHidden, setFadeVisible } from "../lib/fadeTransition";
   import { createHeightTransitionTimeline, killHeightTransitionTweens, toHeight } from "../lib/heightTransition";
 
   const normalizeCategory = (value) =>
@@ -91,6 +92,7 @@ const timingFilters = [
     let activeCategory = "";
     let activeTiming = "";
     const mobileDisclosure = window.matchMedia("(max-width: 767.98px)");
+    const filterButtons = buttons.filter((button): button is HTMLElement => button instanceof HTMLElement);
 
     const setFilterPanelInteractivity = (isInteractive) => {
       if (!(filterPanel instanceof HTMLElement)) return;
@@ -116,6 +118,7 @@ const timingFilters = [
 
       if (!mobileDisclosure.matches) {
         filterPanel.toggleAttribute("data-mobile-open", nextExpanded);
+        setFadeVisible(filterButtons);
         setFilterPanelInteractivity(true);
         return;
       }
@@ -123,10 +126,16 @@ const timingFilters = [
       const startHeight = filterPanel.offsetHeight;
 
       killHeightTransitionTweens(filterPanel);
+      killFadeTransitionTweens(filterButtons);
       filterPanel.style.height = `${startHeight}px`;
       filterPanel.style.overflow = "hidden";
       filterPanel.toggleAttribute("data-mobile-open", nextExpanded);
       setFilterPanelInteractivity(nextExpanded);
+      if (nextExpanded) {
+        setFadeHidden(filterButtons);
+      } else {
+        fadeOut(filterButtons);
+      }
 
       const targetHeight = nextExpanded ? filterPanel.scrollHeight : 0;
 
@@ -138,6 +147,9 @@ const timingFilters = [
       });
 
       toHeight(timeline, filterPanel, targetHeight, nextExpanded, 0);
+      if (nextExpanded) {
+        fadeIn(filterButtons, { delay: 0.06 });
+      }
     };
 
     const syncFilterPanelForViewport = () => {
@@ -149,6 +161,7 @@ const timingFilters = [
         filterPanel.style.height = "";
         filterPanel.style.overflow = "";
         filterPanel.toggleAttribute("data-mobile-open", false);
+        setFadeVisible(filterButtons);
         setFilterPanelInteractivity(true);
         return;
       }
@@ -157,6 +170,11 @@ const timingFilters = [
       filterPanel.toggleAttribute("data-mobile-open", isExpanded);
       filterPanel.style.height = isExpanded ? "auto" : "0px";
       filterPanel.style.overflow = isExpanded ? "" : "hidden";
+      if (isExpanded) {
+        setFadeVisible(filterButtons);
+      } else {
+        setFadeHidden(filterButtons);
+      }
       setFilterPanelInteractivity(isExpanded);
     };
 
