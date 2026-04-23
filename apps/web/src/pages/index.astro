@@ -190,14 +190,14 @@ const googleCalendarUrl = (event: CalendarEvent) => {
 
 const excerpt = (value: string | null) => {
   if (!value) return "More details available on the original source page.";
-  return value.length > 220 ? `${value.slice(0, 217)}...` : value;
+  return value;
 };
 
 ---
 
 <BaseLayout>
   <main class="page-shell">
-    <PageEdgeStrokes position="top" />
+    <PageEdgeStrokes position="top" lines={6} />
 
     <Header categories={categories} />
 
@@ -217,7 +217,6 @@ const excerpt = (value: string | null) => {
         ) : (
           <>
             <section class="event-group" data-event-group data-event-group-name="ongoing" hidden={ongoingEvents.length === 0}>
-              <h2 class="event-group__title">Ongoing</h2>
               <div class="event-list">
                 {ongoingEvents.map((event) => (
                   <EventCard

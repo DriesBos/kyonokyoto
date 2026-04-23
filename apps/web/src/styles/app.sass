@@ -194,6 +194,7 @@ a
   cursor: var(--dot-cursor)
 
 .page-shell
+  position: relative
   width: 100%
   margin: 0 auto
   padding: var(--page-padding-y) var(--page-padding-x)
@@ -205,7 +206,15 @@ a
   gap: 1.5rem
 
   &__logo
+    position: absolute
+    z-index: 3
+    top: calc(var(--page-padding-y) + .2rem)
+    left: calc(var(--page-padding-x) + 2rem)
     flex: 0 0 auto
+    display: block
+    padding: 0 0.25rem
+    background: var(--main-background)
+    line-height: 0
 
   &__logo svg
     width: auto
@@ -254,12 +263,14 @@ a
   line-height: 1
   cursor: var(--dot-cursor)
   pointer-events: auto
+  overflow: visible
 
 .general-button__label
   position: relative
   z-index: 1
   display: inline-block
   text-transform: lowercase
+  overflow: visible
 
 .general-button__dot
   position: absolute
@@ -276,6 +287,7 @@ a
 
 .general-button[aria-pressed='true'] .general-button__dot
   opacity: 1
+  overflow: visible
 
 .general-button:hover,
 .general-button:active,
@@ -466,6 +478,7 @@ a
       overflow: hidden
       padding: 0 var(--page-padding-x)
       padding-left: 1rem
+      overflow: visible
 
   &__meta
     display: flex
@@ -480,8 +493,11 @@ a
     margin: 0
     user-select: auto
 
-  // &__description
-  //   padding: 0 var(--page-padding-x)
+  &__description
+    display: -webkit-box
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 5
+    overflow: hidden
 
   &__categories
     display: flex
@@ -521,12 +537,19 @@ a
     gap: 0.75rem
     font-size: var(--type-button-size)
     pointer-events: auto
+    overflow: visible
 
     .general-button
       font-size: var(--type-button-size)
+      overflow: visible
 
     *
       pointer-events: auto
+
+@media (orientation: landscape)
+  .event-card
+    &__description
+      -webkit-line-clamp: 3
 
 .event-card-dot
   position: absolute
