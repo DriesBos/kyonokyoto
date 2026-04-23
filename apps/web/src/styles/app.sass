@@ -2,7 +2,26 @@ $mobile-breakpoint: 768px
 $desktop-breakpoint: 1440px
 $fluid-type-min-width: 768px
 $fluid-type-max-width: 1440px
+$fluid-type-min-size: 14px
+$fluid-type-max-size: 22px
+$fluid-type-slope: (($fluid-type-max-size - $fluid-type-min-size) / ($fluid-type-max-width - $fluid-type-min-width)) * 100
+$fluid-type-intercept: $fluid-type-min-size - ($fluid-type-slope / 100 * $fluid-type-min-width)
 $image-placeholder: #dcdcdc
+$type-scale-base: 1rem
+$type-scale-ratio: 1.618
+
+@function type-step($step)
+  $size: $type-scale-base
+
+  @if $step > 0
+    @for $_ from 1 through $step
+      $size: $size * $type-scale-ratio
+
+  @if $step < 0
+    @for $_ from $step through -1
+      $size: $size / $type-scale-ratio
+
+  @return $size
 
 =thin-scrollbar
   scrollbar-color: var(--stroke) transparent
@@ -38,10 +57,16 @@ $image-placeholder: #dcdcdc
   --stroke: var(--color-green)
   --stroke-gap: 0.75rem
 
-  --type-body-size: 14px
-  --type-body-letter-spacing: -0.01em
-  --type-title-size: 16px
-  --type-title-letter-spacing: -0.01em
+  --type-scale-ratio: #{$type-scale-ratio}
+  --type-step-0: #{type-step(0)}
+  --type-step-1: #{type-step(1)}
+  --type-step-2: #{type-step(2)}
+  --type-body-size: var(--type-step-0)
+  --type-body-letter-spacing: 0
+  --type-button-size: var(--type-step-0)
+  --type-title-size: var(--type-step-1)
+  --type-title-letter-spacing: 0
+  --type-logo-size: var(--type-step-2)
 
   --font-body: 'GT Walsheim', 'Helvetica Neue', Helvetica, Arial, sans-serif
   --page-padding-x: 0.5rem
@@ -62,7 +87,7 @@ html
   height: 100%
   width: 100%
   max-width: 100%
-  font-size: clamp(16px, calc(16px + (20 - 16) * (((100vw - #{$fluid-type-min-width}) / (#{$fluid-type-max-width} - #{$fluid-type-min-width})))), 20px)
+  font-size: clamp(#{$fluid-type-min-size}, calc(#{$fluid-type-intercept} + #{$fluid-type-slope}vw), #{$fluid-type-max-size})
   background: var(--main-background)
   overflow-x: hidden
   overflow-x: clip
@@ -181,8 +206,8 @@ a
     flex: 0 0 auto
 
   &__logo svg
-    width: 10.625rem
-    height: auto
+    width: auto
+    height: var(--type-logo-size)
     display: block
 
 .site-footer__label
@@ -222,7 +247,7 @@ a
   -webkit-tap-highlight-color: transparent
   background: transparent
   color: currentColor
-  font-size: var(--type-body-size)
+  font-size: var(--type-button-size)
   letter-spacing: var(--type-body-letter-spacing)
   line-height: 1
   cursor: var(--dot-cursor)
@@ -487,7 +512,12 @@ a
     display: flex
     flex-wrap: wrap
     gap: 0.75rem
+    font-size: var(--type-button-size)
     pointer-events: auto
+
+    .general-button
+      font-size: var(--type-button-size)
+
     *
       pointer-events: auto
 
