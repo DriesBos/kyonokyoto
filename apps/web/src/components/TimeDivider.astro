@@ -1,4 +1,6 @@
 ---
+import Icon from "./Icon.astro";
+
 type Props = {
   label?: string;
 };
@@ -18,12 +20,18 @@ const tracks = [
       <div class:list={["time-divider__track", trackClass]}>
         <div class="time-divider__group">
           {items.map(() => (
-            <span>{label}</span>
+            <>
+              <span>{label}</span>
+              <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
+            </>
           ))}
         </div>
         <div class="time-divider__group">
           {items.map(() => (
-            <span>{label}</span>
+            <>
+              <span>{label}</span>
+              <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
+            </>
           ))}
         </div>
       </div>
