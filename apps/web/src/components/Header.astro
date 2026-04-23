@@ -141,6 +141,7 @@ const timingFilters = [
       }
 
       updateCount(visibleCount || (activeCategory || activeTiming ? 0 : total), activeLabel);
+      document.dispatchEvent(new CustomEvent("event-filter:updated"));
     };
 
     categoryButtons.forEach((button) => {

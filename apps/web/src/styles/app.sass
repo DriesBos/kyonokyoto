@@ -254,6 +254,11 @@ a
 .events-divider
   display: block
 
+.has-js:not(.reduced-motion) [data-event-card][data-reveal-state='pending']
+  opacity: 0
+  transform: translate3d(0, 100vh, 0)
+  will-change: transform, opacity
+
 .event-card
   --event-card-media-row-height: var(--event-card-media-row-height-desktop, 10rem)
   --event-card-media-gap: 0.5rem
