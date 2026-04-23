@@ -35,16 +35,13 @@
       "slug": "kyotographie",
       "name": "KYOTOGRAPHIE",
       "source_type": "festival",
-      "language": "ja",
-      "base_url": "https://www.kyotographie.jp",
-      "start_urls": [
-        "https://www.kyotographie.jp/en/programs/",
-        "https://www.kyotographie.jp/programs/"
-      ],
+      "language": "en",
+      "base_url": "https://www.kyotographie.jp/en/programs/",
+      "start_urls": ["https://www.kyotographie.jp/en/programs/"],
       "allowed_domains": ["www.kyotographie.jp", "kyotographie.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/programs/"],
-      "notes": "Festival source with program pages that may map to one or many event records.",
+      "notes": "Use the English programs index as the canonical entry point for festival program pages.",
       "is_active": true
     },
     {
@@ -105,10 +102,15 @@
       "source_type": "gallery",
       "language": "en",
       "base_url": "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
-      "start_urls": ["https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"],
+      "start_urls": [
+        "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
+      ],
       "allowed_domains": ["www.takaishiigallery.com", "takaishiigallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibitions/kyoto-yada-cho/", "/en/archives/"],
+      "event_page_patterns": [
+        "/en/exhibitions/kyoto-yada-cho/",
+        "/en/archives/"
+      ],
       "notes": "Use the Kyoto (Yada-cho) location page directly and extract only the linked Kyoto exhibition archive detail pages.",
       "is_active": true
     },
@@ -220,6 +222,19 @@
       "is_active": true
     },
     {
+      "slug": "dnp-foundation-for-cultural-promotion-gallery-ddd",
+      "name": "kyoto ddd gallery",
+      "source_type": "gallery",
+      "language": "en",
+      "base_url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2",
+      "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"],
+      "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/CGI/gallery/schedule/list.cgi", "/CGI/gallery/schedule/detail.cgi", "/gallery/ddd/"],
+      "notes": "Use the English DDD Coming up page and keep only the first two exhibition blocks listed there, including the upcoming unlinked schedule entry.",
+      "is_active": true
+    },
+    {
       "slug": "kyoto-city-kyocera-museum-of-art",
       "name": "KYOCERA Museum",
       "source_type": "museum",
@@ -249,24 +264,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/English/", "/Japanese/"],
       "notes": "Major institutional source that may need custom handling for archive versus ongoing exhibition pages.",
-      "is_active": true
-    },
-    {
-      "slug": "dnp-foundation-for-cultural-promotion-gallery-ddd",
-      "name": "DNP Foundation for Cultural Promotion Gallery ddd",
-      "source_type": "gallery",
-      "language": "en",
-      "base_url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?l=2&t=2",
-      "start_urls": [
-        "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?l=2&t=2"
-      ],
-      "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/CGI/gallery/schedule/detail.cgi",
-        "/CGI/gallery/schedule/list.cgi"
-      ],
-      "notes": "Use the English Coming up schedule list, which links into structured CGI exhibition detail pages.",
       "is_active": true
     },
     {

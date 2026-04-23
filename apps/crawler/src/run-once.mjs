@@ -1262,6 +1262,31 @@ function extractKyoceraDetailUrls(listingHtml, listingUrl) {
   return [...new Set(matches)];
 }
 
+function parseDddScheduleEntries(listingHtml, listingUrl) {
+  return [...listingHtml.matchAll(/<div class="ttl-cmn-exhibition-wrap[\s\S]*?<\/div><!-- \/ttl-cmn-exhibition-wrap -->/gi)]
+    .map((match) => {
+      const block = match[0];
+      const href = block.match(/<a href="([^"]+)"/i)?.[1] ?? null;
+      const seriesTitle = stripTags(block.match(/<span class="ttl01">([\s\S]*?)<\/span>/i)?.[1] ?? "");
+      const title = stripTags(block.match(/<span class="ttl02">([\s\S]*?)<\/span>/i)?.[1] ?? "");
+      const dateText = stripTags(block.match(/<p class="date">([\s\S]*?)<\/p>/i)?.[1] ?? "") || "See source page";
+
+      return {
+        href: href ? normalizeUrl(href, listingUrl) : null,
+        seriesTitle,
+        title,
+        dateText,
+      };
+    })
+    .filter((entry) => entry.title);
+}
+
+function extractDddDetailUrls(listingHtml, listingUrl) {
+  return parseDddScheduleEntries(listingHtml, listingUrl)
+    .slice(0, 2)
+    .map((entry, index) => entry.href ?? `${listingUrl}#ddd-schedule-${index + 1}`);
+}
+
 function extractKyoceraFooterAddress(detailHtml) {
   const footerInfo = detailHtml.match(/<p class="footer_info">([\s\S]*?)<\/p>/i)?.[1];
   if (!footerInfo) return null;
@@ -1368,6 +1393,97 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
     calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: primaryImageUrl,
     image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractDddEvent(detailHtml, source, detailUrl) {
+  const scheduleMatch = detailUrl.match(/#ddd-schedule-(\d+)$/);
+
+  if (scheduleMatch) {
+    const index = Number(scheduleMatch[1]) - 1;
+    const entry = parseDddScheduleEntries(detailHtml, detailUrl.replace(/#.*$/, ""))[index];
+
+    if (!entry) {
+      throw new Error(`Could not extract DDD schedule entry ${index + 1}`);
+    }
+
+    const parsedDates = parseGenericDateRange(entry.dateText);
+
+    return {
+      title: entry.title,
+      artist_name: null,
+      categories: ["exhibition", "gallery", "design"],
+      description: entry.seriesTitle || "Upcoming exhibition listed on the DDD schedule page.",
+      institution_name: source.name,
+      venue_name: source.name,
+      address_text: source.address_text ?? source.name,
+      directions_query: source.directions_query ?? source.name,
+      date_text: entry.dateText,
+      start_date: parsedDates.startDate,
+      end_date: parsedDates.endDate,
+      start_time_text: null,
+      end_time_text: null,
+      is_all_day: true,
+      timezone: "Asia/Tokyo",
+      ...buildScheduleFields({
+        startDate: parsedDates.startDate,
+        endDate: parsedDates.endDate,
+      }),
+      calendar_starts_at: parsedDates.calendarStartsAt,
+      calendar_ends_at: parsedDates.calendarEndsAt,
+      primary_image_url: null,
+      image_urls: [],
+      source_url: detailUrl.replace(/#.*$/, ""),
+    };
+  }
+
+  const title = stripTags(
+    detailHtml.match(/<span class="ttl-cmn-01">([\s\S]*?)<\/span>/i)?.[1] ??
+    extractMeta(detailHtml, "og:title") ??
+    ""
+  ).replace(/\s+\|\s+kyoto ddd gallery$/i, "").trim();
+
+  if (!title) {
+    throw new Error("Could not extract DDD exhibition title");
+  }
+
+  const dateText = stripTags(detailHtml.match(/<p class="date">([\s\S]*?)<\/p>/i)?.[1] ?? "") || "See source page";
+  const parsedDates = parseGenericDateRange(dateText);
+  const description = stripTags(
+    extractMeta(detailHtml, "og:description") ??
+    detailHtml.match(/<div class="txt">[\s\S]*?<p>([\s\S]*?)<\/p>/i)?.[1] ??
+    ""
+  ).slice(0, 1200);
+  const imageUrl = finalizeImageUrls(
+    [{ url: extractMeta(detailHtml, "og:image"), source: "og:image" }],
+    detailUrl
+  )[0] ?? null;
+
+  return {
+    title,
+    artist_name: null,
+    categories: ["exhibition", "gallery", "design"],
+    description,
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? source.name,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrl,
+    image_urls: imageUrl ? [imageUrl] : [],
     source_url: detailUrl,
   };
 }
@@ -1619,7 +1735,43 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractKyotophonieEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const firstImageUrl = event.image_urls?.[0] ?? null;
+
+  return {
+    ...event,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
+function extractMtkEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const sliderHtml =
+    detailHtml.match(/<div class="ex__slider-main ex__slider">[\s\S]*?<div class="swiper-wrapper">([\s\S]*?)<\/div>\s*<\/div>/i)?.[1] ??
+    detailHtml.match(/<div class="swiper-wrapper">([\s\S]*?)<\/div>/i)?.[1] ??
+    "";
+
+  const sliderImageUrls = finalizeImageUrls(
+    [...sliderHtml.matchAll(/<img[^>]+src="([^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "mtk-swiper",
+    })),
+    detailUrl
+  );
+
+  const firstImageUrl = sliderImageUrls[0] ?? null;
+
+  return {
+    ...event,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
 const detailUrlExtractors = {
+  "dnp-foundation-for-cultural-promotion-gallery-ddd": extractDddDetailUrls,
   "essence-kyoto": extractEssenceDetailUrls,
   "hosoo-gallery": extractHosooDetailUrls,
   "kyoto-art-center": extractKacDetailUrls,
@@ -1632,11 +1784,14 @@ const detailUrlExtractors = {
 };
 
 const eventExtractors = {
+  "dnp-foundation-for-cultural-promotion-gallery-ddd": extractDddEvent,
   "essence-kyoto": extractEssenceEvent,
   "hosoo-gallery": extractHosooEvent,
   "kyoto-art-center": extractKacEvent,
   "kyoto-national-museum": extractKyohakuEvent,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
+  "kyotophonie": extractKyotophonieEvent,
+  "mtk-contemporary-art": extractMtkEvent,
   "sibasi": extractSibasiEvent,
   "taka-ishii-gallery": extractTakaIshiiEvent,
   "zenbi": extractZenbiEvent,
