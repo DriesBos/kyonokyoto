@@ -156,6 +156,34 @@ function parseMomakDateRange(dateText) {
   };
 }
 
+function parseDottedDateRange(dateText) {
+  const pattern =
+    /(\d{4})\.(\d{1,2})\.(\d{1,2})(?:.*?[～〜\-－]\s*(?:(\d{4})\.)?(\d{1,2})\.(\d{1,2}))?/u;
+  const match = dateText.match(pattern);
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, sy, sm, sd, explicitEy, em, ed] = match;
+  const startDate = `${sy}-${sm.padStart(2, "0")}-${sd.padStart(2, "0")}`;
+  const endDate = em && ed
+    ? `${explicitEy ?? sy}-${em.padStart(2, "0")}-${ed.padStart(2, "0")}`
+    : startDate;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
 function extractClassBlock(html, className, tagName = "[a-z0-9]+") {
   const pattern = new RegExp(
     `<${tagName}[^>]*class="[^"]*${className}[^"]*"[^>]*>([\\s\\S]*?)<\\/${tagName}>`,
@@ -175,13 +203,16 @@ function extractDefinitionValue(html, term) {
   return html.match(pattern)?.[1] ?? null;
 }
 
-function extractKacDetailUrl(listingHtml, listingUrl) {
-  const match = listingHtml.match(/https:\/\/www\.kac\.or\.jp\/events\/\d+\//);
-  if (!match) {
-    throw new Error("Could not find a Kyoto Art Center event detail URL on the listing page");
+function extractKacDetailUrls(listingHtml, listingUrl) {
+  const matches = [
+    ...listingHtml.matchAll(/https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/\d+\//g),
+  ].map((match) => new URL(match[0], listingUrl).toString().replace("/en/events/", "/events/"));
+
+  if (!matches.length) {
+    throw new Error("Could not find Kyoto Art Center event detail URLs on the listing page");
   }
 
-  return new URL(match[0], listingUrl).toString();
+  return [...new Set(matches)];
 }
 
 function toDetailUrlList(value) {
@@ -368,16 +399,21 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
   };
 }
 
-function extractMomakDetailUrl(listingHtml, listingUrl) {
-  const match = listingHtml.match(
-    /<a href="(https:\/\/www\.momak\.go\.jp\/English\/\?p=\d+)" class="btn-default">Read More<\/a>/i
-  );
+function extractMomakDetailUrls(listingHtml, listingUrl) {
+  const matches = [
+    ...listingHtml.matchAll(/https:\/\/www\.momak\.go\.jp\/English\/\?p=(\d+)/g),
+  ]
+    .map((match) => {
+      const id = Number(match[1]);
+      return id > 0 ? new URL(match[0], listingUrl).toString() : null;
+    })
+    .filter(Boolean);
 
-  if (!match) {
-    throw new Error("Could not find a MoMAK detail URL on the listing page");
+  if (!matches.length) {
+    throw new Error("Could not find MoMAK detail URLs on the listing page");
   }
 
-  return new URL(match[1], listingUrl).toString();
+  return [...new Set(matches)];
 }
 
 function extractMomakAddress(accessHtml) {
@@ -396,20 +432,40 @@ function extractMomakGoogleMapsUrl(accessHtml) {
   );
 }
 
-function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
-  const title = stripTags(
-    detailHtml.match(/<section id="scTitle"[\s\S]*?<p><i>([\s\S]*?)<\/i><\/p>/i)?.[1] ??
-      ""
+function extractSenOkuDetailUrls(listingHtml, listingUrl) {
+  const matches = [
+    ...listingHtml.matchAll(/https:\/\/(?:www\.)?sen-oku\.or\.jp\/program\/[A-Za-z0-9_./-]+/g),
+  ]
+    .map((match) => new URL(match[0], listingUrl).toString())
+    .filter((url) => /\/program\/[^/]+\/?$/.test(url));
+
+  if (!matches.length) {
+    throw new Error("Could not find Sen-Oku Hakukokan Museum detail URLs on the listing page");
+  }
+
+  return [...new Set(matches)];
+}
+
+function extractSenOkuAddress(accessHtml) {
+  const postalCode = stripTags(accessHtml.match(/〒\s*&nbsp;\s*(\d{3}-\d{4})/i)?.[1] ?? "");
+  const streetAddress = stripTags(
+    accessHtml.match(/<div class="address">\s*〒[\s\S]*?<br>\s*([\s\S]*?)\s*<\/div>/i)?.[1] ?? ""
   );
+
+  if (!postalCode && !streetAddress) return null;
+  return [postalCode, streetAddress].filter(Boolean).join(" ");
+}
+
+function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
+  const scTitle = detailHtml.match(/<section id="scTitle"[\s\S]*?<\/section>/i)?.[0] ?? "";
+  const scTitleParagraphs = [...scTitle.matchAll(/<p>([\s\S]*?)<\/p>/gi)].map((match) => stripTags(match[1]));
+  const title = scTitleParagraphs[1] ?? "";
 
   if (!title) {
     throw new Error("Could not extract event title from MoMAK detail page");
   }
 
-  const dateText = stripTags(
-    detailHtml.match(/<section id="scTitle"[\s\S]*?<p>(\d{4}\.\d{2}\.\d{2}[\s\S]*?)<\/p>/i)?.[1] ??
-      ""
-  ) || "See source page";
+  const dateText = scTitleParagraphs.find((paragraph) => /\d{4}\.\d{2}\.\d{2}/.test(paragraph)) ?? "See source page";
 
   const description = stripTags(
     detailHtml.match(/<div class="description">[\s\S]*?<p>([\s\S]*?)<\/p>/i)?.[1] ?? ""
@@ -449,18 +505,71 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
   };
 }
 
+function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
+  const title = stripTags(
+    detailHtml.match(/<div class="catchArea wrap">[\s\S]*?<div class="catch">([\s\S]*?)<\/div>\s*<div class="dataSetList">/i)?.[1] ?? ""
+  );
+
+  if (!title) {
+    throw new Error("Could not extract event title from Sen-Oku Hakukokan Museum page");
+  }
+
+  const dateParts = [
+    ...detailHtml.matchAll(/<span class="num">(\d{4}\.\d{1,2}\.\d{1,2})<\/span>/gi),
+  ].map((match) => match[1]);
+  const dateText = dateParts.length > 1 ? `${dateParts[0]} - ${dateParts[1]}` : dateParts[0] ?? "See source page";
+  const venueName =
+    stripTags(detailHtml.match(/<div class="spot">([\s\S]*?)<\/div>/i)?.[1] ?? "") || source.name;
+  const description = stripTags(
+    detailHtml.match(/<div class="leadArea">\s*<p class="copy">\s*([\s\S]*?)<\/p>/i)?.[1] ??
+      extractMeta(detailHtml, "og:description") ??
+      ""
+  );
+
+  const imageUrls = [
+    extractMeta(detailHtml, "og:image"),
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => match[1]),
+  ].filter(Boolean);
+  const uniqueImageUrls = [...new Set(imageUrls)];
+  const parsedDates = parseDottedDateRange(dateText);
+  const addressText = context.accessHtml ? extractSenOkuAddress(context.accessHtml) : source.name;
+
+  return {
+    title,
+    artist_name: null,
+    categories: ["exhibition", "museum"],
+    description,
+    institution_name: source.name,
+    venue_name: venueName,
+    address_text: addressText,
+    directions_query: "https://maps.app.goo.gl/xh91N3FpPHUAhiqZA",
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: "Asia/Tokyo",
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: uniqueImageUrls[0] ?? null,
+    image_urls: uniqueImageUrls,
+    source_url: detailUrl,
+  };
+}
+
 const detailUrlExtractors = {
-  "kyoto-art-center": (listingHtml, listingUrl) =>
-    toDetailUrlList(extractKacDetailUrl(listingHtml, listingUrl)),
+  "kyoto-art-center": extractKacDetailUrls,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrls,
-  "the-national-museum-of-modern-art": (listingHtml, listingUrl) =>
-    toDetailUrlList(extractMomakDetailUrl(listingHtml, listingUrl)),
+  "the-national-museum-of-modern-art": extractMomakDetailUrls,
+  "sen-oku-hakukokan-museum": extractSenOkuDetailUrls,
 };
 
 const eventExtractors = {
   "kyoto-art-center": extractKacEvent,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
   "the-national-museum-of-modern-art": extractMomakEvent,
+  "sen-oku-hakukokan-museum": extractSenOkuEvent,
 };
 
 async function fetchHtml(url, userAgent) {
@@ -632,6 +741,11 @@ async function main() {
     let sourceContext = {};
     if (source.slug === "the-national-museum-of-modern-art") {
       const accessPage = await fetchHtml("https://www.momak.go.jp/English/guide/access.html", userAgent);
+      pagesFetched += 1;
+      await upsertRawPage(env, source.id, crawlRun.id, "detail", accessPage);
+      sourceContext = { accessHtml: accessPage.html };
+    } else if (source.slug === "sen-oku-hakukokan-museum") {
+      const accessPage = await fetchHtml("https://sen-oku.or.jp/kyoto/facility/access", userAgent);
       pagesFetched += 1;
       await upsertRawPage(env, source.id, crawlRun.id, "detail", accessPage);
       sourceContext = { accessHtml: accessPage.html };

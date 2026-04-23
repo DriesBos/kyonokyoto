@@ -10,6 +10,7 @@
     "crawl:once": "node src/run-once.mjs",
     "crawl:kac": "node src/run-once.mjs --source=kyoto-art-center",
     "crawl:kyocera": "node src/run-once.mjs --source=kyoto-city-kyocera-museum-of-art",
-    "crawl:momak": "node src/run-once.mjs --source=the-national-museum-of-modern-art"
+    "crawl:momak": "node src/run-once.mjs --source=the-national-museum-of-modern-art",
+    "crawl:sen-oku": "node src/run-once.mjs --source=sen-oku-hakukokan-museum"
   }
 }
