@@ -233,7 +233,7 @@ a
   display: block
 
 .event-card
-  --event-card-media-row-height: 9.375rem
+  --event-card-media-row-height: var(--event-card-media-row-height-desktop, 10rem)
   --event-card-media-gap: 0.5rem
   display: flex
   gap: 1rem
@@ -347,7 +347,7 @@ a
 
 @media (max-width: $mobile-breakpoint)
   .event-card
-    --event-card-media-row-height: 75px
+    --event-card-media-row-height: var(--event-card-media-row-height-mobile, 5rem)
 
     flex-direction: column
 

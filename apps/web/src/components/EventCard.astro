@@ -51,16 +51,19 @@ const normalizeCategory = (value: string) =>
 const categorySlugs = event.categories.map(normalizeCategory);
 const imageUrls = (event.image_urls ?? []).filter(Boolean);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
-const desktopImageHeight = 150;
-const mobileImageHeight = 75;
+const rootFontSizePx = 16;
+const desktopImageHeightRem = 10;
+const mobileImageHeightRem = 5;
+const desktopImageHeightPx = desktopImageHeightRem * rootFontSizePx;
+const mobileImageHeightPx = mobileImageHeightRem * rootFontSizePx;
 
 const imageEntries = await Promise.all(
   images.map(async (imageUrl) => {
     try {
       const dimensions = await inferRemoteSize(imageUrl);
       const aspectRatio = dimensions.width / dimensions.height;
-      const desktopWidth = Math.max(1, Math.round(aspectRatio * desktopImageHeight));
-      const mobileWidth = Math.max(1, Math.round(aspectRatio * mobileImageHeight));
+      const desktopWidth = Math.max(1, Math.round(aspectRatio * desktopImageHeightPx));
+      const mobileWidth = Math.max(1, Math.round(aspectRatio * mobileImageHeightPx));
       const widths = [...new Set([mobileWidth, desktopWidth, desktopWidth * 2])]
         .filter((width) => width <= dimensions.width)
         .sort((left, right) => left - right);
@@ -88,6 +91,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   data-event-card-toggle
   data-active="false"
   data-categories={categorySlugs.join("|")}
+  style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem;`}
   role="button"
   tabindex="0"
   aria-pressed="false"
@@ -158,7 +162,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             src={image.imageUrl}
             alt={index === 0 ? event.title : ""}
             width={image.desktopWidth}
-            height={desktopImageHeight}
+            height={desktopImageHeightPx}
             widths={image.widths}
             sizes={`(max-width: 768px) ${image.mobileWidth}px, ${image.desktopWidth}px`}
             format="webp"
