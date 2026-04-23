@@ -274,6 +274,7 @@ const excerpt = (value: string | null) => {
   if (!window.__eventCardRevealBound) {
     const cards = gsap.utils.toArray("[data-event-card]");
     const revealTriggerId = "event-card-reveal";
+    let rebuildFrame = 0;
 
     const markReady = (card) => {
       if (!(card instanceof HTMLElement)) return;
@@ -296,13 +297,16 @@ const excerpt = (value: string | null) => {
 
       cards.forEach((card) => {
         if (!(card instanceof HTMLElement)) return;
-        if (card.getClientRects().length === 0) return;
+        if (card.getClientRects().length === 0) {
+          gsap.set(card, { clearProps: "opacity,visibility,willChange" });
+          return;
+        }
 
         const rect = card.getBoundingClientRect();
-        const isInViewport = rect.top < viewportHeight && rect.bottom > 0;
+        const hasEnteredViewport = rect.top < viewportHeight;
         const isAlreadyReady = card.dataset.revealState === "ready";
 
-        if (isAlreadyReady || isInViewport) {
+        if (isAlreadyReady || hasEnteredViewport) {
           markReady(card);
           gsap.set(card, { autoAlpha: 1, clearProps: "opacity,visibility,willChange" });
           return;
@@ -326,12 +330,23 @@ const excerpt = (value: string | null) => {
       ScrollTrigger.refresh();
     };
 
+    const scheduleBuildAnimations = () => {
+      if (rebuildFrame) {
+        window.cancelAnimationFrame(rebuildFrame);
+      }
+
+      rebuildFrame = window.requestAnimationFrame(() => {
+        rebuildFrame = 0;
+        buildAnimations();
+      });
+    };
+
     gsap.registerPlugin(ScrollTrigger);
     buildAnimations();
 
-    window.addEventListener("load", () => ScrollTrigger.refresh(), { once: true });
-    window.addEventListener("resize", buildAnimations);
-    document.addEventListener("event-filter:updated", buildAnimations);
+    window.addEventListener("load", scheduleBuildAnimations, { once: true });
+    window.addEventListener("resize", scheduleBuildAnimations);
+    document.addEventListener("event-filter:updated", scheduleBuildAnimations);
     window.__eventCardRevealBound = true;
   }
 </script>
