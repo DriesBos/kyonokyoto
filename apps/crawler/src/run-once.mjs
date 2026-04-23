@@ -1763,6 +1763,7 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
     dedupe_key: dedupeKey,
     status: "published",
     extraction_confidence: 0.6,
+    last_seen_at: new Date().toISOString(),
     ...eventData,
   };
 
@@ -1795,6 +1796,34 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
   }
 
   throw new Error("Supabase request failed for events?on_conflict=dedupe_key after stripping unknown columns");
+}
+
+async function archiveStaleEvents(env, sourceId, activeDedupeKeys) {
+  const rows = await supabaseRequest({
+    env,
+    path: `events?source_id=eq.${sourceId}&status=eq.published&select=id,dedupe_key`,
+  });
+
+  const staleIds = (rows ?? [])
+    .filter((row) => !activeDedupeKeys.has(row.dedupe_key))
+    .map((row) => row.id);
+
+  let archivedCount = 0;
+
+  for (const staleId of staleIds) {
+    const archivedRows = await supabaseRequest({
+      env,
+      path: `events?id=eq.${staleId}`,
+      method: "PATCH",
+      body: {
+        status: "archived",
+      },
+    });
+
+    archivedCount += archivedRows?.length ?? 0;
+  }
+
+  return archivedCount;
 }
 
 async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, genericDetailLimit }) {
@@ -1851,6 +1880,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
 
     const savedEvents = [];
     const skippedEvents = [];
+    const activeDedupeKeys = new Set();
 
     for (const detailUrl of detailUrls) {
       const detailPage = await fetchHtml(detailUrl, userAgent);
@@ -1884,6 +1914,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       }
 
       const dedupeKey = buildEventDedupeKey(extractedEvent);
+      activeDedupeKeys.add(dedupeKey);
       const savedEvent = await upsertEvent(
         env,
         source.id,
@@ -1899,6 +1930,8 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       });
     }
 
+    const archivedEvents = await archiveStaleEvents(env, source.id, activeDedupeKeys);
+
     await updateCrawlRun(env, crawlRun.id, {
       status: "success",
       finished_at: new Date().toISOString(),
@@ -1906,7 +1939,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       pages_fetched: pagesFetched,
       pages_parsed: savedEvents.length,
       events_created: savedEvents.length,
-      events_updated: 0,
+      events_updated: archivedEvents,
       logs: [
         ...(eventExtractors[source.slug] ? [] : [{
           level: "warn",
@@ -1920,6 +1953,12 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
           level: "info",
           message: `Skipped ${skippedEvent.reason ?? "event"} from ${skippedEvent.detailUrl}${skippedEvent.title ? ` (${skippedEvent.title})` : ""}`,
         })),
+        ...(archivedEvents > 0
+          ? [{
+              level: "info",
+              message: `Archived ${archivedEvents} stale event${archivedEvents === 1 ? "" : "s"} not seen in this crawl.`,
+            }]
+          : []),
       ],
     });
 
@@ -1930,6 +1969,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       usedGenericExtractor: !eventExtractors[source.slug],
       detailUrls,
       events: savedEvents,
+      archivedEvents,
     };
   } catch (error) {
     await updateCrawlRun(env, crawlRun.id, {

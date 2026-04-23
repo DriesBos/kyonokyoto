@@ -78,6 +78,7 @@ NETLIFY_BUILD_HOOK_URL=
 Current automation recommendation:
 - sync sources to Supabase
 - crawl all active sources
+- archive previously published events that were not seen in a successful source crawl
 - trigger a Netlify rebuild hook
 
 For the current production plan, use a daily cron job on the VPS.
