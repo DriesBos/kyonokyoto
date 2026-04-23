@@ -201,17 +201,32 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     const cardSelector = "[data-event-card-toggle]";
     const contentSelector = ".event-card__body__content";
     const fadeSelector = "[data-event-card-fade]";
+    const mediaHeightProperty = "--event-card-media-row-height-current";
 
-    const measureCardHeight = (card, content, contentHeight) => {
+    const getMediaHeight = (card, isActive) => {
+      const styles = window.getComputedStyle(card);
+      return styles
+        .getPropertyValue(isActive ? "--event-card-media-row-height-active" : "--event-card-media-row-height")
+        .trim();
+    };
+
+    const measureCardHeight = (card, content, contentHeight, mediaHeight) => {
       const previousHeight = card.style.height;
       const previousContentHeight = content.style.height;
+      const previousMediaHeight = card.style.getPropertyValue(mediaHeightProperty);
 
       card.style.height = "auto";
       content.style.height = contentHeight;
+      card.style.setProperty(mediaHeightProperty, mediaHeight);
       const measuredHeight = card.offsetHeight;
 
       card.style.height = previousHeight;
       content.style.height = previousContentHeight;
+      if (previousMediaHeight) {
+        card.style.setProperty(mediaHeightProperty, previousMediaHeight);
+      } else {
+        card.style.removeProperty(mediaHeightProperty);
+      }
 
       return measuredHeight;
     };
@@ -227,9 +242,11 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       if (isActive) {
         content.style.height = "auto";
+        card.style.setProperty(mediaHeightProperty, getMediaHeight(card, true));
         gsap.set(fadeTargets, { autoAlpha: 1, y: 0, clearProps: "opacity,visibility,transform" });
       } else {
         content.style.height = "0px";
+        card.style.setProperty(mediaHeightProperty, getMediaHeight(card, false));
         gsap.set(fadeTargets, { autoAlpha: 0, y: 8 });
       }
     };
@@ -248,6 +265,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       const fadeTargets = gsap.utils.toArray(fadeSelector, content);
       const startHeight = card.offsetHeight;
+      const targetMediaHeight = getMediaHeight(card, isActive);
 
       gsap.killTweensOf([card, content, ...fadeTargets]);
       card.style.overflow = "hidden";
@@ -255,7 +273,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       if (isActive) {
         setCardActiveState(card, true);
         const targetContentHeight = content.scrollHeight;
-        const expandedCardHeight = measureCardHeight(card, content, "auto");
+        const expandedCardHeight = measureCardHeight(card, content, "auto", targetMediaHeight);
         content.style.height = "0px";
         gsap.set(fadeTargets, { autoAlpha: 0, y: 8 });
         card.style.height = `${startHeight}px`;
@@ -271,13 +289,14 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         });
 
         timeline.to(card, { height: expandedCardHeight, duration: 0.36 }, 0);
+        timeline.to(card, { [mediaHeightProperty]: targetMediaHeight, duration: 0.36 }, 0);
         timeline.to(content, { height: targetContentHeight, duration: 0.36 }, 0);
         timeline.to(fadeTargets, { autoAlpha: 1, y: 0, duration: 0.22, stagger: 0.04 }, 0.12);
         return;
       }
 
       setCardActiveState(card, false);
-      const collapsedCardHeight = measureCardHeight(card, content, "0px");
+      const collapsedCardHeight = measureCardHeight(card, content, "0px", targetMediaHeight);
       card.style.height = `${startHeight}px`;
       content.style.height = `${content.offsetHeight}px`;
 
@@ -291,6 +310,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       });
 
       timeline.to(fadeTargets, { autoAlpha: 0, y: 8, duration: 0.14, stagger: 0.02, overwrite: true }, 0);
+      timeline.to(card, { [mediaHeightProperty]: targetMediaHeight, duration: 0.3 }, 0.04);
       timeline.to(content, { height: 0, duration: 0.3 }, 0.04);
       timeline.to(card, { height: collapsedCardHeight, duration: 0.3 }, 0.04);
     };

@@ -261,6 +261,7 @@ a
 .event-card
   --event-card-media-row-height: var(--event-card-media-row-height-desktop, 10rem)
   --event-card-media-row-height-active: var(--event-card-media-row-height-active-desktop, 20rem)
+  --event-card-media-row-height-current: var(--event-card-media-row-height)
   --event-card-media-gap: 0.5rem
   display: flex
   gap: 1rem
@@ -276,15 +277,6 @@ a
   &:not([data-toggle-ready='true'])[data-active='false'] .event-card__body__content
     display: none
 
-  &[data-active='false'] .event-card__media
-    max-height: var(--event-card-media-row-height)
-
-  &[data-active='true'] .event-card__media
-    max-height: var(--event-card-media-row-height-active)
-
-  &[data-active='true'] .event-card__image
-    height: var(--event-card-media-row-height-active)
-
   &__media
     flex: 1 1 auto
     display: flex
@@ -294,11 +286,12 @@ a
     gap: var(--event-card-media-gap)
     min-width: 0
     overflow: hidden
+    max-height: var(--event-card-media-row-height-current)
 
   &__image
     width: auto
     max-width: 100%
-    height: var(--event-card-media-row-height)
+    height: var(--event-card-media-row-height-current)
     flex: 0 0 auto
     background: $image-placeholder
 
