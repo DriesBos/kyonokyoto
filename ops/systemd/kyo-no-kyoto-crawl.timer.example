@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Kyo no Kyoto crawl cycle every 36 hours
+
+[Timer]
+OnBootSec=10m
+OnUnitActiveSec=36h
+Persistent=true
+Unit=kyo-no-kyoto-crawl.service
+
+[Install]
+WantedBy=timers.target

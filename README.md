@@ -71,10 +71,16 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 DATABASE_URL=
 CRAWLER_TIMEZONE=Asia/Tokyo
-CRAWLER_SCHEDULE=0 */6 * * *
+CRAWLER_SCHEDULE=15 3 * * *
+NETLIFY_BUILD_HOOK_URL=
 ```
 
-Crawler implementation is not scaffolded yet. The next steps are source batching, schema design, and local crawl testing.
+Current automation recommendation:
+- sync sources to Supabase
+- crawl all active sources
+- trigger a Netlify rebuild hook
+
+For the current production plan, use a daily cron job on the VPS.
 
 ## Git
 
@@ -105,7 +111,7 @@ Best quick loop for finetuning the crawler:
 1. Seed sources:
 
 ```bash
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/seed-sources.mjs
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/sync-sources.mjs
 ```
 
 2. Crawl one source while tuning:
@@ -122,6 +128,20 @@ cd apps/crawler
 PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:all -- --generic-limit=6
 ```
 
+4. Run the full production-style cycle locally:
+
+```bash
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/run-crawl-cycle.mjs
+```
+
+Useful flags:
+
+```bash
+node scripts/run-crawl-cycle.mjs --skip-deploy
+node scripts/run-crawl-cycle.mjs --skip-sync
+node scripts/run-crawl-cycle.mjs --generic-limit=8
+```
+
 How to tune effectively:
 
 - Start with `data/sources/kyoto-sources.json`:
@@ -136,3 +156,28 @@ Rule of thumb:
 - Fix source config first.
 - Add custom extraction second.
 - Touch schema only when many sources need the same new field.
+
+## Scheduler
+
+Recommended production path:
+
+1. Put the repo on the VPS.
+2. Keep `apps/crawler/.env` populated with:
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `NETLIFY_BUILD_HOOK_URL`
+3. Copy the example cron file from `ops/cron/`.
+4. Adjust the repo path and Node path.
+5. Install the cron entry:
+
+```bash
+crontab ops/cron/kyo-no-kyoto-crawl.cron.example
+crontab -l
+```
+
+The example job runs daily at `03:15` server time.
+
+Important:
+- Supabase does not trigger a rebuild by itself here.
+- The rebuild happens because `scripts/run-crawl-cycle.mjs` calls the Netlify build hook after a successful crawl.
+- If you want Japan-local timing on a Europe-based VPS, either set the VPS timezone to JST or shift the cron time accordingly.

@@ -1,0 +1,17 @@
+[Unit]
+Description=Kyo no Kyoto crawl and redeploy cycle
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+WorkingDirectory=/srv/kyo-no-kyoto
+ExecStart=/usr/bin/env bash -lc 'export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH"; node scripts/run-crawl-cycle.mjs'
+
+# Nice-to-have hardening that still keeps the job practical.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
