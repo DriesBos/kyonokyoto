@@ -4,6 +4,7 @@ import Header from "../components/Header.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageEdgeStrokes from "../components/PageEdgeStrokes.astro";
 import { supabase } from "../lib/supabase";
+import { dedupeEvents } from "../../../../packages/shared/event-dedupe.mjs";
 import { classifyEventTiming, normalizeDateOnly } from "../../../../packages/shared/event-schedule.mjs";
 
 type EventRow = {
@@ -24,6 +25,7 @@ type EventRow = {
   image_urls: string[] | null;
   source_url: string;
   description: string | null;
+  updated_at?: string | null;
   schedule_type?: "range" | "occurrence_set" | "unknown";
   occurrence_dates?: string[] | null;
 };
@@ -46,7 +48,7 @@ type CalendarEvent = {
 const { data, error } = await supabase
   .from("events")
   .select(
-    "id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description"
+    "id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at"
   )
   .eq("status", "published")
   .order("start_date", { ascending: true, nullsFirst: false });
@@ -55,7 +57,8 @@ if (error) {
   throw error;
 }
 
-const events = (data ?? []) as EventRow[];
+// Collapse duplicates caused by source slug changes or alternate URLs for the same event.
+const events = dedupeEvents((data ?? []) as EventRow[]);
 
 const normalizeCategory = (value: string) =>
   value

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applySourceOverride, loadSourceOverrides } from "../../../data/sources/source-config.mjs";
+import { buildEventDedupeKey } from "../../../packages/shared/event-dedupe.mjs";
 import { buildScheduleFields } from "../../../packages/shared/event-schedule.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -791,12 +792,13 @@ async function main() {
       pagesFetched += 1;
       const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, "detail", detailPage);
       const extractedEvent = eventExtractor(detailPage.html, source, detailUrl, sourceContext);
+      const dedupeKey = buildEventDedupeKey(extractedEvent);
       const savedEvent = await upsertEvent(
         env,
         source.id,
         detailRawPage.id,
         extractedEvent,
-        `${source.slug}:${detailUrl}`
+        dedupeKey
       );
 
       savedEvents.push({

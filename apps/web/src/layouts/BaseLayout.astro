@@ -47,7 +47,10 @@ const appName = "KyōNoKyōto";
   <body>
     <slot />
     <script>
-      if (!window.__elasticLinesBound) {
+      const elasticLinesEnabled = false;
+
+      // Temporary kill switch so the decorative lines stay static.
+      if (elasticLinesEnabled && !window.__elasticLinesBound) {
         const supportsFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
         const lineSelector = "[data-elastic-line='top']";
         const activeLines = new Set();
