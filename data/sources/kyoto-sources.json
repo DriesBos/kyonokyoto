@@ -35,19 +35,6 @@
       "is_active": true
     },
     {
-      "slug": "international-manga-museum",
-      "name": "International Manga Museum",
-      "source_type": "museum",
-      "language": "ja",
-      "base_url": "https://kyotomm.jp",
-      "start_urls": ["https://kyotomm.jp/en/", "https://kyotomm.jp/event/"],
-      "allowed_domains": ["kyotomm.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/ee/"],
-      "notes": "Useful for recurring exhibitions and museum programming.",
-      "is_active": true
-    },
-    {
       "slug": "kyoto-national-museum",
       "name": "Kyoto National Museum",
       "source_type": "museum",
@@ -129,19 +116,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program", "/programs", "/en/"],
       "notes": "Festival source that may behave similarly to KYOTOGRAPHIE with program-style pages.",
-      "is_active": true
-    },
-    {
-      "slug": "soto-kyoto",
-      "name": "SOTO Kyoto",
-      "source_type": "cultural-guide",
-      "language": "ja",
-      "base_url": "https://soto-kyoto.jp/",
-      "start_urls": ["https://soto-kyoto.jp/"],
-      "allowed_domains": ["soto-kyoto.jp"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/event", "/news", "/journal"],
-      "notes": "More editorial than institutional. Good candidate for selective event extraction rather than broad crawling.",
       "is_active": true
     },
     {
