@@ -131,7 +131,7 @@ body
 main
   position: relative
   z-index: 1
-  height: 100%
+  min-height: 100%
   display: flex
   flex-direction: column
   gap: 2rem + 0.5rem
@@ -256,7 +256,7 @@ a
   &::after
     content: ""
     position: absolute
-    inset-inline: 0.5rem
+    inset-inline: 0
     bottom: 0
     border-top: var(--stroke-width) solid var(--stroke)
     opacity: 0
