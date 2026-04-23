@@ -293,12 +293,14 @@ a
   --event-card-media-row-height-active: var(--event-card-media-row-height-active-desktop, 20rem)
   --event-card-media-row-height-current: var(--event-card-media-row-height)
   --event-card-media-gap: 0.5rem
+  position: relative
   display: flex
   gap: 1rem
   align-items: flex-start
   padding: 0.5rem 0 2rem
   border-top: var(--stroke-width) solid var(--stroke)
   cursor: var(--dot-cursor)
+  overflow: hidden
   transition: background-color 140ms ease
 
   > *
@@ -417,13 +419,13 @@ a
       pointer-events: auto
 
 .event-card-dot
-  position: fixed
+  position: absolute
   z-index: 20
   width: var(--dot-card)
   height: var(--dot-card)
   border-radius: 50%
   background: #fd69ba
-  transform: translate(-50%, -50%)
+  transform: translate(-50%, var(--event-card-dot-translate-y, -50%))
   pointer-events: none
 
 @media (min-width: $desktop-breakpoint)

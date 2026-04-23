@@ -213,27 +213,49 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     const mediaPointerState = new Map();
     const mediaScrollClickSuppressions = new WeakSet();
 
-    const getCardDot = () => {
+    const getCardDot = (card) => {
       const existingDot = document.querySelector(`.${cardDotClass}`);
-      if (existingDot instanceof HTMLElement) return existingDot;
+      if (existingDot instanceof HTMLElement) {
+        card.append(existingDot);
+        return existingDot;
+      }
 
       const dot = document.createElement("div");
       dot.className = cardDotClass;
       dot.setAttribute("aria-hidden", "true");
       dot.hidden = true;
-      document.body.append(dot);
+      card.append(dot);
       return dot;
     };
 
-    const setCardDotPosition = (clientX, clientY) => {
-      const dot = getCardDot();
-      dot.style.left = `${clientX}px`;
-      dot.style.top = `${clientY}px`;
+    const hasActiveCardBefore = (card) =>
+      Array.from(document.querySelectorAll(`${cardSelector}[data-active='true']`)).some((activeCard) => {
+        if (!(activeCard instanceof HTMLElement) || activeCard === card) return false;
+        return Boolean(activeCard.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING);
+      });
+
+    const setCardDotPosition = (card, clientX, clientY, anchorFromBottom = false) => {
+      const rect = card.getBoundingClientRect();
+      const dot = getCardDot(card);
+      dot.style.left = `${clientX - rect.left - card.clientLeft}px`;
+      dot.style.removeProperty("top");
+      dot.style.removeProperty("bottom");
+
+      if (anchorFromBottom) {
+        const bottomBorderWidth = card.offsetHeight - card.clientHeight - card.clientTop;
+        dot.style.bottom = `${rect.bottom - clientY - bottomBorderWidth}px`;
+        dot.style.setProperty("--event-card-dot-translate-y", "50%");
+      } else {
+        dot.style.top = `${clientY - rect.top - card.clientTop}px`;
+        dot.style.setProperty("--event-card-dot-translate-y", "-50%");
+      }
+
       dot.hidden = false;
     };
 
     const hideCardDot = () => {
-      getCardDot().hidden = true;
+      const dot = document.querySelector(`.${cardDotClass}`);
+      if (dot instanceof HTMLElement) dot.hidden = true;
     };
 
     const getMediaHeight = (card, isActive) => {
@@ -423,7 +445,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       if (card.getAttribute("data-active") === "true") {
         hideCardDot();
       } else {
-        setCardDotPosition(event.clientX, event.clientY);
+        setCardDotPosition(card, event.clientX, event.clientY, hasActiveCardBefore(card));
       }
       toggleCard(card);
     });
@@ -439,7 +461,12 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         hideCardDot();
       } else {
         const rect = target.getBoundingClientRect();
-        setCardDotPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        setCardDotPosition(
+          target,
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+          hasActiveCardBefore(target)
+        );
       }
       toggleCard(target);
     });
