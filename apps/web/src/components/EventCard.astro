@@ -1,4 +1,5 @@
 ---
+import { Image, inferRemoteSize } from "astro:assets";
 import GeneralButton from "./GeneralButton.astro";
 
 type EventRow = {
@@ -26,6 +27,17 @@ type Props = {
   excerpt: string;
 };
 
+type OptimizedImageEntry = {
+  imageUrl: string;
+  desktopWidth: number;
+  mobileWidth: number;
+  widths: number[];
+};
+
+type FallbackImageEntry = {
+  imageUrl: string;
+};
+
 const { event, mapsUrl, googleCalendarUrl, excerpt } = Astro.props;
 
 const normalizeCategory = (value: string) =>
@@ -39,6 +51,31 @@ const normalizeCategory = (value: string) =>
 const categorySlugs = event.categories.map(normalizeCategory);
 const imageUrls = (event.image_urls ?? []).filter(Boolean);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
+const desktopImageHeight = 150;
+const mobileImageHeight = 75;
+
+const imageEntries = await Promise.all(
+  images.map(async (imageUrl) => {
+    try {
+      const dimensions = await inferRemoteSize(imageUrl);
+      const aspectRatio = dimensions.width / dimensions.height;
+      const desktopWidth = Math.max(1, Math.round(aspectRatio * desktopImageHeight));
+      const mobileWidth = Math.max(1, Math.round(aspectRatio * mobileImageHeight));
+      const widths = [...new Set([mobileWidth, desktopWidth, desktopWidth * 2])]
+        .filter((width) => width <= dimensions.width)
+        .sort((left, right) => left - right);
+
+      return {
+        imageUrl,
+        desktopWidth,
+        mobileWidth,
+        widths: widths.length > 0 ? widths : [dimensions.width],
+      } satisfies OptimizedImageEntry;
+    } catch {
+      return { imageUrl } satisfies FallbackImageEntry;
+    }
+  })
+);
 const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? "";
 const calendarEndDate = event.calendar_ends_at?.slice(0, 10) ?? "";
 const calendarDetails = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
@@ -113,15 +150,30 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
   </div>
     <div class="event-card__media">
-    {images.length > 0 ? (
-      images.map((imageUrl, index) => (
-        <img
-          class="event-card__image"
-          src={imageUrl}
-          alt={index === 0 ? event.title : ""}
-          loading="lazy"
-          aria-hidden={index === 0 ? undefined : "true"}
-        />
+    {imageEntries.length > 0 ? (
+      imageEntries.map((image, index) => (
+        "desktopWidth" in image ? (
+          <Image
+            class="event-card__image"
+            src={image.imageUrl}
+            alt={index === 0 ? event.title : ""}
+            width={image.desktopWidth}
+            height={desktopImageHeight}
+            widths={image.widths}
+            sizes={`(max-width: 768px) ${image.mobileWidth}px, ${image.desktopWidth}px`}
+            format="webp"
+            quality="mid"
+            aria-hidden={index === 0 ? undefined : "true"}
+          />
+        ) : (
+          <img
+            class="event-card__image"
+            src={image.imageUrl}
+            alt={index === 0 ? event.title : ""}
+            loading="lazy"
+            aria-hidden={index === 0 ? undefined : "true"}
+          />
+        )
       ))
     ) : (
       <div class="event-card__image event-card__image--placeholder">KyōNoKyōto</div>
