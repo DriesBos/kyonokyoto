@@ -267,6 +267,32 @@
       "is_active": true
     },
     {
+      "slug": "gallery-unfold",
+      "name": "Gallery Unfold",
+      "source_type": "gallery",
+      "language": "en",
+      "base_url": "https://galleryunfold.com/archive",
+      "start_urls": ["https://galleryunfold.com/archive"],
+      "allowed_domains": ["galleryunfold.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/archive"],
+      "notes": "Only extract the first (most recent) item from the archive listing. Upcoming events lack images and content and should be skipped.",
+      "is_active": true
+    },
+    {
+      "slug": "hakusasonso",
+      "name": "Hakusa Son-so",
+      "source_type": "museum",
+      "language": "ja",
+      "base_url": "http://www.hakusasonso.jp/exhibition/index.html",
+      "start_urls": ["http://www.hakusasonso.jp/exhibition/index.html"],
+      "allowed_domains": ["www.hakusasonso.jp", "hakusasonso.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Historic villa and museum of Japanese painter Hashimoto Kansetsu; exhibition index is at /exhibition/index.html.",
+      "is_active": true
+    },
+    {
       "slug": "sen-oku-hakukokan-museum",
       "name": "Sen-Oku Hakukokan Museum",
       "source_type": "museum",

@@ -1770,6 +1770,30 @@ function extractMtkEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractGalleryUnfoldDetailUrls(listingHtml, listingUrl) {
+  // The archive page lists all exhibitions newest-first. Only the most recent
+  // item has images and content; upcoming entries are placeholders, so we take one.
+  const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean)
+    .filter((url) => {
+      try {
+        const { hostname, pathname } = new URL(url);
+        return hostname === "galleryunfold.com" && pathname !== "/archive" && pathname.length > 1;
+      } catch {
+        return false;
+      }
+    });
+
+  const unique = [...new Set(matches)];
+
+  if (!unique.length) {
+    throw new Error("Could not find Gallery Unfold archive detail URLs");
+  }
+
+  return unique.slice(0, 1);
+}
+
 const detailUrlExtractors = {
   "dnp-foundation-for-cultural-promotion-gallery-ddd": extractDddDetailUrls,
   "essence-kyoto": extractEssenceDetailUrls,
@@ -1781,6 +1805,7 @@ const detailUrlExtractors = {
   "zenbi": extractZenbiDetailUrls,
   "the-national-museum-of-modern-art": extractMomakDetailUrls,
   "sen-oku-hakukokan-museum": extractSenOkuDetailUrls,
+  "gallery-unfold": extractGalleryUnfoldDetailUrls,
 };
 
 const eventExtractors = {
