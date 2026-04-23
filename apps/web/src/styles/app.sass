@@ -389,15 +389,26 @@ a
   overflow: hidden
 
   &__scroller
+    display: flex
+    flex-direction: column  
+    gap: .25rem
     width: 100%
     overflow: hidden
-    padding: 32px 0
+    padding: 12vh 0
 
   &__track
     display: flex
     width: max-content
-    animation: time-divider-scroll 56s linear infinite
     will-change: transform
+
+    &--left
+      animation: time-divider-scroll-left 56s linear infinite
+
+    &--right
+      animation: time-divider-scroll-right 56s linear infinite
+
+    &--left-slow
+      animation: time-divider-scroll-left 68s linear infinite
 
   &__group
     display: flex
@@ -412,12 +423,19 @@ a
     line-height: 1
     letter-spacing: 0
 
-@keyframes time-divider-scroll
+@keyframes time-divider-scroll-left
   from
     transform: translate3d(0, 0, 0)
 
   to
     transform: translate3d(-50%, 0, 0)
+
+@keyframes time-divider-scroll-right
+  from
+    transform: translate3d(-50%, 0, 0)
+
+  to
+    transform: translate3d(0, 0, 0)
 
 [data-event-card][data-reveal-state='queued']
   opacity: 0
