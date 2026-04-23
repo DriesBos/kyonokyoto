@@ -449,7 +449,7 @@ a
   --event-card-media-scrollbar-size: calc(var(--stroke-width) + 4px)
   position: relative
   display: flex
-  gap: 1rem
+  gap: 0.5rem
   align-items: flex-start
   padding: 0.5rem 0 2rem
   border-top: var(--stroke-width) solid var(--stroke)
@@ -516,9 +516,11 @@ a
     flex: 1 1 auto
     display: flex
     flex-direction: column
-    gap: 1.24rem
+    gap: 1.25rem
     min-width: 0
     max-width: 60%
+    @media (orientation: portrait)
+      gap: 1rem
     // border: 1px solid blue
 
     &__header
@@ -543,9 +545,13 @@ a
     text-transform: uppercase
     user-select: auto
     padding: 0 var(--page-padding-x)
-    border: 1px solid red
     @media (orientation: portrait)
       flex-direction: row
+      gap: 1rem
+
+  &__artist
+    @media (orientation: portrait)
+      display: none
 
   &__artist,
   &__description
