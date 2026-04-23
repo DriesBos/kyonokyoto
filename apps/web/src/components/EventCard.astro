@@ -164,31 +164,35 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     <div class="event-card__media">
     {imageEntries.length > 0 ? (
       imageEntries.map((image, index) => (
-        "desktopWidth" in image ? (
-          <Image
-            class="event-card__image"
-            src={image.imageUrl}
-            alt={index === 0 ? event.title : ""}
-            width={image.desktopWidth}
-            height={desktopImageHeightPx}
-            widths={image.widths}
-            sizes={`(max-width: 768px) ${image.mobileWidth}px, ${image.desktopWidth}px`}
-            format="webp"
-            quality="mid"
-            aria-hidden={index === 0 ? undefined : "true"}
-          />
-        ) : (
-          <img
-            class="event-card__image"
-            src={image.imageUrl}
-            alt={index === 0 ? event.title : ""}
-            loading="lazy"
-            aria-hidden={index === 0 ? undefined : "true"}
-          />
-        )
+        <span class="event-card__image-frame">
+          {"desktopWidth" in image ? (
+            <Image
+              class="event-card__image"
+              src={image.imageUrl}
+              alt={index === 0 ? event.title : ""}
+              width={image.desktopWidth}
+              height={desktopImageHeightPx}
+              widths={image.widths}
+              sizes={`(max-width: 768px) ${image.mobileWidth}px, ${image.desktopWidth}px`}
+              format="webp"
+              quality="mid"
+              aria-hidden={index === 0 ? undefined : "true"}
+            />
+          ) : (
+            <img
+              class="event-card__image"
+              src={image.imageUrl}
+              alt={index === 0 ? event.title : ""}
+              loading="lazy"
+              aria-hidden={index === 0 ? undefined : "true"}
+            />
+          )}
+        </span>
       ))
     ) : (
-      <div class="event-card__image event-card__image--placeholder">KyōNoKyōto</div>
+      <span class="event-card__image-frame event-card__image-frame--placeholder">
+        <span class="event-card__image event-card__image--placeholder">KyōNoKyōto</span>
+      </span>
     )}
   </div>
 </article>

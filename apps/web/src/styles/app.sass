@@ -385,18 +385,19 @@ a
   min-height: calc(var(--icon-size) * 2)
 
 .page-edge-strokes__scroll-top
-  position: absolute
-  right: 0
-  bottom: 0
+  justify-self: end
+  align-self: end
   display: grid
   place-items: center
   width: calc(var(--icon-size) + 1rem)
   height: calc(var(--icon-size) * 2 + 1rem)
-  padding: 0.5rem
+  margin-block-start: calc((var(--icon-size) * -2) - 1rem - var(--stroke-gap))
+  padding: 0.25rem
   border: 0
   appearance: none
   -webkit-tap-highlight-color: transparent
-  background: var(--main-background)
+  background: var(--main-background) !important
+  z-index: +1
   color: currentColor
   cursor: var(--dot-cursor)
 
@@ -523,6 +524,12 @@ a
   --event-card-media-row-height-current: var(--event-card-media-row-height)
   --event-card-media-gap: 0.5rem
   --event-card-media-scrollbar-size: calc(var(--stroke-width) + 4px)
+  --event-card-chrome-base: #063f00
+  --event-card-chrome-tint: #d7d7d7
+  --event-card-chrome-filter: grayscale(1) contrast(1.48) brightness(0.78)
+  --event-card-chrome-image-opacity: 0.86
+  --event-card-chrome-tint-opacity: 0.96
+  --event-card-chrome-transition: 520ms cubic-bezier(0.22, 1, 0.36, 1)
   position: relative
   display: flex
   gap: 0.5rem
@@ -545,6 +552,19 @@ a
 
   &[data-active='true'] [data-event-card-fade]
     pointer-events: auto
+
+  &:hover,
+  &[data-active='true']
+    .event-card__image-frame
+      background-color: transparent
+
+      &::after
+        opacity: 0
+
+    .event-card__image
+      filter: grayscale(0) contrast(1) brightness(1)
+      mix-blend-mode: normal
+      opacity: 1
 
   &[data-height-transitioning]
     will-change: height
@@ -573,15 +593,47 @@ a
       overflow-x: scroll
       scrollbar-gutter: stable
 
-  &__image
-    width: auto
-    max-width: 100%
-    height: var(--event-card-media-row-height-current)
+  &__image-frame
+    position: relative
+    isolation: isolate
     flex: 0 0 auto
-    background: $image-placeholder
+    height: var(--event-card-media-row-height-current)
+    max-width: 100%
+    background-color: var(--event-card-chrome-base)
+    overflow: hidden
+    transition: background-color var(--event-card-chrome-transition)
 
     &:first-child
       margin-left: auto
+
+    &::after
+      content: ""
+      position: absolute
+      z-index: 2
+      inset: 0
+      background: var(--event-card-chrome-tint)
+      mix-blend-mode: multiply
+      opacity: var(--event-card-chrome-tint-opacity)
+      pointer-events: none
+      transition: opacity var(--event-card-chrome-transition), background-color var(--event-card-chrome-transition)
+
+    &--placeholder
+      width: 100%
+      background: $image-placeholder
+
+      &::after
+        content: none
+
+  &__image
+    position: relative
+    z-index: 1
+    width: auto
+    height: var(--event-card-media-row-height-current)
+    background: $image-placeholder
+    filter: var(--event-card-chrome-filter)
+    mix-blend-mode: screen
+    opacity: var(--event-card-chrome-image-opacity)
+    transition: filter var(--event-card-chrome-transition), opacity var(--event-card-chrome-transition), mix-blend-mode 0ms linear var(--event-card-chrome-transition)
 
     &--placeholder
       display: grid
