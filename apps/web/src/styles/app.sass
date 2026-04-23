@@ -287,6 +287,12 @@ a
     min-width: 0
     overflow: hidden
     max-height: var(--event-card-media-row-height-current)
+    // border: 1px solid purple
+    @media (max-width: $mobile-breakpoint)
+      overflow-x: auto
+      flex-wrap: nowrap
+      pointer-events: auto
+      
 
   &__image
     width: auto
@@ -307,6 +313,7 @@ a
     gap: 1.5rem
     min-width: 0
     max-width: 60%
+    // border: 1px solid blue
 
     &__header
       display: flex
