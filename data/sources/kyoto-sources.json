@@ -25,12 +25,12 @@
       "language": "ja",
       "base_url": "https://rohmtheatrekyoto.jp",
       "start_urls": [
-        "https://rohmtheatrekyoto.jp/event/",
-        "https://rohmtheatrekyoto.jp/en/event/"
+        "https://rohmtheatrekyoto.jp/",
+        "https://rohmtheatrekyoto.jp/en/"
       ],
       "allowed_domains": ["rohmtheatrekyoto.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/event/", "/en/event/"],
+      "event_page_patterns": ["/event/"],
       "notes": "Broad performing arts source with many date-rich event pages.",
       "is_active": true
     },
@@ -41,12 +41,12 @@
       "language": "ja",
       "base_url": "https://kyotomm.jp",
       "start_urls": [
-        "https://kyotomm.jp/en/exhibitions/",
+        "https://kyotomm.jp/en/",
         "https://kyotomm.jp/event/"
       ],
       "allowed_domains": ["kyotomm.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/event/", "/exhibitions/"],
+      "event_page_patterns": ["/en/ee/"],
       "notes": "Useful for recurring exhibitions and museum programming.",
       "is_active": true
     },
@@ -73,12 +73,24 @@
       "language": "ja",
       "base_url": "https://www.bunpaku.or.jp",
       "start_urls": [
-        "https://www.bunpaku.or.jp/exhi_special/",
-        "https://www.bunpaku.or.jp/en/"
+        "https://www.bunpaku.or.jp/exhi_special/schedule/",
+        "https://www.bunpaku.or.jp/exhi_sogo/schedule/",
+        "https://www.bunpaku.or.jp/exhi_film/schedule/",
+        "https://www.bunpaku.or.jp/museum-event/this_month",
+        "https://www.bunpaku.or.jp/museum-event/next_month"
       ],
       "allowed_domains": ["www.bunpaku.or.jp", "bunpaku.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhi_", "/en/"],
+      "event_page_patterns": [
+        "/exhi_special/schedule/",
+        "/exhi_sogo/schedule/",
+        "/exhi_film/schedule/",
+        "/museum-event/this_month",
+        "/museum-event/next_month",
+        "/museum-event/art-craft-market",
+        "/museum-event/classroom",
+        "/museum-event/roji"
+      ],
       "notes": "May need custom extraction for date formatting and image selection.",
       "is_active": true
     },
@@ -120,7 +132,7 @@
       "start_urls": ["https://huko.jp/"],
       "allowed_domains": ["huko.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/"],
+      "event_page_patterns": ["/blogs/exhibition/"],
       "notes": "Seed source added from manual curation. Site structure may need inspection before automated extraction.",
       "is_active": true
     },
@@ -373,7 +385,7 @@
       "start_urls": ["https://www.dnpfcp.jp/gallery/ddd_e/"],
       "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/gallery/ddd_e/"],
+      "event_page_patterns": ["/CGI/gallery/schedule/detail.cgi", "/gallery/ddd/eng/"],
       "notes": "Likely structured exhibition source with English pages suitable for detail-page extraction.",
       "is_active": true
     },

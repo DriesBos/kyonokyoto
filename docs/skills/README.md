@@ -2,4 +2,8 @@
 
 This folder is reserved for human-readable notes about project skills and tooling.
 
-At the moment, no external agent skill packages are checked into the repository.
+Checked-in notes:
+
+- [crawl4ai.md](./crawl4ai.md) - project guardrails for Crawl4AI-based crawling, extraction, and tuning
+
+No external or tool-managed agent skill packages are checked into the repository.

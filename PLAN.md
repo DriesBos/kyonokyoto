@@ -4,13 +4,6 @@
 
 Build a Kyoto cultural events app that crawls museums, galleries, festival pages, and venue sites, then turns that data into a clean editorial cultural event calendar.
 
-## To Do
-
-1. Choose VPS
-2. Init Supabase
-3. Init Astro and git repo
-4. Init Lightsail
-
 ## MVP Scope
 
 - Start with 5-10 Kyoto source websites

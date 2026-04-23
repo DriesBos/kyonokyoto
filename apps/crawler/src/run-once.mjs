@@ -209,7 +209,10 @@ function parseGenericDateRange(dateText) {
 
 function normalizeUrl(value, baseUrl) {
   try {
-    const url = new URL(value, baseUrl);
+    const sanitizedValue = value
+      .replaceAll("\u0000", "")
+      .replaceAll("＆", "&");
+    const url = new URL(sanitizedValue, baseUrl);
     url.hash = "";
     return url.toString();
   } catch {
@@ -222,13 +225,29 @@ function sourceAllowsUrl(source, url) {
   return (source.allowed_domains ?? []).some((domain) => host === domain || host.endsWith(`.${domain}`));
 }
 
+function pathnameMatchesPattern(pathname, pattern) {
+  const normalizedPathname = pathname.toLowerCase().replace(/\/+$/, "") || "/";
+  const normalizedPattern = pattern.toLowerCase().replace(/\/+$/, "") || "/";
+  return normalizedPathname.includes(normalizedPattern) && normalizedPathname !== normalizedPattern;
+}
 function scoreGenericDetailUrl(source, url) {
   const parsed = new URL(url);
   const pathname = parsed.pathname.toLowerCase();
   if (/\.(?:jpe?g|png|gif|webp|svg|pdf|zip|css|js)$/i.test(pathname)) return 0;
+  if (
+    /\/(?:archive|archives|category|event_category|access|about|contact|privacy|guide|faq|feed|form)(?:\/|$)/.test(pathname) ||
+    /\/(?:customer_authentication|cart)(?:\/|$)/.test(pathname) ||
+    /\/collections\/all(?:\/|$)/.test(pathname) ||
+    /\/pages\/about(?:\/|$)/.test(pathname) ||
+    /\/(?:search|list)\.cgi$/.test(pathname) ||
+    /\/xmlrpc\.php$/.test(pathname) ||
+    /\/wp-json\/?$/.test(pathname)
+  ) {
+    return 0;
+  }
 
   const patterns = (source.event_page_patterns ?? []).filter((pattern) => pattern && pattern !== "/");
-  const patternScore = patterns.some((pattern) => pathname.includes(pattern.toLowerCase())) ? 8 : 0;
+  const patternScore = patterns.some((pattern) => pathnameMatchesPattern(pathname, pattern)) ? 8 : 0;
   const keywordScore = /event|exhibition|exhibit|program|live|schedule|news|journal|show|artist|展|催|公演/i.test(pathname)
     ? 4
     : 0;
@@ -245,14 +264,23 @@ function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
     .filter((url) => sourceAllowsUrl(source, url))
     .filter((url) => url !== listingUrl);
 
+  const patterns = (source.event_page_patterns ?? []).filter((pattern) => pattern && pattern !== "/");
   const scoredUrls = [...new Set(urls)]
-    .map((url) => ({ url, score: scoreGenericDetailUrl(source, url) }))
+    .map((url) => ({
+      url,
+      score: scoreGenericDetailUrl(source, url),
+      matchesPattern: patterns.some((pattern) => pathnameMatchesPattern(new URL(url).pathname, pattern)),
+    }))
     .filter((entry) => entry.score > 0)
     .sort((left, right) => right.score - left.score || left.url.localeCompare(right.url))
+    .slice(0, limit * 4);
+
+  const preferredUrls = scoredUrls.filter((entry) => entry.matchesPattern);
+  const finalUrls = (preferredUrls.length ? preferredUrls : scoredUrls)
     .slice(0, limit)
     .map((entry) => entry.url);
 
-  return scoredUrls.length ? scoredUrls : [listingUrl];
+  return finalUrls.length ? finalUrls : [listingUrl];
 }
 
 function extractFirstDateText(text) {
