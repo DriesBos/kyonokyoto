@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { applySourceOverride, loadSourceOverrides } from "../../../data/sources/source-config.mjs";
+import { applySourceOverride, loadSourceOverrides, loadSourcesConfig } from "../../../data/sources/source-config.mjs";
 import { buildEventDedupeKey } from "../../../packages/shared/event-dedupe.mjs";
 import { buildScheduleFields } from "../../../packages/shared/event-schedule.mjs";
 
@@ -32,6 +32,12 @@ function getArg(name, fallback = null) {
   const prefix = `--${name}=`;
   const match = process.argv.find((arg) => arg.startsWith(prefix));
   return match ? match.slice(prefix.length) : fallback;
+}
+
+function getNumberArg(name, fallback) {
+  const value = getArg(name);
+  const parsed = value ? Number(value) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function decodeHtml(value) {
@@ -185,6 +191,96 @@ function parseDottedDateRange(dateText) {
     calendarStartsAt: `${startDate}T10:00:00+09:00`,
     calendarEndsAt: `${endDate}T18:00:00+09:00`,
   };
+}
+
+function parseGenericDateRange(dateText) {
+  return (
+    parseJapaneseDateRange(dateText).startDate ? parseJapaneseDateRange(dateText) :
+    parseSlashDateRange(dateText).startDate ? parseSlashDateRange(dateText) :
+    parseDottedDateRange(dateText).startDate ? parseDottedDateRange(dateText) :
+    {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    }
+  );
+}
+
+function normalizeUrl(value, baseUrl) {
+  try {
+    const url = new URL(value, baseUrl);
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function sourceAllowsUrl(source, url) {
+  const host = new URL(url).hostname;
+  return (source.allowed_domains ?? []).some((domain) => host === domain || host.endsWith(`.${domain}`));
+}
+
+function scoreGenericDetailUrl(source, url) {
+  const parsed = new URL(url);
+  const pathname = parsed.pathname.toLowerCase();
+  if (/\.(?:jpe?g|png|gif|webp|svg|pdf|zip|css|js)$/i.test(pathname)) return 0;
+
+  const patterns = (source.event_page_patterns ?? []).filter((pattern) => pattern && pattern !== "/");
+  const patternScore = patterns.some((pattern) => pathname.includes(pattern.toLowerCase())) ? 8 : 0;
+  const keywordScore = /event|exhibition|exhibit|program|live|schedule|news|journal|show|artist|展|催|公演/i.test(pathname)
+    ? 4
+    : 0;
+  const dateScore = /20\d{2}|202\d|\d{4}[./-]\d{1,2}/.test(pathname) ? 2 : 0;
+  const depthScore = pathname.split("/").filter(Boolean).length > 1 ? 1 : 0;
+
+  return patternScore + keywordScore + dateScore + depthScore;
+}
+
+function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
+  const urls = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean)
+    .filter((url) => sourceAllowsUrl(source, url))
+    .filter((url) => url !== listingUrl);
+
+  const scoredUrls = [...new Set(urls)]
+    .map((url) => ({ url, score: scoreGenericDetailUrl(source, url) }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score || left.url.localeCompare(right.url))
+    .slice(0, limit)
+    .map((entry) => entry.url);
+
+  return scoredUrls.length ? scoredUrls : [listingUrl];
+}
+
+function extractFirstDateText(text) {
+  const patterns = [
+    /\d{4}年\d{1,2}月\d{1,2}日[\s\S]{0,40}?[～〜\-－][\s\S]{0,40}?\d{4}年\d{1,2}月\d{1,2}日/u,
+    /\d{4}[./-]\d{1,2}[./-]\d{1,2}[\s\S]{0,30}?[-–—～〜][\s\S]{0,30}?(?:\d{4}[./-])?\d{1,2}[./-]\d{1,2}/u,
+    /\d{4}年\d{1,2}月\d{1,2}日/u,
+    /\d{4}[./-]\d{1,2}[./-]\d{1,2}/u,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match[0].replace(/\s+/g, " ").trim();
+  }
+
+  return "See source page";
+}
+
+function extractGenericImageUrls(detailHtml, detailUrl) {
+  const urls = [
+    extractMeta(detailHtml, "og:image"),
+    ...[...detailHtml.matchAll(/<img\b[^>]+src=(["'])(.*?)\1/gi)].map((match) => match[2]),
+  ]
+    .map((value) => value ? normalizeUrl(value, detailUrl) : null)
+    .filter(Boolean)
+    .filter((url) => !/data:image|spacer|logo|icon/i.test(url));
+
+  return [...new Set(urls)].slice(0, 8);
 }
 
 function extractClassBlock(html, className, tagName = "[a-z0-9]+") {
@@ -583,6 +679,73 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
   };
 }
 
+function extractGenericTitle(detailHtml, source) {
+  const candidates = [
+    extractMeta(detailHtml, "og:title"),
+    stripTags(detailHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ""),
+    stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ""),
+  ].filter(Boolean);
+
+  const title = candidates[0]
+    ?.replace(/\s*[|｜-]\s*.+$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return title || source.name;
+}
+
+function extractGenericDescription(detailHtml) {
+  const metaDescription =
+    extractMeta(detailHtml, "og:description") ??
+    extractMeta(detailHtml, "description");
+
+  if (metaDescription) return stripTags(metaDescription).slice(0, 1200);
+
+  const paragraphs = [...detailHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]))
+    .map((value) => value.replace(/\s+/g, " ").trim())
+    .filter((value) => value.length > 40);
+
+  return paragraphs.slice(0, 2).join("\n\n").slice(0, 1200);
+}
+
+function extractGenericEvent(detailHtml, source, detailUrl) {
+  const title = extractGenericTitle(detailHtml, source);
+  const pageText = stripTags(detailHtml);
+  const dateText = extractFirstDateText(pageText);
+  const parsedDates = parseGenericDateRange(dateText);
+  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
+  const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
+
+  return {
+    title,
+    artist_name: null,
+    categories: [source.source_type, "needs-review"].filter(Boolean),
+    description: extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: directionsQuery,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+    extraction_confidence: 0.25,
+  };
+}
+
 const detailUrlExtractors = {
   "kyoto-art-center": extractKacDetailUrls,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrls,
@@ -710,36 +873,47 @@ async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
 }
 
 async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
-  const rows = await supabaseRequest({
-    env,
-    path: "events?on_conflict=dedupe_key",
-    method: "POST",
-    body: [
-      {
-        source_id: sourceId,
-        raw_page_id: rawPageId,
-        dedupe_key: dedupeKey,
-        status: "published",
-        extraction_confidence: 0.6,
-        ...eventData,
+  const eventPayload = {
+    source_id: sourceId,
+    raw_page_id: rawPageId,
+    dedupe_key: dedupeKey,
+    status: "published",
+    extraction_confidence: 0.6,
+    ...eventData,
+  };
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/events?on_conflict=dedupe_key`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        Prefer: "return=representation,resolution=merge-duplicates",
       },
-    ],
-  });
+      body: JSON.stringify([eventPayload]),
+    });
 
-  return rows[0];
-}
+    if (response.ok) {
+      const rows = await response.json();
+      return rows[0];
+    }
 
-async function main() {
-  const envContents = await readFile(envPath, "utf8");
-  const env = parseEnvFile(envContents);
-  const sourceSlug = getArg("source", "kyoto-art-center");
-  const userAgent = env.CRAWLER_USER_AGENT ?? "kyo-no-kyoto-bot/0.1";
-  const sourceOverrides = await loadSourceOverrides();
+    const errorText = await response.text();
+    const missingColumn = errorText.match(/Could not find the '([^']+)' column/)?.[1];
 
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
+    if (response.status === 400 && missingColumn && missingColumn in eventPayload) {
+      delete eventPayload[missingColumn];
+      continue;
+    }
+
+    throw new Error(`Supabase request failed (${response.status}) for events?on_conflict=dedupe_key: ${errorText}`);
   }
 
+  throw new Error("Supabase request failed for events?on_conflict=dedupe_key after stripping unknown columns");
+}
+
+async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, genericDetailLimit }) {
   const source = applySourceOverride(
     await getSourceBySlug(env, sourceSlug),
     sourceOverrides[sourceSlug]
@@ -758,11 +932,10 @@ async function main() {
     await upsertRawPage(env, source.id, crawlRun.id, "listing", listingPage);
 
     const detailUrlExtractor = detailUrlExtractors[source.slug];
-    if (!detailUrlExtractor) {
-      throw new Error(`No extractor has been implemented yet for source "${source.slug}"`);
-    }
+    const detailUrls = detailUrlExtractor
+      ? detailUrlExtractor(listingPage.html, listingUrl)
+      : extractGenericDetailUrls(listingPage.html, listingUrl, source, genericDetailLimit);
 
-    const detailUrls = detailUrlExtractor(listingPage.html, listingUrl);
     if (!detailUrls.length) {
       throw new Error(`No detail URLs were extracted for source "${source.slug}"`);
     }
@@ -780,10 +953,7 @@ async function main() {
       sourceContext = { accessHtml: accessPage.html };
     }
 
-    const eventExtractor = eventExtractors[source.slug];
-    if (!eventExtractor) {
-      throw new Error(`No event extractor has been implemented yet for source "${source.slug}"`);
-    }
+    const eventExtractor = eventExtractors[source.slug] ?? extractGenericEvent;
 
     const savedEvents = [];
 
@@ -816,24 +986,26 @@ async function main() {
       pages_parsed: savedEvents.length,
       events_created: savedEvents.length,
       events_updated: 0,
-      logs: savedEvents.map((savedEvent) => ({
-        level: "info",
-        message: `Stored event ${savedEvent.eventId} from ${savedEvent.detailUrl}`,
-      })),
+      logs: [
+        ...(eventExtractors[source.slug] ? [] : [{
+          level: "warn",
+          message: "Used generic fallback extraction; review output and add a source-specific extractor when needed.",
+        }]),
+        ...savedEvents.map((savedEvent) => ({
+          level: "info",
+          message: `Stored event ${savedEvent.eventId} from ${savedEvent.detailUrl}`,
+        })),
+      ],
     });
 
-    console.log(
-      JSON.stringify(
-        {
-          crawlRunId: crawlRun.id,
-          source: source.slug,
-          detailUrls,
-          events: savedEvents,
-        },
-        null,
-        2
-      )
-    );
+    return {
+      crawlRunId: crawlRun.id,
+      source: source.slug,
+      status: "success",
+      usedGenericExtractor: !eventExtractors[source.slug],
+      detailUrls,
+      events: savedEvents,
+    };
   } catch (error) {
     await updateCrawlRun(env, crawlRun.id, {
       status: "failed",
@@ -841,7 +1013,69 @@ async function main() {
       error_message: error instanceof Error ? error.message : String(error),
     });
 
-    throw error;
+    return {
+      crawlRunId: crawlRun.id,
+      source: source.slug,
+      status: "failed",
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function main() {
+  const envContents = await readFile(envPath, "utf8");
+  const env = parseEnvFile(envContents);
+  const sourceSlug = getArg("source", "kyoto-art-center");
+  const userAgent = env.CRAWLER_USER_AGENT ?? "kyo-no-kyoto-bot/0.1";
+  const genericDetailLimit = getNumberArg("generic-limit", 8);
+  const sourceOverrides = await loadSourceOverrides();
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
+  }
+
+  const sourceSlugs = sourceSlug === "all"
+    ? (await loadSourcesConfig())
+        .filter((source) => source.is_active !== false)
+        .map((source) => source.slug)
+    : [sourceSlug];
+
+  const results = [];
+
+  for (const slug of sourceSlugs) {
+    const result = await crawlSource({
+      env,
+      sourceSlug: slug,
+      userAgent,
+      sourceOverrides,
+      genericDetailLimit,
+    });
+    results.push(result);
+    console.log(JSON.stringify(result, null, 2));
+
+    if (result.status === "failed" && sourceSlug !== "all") {
+      throw new Error(result.error);
+    }
+  }
+
+  if (sourceSlug === "all") {
+    const failed = results.filter((result) => result.status === "failed");
+    console.log(
+      JSON.stringify(
+        {
+          status: failed.length ? "partial_success" : "success",
+          sources_total: results.length,
+          sources_succeeded: results.length - failed.length,
+          sources_failed: failed.length,
+          failed_sources: failed.map((result) => ({
+            source: result.source,
+            error: result.error,
+          })),
+        },
+        null,
+        2
+      )
+    );
   }
 }
 

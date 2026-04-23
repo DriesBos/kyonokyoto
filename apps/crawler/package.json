@@ -8,6 +8,7 @@
   },
   "scripts": {
     "crawl:once": "node src/run-once.mjs",
+    "crawl:all": "node src/run-once.mjs --source=all",
     "crawl:kac": "node src/run-once.mjs --source=kyoto-art-center",
     "crawl:kyocera": "node src/run-once.mjs --source=kyoto-city-kyocera-museum-of-art",
     "crawl:momak": "node src/run-once.mjs --source=the-national-museum-of-modern-art",

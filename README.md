@@ -97,3 +97,42 @@ Next:
 - define event schema
 - scaffold crawler code
 - connect data flow from crawler to Supabase to Astro
+
+## Crawler Tuning
+
+Best quick loop for finetuning the crawler:
+
+1. Seed sources:
+
+```bash
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/seed-sources.mjs
+```
+
+2. Crawl one source while tuning:
+
+```bash
+cd apps/crawler
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:once -- --source=<slug>
+```
+
+3. Crawl everything for QA:
+
+```bash
+cd apps/crawler
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:all -- --generic-limit=6
+```
+
+How to tune effectively:
+
+- Start with `data/sources/kyoto-sources.json`:
+  tighten `start_urls`, `allowed_domains`, and especially `event_page_patterns`.
+- If a source is noisy, narrow the generic candidate set first by making `event_page_patterns` more specific.
+- If a source is important and recurring, add a source-specific pair in `apps/crawler/src/run-once.mjs`:
+  one detail URL extractor and one event extractor.
+- Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
+- When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
+
+Rule of thumb:
+- Fix source config first.
+- Add custom extraction second.
+- Touch schema only when many sources need the same new field.
