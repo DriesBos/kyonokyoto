@@ -215,7 +215,9 @@ a
     display: block
     padding: 0 0.25rem
     background: var(--main-background)
-    line-height: 0
+    @media (max-width: $mobile-breakpoint)
+      left: calc(var(--page-padding-x) + 1.25rem)
+      top: calc(var(--page-padding-y) + 1.13rem)
 
   &__logo svg
     width: auto
