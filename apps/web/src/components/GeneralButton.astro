@@ -109,8 +109,8 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       aria-controls={ariaControls}
       {...rest}
     >
-      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       <span class="general-button__label">{label}</span>
+      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
     </button>
   )

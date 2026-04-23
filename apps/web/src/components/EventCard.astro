@@ -119,7 +119,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       
         {calendarStartDate ? (
           <GeneralButton
-            label="Apple Cal"
+            label="Apple"
             icon="calendar"
             data-apple-calendar-button
             data-calendar-title={event.title}
@@ -129,10 +129,10 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             data-calendar-location={calendarLocation}
           />
         ) : (
-          <GeneralButton label="Apple Cal soon" icon="calendar" disabled={true} />
+          <GeneralButton label="Apple soon" icon="calendar" disabled={true} />
         )}
         {googleCalendarUrl ? (
-          <GeneralButton label="Google Cal" icon="calendar" href={googleCalendarUrl} target="_blank" rel="noreferrer" />
+          <GeneralButton label="Google" icon="calendar" href={googleCalendarUrl} target="_blank" rel="noreferrer" />
         ) : (
           <GeneralButton label="Google Cal soon" icon="calendar" disabled={true} />
         )}
