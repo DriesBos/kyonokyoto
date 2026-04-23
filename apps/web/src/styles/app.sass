@@ -120,6 +120,12 @@ a
   margin-left: auto
   max-width: 15rem
 
+  &__options
+    display: flex
+    flex-wrap: wrap
+    justify-content: flex-end
+    gap: 0.75rem
+
 .site-header__filter-toggle
   @media (min-width: $mobile-breakpoint)
     display: none !important
@@ -422,11 +428,26 @@ a
     align-items: center
     justify-content: flex-start
 
-  .site-header__filter-toggle
-    display: inline-flex
+  .category-filter
+    flex-direction: column
+    align-items: flex-end
 
-  .category-filter [data-filter-button]
-    display: none
+  .category-filter__options
+    width: 100%
+    height: 0
+    overflow: hidden
+    pointer-events: none
 
-  .category-filter[data-mobile-open] [data-filter-button]
-    display: inline-flex
+    [data-filter-button]
+      opacity: 0
+      transform: translateY(0.5rem)
+      pointer-events: none
+      transition: opacity 180ms ease, transform 180ms ease
+
+  .category-filter__options[data-mobile-open]
+    pointer-events: auto
+
+    [data-filter-button]
+      opacity: 1
+      transform: translateY(0)
+      pointer-events: auto

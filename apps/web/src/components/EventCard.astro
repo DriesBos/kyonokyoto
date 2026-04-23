@@ -194,7 +194,13 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 </article>
 
 <script>
-  import { gsap } from "gsap";
+  import {
+    createHeightTransitionTimeline,
+    getHeightTransitionDuration,
+    getHeightTransitionPosition,
+    killHeightTransitionTweens,
+    toHeight,
+  } from "../lib/heightTransition";
 
   if (!window.__eventCardToggleBound) {
     const interactiveSelector = "a, button, input, select, textarea, summary, [role='button']";
@@ -236,7 +242,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       card.dataset.toggleReady = "true";
 
-      gsap.killTweensOf([card, content]);
+      killHeightTransitionTweens([card, content]);
 
       if (isActive) {
         content.style.height = "auto";
@@ -262,7 +268,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       const startHeight = card.offsetHeight;
       const targetMediaHeight = getMediaHeight(card, isActive);
 
-      gsap.killTweensOf([card, content]);
+      killHeightTransitionTweens([card, content]);
       card.style.overflow = "hidden";
 
       if (isActive) {
@@ -272,8 +278,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         content.style.height = "0px";
         card.style.height = `${startHeight}px`;
 
-        const timeline = gsap.timeline({
-          defaults: { ease: "power2.out" },
+        const timeline = createHeightTransitionTimeline({
           onComplete: () => {
             card.style.height = "";
             card.style.overflow = "";
@@ -281,9 +286,9 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
           },
         });
 
-        timeline.to(card, { height: expandedCardHeight, duration: 0.36 }, 0);
-        timeline.to(card, { [mediaHeightProperty]: targetMediaHeight, duration: 0.36 }, 0);
-        timeline.to(content, { height: targetContentHeight, duration: 0.36 }, 0);
+        toHeight(timeline, card, expandedCardHeight, true, 0);
+        timeline.to(card, { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(true) }, 0);
+        toHeight(timeline, content, targetContentHeight, true, 0);
         return;
       }
 
@@ -292,8 +297,8 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       card.style.height = `${startHeight}px`;
       content.style.height = `${content.offsetHeight}px`;
 
-      const timeline = gsap.timeline({
-        defaults: { ease: "power2.out" },
+      const collapsePosition = getHeightTransitionPosition(false);
+      const timeline = createHeightTransitionTimeline({
         onComplete: () => {
           card.style.height = "";
           card.style.overflow = "";
@@ -301,9 +306,13 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         },
       });
 
-      timeline.to(card, { [mediaHeightProperty]: targetMediaHeight, duration: 0.3 }, 0.04);
-      timeline.to(content, { height: 0, duration: 0.3 }, 0.04);
-      timeline.to(card, { height: collapsedCardHeight, duration: 0.3 }, 0.04);
+      timeline.to(
+        card,
+        { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(false) },
+        collapsePosition
+      );
+      toHeight(timeline, content, 0, false, collapsePosition);
+      toHeight(timeline, card, collapsedCardHeight, false, collapsePosition);
     };
 
     const toggleCard = (card) => {

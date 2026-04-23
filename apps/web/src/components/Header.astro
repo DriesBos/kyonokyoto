@@ -25,7 +25,7 @@ const timingFilters = [
 
   {
     categories.length > 0 || timingFilters.length > 0 ? (
-        <div class="category-filter" id="category-filter-panel" aria-label="Filter events by category" role="group">
+        <div class="category-filter" aria-label="Filter events by category" role="group">
           <GeneralButton
             class="site-header__filter-toggle"
             label="filter"
@@ -33,34 +33,38 @@ const timingFilters = [
             showDot={true}
             data-filter-disclosure
             aria-expanded="false"
-            aria-controls="category-filter-panel"
+            aria-controls="category-filter-options"
           />
-          {timingFilters.map((filter) => (
-            <GeneralButton
-              label={filter.label}
-              pressed={false}
-              showDot={true}
-              dataTiming={filter.slug}
-              dataTimingButton={true}
-              dataFilterButton={true}
-            />
-          ))}
-          {categories.map((category) => (
-            <GeneralButton
-              label={category.label}
-              pressed={false}
-              showDot={true}
-              dataCategory={category.slug}
-              dataCategoryButton={true}
-              dataFilterButton={true}
-            />
-          ))}
+          <div class="category-filter__options" id="category-filter-options" data-filter-options>
+            {timingFilters.map((filter) => (
+              <GeneralButton
+                label={filter.label}
+                pressed={false}
+                showDot={true}
+                dataTiming={filter.slug}
+                dataTimingButton={true}
+                dataFilterButton={true}
+              />
+            ))}
+            {categories.map((category) => (
+              <GeneralButton
+                label={category.label}
+                pressed={false}
+                showDot={true}
+                dataCategory={category.slug}
+                dataCategoryButton={true}
+                dataFilterButton={true}
+              />
+            ))}
+          </div>
         </div>
     ) : null
   }
 </header>
 
 <script>
+  import { createHeightTransitionTimeline, killHeightTransitionTweens, toHeight } from "../lib/heightTransition";
+
   const normalizeCategory = (value) =>
     value
       .toLowerCase()
@@ -76,7 +80,7 @@ const timingFilters = [
     const timingButtons = Array.from(root.querySelectorAll("[data-timing-button]"));
     const buttons = [...timingButtons, ...categoryButtons];
     const disclosure = root.querySelector("[data-filter-disclosure]");
-    const filterPanel = root.querySelector("#category-filter-panel");
+    const filterPanel = root.querySelector("[data-filter-options]");
     const cards = Array.from(document.querySelectorAll("[data-event-card]"));
     const groups = Array.from(document.querySelectorAll("[data-event-group]"));
     const divider = document.querySelector("[data-event-divider]");
@@ -86,6 +90,75 @@ const timingFilters = [
     const total = cards.length;
     let activeCategory = "";
     let activeTiming = "";
+    const mobileDisclosure = window.matchMedia("(max-width: 767.98px)");
+
+    const setFilterPanelInteractivity = (isInteractive) => {
+      if (!(filterPanel instanceof HTMLElement)) return;
+
+      filterPanel.toggleAttribute("inert", !isInteractive);
+      filterPanel.setAttribute("aria-hidden", String(!isInteractive));
+      buttons.forEach((button) => {
+        if (!(button instanceof HTMLElement)) return;
+
+        if (isInteractive) {
+          button.removeAttribute("tabindex");
+        } else {
+          button.setAttribute("tabindex", "-1");
+        }
+      });
+    };
+
+    const animateFilterDisclosure = (nextExpanded) => {
+      if (!(filterPanel instanceof HTMLElement)) {
+        filterPanel?.toggleAttribute("data-mobile-open", nextExpanded);
+        return;
+      }
+
+      if (!mobileDisclosure.matches) {
+        filterPanel.toggleAttribute("data-mobile-open", nextExpanded);
+        setFilterPanelInteractivity(true);
+        return;
+      }
+
+      const startHeight = filterPanel.offsetHeight;
+
+      killHeightTransitionTweens(filterPanel);
+      filterPanel.style.height = `${startHeight}px`;
+      filterPanel.style.overflow = "hidden";
+      filterPanel.toggleAttribute("data-mobile-open", nextExpanded);
+      setFilterPanelInteractivity(nextExpanded);
+
+      const targetHeight = nextExpanded ? filterPanel.scrollHeight : 0;
+
+      const timeline = createHeightTransitionTimeline({
+        onComplete: () => {
+          filterPanel.style.height = nextExpanded ? "auto" : "0px";
+          filterPanel.style.overflow = nextExpanded ? "" : "hidden";
+        },
+      });
+
+      toHeight(timeline, filterPanel, targetHeight, nextExpanded, 0);
+    };
+
+    const syncFilterPanelForViewport = () => {
+      if (!(filterPanel instanceof HTMLElement) || !(disclosure instanceof HTMLElement)) return;
+
+      killHeightTransitionTweens(filterPanel);
+
+      if (!mobileDisclosure.matches) {
+        filterPanel.style.height = "";
+        filterPanel.style.overflow = "";
+        filterPanel.toggleAttribute("data-mobile-open", false);
+        setFilterPanelInteractivity(true);
+        return;
+      }
+
+      const isExpanded = disclosure.getAttribute("aria-expanded") === "true";
+      filterPanel.toggleAttribute("data-mobile-open", isExpanded);
+      filterPanel.style.height = isExpanded ? "auto" : "0px";
+      filterPanel.style.overflow = isExpanded ? "" : "hidden";
+      setFilterPanelInteractivity(isExpanded);
+    };
 
     const updateCount = (visibleCount, activeLabel) => {
       if (!countLabel) return;
@@ -176,13 +249,20 @@ const timingFilters = [
     });
 
     if (disclosure && filterPanel) {
+      syncFilterPanelForViewport();
+      if ("addEventListener" in mobileDisclosure) {
+        mobileDisclosure.addEventListener("change", syncFilterPanelForViewport);
+      } else {
+        mobileDisclosure.addListener(syncFilterPanelForViewport);
+      }
+
       disclosure.addEventListener("click", () => {
         const expanded = disclosure.getAttribute("aria-expanded") === "true";
         const nextExpanded = !expanded;
 
         disclosure.setAttribute("aria-expanded", String(nextExpanded));
         disclosure.setAttribute("aria-pressed", String(nextExpanded));
-        filterPanel.toggleAttribute("data-mobile-open", nextExpanded);
+        animateFilterDisclosure(nextExpanded);
       });
     }
 
