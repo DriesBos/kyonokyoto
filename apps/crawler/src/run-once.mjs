@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applySourceOverride, loadSourceOverrides, loadSourcesConfig } from "../../../data/sources/source-config.mjs";
 import { buildEventDedupeKey } from "../../../packages/shared/event-dedupe.mjs";
-import { buildScheduleFields } from "../../../packages/shared/event-schedule.mjs";
+import { buildScheduleFields, classifyEventTiming } from "../../../packages/shared/event-schedule.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(__dirname, "..");
@@ -190,6 +190,143 @@ function parseDottedDateRange(dateText) {
     endDate,
     calendarStartsAt: `${startDate}T10:00:00+09:00`,
     calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
+function parseEnglishMonthDateRange(dateText) {
+  const months = {
+    january: "01",
+    february: "02",
+    march: "03",
+    april: "04",
+    may: "05",
+    june: "06",
+    july: "07",
+    august: "08",
+    september: "09",
+    october: "10",
+    november: "11",
+    december: "12",
+  };
+
+  const match = dateText.match(
+    /([A-Za-z]+)\s+(\d{1,2})[–-]([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/
+  );
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, startMonthName, startDay, endMonthName, endDay, year] = match;
+  const startMonth = months[startMonthName.toLowerCase()];
+  const endMonth = months[endMonthName.toLowerCase()];
+
+  if (!startMonth || !endMonth) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const startDate = `${year}-${startMonth}-${String(startDay).padStart(2, "0")}`;
+  const endDate = `${year}-${endMonth}-${String(endDay).padStart(2, "0")}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T09:00:00+09:00`,
+    calendarEndsAt: `${endDate}T17:30:00+09:00`,
+  };
+}
+
+function parseEnglishMonthDateRangeWithWeekdays(dateText) {
+  const cleaned = dateText
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return parseEnglishMonthDateRange(cleaned);
+}
+
+function toJapanDate(value) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  }).format(value);
+}
+
+function extractYearFromUrl(url) {
+  const match = url.match(/\/(20\d{2})\//);
+  return match ? match[1] : null;
+}
+
+function toDateOnly(year, month, day) {
+  return `${String(year)}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function parseSibasiDateRange(text, detailUrl) {
+  const inferredYear = extractYearFromUrl(detailUrl);
+
+  const explicitRange = text.match(
+    /(?:日時|日程|会期)[：:\s]*((\d{4})年(\d{1,2})月(\d{1,2})日[^。\n]{0,40}?[〜～\-－]\s*(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日)/u
+  );
+  if (explicitRange) {
+    const [, matchedText, startYear, startMonth, startDay, endYear, endMonth, endDay] = explicitRange;
+    return {
+      dateText: matchedText.trim(),
+      startDate: toDateOnly(startYear, startMonth, startDay),
+      endDate: toDateOnly(endYear ?? startYear, endMonth, endDay),
+    };
+  }
+
+  const shortRange = text.match(
+    /(?:日時|日程|会期|を)\s*[：:\s]*?(\d{1,2})\/(\d{1,2})\s*[〜～\-－]\s*(?:(\d{1,2})\/)?(\d{1,2})/u
+  );
+  if (shortRange && inferredYear) {
+    const [, startMonth, startDay, maybeEndMonth, endDay] = shortRange;
+    const endMonth = maybeEndMonth ?? startMonth;
+    return {
+      dateText: shortRange[0].replace(/^(?:日時|日程|会期|を)\s*[：:\s]*/u, "").trim(),
+      startDate: toDateOnly(inferredYear, startMonth, startDay),
+      endDate: toDateOnly(inferredYear, endMonth, endDay),
+    };
+  }
+
+  const explicitSingle = text.match(
+    /(?:日時|日程|会期)[：:\s]*((\d{4})年(\d{1,2})月(\d{1,2})日)/u
+  );
+  if (explicitSingle) {
+    const [, matchedText, year, month, day] = explicitSingle;
+    return {
+      dateText: matchedText.trim(),
+      startDate: toDateOnly(year, month, day),
+      endDate: toDateOnly(year, month, day),
+    };
+  }
+
+  const shortSingle = text.match(
+    /(?:日時|日程|会期)[：:\s]*((\d{1,2})月(\d{1,2})日)/u
+  );
+  if (shortSingle && inferredYear) {
+    const [, matchedText, month, day] = shortSingle;
+    return {
+      dateText: matchedText.trim(),
+      startDate: toDateOnly(inferredYear, month, day),
+      endDate: toDateOnly(inferredYear, month, day),
+    };
+  }
+
+  return {
+    dateText: "See source page",
+    startDate: null,
+    endDate: null,
   };
 }
 
@@ -436,6 +573,50 @@ function extractKacDetailUrls(listingHtml, listingUrl) {
   return [...new Set(matches)];
 }
 
+function extractSibasiDetailUrls(listingPages, genericDetailLimit = 8) {
+  const detailUrls = listingPages.flatMap(({ html, url }) => {
+    const matches = [...html.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
+      .map((match) => ({
+        url: normalizeUrl(match[2], url),
+        text: stripTags(match[3]).replace(/\s+/g, " ").trim(),
+      }))
+      .filter((entry) => entry.url)
+      .filter((entry) => /\/20\d{2}\/\d{2}\/\d{2}\//.test(new URL(entry.url).pathname))
+      .filter((entry) => !/追加チケット|予約開始|会場限定|ご案内|ありがとうございました|item list|items/i.test(entry.text));
+
+    return matches.map((entry) => entry.url);
+  });
+
+  return [...new Set(detailUrls)].slice(0, genericDetailLimit * 2);
+}
+
+function extractEssenceDetailUrls(_listingHtml, listingUrl) {
+  return [listingUrl];
+}
+
+function extractKyohakuDetailUrls(listingHtml, listingUrl) {
+  const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
+    .map((match) => ({
+      url: normalizeUrl(match[2], listingUrl),
+      text: stripTags(match[3]).replace(/\s+/g, " ").trim(),
+    }))
+    .filter((entry) => entry.url)
+    .filter((entry) => /(Current|Upcoming)/i.test(entry.text))
+    .filter((entry) => /Exhibition/i.test(entry.text))
+    .filter((entry) => sourceAllowsUrl({
+      allowed_domains: ["www.kyohaku.go.jp", "kyohaku.go.jp"],
+    }, entry.url))
+    .filter((entry) => /\/exhibitions\//i.test(new URL(entry.url).pathname));
+
+  const urls = [...new Set(matches.map((entry) => entry.url))];
+
+  if (!urls.length) {
+    throw new Error("Could not find Kyoto National Museum exhibition detail URLs on the listing page");
+  }
+
+  return urls.slice(0, 2);
+}
+
 function toDetailUrlList(value) {
   const values = Array.isArray(value) ? value : [value];
   return [...new Set(values.filter(Boolean))];
@@ -502,6 +683,190 @@ function extractKacEvent(detailHtml, source, detailUrl) {
     calendar_starts_at: parsedDates.calendarStartsAt,
     calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: primaryImageUrl,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractSibasiEvent(detailHtml, source, detailUrl) {
+  const title = stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? "")
+    .replace(/\s*[–-]\s*sibasi$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!title) {
+    throw new Error("Could not extract event title from Sibasi detail page");
+  }
+
+  const pageText = stripTags(detailHtml);
+  const parsedDates = parseSibasiDateRange(pageText, detailUrl);
+  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
+
+  const category = detailUrl.includes("/exhibition") ? "exhibition" : "live";
+
+  return {
+    title,
+    artist_name: null,
+    categories: [category, source.source_type].filter(Boolean),
+    description: extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
+    date_text: parsedDates.dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.startDate ? `${parsedDates.startDate}T00:00:00+09:00` : null,
+    calendar_ends_at: parsedDates.endDate ? `${parsedDates.endDate}T23:59:00+09:00` : null,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractEssenceEvent(detailHtml, source, detailUrl) {
+  const featureRows = [...detailHtml.matchAll(
+    /<img class="feature-row__image lazyload"[\s\S]*?src="([^"]+)"[\s\S]*?<h2>([\s\S]*?)<\/h2>[\s\S]*?<div class="rte-setting featured-row__subtext">([\s\S]*?)<\/div>/gi
+  )]
+    .map((match) => ({
+      imageUrl: match[1],
+      title: stripTags(match[2]).replace(/\s+/g, " ").trim(),
+      bodyHtml: match[3],
+      bodyText: stripTags(match[3]),
+    }))
+    .filter((row) => row.title && row.bodyText);
+
+  const topRows = featureRows.slice(0, 2);
+
+  if (!topRows.length) {
+    throw new Error("Could not extract homepage exhibition rows from Essence Kyoto");
+  }
+
+  const englishRow = topRows.find((row) => /[A-Za-z]/.test(row.title) && /Dates:/i.test(row.bodyText)) ?? topRows[0];
+  const bilingualTitle = topRows[0]?.title ?? englishRow.title;
+  const englishTitle = englishRow.title;
+  const dateTextMatch = englishRow.bodyText.match(/Dates:\s*([^\n]+)/i);
+  const dateText = dateTextMatch?.[1]?.trim() ?? "See source page";
+  const parsedDates = parseEnglishMonthDateRangeWithWeekdays(dateText);
+  const openText = englishRow.bodyText.match(/Open:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
+  const description = englishRow.bodyText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^Dates:/i.test(line) && !/^Open:/i.test(line) && !/^No reservations/i.test(line))
+    .slice(0, 3)
+    .join("\n\n");
+
+  const imageUrls = finalizeImageUrls(
+    topRows.map((row) => ({
+      url: row.imageUrl.startsWith("//") ? `https:${row.imageUrl}` : row.imageUrl,
+      source: "img",
+    })),
+    detailUrl
+  );
+
+  return {
+    title: englishTitle || bilingualTitle,
+    artist_name: null,
+    categories: ["exhibition", "gallery"],
+    description: description || extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: openText,
+    end_time_text: null,
+    is_all_day: !openText,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
+function extractKyohakuEvent(detailHtml, source, detailUrl) {
+  const title = stripTags(
+    detailHtml.match(/<dt>Exhibition Title<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ?? ""
+  );
+
+  if (!title) {
+    throw new Error("Could not extract event title from Kyoto National Museum detail page");
+  }
+
+  const dateText = stripTags(
+    detailHtml.match(/<dt>Period<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ?? ""
+  )
+    .split("\n")[0]
+    .trim() || "See source page";
+
+  const descriptionSection = detailHtml.match(
+    /<h2 class="titleBg gold large" id="Contents02">Description of Exhibition<\/h2>([\s\S]*?)(?:<div class="imgPosition">|<h3|<div class="wallBelt|<footer)/i
+  )?.[1] ?? "";
+
+  const description = [...descriptionSection.matchAll(/<p>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]))
+    .map((value) => value.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join("\n\n");
+
+  const venueName = stripTags(
+    detailHtml.match(/<dt>Venue<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ?? ""
+  ) || source.name;
+
+  const imageUrls = finalizeImageUrls([
+    {
+      url: detailHtml.match(/<h1[^>]*>\s*<img[^>]+src="([^"]+)"/i)?.[1],
+      source: "img",
+    },
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*\/exhibitions\/[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
+
+  const parsedDates = parseEnglishMonthDateRange(dateText);
+
+  return {
+    title,
+    artist_name: null,
+    categories: ["exhibition", "museum", "special-exhibition"],
+    description: description || extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: venueName,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: "9:00-17:30",
+    end_time_text: null,
+    is_all_day: false,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     source_url: detailUrl,
   };
@@ -881,15 +1246,20 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
 }
 
 const detailUrlExtractors = {
+  "essence-kyoto": extractEssenceDetailUrls,
   "kyoto-art-center": extractKacDetailUrls,
+  "kyoto-national-museum": extractKyohakuDetailUrls,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraDetailUrls,
   "the-national-museum-of-modern-art": extractMomakDetailUrls,
   "sen-oku-hakukokan-museum": extractSenOkuDetailUrls,
 };
 
 const eventExtractors = {
+  "essence-kyoto": extractEssenceEvent,
   "kyoto-art-center": extractKacEvent,
+  "kyoto-national-museum": extractKyohakuEvent,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
+  "sibasi": extractSibasiEvent,
   "the-national-museum-of-modern-art": extractMomakEvent,
   "sen-oku-hakukokan-museum": extractSenOkuEvent,
 };
@@ -1055,20 +1425,29 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
   const crawlRun = await createCrawlRun(env, source.id);
 
   try {
-    const listingUrl = source.start_urls?.[0];
-    if (!listingUrl) {
+    const listingUrls = [...new Set(source.start_urls?.filter(Boolean) ?? [])];
+    if (!listingUrls.length) {
       throw new Error(`Source "${source.slug}" does not have a start URL`);
     }
 
     let pagesFetched = 0;
-    const listingPage = await fetchHtml(listingUrl, userAgent);
-    pagesFetched += 1;
-    await upsertRawPage(env, source.id, crawlRun.id, "listing", listingPage);
+    const listingPages = [];
+
+    for (const listingUrl of listingUrls) {
+      const listingPage = await fetchHtml(listingUrl, userAgent);
+      pagesFetched += 1;
+      await upsertRawPage(env, source.id, crawlRun.id, "listing", listingPage);
+      listingPages.push(listingPage);
+    }
 
     const detailUrlExtractor = detailUrlExtractors[source.slug];
-    const detailUrls = detailUrlExtractor
-      ? detailUrlExtractor(listingPage.html, listingUrl)
-      : extractGenericDetailUrls(listingPage.html, listingUrl, source, genericDetailLimit);
+    const detailUrls = source.slug === "sibasi"
+      ? extractSibasiDetailUrls(listingPages, genericDetailLimit)
+      : detailUrlExtractor
+        ? detailUrlExtractor(listingPages[0].html, listingPages[0].url)
+        : [...new Set(listingPages.flatMap((listingPage) =>
+            extractGenericDetailUrls(listingPage.html, listingPage.url, source, genericDetailLimit)
+          ))];
 
     if (!detailUrls.length) {
       throw new Error(`No detail URLs were extracted for source "${source.slug}"`);
@@ -1088,14 +1467,42 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
     }
 
     const eventExtractor = eventExtractors[source.slug] ?? extractGenericEvent;
+    const todayJapan = toJapanDate(new Date());
 
     const savedEvents = [];
+    const skippedEvents = [];
 
     for (const detailUrl of detailUrls) {
       const detailPage = await fetchHtml(detailUrl, userAgent);
       pagesFetched += 1;
       const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, "detail", detailPage);
       const extractedEvent = eventExtractor(detailPage.html, source, detailUrl, sourceContext);
+
+      if (source.slug === "sibasi") {
+        const hasVerifiedDate =
+          Boolean(extractedEvent.start_date) ||
+          Boolean(extractedEvent.end_date) ||
+          (Array.isArray(extractedEvent.occurrence_dates) && extractedEvent.occurrence_dates.length > 0);
+
+        if (!hasVerifiedDate) {
+          skippedEvents.push({
+            detailUrl,
+            title: extractedEvent.title,
+            reason: "missing verifiable event date",
+          });
+          continue;
+        }
+
+        if (classifyEventTiming(extractedEvent, todayJapan) === "past") {
+          skippedEvents.push({
+            detailUrl,
+            title: extractedEvent.title,
+            reason: "past event",
+          });
+          continue;
+        }
+      }
+
       const dedupeKey = buildEventDedupeKey(extractedEvent);
       const savedEvent = await upsertEvent(
         env,
@@ -1115,7 +1522,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
     await updateCrawlRun(env, crawlRun.id, {
       status: "success",
       finished_at: new Date().toISOString(),
-      pages_queued: detailUrls.length + 1,
+      pages_queued: detailUrls.length + listingPages.length,
       pages_fetched: pagesFetched,
       pages_parsed: savedEvents.length,
       events_created: savedEvents.length,
@@ -1128,6 +1535,10 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
         ...savedEvents.map((savedEvent) => ({
           level: "info",
           message: `Stored event ${savedEvent.eventId} from ${savedEvent.detailUrl}`,
+        })),
+        ...skippedEvents.map((skippedEvent) => ({
+          level: "info",
+          message: `Skipped ${skippedEvent.reason ?? "event"} from ${skippedEvent.detailUrl}${skippedEvent.title ? ` (${skippedEvent.title})` : ""}`,
         })),
       ],
     });
