@@ -277,6 +277,17 @@ a
   &:not([data-toggle-ready='true'])[data-active='false'] .event-card__body__content
     display: none
 
+  [data-event-card-fade]
+    opacity: 0
+    transform: translateY(0.5rem)
+    pointer-events: none
+    transition: opacity 180ms ease, transform 180ms ease
+
+  &[data-active='true'] [data-event-card-fade]
+    opacity: 1
+    transform: translateY(0)
+    pointer-events: auto
+
   &__media
     flex: 1 1 auto
     display: flex
