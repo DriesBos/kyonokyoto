@@ -104,7 +104,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   tabindex="0"
   aria-pressed="false"
 >
-
+  <div class="event-card__dot" aria-hidden="true"></div>
   <div class="event-card__body">
     <div class="event-card__body__header">
       <h2 class="event-card__title">{event.title}</h2>
@@ -203,11 +203,21 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   } from "../lib/heightTransition";
 
   if (!window.__eventCardToggleBound) {
-    const interactiveSelector = "a, button, input, select, textarea, summary, [role='button']";
+    const actionSelector = ".event-card__actions .general-button";
     const cardSelector = "[data-event-card-toggle]";
     const contentSelector = ".event-card__body__content";
     const fadeSelector = "[data-event-card-fade]";
+    const mediaSelector = ".event-card__media";
     const mediaHeightProperty = "--event-card-media-row-height-current";
+    const mediaScrollThreshold = 6;
+    const mediaPointerState = new Map();
+    const mediaScrollClickSuppressions = new WeakSet();
+
+    const setCardDotPosition = (card, clientX, clientY) => {
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty("--event-card-dot-left", `${clientX - rect.left}px`);
+      card.style.setProperty("--event-card-dot-top", `${clientY - rect.top}px`);
+    };
 
     const getMediaHeight = (card, isActive) => {
       const styles = window.getComputedStyle(card);
@@ -343,14 +353,57 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       setContentState(card, card.getAttribute("data-active") === "true");
     });
 
+    document.addEventListener("pointerdown", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const media = target.closest(mediaSelector);
+      if (!(media instanceof HTMLElement)) return;
+
+      mediaPointerState.set(event.pointerId, {
+        media,
+        x: event.clientX,
+        y: event.clientY,
+        scrollLeft: media.scrollLeft,
+      });
+    });
+
+    document.addEventListener("pointerup", (event) => {
+      const state = mediaPointerState.get(event.pointerId);
+      if (!state) return;
+
+      mediaPointerState.delete(event.pointerId);
+
+      const deltaX = Math.abs(event.clientX - state.x);
+      const deltaY = Math.abs(event.clientY - state.y);
+      const scrollDelta = Math.abs(state.media.scrollLeft - state.scrollLeft);
+      const wasHorizontalScroll = scrollDelta > 0 || (deltaX > mediaScrollThreshold && deltaX > deltaY);
+
+      if (wasHorizontalScroll) {
+        mediaScrollClickSuppressions.add(state.media);
+      }
+    });
+
+    document.addEventListener("pointercancel", (event) => {
+      mediaPointerState.delete(event.pointerId);
+    });
+
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
+      const media = target.closest(mediaSelector);
+      if (media instanceof HTMLElement && mediaScrollClickSuppressions.has(media)) {
+        mediaScrollClickSuppressions.delete(media);
+        event.preventDefault();
+        return;
+      }
+
       const card = target.closest(cardSelector);
       if (!(card instanceof HTMLElement)) return;
-      if (target.closest(interactiveSelector) && target !== card) return;
+      if (target.closest(actionSelector)) return;
 
+      setCardDotPosition(card, event.clientX, event.clientY);
       toggleCard(card);
     });
 
