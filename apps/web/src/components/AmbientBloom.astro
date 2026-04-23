@@ -1,0 +1,108 @@
+<div class="ambient-bloom-field" data-ambient-bloom-field aria-hidden="true"></div>
+
+<script>
+  import { createAmbientBloomEngine } from "../lib/ambientBloom";
+  import type { AmbientBloomNote } from "../lib/ambientBloom";
+
+  type AmbientBloomWindow = Window &
+    typeof globalThis & {
+      __ambientBloomBound?: boolean;
+    };
+
+  const ambientWindow = window as AmbientBloomWindow;
+
+  if (!ambientWindow.__ambientBloomBound) {
+    const fieldSelector = "[data-ambient-bloom-field]";
+    const buttonSelector = "[data-ambient-sound-button]";
+    let field = document.querySelector(fieldSelector);
+
+    const getField = () => {
+      field = document.querySelector(fieldSelector);
+      return field instanceof HTMLElement ? field : null;
+    };
+
+    const syncFieldSize = () => {
+      const target = getField();
+      if (!target) return;
+
+      target.style.width = `${Math.max(document.documentElement.scrollWidth, window.innerWidth)}px`;
+      target.style.height = `${Math.max(document.documentElement.scrollHeight, window.innerHeight)}px`;
+    };
+
+    const removeOldDots = (target: HTMLElement) => {
+      const dots = Array.from(target.querySelectorAll(".ambient-bloom-dot"));
+      const overflow = dots.length - 42;
+      if (overflow <= 0) return;
+
+      dots.slice(0, overflow).forEach((dot) => dot.remove());
+    };
+
+    const spawnDot = (note: AmbientBloomNote) => {
+      const target = getField();
+      if (!target) return;
+
+      syncFieldSize();
+
+      const x = window.scrollX + note.viewportX * window.innerWidth;
+      const y = window.scrollY + note.viewportY * window.innerHeight;
+      const dot = document.createElement("span");
+      const scale = 1.4 + note.loudness * 3.6;
+      const size = 2.2 + note.velocity * 4.6;
+      const opacity = 0.16 + note.loudness * 0.26;
+
+      dot.className = "ambient-bloom-dot";
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+      dot.style.setProperty("--ambient-dot-size", `${size}rem`);
+      dot.style.setProperty("--ambient-dot-scale", String(scale));
+      dot.style.setProperty("--ambient-dot-opacity", String(opacity));
+      dot.style.setProperty("--ambient-dot-duration", `${note.duration}s`);
+      dot.style.setProperty("--ambient-dot-hue", `${320 + note.viewportY * 26}deg`);
+      dot.dataset.note = note.note;
+      dot.addEventListener("animationend", () => dot.remove(), { once: true });
+
+      target.append(dot);
+      removeOldDots(target);
+    };
+
+    const engine = createAmbientBloomEngine({ onNote: spawnDot });
+
+    const syncButtons = (isActive: boolean) => {
+      document.querySelectorAll(buttonSelector).forEach((button) => {
+        if (!(button instanceof HTMLElement)) return;
+
+        button.setAttribute("aria-pressed", String(isActive));
+        button.dataset.ambientState = isActive ? "on" : "off";
+      });
+    };
+
+    document.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const button = target.closest(buttonSelector);
+      if (!(button instanceof HTMLElement)) return;
+
+      event.preventDefault();
+      button.setAttribute("disabled", "");
+
+      try {
+        if (engine.active) {
+          await engine.stop();
+          syncButtons(false);
+        } else {
+          await engine.start();
+          syncButtons(true);
+        }
+      } finally {
+        button.removeAttribute("disabled");
+      }
+    });
+
+    syncFieldSize();
+    window.addEventListener("resize", syncFieldSize);
+    window.addEventListener("scroll", syncFieldSize, { passive: true });
+    document.addEventListener("astro:page-load", syncFieldSize);
+    ambientWindow.__ambientBloomBound = true;
+  }
+</script>

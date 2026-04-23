@@ -35,6 +35,12 @@ const timingFilters = [
             aria-expanded="false"
             aria-controls="category-filter-options"
           />
+          <GeneralButton
+            label="ambient"
+            pressed={false}
+            showDot={true}
+            dataAmbientSoundButton={true}
+          />
           <div class="category-filter__options" id="category-filter-options" data-filter-options>
             {timingFilters.map((filter) => (
               <GeneralButton

@@ -213,6 +213,15 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     const mediaPointerState = new Map();
     const mediaScrollClickSuppressions = new WeakSet();
 
+    const canScrollMedia = (media) => media.scrollWidth > media.clientWidth + 1;
+
+    const releaseMediaPointer = (pointerId, state) => {
+      if (!state?.capturedPointer) return;
+      if (typeof state.media.hasPointerCapture !== "function") return;
+      if (!state.media.hasPointerCapture(pointerId)) return;
+      state.media.releasePointerCapture(pointerId);
+    };
+
     const getCardDot = (card) => {
       const existingDot = document.querySelector(`.${cardDotClass}`);
       if (existingDot instanceof HTMLElement) {
@@ -325,6 +334,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       killHeightTransitionTweens([card, content]);
       killFadeTransitionTweens(fadeTargets);
+      card.toggleAttribute("data-height-transitioning", true);
       card.style.overflow = "hidden";
 
       if (isActive) {
@@ -339,12 +349,17 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
           onComplete: () => {
             card.style.height = "";
             card.style.overflow = "";
+            card.toggleAttribute("data-height-transitioning", false);
             content.style.height = "auto";
           },
         });
 
         toHeight(timeline, card, expandedCardHeight, true, 0);
-        timeline.to(card, { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(true) }, 0);
+        timeline.to(
+          card,
+          { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(true) },
+          0
+        );
         toHeight(timeline, content, targetContentHeight, true, 0);
         fadeIn(fadeTargets, { delay: 0.06 });
         return;
@@ -360,6 +375,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         onComplete: () => {
           card.style.height = "";
           card.style.overflow = "";
+          card.toggleAttribute("data-height-transitioning", false);
           content.style.height = "0px";
         },
       });
@@ -404,19 +420,47 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         x: event.clientX,
         y: event.clientY,
         scrollLeft: media.scrollLeft,
+        pointerType: event.pointerType,
+        dragging: false,
+        capturedPointer: false,
       });
+
+      const state = mediaPointerState.get(event.pointerId);
+      if (event.pointerType !== "touch" && canScrollMedia(media) && typeof media.setPointerCapture === "function") {
+        media.setPointerCapture(event.pointerId);
+        state.capturedPointer = true;
+      }
+    });
+
+    document.addEventListener("pointermove", (event) => {
+      const state = mediaPointerState.get(event.pointerId);
+      if (!state || state.pointerType === "touch") return;
+
+      const deltaX = event.clientX - state.x;
+      const deltaY = event.clientY - state.y;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      if (!state.dragging) {
+        if (absX <= mediaScrollThreshold || absX <= absY || !canScrollMedia(state.media)) return;
+        state.dragging = true;
+      }
+
+      state.media.scrollLeft = state.scrollLeft - deltaX;
+      event.preventDefault();
     });
 
     document.addEventListener("pointerup", (event) => {
       const state = mediaPointerState.get(event.pointerId);
       if (!state) return;
 
+      releaseMediaPointer(event.pointerId, state);
       mediaPointerState.delete(event.pointerId);
 
       const deltaX = Math.abs(event.clientX - state.x);
       const deltaY = Math.abs(event.clientY - state.y);
       const scrollDelta = Math.abs(state.media.scrollLeft - state.scrollLeft);
-      const wasHorizontalScroll = scrollDelta > 0 || (deltaX > mediaScrollThreshold && deltaX > deltaY);
+      const wasHorizontalScroll = state.dragging || scrollDelta > 0 || (deltaX > mediaScrollThreshold && deltaX > deltaY);
 
       if (wasHorizontalScroll) {
         mediaScrollClickSuppressions.add(state.media);
@@ -424,6 +468,8 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     });
 
     document.addEventListener("pointercancel", (event) => {
+      const state = mediaPointerState.get(event.pointerId);
+      releaseMediaPointer(event.pointerId, state);
       mediaPointerState.delete(event.pointerId);
     });
 

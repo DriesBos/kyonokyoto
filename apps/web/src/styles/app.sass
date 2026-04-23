@@ -60,14 +60,21 @@ $image-placeholder: #dcdcdc
 html
   position: relative
   height: 100%
+  width: 100%
+  max-width: 100%
   font-size: clamp(16px, calc(16px + (20 - 16) * (((100vw - #{$fluid-type-min-width}) / (#{$fluid-type-max-width} - #{$fluid-type-min-width})))), 20px)
   background: var(--main-background)
+  overflow-x: hidden
+  overflow-x: clip
   overscroll-behavior: none
+  overscroll-behavior-x: none
   +thin-scrollbar
 
 body
   position: relative
   height: 100%
+  width: 100%
+  max-width: 100%
   margin: 0
   background: var(--main-background)
   color: var(--main-color)
@@ -78,15 +85,55 @@ body
   text-rendering: optimizeLegibility
   cursor: var(--dot-cursor)
   min-height: 100vh
+  overflow-x: hidden
+  overflow-x: clip
   overscroll-behavior: none
+  overscroll-behavior-x: none
   +thin-scrollbar
 
 main
   position: relative
+  z-index: 1
   height: 100%
   display: flex
   flex-direction: column
   gap: 2rem
+
+.ambient-bloom-field
+  position: absolute
+  z-index: 0
+  top: 0
+  left: 0
+  min-width: 100%
+  min-height: 100%
+  pointer-events: none
+  overflow: hidden
+  transform: translateZ(0)
+
+.ambient-bloom-dot
+  position: absolute
+  width: var(--ambient-dot-size, 4rem)
+  height: var(--ambient-dot-size, 4rem)
+  border-radius: 50%
+  background: hsl(var(--ambient-dot-hue, 328deg) 100% 70%)
+  opacity: 0
+  mix-blend-mode: multiply
+  transform: translate(-50%, -50%) scale(0.12)
+  animation: ambient-bloom-pulse var(--ambient-dot-duration, 6s) ease-out forwards
+  will-change: opacity, transform
+
+@keyframes ambient-bloom-pulse
+  0%
+    opacity: 0
+    transform: translate(-50%, -50%) scale(0.12)
+
+  16%
+    opacity: var(--ambient-dot-opacity, 0.28)
+    transform: translate(-50%, -50%) scale(0.76)
+
+  100%
+    opacity: 0
+    transform: translate(-50%, -50%) scale(var(--ambient-dot-scale, 3))
 
 button,
 input,
@@ -135,7 +182,7 @@ a
   margin: 0
 
 .category-filter
-  display: flex
+  display: inline-flex
   flex-wrap: wrap
   justify-content: flex-end
   gap: 0.75rem
@@ -144,7 +191,7 @@ a
   overflow: visible
 
   &__options
-    display: flex
+    display: inline-flex
     flex-wrap: wrap
     justify-content: flex-end
     gap: 0.75rem
@@ -320,15 +367,22 @@ a
   &[data-active='true'] [data-event-card-fade]
     pointer-events: auto
 
+  &[data-height-transitioning]
+    will-change: height
+
+    .event-card__body__content
+      will-change: height
+
   &__media
     flex: 1 1 auto
     display: flex
-    justify-content: flex-end
+    justify-content: flex-start
     gap: var(--event-card-media-gap)
     min-width: 0
     max-height: var(--event-card-media-row-height-current)
     // border: 1px solid purple
     overflow-x: auto
+    overflow-y: hidden
     overscroll-behavior-x: contain
     flex-wrap: nowrap
     pointer-events: auto
@@ -342,6 +396,9 @@ a
     height: var(--event-card-media-row-height-current)
     flex: 0 0 auto
     background: $image-placeholder
+
+    &:first-child
+      margin-left: auto
 
     &--placeholder
       display: grid

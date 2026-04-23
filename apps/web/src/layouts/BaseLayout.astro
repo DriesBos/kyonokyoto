@@ -1,6 +1,7 @@
 ---
 import "../styles/reset.css";
 import "../styles/app.sass";
+import AmbientBloom from "../components/AmbientBloom.astro";
 
 type Props = {
   title?: string;
@@ -45,6 +46,7 @@ const appName = "KyōNoKyōto";
     <meta name="description" content={description} />
   </head>
   <body>
+    <AmbientBloom />
     <slot />
     <script>
       const elasticLinesEnabled = false;

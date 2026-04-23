@@ -16,6 +16,7 @@ type Props = {
   dataTiming?: string;
   dataTimingButton?: boolean;
   dataFilterButton?: boolean;
+  dataAmbientSoundButton?: boolean;
   ariaControls?: string;
 };
 
@@ -36,6 +37,7 @@ const {
   dataTiming,
   dataTimingButton = false,
   dataFilterButton = false,
+  dataAmbientSoundButton = false,
   ariaControls,
   ...rest
 } = Astro.props;
@@ -55,6 +57,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -71,6 +74,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -89,6 +93,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}

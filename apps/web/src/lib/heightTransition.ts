@@ -18,9 +18,12 @@ export const createHeightTransitionTimeline = (
   options: Parameters<typeof gsap.timeline>[0] = {},
 ) =>
   gsap.timeline({
+    autoRemoveChildren: true,
     ...options,
     defaults: {
+      autoRound: false,
       ease: heightTransition.ease,
+      overwrite: 'auto',
       ...options.defaults,
     },
   });
@@ -40,7 +43,9 @@ export const toHeight = (
     element,
     {
       height,
+      autoRound: false,
       duration: getHeightTransitionDuration(isExpanding),
+      overwrite: 'auto',
     },
     position,
   );
