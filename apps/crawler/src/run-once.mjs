@@ -220,6 +220,94 @@ function normalizeUrl(value, baseUrl) {
   }
 }
 
+function parseTagAttributes(tagHtml) {
+  const attributes = {};
+
+  for (const match of tagHtml.matchAll(/([:@a-zA-Z0-9_-]+)\s*=\s*(["'])(.*?)\2/g)) {
+    attributes[match[1].toLowerCase()] = match[3];
+  }
+
+  return attributes;
+}
+
+function parsePositiveInteger(value) {
+  if (!value) return null;
+  const match = String(value).match(/\d+/);
+  if (!match) return null;
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function looksLikeSocialOrUiImage(url) {
+  return /data:image|spacer|sprite|logo|icon|favicon|avatar|loader|loading|blank|pixel|tracking|analytics/i.test(url) ||
+    /(?:^|[\/_.-])(facebook|instagram|twitter|social|sns|share|line|youtube|pinterest|linkedin)(?:[\/_.-]|$)/i.test(url) ||
+    /(?:^|[\/_.-])x[_-]?banner(?:[\/_.-]|$)/i.test(url);
+}
+
+function scoreImageCandidate(candidate) {
+  let score = 0;
+  const url = candidate.url.toLowerCase();
+  const width = candidate.width ?? 0;
+  const height = candidate.height ?? 0;
+
+  if (candidate.source === "og:image") score += 20;
+  if (/wp-content\/uploads|\/uploads\/|\/media\/|\/images?\//i.test(url)) score += 15;
+  if (/exhi|exhibition|event|program|museum|art|craft|gallery|film|schedule/i.test(url)) score += 8;
+  if (width >= 256) score += 8;
+  if (height >= 256) score += 8;
+  if (width >= 512) score += 8;
+  if (height >= 512) score += 8;
+  if (width && height) score += Math.min(width * height, 1600000) / 100000;
+
+  return score;
+}
+
+function finalizeImageUrls(candidates, baseUrl) {
+  const accepted = [];
+  const rejected = [];
+
+  for (const candidate of candidates) {
+    const url = candidate?.url ? normalizeUrl(candidate.url, baseUrl) : null;
+    if (!url) continue;
+
+    const width = parsePositiveInteger(candidate.width);
+    const height = parsePositiveInteger(candidate.height);
+
+    if (looksLikeSocialOrUiImage(url)) {
+      rejected.push(url);
+      continue;
+    }
+
+    if ((width && width < 64) || (height && height < 64)) {
+      rejected.push(url);
+      continue;
+    }
+
+    accepted.push({
+      url,
+      width,
+      height,
+      source: candidate.source ?? "img",
+      score: scoreImageCandidate({ url, width, height, source: candidate.source ?? "img" }),
+    });
+  }
+
+  const deduped = new Map();
+  for (const candidate of accepted) {
+    const existing = deduped.get(candidate.url);
+    if (!existing || candidate.score > existing.score) {
+      deduped.set(candidate.url, candidate);
+    }
+  }
+
+  const ranked = [...deduped.values()]
+    .sort((left, right) => right.score - left.score || left.url.localeCompare(right.url))
+    .map((candidate) => candidate.url)
+    .slice(0, 8);
+
+  return ranked.length ? ranked : [];
+}
+
 function sourceAllowsUrl(source, url) {
   const host = new URL(url).hostname;
   return (source.allowed_domains ?? []).some((domain) => host === domain || host.endsWith(`.${domain}`));
@@ -300,15 +388,21 @@ function extractFirstDateText(text) {
 }
 
 function extractGenericImageUrls(detailHtml, detailUrl) {
-  const urls = [
-    extractMeta(detailHtml, "og:image"),
-    ...[...detailHtml.matchAll(/<img\b[^>]+src=(["'])(.*?)\1/gi)].map((match) => match[2]),
-  ]
-    .map((value) => value ? normalizeUrl(value, detailUrl) : null)
-    .filter(Boolean)
-    .filter((url) => !/data:image|spacer|logo|icon/i.test(url));
+  const ogImage = extractMeta(detailHtml, "og:image");
+  const imageCandidates = [
+    ...(ogImage ? [{ url: ogImage, source: "og:image" }] : []),
+    ...[...detailHtml.matchAll(/<img\b[^>]*>/gi)].map((match) => {
+      const attributes = parseTagAttributes(match[0]);
+      return {
+        url: attributes.src ?? attributes["data-src"] ?? attributes["data-original"] ?? attributes["data-lazy-src"] ?? null,
+        width: attributes.width,
+        height: attributes.height,
+        source: "img",
+      };
+    }),
+  ];
 
-  return [...new Set(urls)].slice(0, 8);
+  return finalizeImageUrls(imageCandidates, detailUrl);
 }
 
 function extractClassBlock(html, className, tagName = "[a-z0-9]+") {
@@ -364,12 +458,14 @@ function extractKacEvent(detailHtml, source, detailUrl) {
     extractMeta(detailHtml, "og:description") ??
     "";
 
-  const imageMatches = [
-    ...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi),
-  ].map((match) => match[1]);
-
-  const imageUrls = [...new Set(imageMatches)];
-  const primaryImageUrl = extractMeta(detailHtml, "og:image") ?? imageUrls[0] ?? null;
+  const imageUrls = finalizeImageUrls([
+    { url: extractMeta(detailHtml, "og:image"), source: "og:image" },
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
+  const primaryImageUrl = imageUrls[0] ?? null;
 
   const categories = [...new Set([genre, category]
     .flatMap((value) => (value ? value.split(/[／/、,]/) : []))
@@ -488,11 +584,14 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
           .filter(Boolean)
       );
 
-  const imageMatches = [
-    ...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi),
-  ].map((match) => match[1]);
-  const imageUrls = [...new Set(imageMatches)];
-  const primaryImageUrl = extractMeta(detailHtml, "og:image") ?? imageUrls[0] ?? null;
+  const imageUrls = finalizeImageUrls([
+    { url: extractMeta(detailHtml, "og:image"), source: "og:image" },
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
+  const primaryImageUrl = imageUrls[0] ?? null;
 
   const normalizedCategories = [
     "exhibition",
@@ -606,11 +705,16 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
     detailHtml.match(/<div class="description">[\s\S]*?<p>([\s\S]*?)<\/p>/i)?.[1] ?? ""
   );
 
-  const imageUrls = [
-    detailHtml.match(/<section id="scMainImg"[\s\S]*?<img src="([^"]+)"/i)?.[1],
-    ...[...detailHtml.matchAll(/<img src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => match[1]),
-  ].filter(Boolean);
-  const uniqueImageUrls = [...new Set(imageUrls)];
+  const uniqueImageUrls = finalizeImageUrls([
+    {
+      url: detailHtml.match(/<section id="scMainImg"[\s\S]*?<img src="([^"]+)"/i)?.[1],
+      source: "img",
+    },
+    ...[...detailHtml.matchAll(/<img src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
 
   const parsedDates = parseMomakDateRange(dateText);
   const addressText =
@@ -668,11 +772,13 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
       ""
   );
 
-  const imageUrls = [
-    extractMeta(detailHtml, "og:image"),
-    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => match[1]),
-  ].filter(Boolean);
-  const uniqueImageUrls = [...new Set(imageUrls)];
+  const uniqueImageUrls = finalizeImageUrls([
+    { url: extractMeta(detailHtml, "og:image"), source: "og:image" },
+    ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
+      url: match[1],
+      source: "img",
+    })),
+  ], detailUrl);
   const parsedDates = parseDottedDateRange(dateText);
   const addressText =
     (context.accessHtml ? extractSenOkuAddress(context.accessHtml) : null) ??
