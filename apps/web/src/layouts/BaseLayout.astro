@@ -43,18 +43,11 @@ const appName = "KyōNoKyōto";
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <script is:inline>
-      document.documentElement.classList.add("has-js");
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        document.documentElement.classList.add("reduced-motion");
-      }
-    </script>
   </head>
   <body>
     <slot />
     <script>
       if (!window.__elasticLinesBound) {
-        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
         const supportsFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
         const lineSelector = "[data-elastic-line='top']";
         const activeLines = new Set();
@@ -67,7 +60,7 @@ const appName = "KyōNoKyōto";
           return Number.isFinite(parsed) ? parsed : fallback;
         };
 
-        const shouldEnhance = () => supportsFinePointer.matches && !prefersReducedMotion.matches;
+        const shouldEnhance = () => supportsFinePointer.matches;
 
         const buildPath = (width, baseline, x, y) => {
           const centerOffset = x - width * 0.5;
@@ -267,7 +260,6 @@ const appName = "KyōNoKyōto";
         };
 
         syncEnhancement();
-        prefersReducedMotion.addEventListener("change", syncEnhancement);
         supportsFinePointer.addEventListener("change", syncEnhancement);
         window.__elasticLinesBound = true;
       }

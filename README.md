@@ -45,6 +45,10 @@ Run the Astro dev server:
 npm run dev
 ```
 
+Motion note:
+- Motion behavior is managed manually in app code and styles.
+- There are no built-in `prefers-reduced-motion` checks wired into the web app right now.
+
 Current public env vars used by the web app:
 
 ```env

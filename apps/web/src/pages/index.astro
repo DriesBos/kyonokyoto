@@ -273,90 +273,55 @@ const excerpt = (value: string | null) => {
 
   if (!window.__eventCardRevealBound) {
     const cards = gsap.utils.toArray("[data-event-card]");
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const revealTriggerId = "event-card-reveal";
 
     const markReady = (card) => {
       if (!(card instanceof HTMLElement)) return;
       card.dataset.revealState = "ready";
     };
 
+    const markQueued = (card) => {
+      if (!(card instanceof HTMLElement)) return;
+      card.dataset.revealState = "queued";
+    };
+
     const buildAnimations = () => {
       if (cards.length === 0) return;
 
       ScrollTrigger.getAll()
-        .filter((trigger) => trigger.vars?.id === "event-card-reveal")
+        .filter((trigger) => trigger.vars?.id === revealTriggerId)
         .forEach((trigger) => trigger.kill());
 
-      if (prefersReducedMotion.matches) {
-        cards.forEach((card) => {
-          markReady(card);
-          gsap.set(card, { clearProps: "opacity,transform,willChange" });
-        });
-        return;
-      }
-
       const viewportHeight = window.innerHeight;
-      const initialCards = [];
-      const lazyCards = [];
 
       cards.forEach((card) => {
         if (!(card instanceof HTMLElement)) return;
-        const rect = card.getBoundingClientRect();
+        if (card.getClientRects().length === 0) return;
 
-        if (rect.top < viewportHeight && rect.bottom > 0) {
-          initialCards.push(card);
+        const rect = card.getBoundingClientRect();
+        const isInViewport = rect.top < viewportHeight && rect.bottom > 0;
+        const isAlreadyReady = card.dataset.revealState === "ready";
+
+        if (isAlreadyReady || isInViewport) {
+          markReady(card);
+          gsap.set(card, { autoAlpha: 1, clearProps: "opacity,visibility,willChange" });
           return;
         }
 
-        lazyCards.push(card);
-      });
+        markQueued(card);
+        gsap.set(card, { autoAlpha: 0, willChange: "opacity" });
 
-      if (initialCards.length > 0) {
-        initialCards.forEach(markReady);
-        gsap.fromTo(
-          initialCards,
-          {
-            autoAlpha: 0,
-            y: 32,
-            willChange: "transform, opacity",
-          },
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.45,
-            ease: "power3.out",
-            stagger: 0.08,
-            clearProps: "opacity,transform,willChange",
-          }
-        );
-      }
-
-      if (lazyCards.length > 0) {
-        ScrollTrigger.batch(lazyCards, {
-          id: "event-card-reveal",
-          start: "clamp(top bottom)",
+        ScrollTrigger.create({
+          id: revealTriggerId,
+          trigger: card,
+          start: "top bottom",
           once: true,
-          onEnter: (batch) => {
-            batch.forEach(markReady);
-            gsap.fromTo(
-              batch,
-              {
-                autoAlpha: 0,
-                y: window.innerHeight,
-                willChange: "transform, opacity",
-              },
-              {
-                autoAlpha: 1,
-                y: 0,
-                duration: 1.05,
-                ease: "power3.out",
-                stagger: 0.12,
-                clearProps: "opacity,transform,willChange",
-              }
-            );
+          onEnter: () => {
+            markReady(card);
+            gsap.set(card, { autoAlpha: 1, clearProps: "opacity,visibility,willChange" });
           },
         });
-      }
+      });
 
       ScrollTrigger.refresh();
     };
@@ -365,9 +330,8 @@ const excerpt = (value: string | null) => {
     buildAnimations();
 
     window.addEventListener("load", () => ScrollTrigger.refresh(), { once: true });
-    window.addEventListener("resize", () => ScrollTrigger.refresh());
-    prefersReducedMotion.addEventListener("change", buildAnimations);
-    document.addEventListener("event-filter:updated", () => ScrollTrigger.refresh());
+    window.addEventListener("resize", buildAnimations);
+    document.addEventListener("event-filter:updated", buildAnimations);
     window.__eventCardRevealBound = true;
   }
 </script>
