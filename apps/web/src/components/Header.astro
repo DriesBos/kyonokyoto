@@ -104,7 +104,10 @@ const timingFilters = [
           .split("|")
           .filter(Boolean)
           .map(normalizeCategory);
-        const timing = card.closest("[data-event-group]")?.getAttribute("data-event-group-name") || "";
+        const timing =
+          card.getAttribute("data-timing") ||
+          card.closest("[data-event-group]")?.getAttribute("data-event-group-name") ||
+          "";
         const matchesCategory = !activeCategory || categories.includes(activeCategory);
         const matchesTiming = !activeTiming || timing === activeTiming;
         const matches = matchesCategory && matchesTiming;

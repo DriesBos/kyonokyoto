@@ -76,6 +76,8 @@ create table if not exists public.events (
   date_text text not null,
   start_date date,
   end_date date,
+  schedule_type text not null default 'unknown' check (schedule_type in ('range', 'occurrence_set', 'unknown')),
+  occurrence_dates jsonb not null default '[]'::jsonb,
   start_time_text text,
   end_time_text text,
   is_all_day boolean not null default true,

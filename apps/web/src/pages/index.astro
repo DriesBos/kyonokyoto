@@ -4,6 +4,7 @@ import Header from "../components/Header.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageEdgeStrokes from "../components/PageEdgeStrokes.astro";
 import { supabase } from "../lib/supabase";
+import { classifyEventTiming, normalizeDateOnly } from "../../../../packages/shared/event-schedule.mjs";
 
 type EventRow = {
   id: string;
@@ -15,12 +16,16 @@ type EventRow = {
   venue_name: string | null;
   address_text: string | null;
   directions_query: string | null;
+  start_date: string | null;
+  end_date: string | null;
   calendar_starts_at: string | null;
   calendar_ends_at: string | null;
   primary_image_url: string | null;
   image_urls: string[] | null;
   source_url: string;
   description: string | null;
+  schedule_type?: "range" | "occurrence_set" | "unknown";
+  occurrence_dates?: string[] | null;
 };
 
 type ClassifiedEvent = EventRow & {
@@ -41,7 +46,7 @@ type CalendarEvent = {
 const { data, error } = await supabase
   .from("events")
   .select(
-    "id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description"
+    "id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description"
   )
   .eq("status", "published")
   .order("start_date", { ascending: true, nullsFirst: false });
@@ -80,15 +85,6 @@ const preferredCategoryOrder = [
   "festival",
   "fair",
 ];
-
-const toDateOnly = (value: string | null) => {
-  if (!value) return null;
-
-  const match = value.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
-
-  return null;
-};
 
 const formatEventDate = (value: string | null) => {
   if (!value) return "";
@@ -131,20 +127,10 @@ const toJapanDate = (value: Date) =>
 
 const today = toJapanDate(new Date());
 
-const classifyEventTiming = (event: EventRow): ClassifiedEvent["timing"] => {
-  const start = toDateOnly(event.calendar_starts_at);
-  const end = toDateOnly(event.calendar_ends_at) ?? start;
-
-  if (start && start > today) return "upcoming";
-  if (end && end < today) return "past";
-
-  return "ongoing";
-};
-
 const formattedEvents: ClassifiedEvent[] = events.map((event) => ({
   ...event,
   date_text: formatEventDateRange(event.calendar_starts_at, event.calendar_ends_at, event.date_text),
-  timing: classifyEventTiming(event),
+  timing: classifyEventTiming(event, today),
 }));
 
 const displayEvents = formattedEvents.filter((event) => event.timing !== "past");
@@ -188,10 +174,10 @@ const addDays = (value: string, days: number) => {
 const toGoogleCalendarStamp = (value: string) => value.replaceAll("-", "");
 
 const googleCalendarUrl = (event: CalendarEvent) => {
-  const start = toDateOnly(event.calendar_starts_at);
+  const start = normalizeDateOnly(event.calendar_starts_at);
   if (!start) return null;
 
-  const end = toDateOnly(event.calendar_ends_at);
+  const end = normalizeDateOnly(event.calendar_ends_at);
   const exclusiveEnd = addDays(end ?? start, 1);
   const details = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
   const location = event.address_text ?? event.venue_name ?? event.institution_name;

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applySourceOverride, loadSourceOverrides } from "../../../data/sources/source-config.mjs";
+import { buildScheduleFields } from "../../../packages/shared/event-schedule.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(__dirname, "..");
@@ -273,6 +274,10 @@ function extractKacEvent(detailHtml, source, detailUrl) {
     end_time_text: null,
     is_all_day: true,
     timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
     calendar_starts_at: parsedDates.calendarStartsAt,
     calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: primaryImageUrl,
@@ -392,6 +397,10 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
     end_time_text: null,
     is_all_day: !timeText,
     timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
     calendar_starts_at: parsedDates.calendarStartsAt,
     calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: primaryImageUrl,
@@ -501,6 +510,10 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
     end_time_text: null,
     is_all_day: false,
     timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
     calendar_starts_at: parsedDates.calendarStartsAt,
     calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: uniqueImageUrls[0] ?? null,
@@ -557,6 +570,10 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
     end_time_text: null,
     is_all_day: true,
     timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
     calendar_starts_at: parsedDates.calendarStartsAt,
     calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: uniqueImageUrls[0] ?? null,
