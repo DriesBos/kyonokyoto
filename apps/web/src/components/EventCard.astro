@@ -197,7 +197,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   import {
     createHeightTransitionTimeline,
     getHeightTransitionDuration,
-    getHeightTransitionPosition,
     killHeightTransitionTweens,
     toHeight,
   } from "../lib/heightTransition";
@@ -297,7 +296,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       card.style.height = `${startHeight}px`;
       content.style.height = `${content.offsetHeight}px`;
 
-      const collapsePosition = getHeightTransitionPosition(false);
       const timeline = createHeightTransitionTimeline({
         onComplete: () => {
           card.style.height = "";
@@ -309,10 +307,10 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       timeline.to(
         card,
         { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(false) },
-        collapsePosition
+        0
       );
-      toHeight(timeline, content, 0, false, collapsePosition);
-      toHeight(timeline, card, collapsedCardHeight, false, collapsePosition);
+      toHeight(timeline, content, 0, false);
+      toHeight(timeline, card, collapsedCardHeight, false);
     };
 
     const toggleCard = (card) => {

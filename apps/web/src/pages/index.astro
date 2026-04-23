@@ -261,7 +261,7 @@ const excerpt = (value: string | null) => {
   import { ScrollTrigger } from "gsap/ScrollTrigger";
 
   if (!window.__eventCardRevealBound) {
-    const cards = gsap.utils.toArray("[data-event-card]");
+    const cards = Array.from(document.querySelectorAll("[data-event-card]"));
     const revealTriggerId = "event-card-reveal";
     let rebuildFrame = 0;
 
@@ -287,7 +287,6 @@ const excerpt = (value: string | null) => {
       cards.forEach((card) => {
         if (!(card instanceof HTMLElement)) return;
         if (card.getClientRects().length === 0) {
-          gsap.set(card, { clearProps: "opacity,visibility,willChange" });
           return;
         }
 
@@ -297,12 +296,10 @@ const excerpt = (value: string | null) => {
 
         if (isAlreadyReady || hasEnteredViewport) {
           markReady(card);
-          gsap.set(card, { autoAlpha: 1, clearProps: "opacity,visibility,willChange" });
           return;
         }
 
         markQueued(card);
-        gsap.set(card, { autoAlpha: 0, willChange: "opacity" });
 
         ScrollTrigger.create({
           id: revealTriggerId,
@@ -311,7 +308,6 @@ const excerpt = (value: string | null) => {
           once: true,
           onEnter: () => {
             markReady(card);
-            gsap.set(card, { autoAlpha: 1, clearProps: "opacity,visibility,willChange" });
           },
         });
       });

@@ -7,17 +7,12 @@ export const heightTransition = {
   ease: 'power3.out',
   expandDuration: 0.25,
   collapseDuration: 0.25,
-  collapsePosition: 0.04,
 } as const;
 
 export const getHeightTransitionDuration = (isExpanding: boolean) =>
   isExpanding
     ? heightTransition.expandDuration
     : heightTransition.collapseDuration;
-
-export const getHeightTransitionPosition = (
-  isExpanding: boolean,
-): HeightPosition => (isExpanding ? 0 : heightTransition.collapsePosition);
 
 export const createHeightTransitionTimeline = (
   options: Parameters<typeof gsap.timeline>[0] = {},
@@ -39,7 +34,7 @@ export const toHeight = (
   element: HTMLElement,
   height: number,
   isExpanding: boolean,
-  position: HeightPosition = getHeightTransitionPosition(isExpanding),
+  position: HeightPosition = 0,
 ) => {
   timeline.to(
     element,
