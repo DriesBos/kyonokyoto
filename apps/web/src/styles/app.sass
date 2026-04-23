@@ -624,6 +624,7 @@ a
     gap: var(--event-card-media-gap)
     min-width: 0
     max-height: var(--event-card-media-row-height-current)
+    max-width: 66%
     // border: 1px solid purple
     overflow-x: auto
     overflow-y: hidden
@@ -632,6 +633,11 @@ a
     pointer-events: auto
     -webkit-overflow-scrolling: touch
     +thin-scrollbar
+
+    @media screen and (max-width: $desktop-breakpoint)
+      max-width: 60%
+    @media screen and (max-width: $mobile-breakpoint)
+      max-width: 100%
 
     &[data-scrollable='true']
       max-height: calc(var(--event-card-media-row-height-current) + var(--event-card-media-scrollbar-size))
@@ -712,6 +718,7 @@ a
       display: none
 
   &__artist
+    display: none !important
     @media (orientation: portrait)
       display: none
 

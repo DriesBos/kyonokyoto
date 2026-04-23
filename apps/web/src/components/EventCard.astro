@@ -132,14 +132,10 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             data-calendar-details={calendarDetails}
             data-calendar-location={calendarLocation}
           />
-        ) : (
-          <GeneralButton label="Apple soon" icon="calendar" disabled={true} />
-        )}
+        ) : null}
         {googleCalendarUrl ? (
           <GeneralButton label="Google" icon="calendar" href={googleCalendarUrl} target="_blank" rel="noreferrer" />
-        ) : (
-          <GeneralButton label="Google Cal soon" icon="calendar" disabled={true} />
-        )}
+        ) : null}
         <GeneralButton label="Directions" icon="map" href={mapsUrl} target="_blank" rel="noreferrer" />
         <GeneralButton label="Website" icon="exit" href={event.source_url} target="_blank" rel="noreferrer" />
       </div>

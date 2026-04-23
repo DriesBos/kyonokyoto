@@ -41,7 +41,7 @@ function getNumberArg(name, fallback) {
 }
 
 function decodeHtml(value) {
-  return value
+  return String(value)
     .replaceAll("&nbsp;", " ")
     .replaceAll("&amp;", "&")
     .replaceAll("&quot;", "\"")
@@ -52,7 +52,15 @@ function decodeHtml(value) {
     .replaceAll("&#8220;", "\"")
     .replaceAll("&#8221;", "\"")
     .replaceAll("&#8230;", "…")
-    .replaceAll("&#039;", "'");
+    .replaceAll("&#039;", "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
+    })
+    .replace(/&#(\d+);/g, (_, decimal) => {
+      const codePoint = Number.parseInt(decimal, 10);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
+    });
 }
 
 function stripTags(value) {
@@ -112,6 +120,29 @@ function parseJapaneseDateRange(dateText) {
   };
 }
 
+function parseJapaneseSingleDate(dateText) {
+  const match = dateText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/u);
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, year, month, day] = match;
+  const date = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+
+  return {
+    startDate: date,
+    endDate: date,
+    calendarStartsAt: `${date}T00:00:00+09:00`,
+    calendarEndsAt: `${date}T23:59:00+09:00`,
+  };
+}
+
 function parseSlashDateRange(dateText) {
   const pattern =
     /(\d{4})\/(\d{1,2})\/(\d{1,2})\s*[-–—]\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/;
@@ -135,6 +166,29 @@ function parseSlashDateRange(dateText) {
     endDate,
     calendarStartsAt: `${startDate}T10:00:00+09:00`,
     calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
+function parseSlashSingleDate(dateText) {
+  const match = dateText.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, year, month, day] = match;
+  const date = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+
+  return {
+    startDate: date,
+    endDate: date,
+    calendarStartsAt: `${date}T10:00:00+09:00`,
+    calendarEndsAt: `${date}T18:00:00+09:00`,
   };
 }
 
@@ -398,6 +452,94 @@ function parseEnglishDayMonthYearRange(dateText) {
   };
 }
 
+function parseEnglishSingleDate(dateText) {
+  const months = {
+    january: "01",
+    jan: "01",
+    february: "02",
+    feb: "02",
+    march: "03",
+    mar: "03",
+    april: "04",
+    apr: "04",
+    may: "05",
+    june: "06",
+    jun: "06",
+    july: "07",
+    jul: "07",
+    august: "08",
+    aug: "08",
+    september: "09",
+    sep: "09",
+    sept: "09",
+    october: "10",
+    oct: "10",
+    november: "11",
+    nov: "11",
+    december: "12",
+    dec: "12",
+  };
+
+  const cleaned = decodeHtml(dateText)
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const monthDayYear = cleaned.match(/([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/);
+  if (monthDayYear) {
+    const [, monthName, day, year] = monthDayYear;
+    const month = months[monthName.toLowerCase()];
+
+    if (!month) {
+      return {
+        startDate: null,
+        endDate: null,
+        calendarStartsAt: null,
+        calendarEndsAt: null,
+      };
+    }
+
+    const date = `${year}-${month}-${String(day).padStart(2, "0")}`;
+    return {
+      startDate: date,
+      endDate: date,
+      calendarStartsAt: `${date}T10:00:00+09:00`,
+      calendarEndsAt: `${date}T18:00:00+09:00`,
+    };
+  }
+
+  const dayMonthYear = cleaned.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if (dayMonthYear) {
+    const [, day, monthName, year] = dayMonthYear;
+    const month = months[monthName.toLowerCase()];
+
+    if (!month) {
+      return {
+        startDate: null,
+        endDate: null,
+        calendarStartsAt: null,
+        calendarEndsAt: null,
+      };
+    }
+
+    const date = `${year}-${month}-${String(day).padStart(2, "0")}`;
+    return {
+      startDate: date,
+      endDate: date,
+      calendarStartsAt: `${date}T10:00:00+09:00`,
+      calendarEndsAt: `${date}T18:00:00+09:00`,
+    };
+  }
+
+  return {
+    startDate: null,
+    endDate: null,
+    calendarStartsAt: null,
+    calendarEndsAt: null,
+  };
+}
+
 function toJapanDate(value) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Tokyo",
@@ -477,6 +619,13 @@ function parseGenericDateRange(dateText) {
     parseJapaneseDateRange(dateText).startDate ? parseJapaneseDateRange(dateText) :
     parseSlashDateRange(dateText).startDate ? parseSlashDateRange(dateText) :
     parseDottedDateRange(dateText).startDate ? parseDottedDateRange(dateText) :
+    parseEnglishMonthDateRangeWithOptionalStartYear(dateText).startDate ? parseEnglishMonthDateRangeWithOptionalStartYear(dateText) :
+    parseEnglishMonthDateRangeWithWeekdays(dateText).startDate ? parseEnglishMonthDateRangeWithWeekdays(dateText) :
+    parseEnglishMonthDateRange(dateText).startDate ? parseEnglishMonthDateRange(dateText) :
+    parseEnglishDayMonthYearRange(dateText).startDate ? parseEnglishDayMonthYearRange(dateText) :
+    parseJapaneseSingleDate(dateText).startDate ? parseJapaneseSingleDate(dateText) :
+    parseSlashSingleDate(dateText).startDate ? parseSlashSingleDate(dateText) :
+    parseEnglishSingleDate(dateText).startDate ? parseEnglishSingleDate(dateText) :
     {
       startDate: null,
       endDate: null,
@@ -702,8 +851,12 @@ function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
 
 function extractFirstDateText(text) {
   const patterns = [
+    /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2}(?:,\s*\d{4})?\s*[-–—～〜]\s*(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
+    /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\s*[-–—～〜]\s*\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
     /\d{4}年\d{1,2}月\d{1,2}日[\s\S]{0,40}?[～〜\-－][\s\S]{0,40}?\d{4}年\d{1,2}月\d{1,2}日/u,
     /\d{4}[./-]\d{1,2}[./-]\d{1,2}[\s\S]{0,30}?[-–—～〜][\s\S]{0,30}?(?:\d{4}[./-])?\d{1,2}[./-]\d{1,2}/u,
+    /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
+    /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
     /\d{4}年\d{1,2}月\d{1,2}日/u,
     /\d{4}[./-]\d{1,2}[./-]\d{1,2}/u,
   ];
@@ -711,6 +864,22 @@ function extractFirstDateText(text) {
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) return match[0].replace(/\s+/g, " ").trim();
+  }
+
+  return "See source page";
+}
+
+function extractBestDateText(detailHtml) {
+  const candidates = [
+    stripTags(detailHtml),
+    stripTags(extractMeta(detailHtml, "og:description") ?? ""),
+    stripTags(extractMeta(detailHtml, "description") ?? ""),
+    stripTags(extractMeta(detailHtml, "og:title") ?? ""),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const extracted = extractFirstDateText(candidate);
+    if (extracted !== "See source page") return extracted;
   }
 
   return "See source page";
@@ -1683,7 +1852,7 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
       url: match[1],
       source: "img",
     })),
-  ], detailUrl);
+  ], detailUrl).slice(0, 1);
   const parsedDates = parseDottedDateRange(dateText);
   const addressText =
     (context.accessHtml ? extractSenOkuAddress(context.accessHtml) : null) ??
@@ -1720,13 +1889,14 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
 
 function extractGenericTitle(detailHtml, source) {
   const candidates = [
-    extractMeta(detailHtml, "og:title"),
+    decodeHtml(extractMeta(detailHtml, "og:title") ?? ""),
     stripTags(detailHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ""),
     stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ""),
   ].filter(Boolean);
 
   const title = candidates[0]
-    ?.replace(/\s*[|｜-]\s*.+$/, "")
+    ?.replace(/\s*[|｜\-–—]\s*KYOTOGRAPHIE 京都国際写真祭$/i, "")
+    .replace(/\s*[|｜-]\s*.+$/, "")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -1750,8 +1920,7 @@ function extractGenericDescription(detailHtml) {
 
 function extractGenericEvent(detailHtml, source, detailUrl) {
   const title = extractGenericTitle(detailHtml, source);
-  const pageText = stripTags(detailHtml);
-  const dateText = extractFirstDateText(pageText);
+  const dateText = extractBestDateText(detailHtml);
   const parsedDates = parseGenericDateRange(dateText);
   const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;

@@ -227,10 +227,16 @@
       "source_type": "gallery",
       "language": "en",
       "base_url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2",
-      "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"],
+      "start_urls": [
+        "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"
+      ],
       "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/CGI/gallery/schedule/list.cgi", "/CGI/gallery/schedule/detail.cgi", "/gallery/ddd/"],
+      "event_page_patterns": [
+        "/CGI/gallery/schedule/list.cgi",
+        "/CGI/gallery/schedule/detail.cgi",
+        "/gallery/ddd/"
+      ],
       "notes": "Use the English DDD Coming up page and keep only the first two exhibition blocks listed there, including the upcoming unlinked schedule entry.",
       "is_active": true
     },
@@ -293,8 +299,8 @@
       "is_active": true
     },
     {
-      "slug": "sen-oku-hakukokan-museum",
-      "name": "Sen-Oku Hakukokan Museum",
+      "slug": "sen-oku-hakukokan",
+      "name": "Sen-Oku Hakukokan",
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://sen-oku.or.jp/kyoto/",
@@ -398,7 +404,9 @@
       "source_type": "museum",
       "language": "en",
       "base_url": "https://www.shokokuji.jp/en/museum/exhibition/shokokuji-kindai/",
-      "start_urls": ["https://www.shokokuji.jp/en/museum/exhibition/shokokuji-kindai/"],
+      "start_urls": [
+        "https://www.shokokuji.jp/en/museum/exhibition/shokokuji-kindai/"
+      ],
       "allowed_domains": ["www.shokokuji.jp", "shokokuji.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/museum/exhibition/", "/museum/exhibition/"],
@@ -411,7 +419,9 @@
       "source_type": "museum",
       "language": "en",
       "base_url": "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html",
-      "start_urls": ["https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"],
+      "start_urls": [
+        "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"
+      ],
       "allowed_domains": ["www.raku-yaki.or.jp", "raku-yaki.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
@@ -531,8 +541,13 @@
       "source_type": "museum",
       "language": "en",
       "base_url": "https://www.asahigroup-oyamazaki.com/english/exhibition/",
-      "start_urls": ["https://www.asahigroup-oyamazaki.com/english/exhibition/"],
-      "allowed_domains": ["www.asahigroup-oyamazaki.com", "asahigroup-oyamazaki.com"],
+      "start_urls": [
+        "https://www.asahigroup-oyamazaki.com/english/exhibition/"
+      ],
+      "allowed_domains": [
+        "www.asahigroup-oyamazaki.com",
+        "asahigroup-oyamazaki.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/english/exhibition/", "/exhibition/"],
       "notes": "English exhibition listing for the Oyamazaki Villa Museum, just outside Kyoto.",
