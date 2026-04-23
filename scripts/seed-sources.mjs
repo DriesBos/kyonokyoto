@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { loadSourcesConfig } from "../data/sources/source-config.mjs";
 
 const projectRoot = process.cwd();
-const sourcesPath = resolve(projectRoot, "data/sources/kyoto-sources.json");
 const crawlerEnvPath = resolve(projectRoot, "apps/crawler/.env");
 
 function parseEnvFile(contents) {
@@ -33,14 +33,9 @@ if (!supabaseUrl || !serviceRoleKey) {
   throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
 }
 
-const fileContents = await readFile(sourcesPath, "utf8");
-const payload = JSON.parse(fileContents);
+const sourceConfig = await loadSourcesConfig();
 
-if (!Array.isArray(payload.sources)) {
-  throw new Error("Expected data/sources/kyoto-sources.json to contain a sources array");
-}
-
-const sources = payload.sources.map((source) => ({
+const sources = sourceConfig.map((source) => ({
   slug: source.slug,
   name: source.name,
   source_type: source.source_type,

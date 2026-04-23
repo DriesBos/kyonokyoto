@@ -23,6 +23,11 @@ type EventRow = {
   description: string | null;
 };
 
+type ClassifiedEvent = EventRow & {
+  date_text: string;
+  timing: "current" | "upcoming" | "past";
+};
+
 type CalendarEvent = {
   title: string;
   description: string | null;
@@ -76,34 +81,6 @@ const preferredCategoryOrder = [
   "fair",
 ];
 
-const categoryMap = new Map<string, string>();
-
-for (const event of events) {
-  for (const category of event.categories) {
-    const slug = normalizeCategory(category);
-    if (!slug || categoryMap.has(slug)) continue;
-    categoryMap.set(slug, titleCaseCategory(category));
-  }
-}
-
-const categories = [...categoryMap.entries()]
-  .map(([slug, label]) => ({ slug, label: label.toLowerCase() }))
-  .sort((a, b) => {
-    const aIndex = preferredCategoryOrder.indexOf(a.slug);
-    const bIndex = preferredCategoryOrder.indexOf(b.slug);
-
-    if (aIndex === -1 && bIndex === -1) return a.label.localeCompare(b.label);
-    if (aIndex === -1) return 1;
-    if (bIndex === -1) return -1;
-    return aIndex - bIndex;
-  });
-
-const mapsUrl = (event: EventRow) => {
-  const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
-  if (/^https?:\/\//i.test(query)) return query;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-};
-
 const toDateOnly = (value: string | null) => {
   if (!value) return null;
 
@@ -111,31 +88,6 @@ const toDateOnly = (value: string | null) => {
   if (match) return `${match[1]}-${match[2]}-${match[3]}`;
 
   return null;
-};
-
-const addDays = (value: string, days: number) => {
-  const date = new Date(`${value}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-};
-
-const toGoogleCalendarStamp = (value: string) => value.replaceAll("-", "");
-
-const googleCalendarUrl = (event: CalendarEvent) => {
-  const start = toDateOnly(event.calendar_starts_at);
-  if (!start) return null;
-
-  const end = toDateOnly(event.calendar_ends_at);
-  const exclusiveEnd = addDays(end ?? start, 1);
-  const details = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
-  const location = event.address_text ?? event.venue_name ?? event.institution_name;
-
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(exclusiveEnd)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
-};
-
-const excerpt = (value: string | null) => {
-  if (!value) return "More details available on the original source page.";
-  return value.length > 220 ? `${value.slice(0, 217)}...` : value;
 };
 
 const formatEventDate = (value: string | null) => {
@@ -172,10 +124,86 @@ const formatEventDateRange = (start: string | null, end: string | null, fallback
   return `${formattedStart} - ${formattedEnd}`;
 };
 
-const formattedEvents = events.map((event) => ({
+const toJapanDate = (value: Date) =>
+  new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  }).format(value);
+
+const today = toJapanDate(new Date());
+
+const classifyEventTiming = (event: EventRow): ClassifiedEvent["timing"] => {
+  const start = toDateOnly(event.calendar_starts_at);
+  const end = toDateOnly(event.calendar_ends_at) ?? start;
+
+  if (start && start > today) return "upcoming";
+  if (end && end < today) return "past";
+
+  return "current";
+};
+
+const formattedEvents: ClassifiedEvent[] = events.map((event) => ({
   ...event,
   date_text: formatEventDateRange(event.calendar_starts_at, event.calendar_ends_at, event.date_text),
+  timing: classifyEventTiming(event),
 }));
+
+const displayEvents = formattedEvents.filter((event) => event.timing !== "past");
+const currentEvents = displayEvents.filter((event) => event.timing === "current");
+const upcomingEvents = displayEvents.filter((event) => event.timing === "upcoming");
+
+const categoryMap = new Map<string, string>();
+
+for (const event of displayEvents) {
+  for (const category of event.categories) {
+    const slug = normalizeCategory(category);
+    if (!slug || categoryMap.has(slug)) continue;
+    categoryMap.set(slug, titleCaseCategory(category));
+  }
+}
+
+const categories = [...categoryMap.entries()]
+  .map(([slug, label]) => ({ slug, label: label.toLowerCase() }))
+  .sort((a, b) => {
+    const aIndex = preferredCategoryOrder.indexOf(a.slug);
+    const bIndex = preferredCategoryOrder.indexOf(b.slug);
+
+    if (aIndex === -1 && bIndex === -1) return a.label.localeCompare(b.label);
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
+
+const mapsUrl = (event: EventRow) => {
+  const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
+  if (/^https?:\/\//i.test(query)) return query;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+};
+
+const addDays = (value: string, days: number) => {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+const toGoogleCalendarStamp = (value: string) => value.replaceAll("-", "");
+
+const googleCalendarUrl = (event: CalendarEvent) => {
+  const start = toDateOnly(event.calendar_starts_at);
+  if (!start) return null;
+
+  const end = toDateOnly(event.calendar_ends_at);
+  const exclusiveEnd = addDays(end ?? start, 1);
+  const details = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
+  const location = event.address_text ?? event.venue_name ?? event.institution_name;
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(exclusiveEnd)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+};
+
+const excerpt = (value: string | null) => {
+  if (!value) return "More details available on the original source page.";
+  return value.length > 220 ? `${value.slice(0, 217)}...` : value;
+};
+
 ---
 
 <BaseLayout>
@@ -192,22 +220,45 @@ const formattedEvents = events.map((event) => ({
       </div>
 
       {
-        events.length === 0 ? (
+        displayEvents.length === 0 ? (
           <div class="empty-state">
-            <h3>No published events yet</h3>
-            <p>The crawler pipeline is connected. Once events are published, they’ll appear here automatically.</p>
+            <h3>No current or upcoming events yet</h3>
+            <p>The crawler is connected. Once current or upcoming events are available, they’ll appear here automatically.</p>
           </div>
         ) : (
-          <div class="event-list">
-            {formattedEvents.map((event) => (
-              <EventCard
-                event={event}
-                mapsUrl={mapsUrl(event)}
-                googleCalendarUrl={googleCalendarUrl(event)}
-                excerpt={excerpt(event.description)}
-              />
-            ))}
-          </div>
+          <>
+            <section class="event-group" data-event-group data-event-group-name="current" hidden={currentEvents.length === 0}>
+              <h2 class="event-group__title">Current</h2>
+              <div class="event-list">
+                {currentEvents.map((event) => (
+                  <EventCard
+                    event={event}
+                    mapsUrl={mapsUrl(event)}
+                    googleCalendarUrl={googleCalendarUrl(event)}
+                    excerpt={excerpt(event.description)}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <div class="events-divider" data-event-divider hidden={currentEvents.length === 0 || upcomingEvents.length === 0}>
+              <PageEdgeStrokes position="top" lines={4} />
+            </div>
+
+            <section class="event-group" data-event-group data-event-group-name="upcoming" hidden={upcomingEvents.length === 0}>
+              <h2 class="event-group__title">Upcoming</h2>
+              <div class="event-list">
+                {upcomingEvents.map((event) => (
+                  <EventCard
+                    event={event}
+                    mapsUrl={mapsUrl(event)}
+                    googleCalendarUrl={googleCalendarUrl(event)}
+                    excerpt={excerpt(event.description)}
+                  />
+                ))}
+              </div>
+            </section>
+          </>
         )
       }
     </section>

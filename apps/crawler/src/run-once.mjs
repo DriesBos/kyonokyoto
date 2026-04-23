@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { applySourceOverride, loadSourceOverrides } from "../../../data/sources/source-config.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(__dirname, "..");
@@ -253,8 +254,8 @@ function extractKacEvent(detailHtml, source, detailUrl) {
   const artistName = artistSeed.replace(/^[A-ZＡ-Ｚ0-9０-９#＃\s]+/u, "").trim() || null;
 
   const parsedDates = parseJapaneseDateRange(dateText);
-  const addressText = venueName ?? source.name;
-  const directionsQuery = `${addressText} Kyoto`;
+  const addressText = venueName ?? source.address_text ?? source.name;
+  const directionsQuery = source.directions_query ?? `${addressText} Kyoto`;
 
   return {
     title,
@@ -370,10 +371,10 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
   ];
   const categories = [...new Set(normalizedCategories.filter(Boolean))];
   const parsedDates = parseSlashDateRange(dateText);
-  const addressText = extractKyoceraFooterAddress(detailHtml) ?? source.name;
-  const directionsQuery = venueName
+  const addressText = extractKyoceraFooterAddress(detailHtml) ?? source.address_text ?? source.name;
+  const directionsQuery = source.directions_query ?? (venueName
     ? `${venueName}, ${source.name}, Kyoto`
-    : `${source.name}, Kyoto`;
+    : `${source.name}, Kyoto`);
 
   return {
     title,
@@ -478,8 +479,11 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
   const uniqueImageUrls = [...new Set(imageUrls)];
 
   const parsedDates = parseMomakDateRange(dateText);
-  const addressText = context.accessHtml ? extractMomakAddress(context.accessHtml) : source.name;
-  const directionsQuery = extractMomakGoogleMapsUrl(context.accessHtml ?? "");
+  const addressText =
+    (context.accessHtml ? extractMomakAddress(context.accessHtml) : null) ??
+    source.address_text ??
+    source.name;
+  const directionsQuery = source.directions_query ?? extractMomakGoogleMapsUrl(context.accessHtml ?? "");
 
   return {
     title,
@@ -532,7 +536,10 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
   ].filter(Boolean);
   const uniqueImageUrls = [...new Set(imageUrls)];
   const parsedDates = parseDottedDateRange(dateText);
-  const addressText = context.accessHtml ? extractSenOkuAddress(context.accessHtml) : source.name;
+  const addressText =
+    (context.accessHtml ? extractSenOkuAddress(context.accessHtml) : null) ??
+    source.address_text ??
+    source.name;
 
   return {
     title,
@@ -542,7 +549,7 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
     institution_name: source.name,
     venue_name: venueName,
     address_text: addressText,
-    directions_query: "https://maps.app.goo.gl/xh91N3FpPHUAhiqZA",
+    directions_query: source.directions_query ?? "https://maps.app.goo.gl/xh91N3FpPHUAhiqZA",
     date_text: dateText,
     start_date: parsedDates.startDate,
     end_date: parsedDates.endDate,
@@ -694,7 +701,7 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
         source_id: sourceId,
         raw_page_id: rawPageId,
         dedupe_key: dedupeKey,
-        status: "draft",
+        status: "published",
         extraction_confidence: 0.6,
         ...eventData,
       },
@@ -709,12 +716,16 @@ async function main() {
   const env = parseEnvFile(envContents);
   const sourceSlug = getArg("source", "kyoto-art-center");
   const userAgent = env.CRAWLER_USER_AGENT ?? "kyo-no-kyoto-bot/0.1";
+  const sourceOverrides = await loadSourceOverrides();
 
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
   }
 
-  const source = await getSourceBySlug(env, sourceSlug);
+  const source = applySourceOverride(
+    await getSourceBySlug(env, sourceSlug),
+    sourceOverrides[sourceSlug]
+  );
   const crawlRun = await createCrawlRun(env, source.id);
 
   try {

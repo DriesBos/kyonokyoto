@@ -61,6 +61,8 @@ const { categories } = Astro.props;
     const disclosure = root.querySelector("[data-filter-disclosure]");
     const filterPanel = root.querySelector("#category-filter-panel");
     const cards = Array.from(document.querySelectorAll("[data-event-card]"));
+    const groups = Array.from(document.querySelectorAll("[data-event-group]"));
+    const divider = document.querySelector("[data-event-divider]");
     const filteredEmptyState = document.querySelector("[data-filter-empty]");
     const countLabel = document.querySelector("[data-event-count]");
 
@@ -90,6 +92,19 @@ const { categories } = Astro.props;
 
         if (matches) visibleCount += 1;
       });
+
+      let visibleGroups = 0;
+
+      groups.forEach((group) => {
+        const visibleCards = group.querySelectorAll("[data-event-card]:not([hidden])").length;
+        group.toggleAttribute("hidden", visibleCards === 0);
+
+        if (visibleCards > 0) visibleGroups += 1;
+      });
+
+      if (divider) {
+        divider.toggleAttribute("hidden", visibleGroups < 2);
+      }
 
       const activeButton = buttons.find((button) => button.dataset.category === activeCategory);
       const activeLabel = activeButton?.querySelector(".general-button__label")?.textContent || "";
