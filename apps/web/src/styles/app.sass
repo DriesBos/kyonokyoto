@@ -164,6 +164,8 @@ a
   padding: 0.25rem 1px 0
   border: 0
   border-top: var(--stroke-width) solid var(--stroke)
+  appearance: none
+  -webkit-tap-highlight-color: transparent
   background: transparent
   color: currentColor
   font-size: var(--type-body-size)
@@ -195,8 +197,10 @@ a
   opacity: 1
 
 .general-button:hover,
+.general-button:active,
 .general-button:focus-visible
   outline: none
+  background: transparent
 
 .general-button--disabled
   opacity: 0.55
