@@ -4,6 +4,22 @@ $fluid-type-min-width: 768px
 $fluid-type-max-width: 1440px
 $image-placeholder: #dcdcdc
 
+=thin-scrollbar
+  scrollbar-color: var(--stroke) transparent
+  scrollbar-width: thin
+
+  // &::-webkit-scrollbar
+  //   width: calc(var(--stroke-width) + 4px)
+  //   height: calc(var(--stroke-width) + 4px)
+
+  &::-webkit-scrollbar-track
+    background: transparent
+
+  &::-webkit-scrollbar-thumb
+    background-color: var(--stroke)
+    // border: 2px solid transparent
+    background-clip: content-box
+
 @font-face
   font-family: 'GT Walsheim'
   src: url('/fonts/GT-Walsheim-Regular.woff2') format('woff2')
@@ -44,6 +60,8 @@ html
   height: 100%
   font-size: clamp(16px, calc(16px + (20 - 16) * (((100vw - #{$fluid-type-min-width}) / (#{$fluid-type-max-width} - #{$fluid-type-min-width})))), 20px)
   background: var(--main-background)
+  overscroll-behavior: none
+  +thin-scrollbar
 
 body
   position: relative
@@ -58,6 +76,8 @@ body
   text-rendering: optimizeLegibility
   cursor: var(--cursor-dot)
   min-height: 100vh
+  overscroll-behavior: none
+  +thin-scrollbar
 
 main
   position: relative
@@ -299,7 +319,9 @@ a
     max-height: var(--event-card-media-row-height-current)
     // border: 1px solid purple
     overflow-x: auto
+    overscroll-behavior-x: contain
     flex-wrap: nowrap
+    +thin-scrollbar
     // pointer-events: auto
       
 

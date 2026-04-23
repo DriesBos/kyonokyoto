@@ -257,67 +257,77 @@ const excerpt = (value: string | null) => {
 </BaseLayout>
 
 <script>
-  import { gsap } from "gsap";
-  import { ScrollTrigger } from "gsap/ScrollTrigger";
   import { fadeIn, setFadeHidden, setFadeVisible } from "../lib/fadeTransition";
 
-  if (!window.__eventCardRevealBound) {
-    const cards = Array.from(document.querySelectorAll("[data-event-card]"));
-    const revealTriggerId = "event-card-reveal";
-    let rebuildFrame = 0;
-
-    const markReady = (card) => {
-      if (!(card instanceof HTMLElement)) return;
-      card.dataset.revealState = "ready";
+  type EventCardRevealWindow = Window &
+    typeof globalThis & {
+      __eventCardRevealBound?: boolean;
+      __eventCardRevealObserver?: IntersectionObserver;
     };
 
-    const markQueued = (card) => {
-      if (!(card instanceof HTMLElement)) return;
-      card.dataset.revealState = "queued";
-    };
+  const revealWindow = window as EventCardRevealWindow;
+  const cardSelector = "[data-event-card]";
+  const revealThreshold = 0.5;
 
-    const buildAnimations = () => {
-      if (cards.length === 0) return;
+  const markVisible = (card: Element) => {
+    if (!(card instanceof HTMLElement)) return;
+    card.dataset.revealState = "visible";
+  };
 
-      ScrollTrigger.getAll()
-        .filter((trigger) => trigger.vars?.id === revealTriggerId)
-        .forEach((trigger) => trigger.kill());
+  const markQueued = (card: Element) => {
+    if (!(card instanceof HTMLElement)) return;
+    card.dataset.revealState = "queued";
+  };
 
-      const viewportHeight = window.innerHeight;
+  const revealCard = (card: Element, animate: boolean) => {
+    if (!(card instanceof HTMLElement)) return;
+    revealWindow.__eventCardRevealObserver?.unobserve(card);
+    markVisible(card);
 
-      cards.forEach((card) => {
-        if (!(card instanceof HTMLElement)) return;
-        if (card.getClientRects().length === 0) {
-          return;
-        }
+    if (animate) {
+      fadeIn(card, { stagger: 0 });
+    } else {
+      setFadeVisible(card);
+    }
+  };
 
-        const rect = card.getBoundingClientRect();
-        const hasEnteredViewport = rect.top < viewportHeight;
-        const isAlreadyReady = card.dataset.revealState === "ready";
+  const isRendered = (card: HTMLElement) => !card.hidden && card.getClientRects().length > 0;
 
-        if (isAlreadyReady || hasEnteredViewport) {
-          markReady(card);
-          setFadeVisible(card);
-          return;
-        }
+  const isInViewport = (card: HTMLElement) => {
+    const rect = card.getBoundingClientRect();
+    return rect.top < window.innerHeight && rect.bottom > 0;
+  };
 
-        markQueued(card);
-        setFadeHidden(card);
+  const buildAnimations = () => {
+    const cards = Array.from(document.querySelectorAll(cardSelector));
 
-        ScrollTrigger.create({
-          id: revealTriggerId,
-          trigger: card,
-          start: "top bottom",
-          once: true,
-          onEnter: () => {
-            markReady(card);
-            fadeIn(card, { stagger: 0 });
-          },
+    revealWindow.__eventCardRevealObserver?.disconnect();
+    revealWindow.__eventCardRevealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting || entry.intersectionRatio < revealThreshold) return;
+          revealCard(entry.target, true);
         });
-      });
+      },
+      { threshold: [0, revealThreshold] },
+    );
 
-      ScrollTrigger.refresh();
-    };
+    cards.forEach((card) => {
+      if (!(card instanceof HTMLElement)) return;
+
+      if (!isRendered(card) || isInViewport(card) || card.dataset.revealState === "visible") {
+        revealCard(card, false);
+        return;
+      }
+
+      markQueued(card);
+      setFadeHidden(card);
+      revealWindow.__eventCardRevealObserver?.observe(card);
+    });
+  };
+
+  if (!revealWindow.__eventCardRevealBound) {
+    let rebuildFrame = 0;
 
     const scheduleBuildAnimations = () => {
       if (rebuildFrame) {
@@ -330,12 +340,12 @@ const excerpt = (value: string | null) => {
       });
     };
 
-    gsap.registerPlugin(ScrollTrigger);
     buildAnimations();
 
+    document.addEventListener("astro:page-load", scheduleBuildAnimations);
     window.addEventListener("load", scheduleBuildAnimations, { once: true });
     window.addEventListener("resize", scheduleBuildAnimations);
     document.addEventListener("event-filter:updated", scheduleBuildAnimations);
-    window.__eventCardRevealBound = true;
+    revealWindow.__eventCardRevealBound = true;
   }
 </script>
