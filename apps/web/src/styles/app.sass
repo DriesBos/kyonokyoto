@@ -688,6 +688,18 @@ a
       padding-left: 1rem
       overflow: visible
 
+  &__headermeta
+    display: none
+    font-size: var(--type-body-size)
+    text-transform: uppercase
+    user-select: auto
+    padding: 0 var(--page-padding-x)
+
+    @media (max-width: $mobile-breakpoint)
+      display: flex
+      flex-direction: row
+      gap: 1rem
+
   &__meta
     display: flex
     flex-direction: column
@@ -695,9 +707,9 @@ a
     text-transform: uppercase
     user-select: auto
     padding: 0 var(--page-padding-x)
+
     @media (max-width: $mobile-breakpoint)
-      flex-direction: row
-      gap: 1rem
+      display: none
 
   &__artist
     @media (orientation: portrait)
