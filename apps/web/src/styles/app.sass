@@ -1,11 +1,13 @@
+@use "sass:math"
+
 $mobile-breakpoint: 768px
 $desktop-breakpoint: 1440px
 $fluid-type-min-width: 768px
 $fluid-type-max-width: 1440px
 $fluid-type-min-size: 14px
-$fluid-type-max-size: 22px
-$fluid-type-slope: (($fluid-type-max-size - $fluid-type-min-size) / ($fluid-type-max-width - $fluid-type-min-width)) * 100
-$fluid-type-intercept: $fluid-type-min-size - ($fluid-type-slope / 100 * $fluid-type-min-width)
+$fluid-type-max-size: 18px
+$fluid-type-slope: math.div($fluid-type-max-size - $fluid-type-min-size, $fluid-type-max-width - $fluid-type-min-width) * 100
+$fluid-type-intercept: $fluid-type-min-size - (math.div($fluid-type-slope, 100) * $fluid-type-min-width)
 $image-placeholder: #dcdcdc
 $type-scale-base: 1rem
 $type-scale-ratio: 1.618
@@ -19,7 +21,7 @@ $type-scale-ratio: 1.618
 
   @if $step < 0
     @for $_ from $step through -1
-      $size: $size / $type-scale-ratio
+      $size: math.div($size, $type-scale-ratio)
 
   @return $size
 
