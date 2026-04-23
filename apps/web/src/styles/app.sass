@@ -250,9 +250,8 @@ a
   justify-content: space-between
   align-items: flex-start
   gap: 1.5rem
-  padding: 0 0 var(--stroke-gap)
+  padding: var(--stroke-gap) 0
   background: var(--main-background)
-
   &::after
     content: ""
     position: absolute
@@ -261,9 +260,11 @@ a
     border-top: var(--stroke-width) solid var(--stroke)
     opacity: 0
     pointer-events: none
-    transition: opacity 180ms ease
-
+    transition: opacity 165ms ease
   &[data-stuck]
+    .site-header__logo svg
+      height: 1rem * 1.22
+      transition: height 165ms ease
     &::after
       opacity: 1
 
@@ -470,6 +471,8 @@ a
   display: flex
   flex-direction: column
   gap: 2rem
+  margin-top: 6rem
+  padding-bottom: 6rem
 
 .event-group
   display: flex
