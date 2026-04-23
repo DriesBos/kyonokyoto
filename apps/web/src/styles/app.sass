@@ -128,7 +128,7 @@ main
   height: 100%
   display: flex
   flex-direction: column
-  gap: 2rem
+  gap: 2rem + 0.5rem
 
 .ambient-bloom-field
   position: absolute
@@ -380,6 +380,41 @@ a
 
 .events-divider
   display: block
+
+.time-divider
+  width: 100%
+  overflow: hidden
+
+  &__scroller
+    width: 100%
+    overflow: hidden
+    padding: 32px 0
+
+  &__track
+    display: flex
+    width: max-content
+    animation: time-divider-scroll 56s linear infinite
+    will-change: transform
+
+  &__group
+    display: flex
+    flex: 0 0 auto
+    gap: 4px
+    padding-right: 4px
+    white-space: nowrap
+
+  span
+    flex: 0 0 auto
+    font-size: var(--type-title-size)
+    line-height: 1
+    letter-spacing: 0
+
+@keyframes time-divider-scroll
+  from
+    transform: translate3d(0, 0, 0)
+
+  to
+    transform: translate3d(-50%, 0, 0)
 
 [data-event-card][data-reveal-state='queued']
   opacity: 0

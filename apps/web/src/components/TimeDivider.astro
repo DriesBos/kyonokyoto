@@ -1,0 +1,25 @@
+---
+type Props = {
+  label?: string;
+};
+
+const { label = "Upcoming" } = Astro.props;
+const items = Array.from({ length: 25 });
+---
+
+<div class="time-divider" aria-label={`${label} events`}>
+  <div class="time-divider__scroller" aria-hidden="true">
+    <div class="time-divider__track">
+      <div class="time-divider__group">
+        {items.map(() => (
+          <span>{label}</span>
+        ))}
+      </div>
+      <div class="time-divider__group">
+        {items.map(() => (
+          <span>{label}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>

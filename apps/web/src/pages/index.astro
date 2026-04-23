@@ -3,6 +3,7 @@ import EventCard from "../components/EventCard.astro";
 import Header from "../components/Header.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageEdgeStrokes from "../components/PageEdgeStrokes.astro";
+import TimeDivider from "../components/TimeDivider.astro";
 import { supabase } from "../lib/supabase";
 import { dedupeEvents } from "../../../../packages/shared/event-dedupe.mjs";
 import { classifyEventTiming, normalizeDateOnly } from "../../../../packages/shared/event-schedule.mjs";
@@ -230,11 +231,10 @@ const excerpt = (value: string | null) => {
             </section>
 
             <div class="events-divider" data-event-divider hidden={ongoingEvents.length === 0 || upcomingEvents.length === 0}>
-              <PageEdgeStrokes position="top" lines={4} />
+              <TimeDivider />
             </div>
 
             <section class="event-group" data-event-group data-event-group-name="upcoming" hidden={upcomingEvents.length === 0}>
-              <h2 class="event-group__title">Upcoming</h2>
               <div class="event-list">
                 {upcomingEvents.map((event) => (
                   <EventCard
