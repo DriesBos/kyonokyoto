@@ -11,17 +11,71 @@ const tracks = [
   {
     className: "time-divider__track--left",
     direction: "left",
-    travel: 50,
+    travel: 46,
   },
   {
     className: "time-divider__track--right",
     direction: "right",
-    travel: 50,
+    travel: 52,
   },
   {
     className: "time-divider__track--left-slow",
     direction: "left",
-    travel: 36,
+    travel: 39,
+  },
+  {
+    className: "time-divider__track--right",
+    direction: "right",
+    travel: 44,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--left-slow",
+    direction: "left",
+    travel: 57,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--right",
+    direction: "right",
+    travel: 35,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--left",
+    direction: "left",
+    travel: 49,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--right",
+    direction: "right",
+    travel: 61,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--left-slow",
+    direction: "left",
+    travel: 42,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--right",
+    direction: "right",
+    travel: 54,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--left",
+    direction: "left",
+    travel: 37,
+    mobileOnly: true,
+  },
+  {
+    className: "time-divider__track--right",
+    direction: "right",
+    travel: 48,
+    mobileOnly: true,
   },
 ];
 ---
@@ -30,7 +84,7 @@ const tracks = [
   <div class="time-divider__scroller" aria-hidden="true">
     {tracks.map((track) => (
       <div
-        class:list={["time-divider__track", track.className]}
+        class:list={["time-divider__track", track.className, { "time-divider__track--mobile-extra": track.mobileOnly }]}
         data-time-divider-track
         data-direction={track.direction}
         data-travel={track.travel}
@@ -71,6 +125,8 @@ const tracks = [
   const dividerWindow = window as TimeDividerWindow;
   const dividerSelector = "[data-time-divider]";
   const trackSelector = "[data-time-divider-track]";
+  const scrollDistanceMultiplier = 5;
+  const scrollScrubSeconds = 0.33;
 
   const cleanupTimeDividers = () => {
     dividerWindow.__timeDividerCleanup?.();
@@ -107,8 +163,8 @@ const tracks = [
               scrollTrigger: {
                 trigger: divider,
                 start: "top bottom",
-                end: "bottom top",
-                scrub: true,
+                end: () => `+=${(divider.offsetHeight + window.innerHeight) * scrollDistanceMultiplier}`,
+                scrub: scrollScrubSeconds,
                 invalidateOnRefresh: true,
               },
             },

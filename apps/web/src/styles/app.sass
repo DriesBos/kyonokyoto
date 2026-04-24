@@ -552,7 +552,7 @@ a
   &__scroller
     display: flex
     flex-direction: column  
-    gap: 1.5rem
+    gap: 3rem
     width: 100%
     overflow: hidden
     padding: 12vh 0
@@ -562,6 +562,9 @@ a
     width: max-content
     will-change: transform
     gap: 2px
+
+    &--mobile-extra
+      display: none
 
     &--left
       transform: translate3d(0, 0, 0)
@@ -820,6 +823,10 @@ a
     &__toolbar,
     &__options
       width: 100%
+
+  .time-divider
+    &__track--mobile-extra
+      display: flex
 
 .event-card-dot
   position: absolute
