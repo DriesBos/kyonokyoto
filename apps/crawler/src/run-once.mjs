@@ -2124,6 +2124,13 @@ function extractKyotophonieEvent(detailHtml, source, detailUrl) {
 
 function extractMtkEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const descriptionBlock = extractClassBlock(detailHtml, "ex__detail", "div") ?? "";
+  const description = [...descriptionBlock.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((value) => !/^[-–—]+$/.test(value))
+    .filter((value) => !/^photo by\b/i.test(value))
+    .join("\n\n");
   const sliderHtml =
     detailHtml.match(/<div class="ex__slider-main ex__slider">[\s\S]*?<div class="swiper-wrapper">([\s\S]*?)<\/div>\s*<\/div>/i)?.[1] ??
     detailHtml.match(/<div class="swiper-wrapper">([\s\S]*?)<\/div>/i)?.[1] ??
@@ -2141,6 +2148,7 @@ function extractMtkEvent(detailHtml, source, detailUrl) {
 
   return {
     ...event,
+    description: description || event.description,
     primary_image_url: firstImageUrl,
     image_urls: firstImageUrl ? [firstImageUrl] : [],
   };
@@ -2192,7 +2200,7 @@ const eventExtractors = {
   "kyoto-national-museum": extractKyohakuEvent,
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
   "kyotophonie": extractKyotophonieEvent,
-  "mtk-contemporary-art": extractMtkEvent,
+  "mtk": extractMtkEvent,
   "sibasi": extractSibasiEvent,
   "taka-ishii-gallery": extractTakaIshiiEvent,
   "zenbi": extractZenbiEvent,

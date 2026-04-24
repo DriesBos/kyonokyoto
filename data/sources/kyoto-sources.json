@@ -261,8 +261,8 @@
       "source_categories": ["art", "museum"]
     },
     {
-      "slug": "national-museum-of-modern-art",
-      "name": "National Museum of Modern Art",
+      "slug": "momak",
+      "name": "MoMAK",
       "source_type": "museum",
       "language": "ja",
       "base_url": "https://www.momak.go.jp/",
