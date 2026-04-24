@@ -82,14 +82,13 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   --dot-button: 1.5rem
   --dot-card: max(2rem, 5vmin)
   --grain-texture: #{$grain-texture}
-  --grain-opacity: 0
-  --grain-blend-mode: multiply
+  --grain-background-image: none
 
 :root[data-theme='mud']
   --main-color: #000F88
   --main-background: #DDE2E6
   --stroke: #000F88
-  --grain-opacity: 1
+  --grain-background-image: var(--grain-texture)
 
 @media (any-pointer: coarse)
   :root
@@ -256,18 +255,10 @@ a
   width: 100%
   margin: 0 auto
   padding: var(--page-padding-y) var(--page-padding-x)
-
-  &::before
-    content: ""
-    position: absolute
-    z-index: -1
-    inset: 0
-    background-image: var(--grain-texture)
-    background-size: 180px 180px
-    background-repeat: repeat
-    mix-blend-mode: var(--grain-blend-mode)
-    opacity: var(--grain-opacity)
-    pointer-events: none
+  background-color: var(--main-background)
+  background-image: var(--grain-background-image)
+  background-size: 180px 180px
+  background-repeat: repeat
 
 @keyframes site-header-logo-shrink
   from
@@ -291,18 +282,10 @@ a
   align-items: flex-start
   gap: 1.5rem
   padding: var(--stroke-gap) 0
-  background: var(--main-background)
-  &::before
-    content: ""
-    position: absolute
-    z-index: 0
-    inset: 0
-    background-image: var(--grain-texture)
-    background-size: 180px 180px
-    background-repeat: repeat
-    mix-blend-mode: var(--grain-blend-mode)
-    opacity: var(--grain-opacity)
-    pointer-events: none
+  background-color: var(--main-background)
+  background-image: var(--grain-background-image)
+  background-size: 180px 180px
+  background-repeat: repeat
   &::after
     content: ""
     position: absolute
