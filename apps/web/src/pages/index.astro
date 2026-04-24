@@ -73,7 +73,7 @@ const titleCaseCategory = (value: string) =>
   value
     .trim()
     .toLowerCase()
-    .split(/\s+/)
+    .split(/[\s-]+/)
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
@@ -81,8 +81,14 @@ const titleCaseCategory = (value: string) =>
 const preferredCategoryOrder = [
   "exhibition",
   "museum",
+  "gallery",
+  "art",
+  "photography",
+  "design",
+  "craft",
   "event",
   "music",
+  "performance",
   "mingei",
   "ceramics",
   "workshop",
@@ -109,7 +115,7 @@ const decodeHtml = (value: string) =>
     return entities[entity.toLowerCase()] ?? match;
   });
 
-const parseEnglishMonthDateRange = (dateText: string) => {
+const parseEnglishMonthDateRange = (dateText: string, fallbackYear?: string | null) => {
   const months: Record<string, string> = {
     january: "01",
     jan: "01",
@@ -139,19 +145,24 @@ const parseEnglishMonthDateRange = (dateText: string) => {
 
   const cleaned = decodeHtml(dateText)
     .replace(/\([^)]*\)/g, "")
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, "")
     .replace(/\s+/g, " ")
     .trim();
-  const match = cleaned.match(
+  const datedMatch = cleaned.match(
     /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/
   );
+  const undatedMatch = cleaned.match(/([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/);
+  const match = datedMatch ?? undatedMatch;
+  const normalizedFallbackYear = fallbackYear?.match(/20\d{2}/)?.[0] ?? null;
 
   if (!match) return { calendar_starts_at: null, calendar_ends_at: null };
 
-  const [, startMonthName, startDay, endMonthName, endDay, year] = match;
+  const [, startMonthName, startDay, endMonthName, endDay] = match;
+  const year = datedMatch?.[5] ?? normalizedFallbackYear;
   const startMonth = months[startMonthName.toLowerCase()];
   const endMonth = months[endMonthName.toLowerCase()];
 
-  if (!startMonth || !endMonth) return { calendar_starts_at: null, calendar_ends_at: null };
+  if (!year || !startMonth || !endMonth) return { calendar_starts_at: null, calendar_ends_at: null };
 
   const startDate = `${year}-${startMonth}-${String(startDay).padStart(2, "0")}`;
   const endDate = `${year}-${endMonth}-${String(endDay).padStart(2, "0")}`;
@@ -205,8 +216,11 @@ const toJapanDate = (value: Date) =>
 const today = toJapanDate(new Date());
 
 const formattedEvents: ClassifiedEvent[] = events.map((event) => {
+  const fallbackCalendarYear = event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
   const parsedCalendarDates =
-    event.calendar_starts_at && event.calendar_ends_at ? null : parseEnglishMonthDateRange(event.date_text);
+    event.calendar_starts_at && event.calendar_ends_at
+      ? null
+      : parseEnglishMonthDateRange(event.date_text, fallbackCalendarYear);
   const calendarStartsAt = event.calendar_starts_at ?? parsedCalendarDates?.calendar_starts_at ?? null;
   const calendarEndsAt = event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
   const eventWithCalendarDates = {

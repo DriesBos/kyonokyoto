@@ -79,6 +79,25 @@ function decodeHtml(value) {
     });
 }
 
+function normalizeCategoryList(values) {
+  return [...new Set(
+    values
+      .flatMap((value) => Array.isArray(value) ? value : [value])
+      .map((value) => String(value ?? "").trim().toLowerCase())
+      .filter(Boolean)
+  )];
+}
+
+function withSourceCategories(eventData, source) {
+  return {
+    ...eventData,
+    categories: normalizeCategoryList([
+      eventData.categories ?? [],
+      source.source_categories ?? [],
+    ]),
+  };
+}
+
 function stripTags(value) {
   return decodeHtml(
     value
@@ -412,6 +431,76 @@ function parseEnglishMonthDateRangeWithWeekdays(dateText) {
     .trim();
 
   return parseEnglishMonthDateRange(cleaned);
+}
+
+function parseEnglishMonthDayRangeWithYear(dateText, year) {
+  const months = {
+    january: "01",
+    jan: "01",
+    february: "02",
+    feb: "02",
+    march: "03",
+    mar: "03",
+    april: "04",
+    apr: "04",
+    may: "05",
+    june: "06",
+    jun: "06",
+    july: "07",
+    jul: "07",
+    august: "08",
+    aug: "08",
+    september: "09",
+    sep: "09",
+    sept: "09",
+    october: "10",
+    oct: "10",
+    november: "11",
+    nov: "11",
+    december: "12",
+    dec: "12",
+  };
+  const normalizedYear = String(year ?? "").match(/20\d{2}/)?.[0];
+  const cleaned = decodeHtml(dateText)
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const match = cleaned.match(
+    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/
+  );
+
+  if (!normalizedYear || !match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, startMonthName, startDay, endMonthName, endDay] = match;
+  const startMonth = months[startMonthName.toLowerCase()];
+  const endMonth = months[endMonthName.toLowerCase()];
+
+  if (!startMonth || !endMonth) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const startDate = `${normalizedYear}-${startMonth}-${String(startDay).padStart(2, "0")}`;
+  const endDate = `${normalizedYear}-${endMonth}-${String(endDay).padStart(2, "0")}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
 }
 
 function parseEnglishDayMonthYearRange(dateText) {
@@ -1227,7 +1316,16 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
   const englishTitle = englishRow.title;
   const dateTextMatch = englishRow.bodyText.match(/Dates:\s*([^\n]+)/i);
   const dateText = dateTextMatch?.[1]?.trim() ?? "See source page";
-  const parsedDates = parseEnglishMonthDateRangeWithWeekdays(dateText);
+  const detailYear = detailUrl.match(/20\d{2}/)?.[0];
+  const pageYear = englishRow.bodyText.match(/20\d{2}/)?.[0];
+  const currentJapanYear = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+  }).format(new Date());
+  const parsedDateRange = parseEnglishMonthDateRangeWithWeekdays(dateText);
+  const parsedDates = parsedDateRange.startDate
+    ? parsedDateRange
+    : parseEnglishMonthDayRangeWithYear(dateText, detailYear ?? pageYear ?? currentJapanYear);
   const openText = englishRow.bodyText.match(/Open:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
   const description = englishRow.bodyText
     .split("\n")
@@ -2346,7 +2444,10 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       const detailPage = await fetchHtml(detailUrl, userAgent);
       pagesFetched += 1;
       const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, "detail", detailPage);
-      const extractedEvent = eventExtractor(detailPage.html, source, detailUrl, sourceContext);
+      const extractedEvent = withSourceCategories(
+        eventExtractor(detailPage.html, source, detailUrl, sourceContext),
+        source
+      );
 
       if (source.slug === "sibasi") {
         const hasVerifiedDate =

@@ -16,7 +16,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/events/", "/en/events/"],
       "notes": "Good mixed source for exhibitions, performances, talks, and workshops.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "performance", "workshop"]
     },
     {
       "slug": "kyoto-national-museum",
@@ -29,7 +30,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/eng/exhibitions/", "/exhibitions/"],
       "notes": "Use the English exhibitions index and keep only the first two fully populated exhibition pages listed there.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "kyotographie",
@@ -42,7 +44,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/programs/"],
       "notes": "Use the English programs index as the canonical entry point for festival program pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["photography", "festival", "art"]
     },
     {
       "slug": "hosoo-gallery",
@@ -55,7 +58,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Use the English exhibitions archive and only extract links from the exhibition article cards, so research pages and section indexes do not leak into the crawl.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["design", "craft", "gallery"]
     },
     {
       "slug": "huko",
@@ -68,7 +72,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blogs/exhibition/"],
       "notes": "Use the dedicated exhibition blog listing page, which links into individual exhibition entries under /blogs/exhibition/.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "gallery-yamahon",
@@ -81,7 +86,8 @@
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/"],
       "notes": "Homepage currently exposes the newest exhibition as a WordPress post-style `?p=` link. Prefer post links and ignore `?page_id=` navigation pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["craft", "ceramics", "gallery"]
     },
     {
       "slug": "kyotophonie",
@@ -94,7 +100,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program", "/programs", "/en/"],
       "notes": "Festival source that may behave similarly to KYOTOGRAPHIE with program-style pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["music", "festival"]
     },
     {
       "slug": "taka-ishii-gallery",
@@ -112,20 +119,8 @@
         "/en/archives/"
       ],
       "notes": "Use the Kyoto (Yada-cho) location page directly and extract only the linked Kyoto exhibition archive detail pages.",
-      "is_active": true
-    },
-    {
-      "slug": "komyoin",
-      "name": "Komyo-in",
-      "source_type": "temple",
-      "language": "ja",
-      "base_url": "https://komyoin.jp/",
-      "start_urls": ["https://komyoin.jp/"],
-      "allowed_domains": ["komyoin.jp"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/"],
-      "notes": "Current site is a JS-rendered homepage with no stable crawlable event detail URLs in the server-rendered HTML. Keep inactive until a source-specific extractor exists.",
-      "is_active": false
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "essence-kyoto",
@@ -138,7 +133,8 @@
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/"],
       "notes": "The exhibition is surfaced directly on the homepage beneath the hero. Extract only the top homepage exhibition rows and ignore the storefront content below.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["design", "craft", "gallery"]
     },
     {
       "slug": "arts-and-science",
@@ -151,7 +147,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/events/"],
       "notes": "Use the dedicated events listing and ignore collection, products, editorial, and store pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["design", "craft"]
     },
     {
       "slug": "sibasi",
@@ -167,7 +164,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/category/live/", "/category/exhibitions/"],
       "notes": "Use the live and exhibitions category pages, then only publish items whose actual event or exhibition dates are ongoing or upcoming.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["music", "art"]
     },
     {
       "slug": "kojin",
@@ -180,7 +178,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/event/"],
       "notes": "Use the dedicated event listing. The homepage event rail links into `/event/<slug>/` detail pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "kyoto-art-month",
@@ -193,7 +192,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program", "/event", "/"],
       "notes": "Current homepage behaves as an off-domain directory linking straight to partner venues rather than hosting stable on-domain program detail pages. Keep inactive until we add a source-specific aggregator.",
-      "is_active": false
+      "is_active": false,
+      "source_categories": ["art", "festival"]
     },
     {
       "slug": "zenbi",
@@ -206,7 +206,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Exhibitions are listed on the dedicated exhibition index. Prefer current and upcoming exhibition cards and ignore linked news posts surfaced inside exhibition pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "mtk-contemporary-art",
@@ -219,7 +220,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Exhibitions are listed on the English exhibition index, while some linked detail pages resolve under /exhibition/<slug>/.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "dnp-foundation-for-cultural-promotion-gallery-ddd",
@@ -238,7 +240,8 @@
         "/gallery/ddd/"
       ],
       "notes": "Use the English DDD Coming up page and keep only the first two exhibition blocks listed there, including the upcoming unlinked schedule entry.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["design", "gallery"]
     },
     {
       "slug": "kyoto-city-kyocera-museum-of-art",
@@ -254,7 +257,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Strong institutional source with likely structured exhibition pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "the-national-museum-of-modern-art",
@@ -270,7 +274,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/English/", "/Japanese/"],
       "notes": "Major institutional source that may need custom handling for archive versus ongoing exhibition pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "gallery-unfold",
@@ -283,7 +288,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/archive"],
       "notes": "Only extract the first (most recent) item from the archive listing. Upcoming events lack images and content and should be skipped.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "hakusasonso",
@@ -296,7 +302,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/detail/"],
       "notes": "Use the exhibition index and prefer linked detail pages under `/exhibition/detail/` over archive and index links.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "sen-oku-hakukokan",
@@ -312,7 +319,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program/"],
       "notes": "Kyoto museum homepage surfaces ongoing and upcoming exhibition program pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "gallery-morning-kyoto",
@@ -331,7 +339,8 @@
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/20"],
       "notes": "Homepage cards point to Blogspot post URLs like `/2026/04/...html`. Allow the Blogspot domain and prefer dated post URLs over archive pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "nonaka-hill",
@@ -344,7 +353,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Only extract current and upcoming exhibitions; skip the archive section further down the page.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "kcua-gallery",
@@ -357,7 +367,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/archives/", "/archives/"],
       "notes": "The English exhibitions landing page links into detail pages under `/en/archives/<year>/<id>/`. Prefer those archive detail URLs over menu and news links.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "the-terminal-kyoto",
@@ -370,7 +381,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/event_type/exhibition/", "/event/"],
       "notes": "Exhibition-type filtered event listing.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "artro",
@@ -383,7 +395,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Dedicated exhibition listing page.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "chushin-bijutsu",
@@ -396,7 +409,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/bijyutu/exhibition/"],
       "notes": "Bank-affiliated art museum with exhibition index at /bijyutu/exhibition/index.html.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "shokokuji-jotenkaku-museum",
@@ -411,7 +425,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/museum/exhibition/", "/museum/exhibition/"],
       "notes": "Temple museum; English exhibition index for the Shokokuji Kindai wing.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "raku-museum",
@@ -426,7 +441,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
       "notes": "English version of the Raku Museum exhibition index; dedicated to Raku ware ceramics.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["ceramics", "museum", "craft"]
     },
     {
       "slug": "anewal-gallery",
@@ -439,7 +455,8 @@
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/"],
       "notes": "Current schedule is homepage-only and mostly points to PDFs, social posts, and external event pages. Keep inactive until we add a source-specific homepage extractor.",
-      "is_active": false
+      "is_active": false,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "kusakabe-gallery",
@@ -452,7 +469,8 @@
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/news", "/"],
       "notes": "Exhibitions surfaced on the homepage.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "insho-domoto",
@@ -465,7 +483,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Use the schedule listing as the entry point, but prefer linked exhibition detail pages under `/exhibitions/<id>/`.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "kuramonzen",
@@ -478,7 +497,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blogs/exhibitions"],
       "notes": "Exhibition blog listing; similar structure to HUKO.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "oscaar-mouligne",
@@ -491,7 +511,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Gallery exhibition listing.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery"]
     },
     {
       "slug": "kankakari",
@@ -504,7 +525,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/single-post/"],
       "notes": "Use the Wix news listing as the index and follow exhibition posts under `/single-post/`.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "gallery", "craft"]
     },
     {
       "slug": "samac",
@@ -520,7 +542,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/"],
       "notes": "Crawl both the current (index.php) and upcoming (index.php?m=future) exhibition index pages.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "fukuda-art-museum",
@@ -533,7 +556,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition", "/exhibition"],
       "notes": "English exhibition listing.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "oyamazaki-villa-museum",
@@ -551,7 +575,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/english/exhibition/", "/exhibition/"],
       "notes": "English exhibition listing for the Oyamazaki Villa Museum, just outside Kyoto.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     },
     {
       "slug": "miho-museum",
@@ -567,7 +592,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Use the current and upcoming exhibition landing pages, which link into exhibition detail pages under `/en/exhibition/<slug>/`.",
-      "is_active": true
+      "is_active": true,
+      "source_categories": ["art", "museum"]
     }
   ]
 }

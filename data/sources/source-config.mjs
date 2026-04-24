@@ -13,6 +13,7 @@ export function applySourceOverride(source, override = {}) {
     start_urls: override.start_urls ?? source.start_urls ?? [],
     allowed_domains: override.allowed_domains ?? source.allowed_domains ?? [],
     event_page_patterns: override.event_page_patterns ?? source.event_page_patterns ?? [],
+    source_categories: override.source_categories ?? source.source_categories ?? [],
   };
 }
 
