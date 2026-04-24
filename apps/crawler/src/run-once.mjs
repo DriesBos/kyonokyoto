@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applySourceOverride, loadSourceOverrides, loadSourcesConfig } from "../../../data/sources/source-config.mjs";
 import { buildEventDedupeKey } from "../../../packages/shared/event-dedupe.mjs";
-import { buildScheduleFields, classifyEventTiming } from "../../../packages/shared/event-schedule.mjs";
+import { buildScheduleFields, classifyEventTiming, normalizeDateOnly } from "../../../packages/shared/event-schedule.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(__dirname, "..");
@@ -544,6 +544,44 @@ function toJapanDate(value) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Tokyo",
   }).format(value);
+}
+
+function shiftDateOnlyByYears(dateOnly, deltaYears) {
+  const normalized = normalizeDateOnly(dateOnly);
+  if (!normalized) return null;
+
+  const utcDate = new Date(`${normalized}T00:00:00Z`);
+  if (Number.isNaN(utcDate.getTime())) return null;
+
+  utcDate.setUTCFullYear(utcDate.getUTCFullYear() + deltaYears);
+  return utcDate.toISOString().slice(0, 10);
+}
+
+function getLatestEventDateOnly(event) {
+  const candidates = [
+    normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at),
+    normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at),
+    ...(Array.isArray(event?.occurrence_dates)
+      ? event.occurrence_dates.map((value) => normalizeDateOnly(value))
+      : []),
+  ].filter(Boolean);
+
+  if (!candidates.length) return null;
+  return [...candidates].sort().at(-1) ?? null;
+}
+
+function getLatestEventYearHint(event, detailUrl) {
+  const haystacks = [
+    typeof event?.date_text === "string" ? event.date_text : "",
+    typeof detailUrl === "string" ? detailUrl : "",
+  ];
+
+  const years = haystacks.flatMap((value) =>
+    [...decodeHtml(value).matchAll(/(?:^|[^\d])(20\d{2})(?!\d)/g)].map((match) => Number(match[1]))
+  ).filter((value) => Number.isFinite(value));
+
+  if (!years.length) return null;
+  return Math.max(...years);
 }
 
 function extractYearFromUrl(url) {
@@ -2276,6 +2314,8 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
 
     const eventExtractor = eventExtractors[source.slug] ?? extractGenericEvent;
     const todayJapan = toJapanDate(new Date());
+    const oneYearAgoJapan = shiftDateOnlyByYears(todayJapan, -1);
+    const previousYear = Number(todayJapan.slice(0, 4)) - 1;
 
     const savedEvents = [];
     const skippedEvents = [];
@@ -2307,6 +2347,29 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
             detailUrl,
             title: extractedEvent.title,
             reason: "past event",
+          });
+          continue;
+        }
+      }
+
+      const latestEventDate = getLatestEventDateOnly(extractedEvent);
+      if (latestEventDate && oneYearAgoJapan && latestEventDate < oneYearAgoJapan) {
+        skippedEvents.push({
+          detailUrl,
+          title: extractedEvent.title,
+          reason: `older than one year (${latestEventDate})`,
+        });
+        continue;
+      }
+
+      if (!latestEventDate) {
+        const latestEventYearHint = getLatestEventYearHint(extractedEvent, detailUrl);
+
+        if (latestEventYearHint && latestEventYearHint < previousYear) {
+          skippedEvents.push({
+            detailUrl,
+            title: extractedEvent.title,
+            reason: `older than previous year (${latestEventYearHint})`,
           });
           continue;
         }
