@@ -2044,13 +2044,14 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
       ""
   );
 
-  const uniqueImageUrls = finalizeImageUrls([
+  const allImageUrls = finalizeImageUrls([
     { url: extractMeta(detailHtml, "og:image"), source: "og:image" },
     ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
       url: match[1],
       source: "img",
     })),
-  ], detailUrl).slice(0, 1);
+  ], detailUrl);
+  const uniqueImageUrls = allImageUrls.length > 1 ? allImageUrls.slice(0, -1) : allImageUrls;
   const parsedDates = parseDottedDateRange(dateText);
   const addressText =
     (context.accessHtml ? extractSenOkuAddress(context.accessHtml) : null) ??

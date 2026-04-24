@@ -63,7 +63,7 @@ const timingFilters = [
           ))}
           {categories.map((category) => (
             <GeneralButton
-              label={category.label}
+              label={"#" + category.label}
               pressed={false}
               showDot={true}
               dataCategory={category.slug}
@@ -92,9 +92,10 @@ const timingFilters = [
   const root = document.querySelector("[data-category-filter]");
 
   if (root) {
-    const categoryButtons = Array.from(root.querySelectorAll("[data-category-button]"));
+    const headerCategoryButtons = Array.from(root.querySelectorAll("[data-category-button]"));
+    const categoryButtons = Array.from(document.querySelectorAll("[data-category-button]"));
     const timingButtons = Array.from(root.querySelectorAll("[data-timing-button]"));
-    const buttons = [...timingButtons, ...categoryButtons];
+    const buttons = [...timingButtons, ...headerCategoryButtons];
     const disclosure = root.querySelector("[data-filter-disclosure]");
     const themeToggleButtons = Array.from(root.querySelectorAll("[data-theme-toggle]"));
     const filterPanel = root.querySelector("[data-filter-options]");
