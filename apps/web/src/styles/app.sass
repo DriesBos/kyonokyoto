@@ -11,7 +11,7 @@ $fluid-type-intercept: $fluid-type-min-size - (math.div($fluid-type-slope, 100) 
 $image-placeholder: #dcdcdc
 $type-scale-base: 1rem
 $type-scale-ratio: 1.618
-$grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.62'/%3E%3C/svg%3E")
+$grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E")
 
 @function type-step($step)
   $size: $type-scale-base
@@ -51,9 +51,9 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 
 :root
   --color-green: #138e00
-  --color-mudgreen: #889488
   --color-beige: #efefef
   --color-white: #ffffff
+  --color-dark: #1f1f1f
 
   --main-color: var(--color-green)
   --main-background: var(--color-beige)
@@ -84,18 +84,24 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   --grain-texture: #{$grain-texture}
   --grain-background-image: none
 
-:root[data-theme='mud']
-  --main-color: #000F88
-  --main-background: #1F1F1F
-  --stroke: #000F88
+:root[data-theme='dark']
+  --main-color: var(--color-green)
+  --main-background: var(--color-dark)
+  --stroke: var(--color-green)
   --grain-background-image: var(--grain-texture)
 
 @media (any-pointer: coarse)
-  :root
+  :root:not([data-theme='dark'])
     --main-background: var(--color-white)
 
-  :root[data-theme='mud']
-    --main-background: var(--color-mudgreen)
+  :root[data-theme='dark']
+    --main-background: var(--color-dark)
+
+:root[data-theme-ready='true'] body,
+:root[data-theme-ready='true'] .site-header,
+:root[data-theme-ready='true'] .page-shell,
+:root[data-theme-ready='true'] .page-edge-strokes__scroll-top
+  transition: background-color 1s ease, color 1s ease, border-color 1s ease
 
 *,
 *::before,

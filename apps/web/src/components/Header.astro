@@ -44,7 +44,7 @@ const timingFilters = [
             dataAmbientSoundButton={true}
           />
           <GeneralButton
-            label="theme"
+            label="light"
             pressed={false}
             showDot={true}
             data-theme-toggle
@@ -115,24 +115,31 @@ const timingFilters = [
     const isFilterExpanded = () =>
       disclosure instanceof HTMLElement && disclosure.getAttribute("aria-expanded") === "true";
 
-    const isMudTheme = () => themeRoot.getAttribute("data-theme") === "mud";
+    const themeStorageKey = "kyo-theme";
+    const isDarkTheme = () => themeRoot.getAttribute("data-theme") === "dark";
 
     const syncThemeButtons = () => {
-      const isActive = isMudTheme();
+      const isActive = isDarkTheme();
 
       themeToggleButtons.forEach((button) => {
         if (!(button instanceof HTMLElement)) return;
         button.setAttribute("aria-pressed", String(isActive));
-        button.dataset.themeState = isActive ? "mud" : "default";
+        button.dataset.themeState = isActive ? "dark" : "light";
+        const label = button.querySelector(".general-button__label");
+        if (label) {
+          label.textContent = isActive ? "dark" : "light";
+        }
       });
     };
 
     const setTheme = (nextTheme) => {
-      if (nextTheme === "mud") {
-        themeRoot.setAttribute("data-theme", "mud");
-      } else {
-        themeRoot.removeAttribute("data-theme");
-      }
+      const theme = nextTheme === "dark" ? "dark" : "light";
+      themeRoot.setAttribute("data-theme", theme);
+      themeRoot.style.colorScheme = theme;
+
+      try {
+        localStorage.setItem(themeStorageKey, theme);
+      } catch {}
 
       syncThemeButtons();
     };
@@ -321,7 +328,7 @@ const timingFilters = [
       if (!(button instanceof HTMLElement)) return;
 
       button.addEventListener("click", () => {
-        setTheme(isMudTheme() ? "default" : "mud");
+        setTheme(isDarkTheme() ? "light" : "dark");
       });
     });
 
