@@ -11,6 +11,7 @@ $fluid-type-intercept: $fluid-type-min-size - (math.div($fluid-type-slope, 100) 
 $image-placeholder: #dcdcdc
 $type-scale-base: 1rem
 $type-scale-ratio: 1.618
+$grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.62'/%3E%3C/svg%3E")
 
 @function type-step($step)
   $size: $type-scale-base
@@ -80,11 +81,15 @@ $type-scale-ratio: 1.618
   --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23fd69ba'/%3E%3C/svg%3E") 12 12, auto
   --dot-button: 1.5rem
   --dot-card: max(2rem, 5vmin)
+  --grain-texture: #{$grain-texture}
+  --grain-opacity: 0
+  --grain-blend-mode: multiply
 
 :root[data-theme='mud']
   --main-color: #000F88
   --main-background: #DDE2E6
   --stroke: #000F88
+  --grain-opacity: 1
 
 @media (any-pointer: coarse)
   :root
@@ -247,9 +252,22 @@ a
 
 .page-shell
   position: relative
+  isolation: isolate
   width: 100%
   margin: 0 auto
   padding: var(--page-padding-y) var(--page-padding-x)
+
+  &::before
+    content: ""
+    position: absolute
+    z-index: -1
+    inset: 0
+    background-image: var(--grain-texture)
+    background-size: 180px 180px
+    background-repeat: repeat
+    mix-blend-mode: var(--grain-blend-mode)
+    opacity: var(--grain-opacity)
+    pointer-events: none
 
 @keyframes site-header-logo-shrink
   from
@@ -267,15 +285,28 @@ a
   position: sticky
   top: 0
   z-index: 12
+  isolation: isolate
   display: flex
   justify-content: space-between
   align-items: flex-start
   gap: 1.5rem
   padding: var(--stroke-gap) 0
   background: var(--main-background)
+  &::before
+    content: ""
+    position: absolute
+    z-index: 0
+    inset: 0
+    background-image: var(--grain-texture)
+    background-size: 180px 180px
+    background-repeat: repeat
+    mix-blend-mode: var(--grain-blend-mode)
+    opacity: var(--grain-opacity)
+    pointer-events: none
   &::after
     content: ""
     position: absolute
+    z-index: 2
     inset-inline: 0
     bottom: 0
     border-top: var(--stroke-width) solid var(--stroke)
@@ -295,6 +326,8 @@ a
         opacity: 1
 
   &__logo
+    position: relative
+    z-index: 1
     flex: 0 0 auto
     display: block
     padding: 0.125rem 0.25rem 0 0
@@ -317,6 +350,8 @@ a
   margin: 0
 
 .category-filter
+  position: relative
+  z-index: 1
   display: flex
   flex-direction: column
   align-items: flex-end
