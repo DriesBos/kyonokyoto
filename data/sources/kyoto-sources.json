@@ -151,20 +151,6 @@
       "source_categories": ["design", "craft", "gallery"]
     },
     {
-      "slug": "arts-and-science",
-      "name": "Arts & Science",
-      "source_type": "shop-gallery",
-      "language": "ja",
-      "base_url": "https://arts-science.com/events/",
-      "start_urls": ["https://arts-science.com/events/"],
-      "allowed_domains": ["arts-science.com"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/events/"],
-      "notes": "Use the dedicated events listing and ignore collection, products, editorial, and store pages.",
-      "is_active": true,
-      "source_categories": ["design", "craft"]
-    },
-    {
       "slug": "sibasi",
       "name": "Sibasi",
       "source_type": "venue",
@@ -278,16 +264,13 @@
       "slug": "momak",
       "name": "MoMAK",
       "source_type": "museum",
-      "language": "ja",
-      "base_url": "https://www.momak.go.jp/",
-      "start_urls": [
-        "https://www.momak.go.jp/English/exhibitionArchive/",
-        "https://www.momak.go.jp/Japanese/exhibitionArchive/"
-      ],
+      "language": "en",
+      "base_url": "https://www.momak.go.jp/English/exhibitionArchive/",
+      "start_urls": ["https://www.momak.go.jp/English/exhibitionArchive/"],
       "allowed_domains": ["www.momak.go.jp", "momak.go.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/English/", "/Japanese/"],
-      "notes": "Major institutional source that may need custom handling for archive versus ongoing exhibition pages.",
+      "event_page_patterns": ["/English/?p="],
+      "notes": "Use only the English current/upcoming exhibition archive as the starting point. Avoid the Japanese archive and general information pages.",
       "is_active": true,
       "source_categories": ["art", "museum"]
     },

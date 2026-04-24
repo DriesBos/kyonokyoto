@@ -886,7 +886,7 @@ function finalizeImageUrls(candidates, baseUrl) {
       continue;
     }
 
-    if ((width && width < 64) || (height && height < 64)) {
+    if ((width && width < 64) || (height && height < 100)) {
       rejected.push(url);
       continue;
     }
@@ -2180,7 +2180,7 @@ function extractKyotographieFestivalSchedule(planHtml) {
 
 function extractKyotographieEvent(detailHtml, source, detailUrl, sourceContext = {}) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
-  const imageUrls = (event.image_urls ?? []).slice(0, 4);
+  const imageUrls = (event.image_urls ?? []).slice(0, 3);
   const festivalSchedule = sourceContext.festivalSchedule ?? {};
   const hasFestivalSchedule = Boolean(festivalSchedule.startDate && festivalSchedule.endDate);
 
@@ -2297,7 +2297,7 @@ function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
   const venueLines = extractAckItemLines(detailHtml, "Venue");
   const venueName = venueLines[0] ?? "Kyoto International Conference Center";
   const addressText = venueLines.find((line) => /Kyoto\s+\d{3}-\d{4}\s+Japan/i.test(line)) ?? venueName;
-  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
+  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl).slice(0, 2);
   const year = parsedDates.startDate?.slice(0, 4) ?? dateText.match(/20\d{2}/)?.[0] ?? "";
 
   return {
@@ -2414,6 +2414,17 @@ function extractKyotophonieEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractKankakariEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const firstImageUrl = event.image_urls?.[0] ?? null;
+
+  return {
+    ...event,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
 function extractMtkEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const descriptionBlock = extractClassBlock(detailHtml, "ex__detail", "div") ?? "";
@@ -2497,6 +2508,7 @@ const eventExtractors = {
   "kyoto-city-kyocera-museum-of-art": extractKyoceraEvent,
   "kyotographie": extractKyotographieEvent,
   "kyotophonie": extractKyotophonieEvent,
+  "kankakari": extractKankakariEvent,
   "mtk": extractMtkEvent,
   "sibasi": extractSibasiEvent,
   "taka-ishii-gallery": extractTakaIshiiEvent,

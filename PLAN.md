@@ -1,9 +1,5 @@
 # Plan
 
-## To Do
-
-- [ ] Deploy .env with crawler settings updates to VPS
-
 ## Product
 
 Build a Kyoto cultural events app that crawls museums, galleries, festival pages, and venue sites, then turns that data into a clean editorial cultural event calendar.
@@ -34,7 +30,8 @@ Build a Kyoto cultural events app that crawls museums, galleries, festival pages
 
 - Frontend: Astro, hosted on Netlify
 - Database: Postgres via Supabase, hosted on a Supabase free tier
-- Crawler worker: Crawl4AI, hosted on a Hetzner VPS, using Docker and a cron scheduler
+- Crawler worker: Crawl4AI, running daily using CRON from a VPS and Python venv
+- VPS: AWS Lightsail
 - Git: GitHub
 - Design: Figma
 - Other: Fallow (codebase analysis)
