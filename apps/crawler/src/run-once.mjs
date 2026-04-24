@@ -1129,6 +1129,10 @@ function extractEssenceDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
 
+function extractGalleryYamahonDetailUrls(_listingHtml, listingUrl) {
+  return [listingUrl];
+}
+
 function extractHosooDetailUrls(listingHtml, listingUrl) {
   const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
     .map((match) => normalizeUrl(match[2], listingUrl))
@@ -2186,6 +2190,80 @@ function extractKyotographieEvent(detailHtml, source, detailUrl, sourceContext =
   };
 }
 
+function extractGalleryYamahonEvent(detailHtml, source, detailUrl) {
+  const englishHeading = [...detailHtml.matchAll(/<h5\b[^>]*>([\s\S]*?)<\/h5>/gi)]
+    .map((match) => stripTags(match[1]))
+    .map((value) => value.split("\n").map((line) => line.trim()).filter(Boolean))
+    .find((lines) => /^No\.\s*\d+/i.test(lines[0] ?? ""));
+
+  if (!englishHeading) {
+    throw new Error("Could not find Gallery Yamahon English exhibition heading");
+  }
+
+  const [title, dateText = "See source page", ...headingDetails] = englishHeading;
+  const yearHint =
+    detailHtml.match(/(20\d{2})年/)?.[1] ??
+    detailHtml.match(/datetime=["'](20\d{2})/)?.[1] ??
+    String(new Date().getFullYear());
+  const parseableDateText = `${dateText.replace(/\b([A-Za-z]{3})\./g, "$1")}, ${yearHint}`;
+  const parsedDates = parseEnglishMonthDateRangeWithOptionalStartYear(parseableDateText);
+  const timeText = headingDetails.find((line) => /\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(line)) ?? null;
+  const timeMatch = timeText?.match(/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/);
+  const startTimeText = timeMatch?.[1] ?? null;
+  const endTimeText = timeMatch?.[2] ?? null;
+  const venueName = headingDetails
+    .find((line) => /^MAP\s*:/i.test(line))
+    ?.replace(/^MAP\s*:\s*/i, "")
+    .trim() || source.name;
+  const artistName = title
+    .replace(/^No\.\s*\d+\s*/i, "")
+    .split(":")[0]
+    ?.trim() || null;
+  const paragraphs = [...detailHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const description = paragraphs.find((paragraph) => /^We are pleased\b/i.test(paragraph)) ??
+    paragraphs.find((paragraph) =>
+      paragraph.length > 80 && paragraph.replace(/[^\x00-\x7F]/g, "").length / paragraph.length > 0.75
+    ) ??
+    "";
+  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
+  const calendarStartsAt = parsedDates.startDate && startTimeText
+    ? `${parsedDates.startDate}T${startTimeText}:00+09:00`
+    : parsedDates.calendarStartsAt;
+  const calendarEndsAt = parsedDates.endDate && endTimeText
+    ? `${parsedDates.endDate}T${endTimeText}:00+09:00`
+    : parsedDates.calendarEndsAt;
+
+  return {
+    title,
+    artist_name: artistName,
+    categories: ["exhibition"],
+    description,
+    institution_name: source.name,
+    venue_name: venueName,
+    address_text: source.address_text ?? venueName,
+    directions_query: source.directions_query ?? `${venueName}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: startTimeText,
+    end_time_text: endTimeText,
+    is_all_day: false,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: calendarStartsAt,
+    calendar_ends_at: calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+    extraction_confidence: 0.75,
+  };
+}
+
 function extractKyotophonieEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const firstImageUrl = event.image_urls?.[0] ?? null;
@@ -2256,6 +2334,7 @@ function extractGalleryUnfoldDetailUrls(listingHtml, listingUrl) {
 const detailUrlExtractors = {
   "dnp-foundation-for-cultural-promotion-gallery-ddd": extractDddDetailUrls,
   "essence-kyoto": extractEssenceDetailUrls,
+  "gallery-yamahon": extractGalleryYamahonDetailUrls,
   "hosoo-gallery": extractHosooDetailUrls,
   "kyoto-art-center": extractKacDetailUrls,
   "kyoto-national-museum": extractKyohakuDetailUrls,
@@ -2270,6 +2349,7 @@ const detailUrlExtractors = {
 const eventExtractors = {
   "dnp-foundation-for-cultural-promotion-gallery-ddd": extractDddEvent,
   "essence-kyoto": extractEssenceEvent,
+  "gallery-yamahon": extractGalleryYamahonEvent,
   "hosoo-gallery": extractHosooEvent,
   "kyoto-art-center": extractKacEvent,
   "kyoto-national-museum": extractKyohakuEvent,
