@@ -59,7 +59,8 @@ const formatCategoryLabel = (value: string) =>
     .trim();
 
 const categorySlugs = event.categories.map(normalizeCategory);
-const imageUrls = (event.image_urls ?? []).filter(Boolean);
+const maxImagesPerCard = 3;
+const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
 const rootFontSizePx = 16;
 const desktopImageHeightRem = 10;

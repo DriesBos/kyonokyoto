@@ -61,6 +61,7 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   --stroke-width: 2px
   --stroke: var(--color-green)
   --stroke-gap: 0.75rem
+  --control-gap: 0.75rem
   --icon-size: 1.5625rem
 
   --type-scale-ratio: #{$type-scale-ratio}
@@ -354,13 +355,13 @@ a
     align-items: flex-start
     justify-content: flex-end
     flex-wrap: wrap
-    gap: 0.75rem
+    gap: var(--control-gap)
 
   &__options
     display: flex
     flex-wrap: wrap
     justify-content: flex-end
-    gap: 0.75rem
+    gap: var(--control-gap)
     width: min(100%, 48rem)
     height: 0
     overflow: hidden !important
@@ -754,7 +755,7 @@ a
   &__categories
     display: flex
     flex-wrap: wrap
-    gap: 6px
+    gap: var(--control-gap)
     margin: 0
     padding: 0
     list-style: none
@@ -782,7 +783,7 @@ a
   &__actions
     display: flex
     flex-wrap: wrap
-    gap: 0.75rem
+    gap: var(--control-gap)
     font-size: var(--type-button-size)
     pointer-events: none
     overflow: visible
