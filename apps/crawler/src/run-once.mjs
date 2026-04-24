@@ -42,6 +42,22 @@ function getNumberArg(name, fallback) {
 
 function decodeHtml(value) {
   return String(value)
+    .replace(/&(nbsp|amp|quot|apos|ndash|mdash|lsquo|rsquo|ldquo|rdquo|hellip);/gi, (match, entity) => {
+      const entities = {
+        nbsp: " ",
+        amp: "&",
+        quot: "\"",
+        apos: "'",
+        ndash: "–",
+        mdash: "—",
+        lsquo: "'",
+        rsquo: "'",
+        ldquo: "\"",
+        rdquo: "\"",
+        hellip: "…",
+      };
+      return entities[entity.toLowerCase()] ?? match;
+    })
     .replaceAll("&nbsp;", " ")
     .replaceAll("&amp;", "&")
     .replaceAll("&quot;", "\"")
@@ -275,8 +291,13 @@ function parseEnglishMonthDateRange(dateText) {
     dec: "12",
   };
 
-  const match = dateText.match(
-    /([A-Za-z]+)\s+(\d{1,2})[–-]([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/
+  const cleaned = decodeHtml(dateText)
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const match = cleaned.match(
+    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/
   );
 
   if (!match) {

@@ -90,28 +90,101 @@ const preferredCategoryOrder = [
   "fair",
 ];
 
+const decodeHtml = (value: string) =>
+  value.replace(/&(nbsp|amp|quot|apos|ndash|mdash|lsquo|rsquo|ldquo|rdquo|hellip);/gi, (match, entity) => {
+    const entities: Record<string, string> = {
+      nbsp: " ",
+      amp: "&",
+      quot: "\"",
+      apos: "'",
+      ndash: "–",
+      mdash: "—",
+      lsquo: "'",
+      rsquo: "'",
+      ldquo: "\"",
+      rdquo: "\"",
+      hellip: "…",
+    };
+
+    return entities[entity.toLowerCase()] ?? match;
+  });
+
+const parseEnglishMonthDateRange = (dateText: string) => {
+  const months: Record<string, string> = {
+    january: "01",
+    jan: "01",
+    february: "02",
+    feb: "02",
+    march: "03",
+    mar: "03",
+    april: "04",
+    apr: "04",
+    may: "05",
+    june: "06",
+    jun: "06",
+    july: "07",
+    jul: "07",
+    august: "08",
+    aug: "08",
+    september: "09",
+    sep: "09",
+    sept: "09",
+    october: "10",
+    oct: "10",
+    november: "11",
+    nov: "11",
+    december: "12",
+    dec: "12",
+  };
+
+  const cleaned = decodeHtml(dateText)
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const match = cleaned.match(
+    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/
+  );
+
+  if (!match) return { calendar_starts_at: null, calendar_ends_at: null };
+
+  const [, startMonthName, startDay, endMonthName, endDay, year] = match;
+  const startMonth = months[startMonthName.toLowerCase()];
+  const endMonth = months[endMonthName.toLowerCase()];
+
+  if (!startMonth || !endMonth) return { calendar_starts_at: null, calendar_ends_at: null };
+
+  const startDate = `${year}-${startMonth}-${String(startDay).padStart(2, "0")}`;
+  const endDate = `${year}-${endMonth}-${String(endDay).padStart(2, "0")}`;
+
+  return {
+    calendar_starts_at: `${startDate}T09:00:00+09:00`,
+    calendar_ends_at: `${endDate}T17:30:00+09:00`,
+  };
+};
+
 const formatEventDate = (value: string | null) => {
   if (!value) return "";
 
-  const isoLikeMatch = value.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const decodedValue = decodeHtml(value);
+  const isoLikeMatch = decodedValue.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (isoLikeMatch) {
     const [, year, month, day] = isoLikeMatch;
     return `${year}.${month}.${day}`;
   }
 
-  const dottedMatch = value.match(/(\d{4})\.(\d{2})\.(\d{2})/);
+  const dottedMatch = decodedValue.match(/(\d{4})\.(\d{2})\.(\d{2})/);
   if (dottedMatch) {
     const [, year, month, day] = dottedMatch;
     return `${year}.${month}.${day}`;
   }
 
-  const japaneseMatch = value.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/);
+  const japaneseMatch = decodedValue.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/);
   if (japaneseMatch) {
     const [, year, month, day] = japaneseMatch;
     return `${year}.${month.padStart(2, "0")}.${day.padStart(2, "0")}`;
   }
 
-  return value;
+  return decodedValue;
 };
 
 const formatEventDateRange = (start: string | null, end: string | null, fallback: string) => {
@@ -131,11 +204,23 @@ const toJapanDate = (value: Date) =>
 
 const today = toJapanDate(new Date());
 
-const formattedEvents: ClassifiedEvent[] = events.map((event) => ({
-  ...event,
-  date_text: formatEventDateRange(event.calendar_starts_at, event.calendar_ends_at, event.date_text),
-  timing: classifyEventTiming(event, today),
-}));
+const formattedEvents: ClassifiedEvent[] = events.map((event) => {
+  const parsedCalendarDates =
+    event.calendar_starts_at && event.calendar_ends_at ? null : parseEnglishMonthDateRange(event.date_text);
+  const calendarStartsAt = event.calendar_starts_at ?? parsedCalendarDates?.calendar_starts_at ?? null;
+  const calendarEndsAt = event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
+  const eventWithCalendarDates = {
+    ...event,
+    calendar_starts_at: calendarStartsAt,
+    calendar_ends_at: calendarEndsAt,
+  };
+
+  return {
+    ...eventWithCalendarDates,
+    date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
+    timing: classifyEventTiming(eventWithCalendarDates, today),
+  };
+});
 
 const displayEvents = formattedEvents.filter((event) => event.timing !== "past");
 const ongoingEvents = displayEvents.filter((event) => event.timing === "ongoing");
