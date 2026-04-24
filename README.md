@@ -152,6 +152,12 @@ cd apps/crawler && npm run crawl:once -- --source=<slug> --render=always
 node scripts/create-netlify-build-hook.mjs --name="Daily crawler deploy"
 ```
 
+Run crawler tests without touching live sites:
+
+```bash
+node --test apps/crawler/test/*.test.mjs
+```
+
 How to tune effectively:
 
 - Start with `data/sources/kyoto-sources.json`:
@@ -162,6 +168,10 @@ How to tune effectively:
 - Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
 - When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
 - Lazy-loaded images are handled as a second pass when `CRAWL4AI_RENDER_MODE=auto`: the crawler keeps the normal static fetch first, then asks Crawl4AI to render and scroll detail pages whose extracted event has no image.
+- JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
+- Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
+- Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
+- Each crawl run records structured diagnostics and a source outcome in `crawl_runs.logs`.
 - Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
 
 Rule of thumb:

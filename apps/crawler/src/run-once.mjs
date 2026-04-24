@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { applySourceOverride, loadSourceOverrides, loadSourcesConfig } from "../../../data/sources/source-config.mjs";
 import { buildEventDedupeKey } from "../../../packages/shared/event-dedupe.mjs";
 import { buildScheduleFields, classifyEventTiming, normalizeDateOnly } from "../../../packages/shared/event-schedule.mjs";
@@ -12,6 +12,7 @@ const appRoot = resolve(__dirname, "..");
 const envPath = resolve(appRoot, ".env");
 const crawl4AiFetchPath = resolve(__dirname, "crawl4ai-fetch.py");
 let crawl4AiDisabled = false;
+const domainFetchSchedule = new Map();
 
 function parseEnvFile(contents) {
   const env = {};
@@ -40,6 +41,11 @@ function getArg(name, fallback = null) {
 function getNumberArg(name, fallback) {
   const value = getArg(name);
   const parsed = value ? Number(value) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getEnvNumber(env, name, fallback) {
+  const parsed = Number(env[name]);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
@@ -1129,6 +1135,10 @@ function extractEssenceDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
 
+function extractArtCollaborationKyotoDetailUrls(_listingHtml, listingUrl) {
+  return [listingUrl];
+}
+
 function extractGalleryYamahonDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
@@ -1754,13 +1764,14 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
           .filter(Boolean)
       );
 
-  const imageUrls = finalizeImageUrls([
+  const allImageUrls = finalizeImageUrls([
     { url: extractMeta(detailHtml, "og:image"), source: "og:image" },
     ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
       url: match[1],
       source: "img",
     })),
   ], detailUrl);
+  const imageUrls = allImageUrls.length > 1 ? allImageUrls.slice(1) : allImageUrls;
   const primaryImageUrl = imageUrls[0] ?? null;
 
   const normalizedCategories = [
@@ -2190,6 +2201,134 @@ function extractKyotographieEvent(detailHtml, source, detailUrl, sourceContext =
   };
 }
 
+function parseAckDateRange(dateText) {
+  const months = {
+    january: "01",
+    jan: "01",
+    february: "02",
+    feb: "02",
+    march: "03",
+    mar: "03",
+    april: "04",
+    apr: "04",
+    may: "05",
+    june: "06",
+    jun: "06",
+    july: "07",
+    jul: "07",
+    august: "08",
+    aug: "08",
+    september: "09",
+    sep: "09",
+    sept: "09",
+    october: "10",
+    oct: "10",
+    november: "11",
+    nov: "11",
+    december: "12",
+    dec: "12",
+  };
+  const cleaned = decodeHtml(dateText)
+    .replace(/\b(?:Mon|Tue|Tues|Wed|Thu|Thurs|Fri|Sat|Sun)\.?\s*/gi, "")
+    .replace(/[−–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  const match = cleaned.match(/([A-Za-z]+)\s+(\d{1,2})\s*-\s*(?:([A-Za-z]+)\s+)?(\d{1,2}),\s*(20\d{2})/);
+
+  if (!match) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const [, startMonthName, startDay, endMonthName, endDay, year] = match;
+  const startMonth = months[startMonthName.toLowerCase()];
+  const endMonth = months[(endMonthName ?? startMonthName).toLowerCase()];
+
+  if (!startMonth || !endMonth) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const startDate = `${year}-${startMonth}-${String(startDay).padStart(2, "0")}`;
+  const endDate = `${year}-${endMonth}-${String(endDay).padStart(2, "0")}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T00:00:00+09:00`,
+    calendarEndsAt: `${endDate}T23:59:59+09:00`,
+  };
+}
+
+function extractAckItemLines(detailHtml, heading) {
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    `<h2[^>]*class="[^"]*m-item_heading[^"]*"[^>]*>\\s*${escapedHeading}\\s*<\\/h2>[\\s\\S]*?<div[^>]*class="[^"]*m-item_body[^"]*"[^>]*>\\s*<p[^>]*>([\\s\\S]*?)<\\/p>`,
+    "i"
+  );
+
+  return stripTags(detailHtml.match(pattern)?.[1] ?? "")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((line) => !/^Google map$/i.test(line));
+}
+
+function extractAckItemText(detailHtml, heading) {
+  return extractAckItemLines(detailHtml, heading).join(" ");
+}
+
+function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
+  const dateText = extractAckItemText(detailHtml, "Dates") ||
+    stripTags(detailHtml.match(/alt="([^"]*Art Collaboration Kyoto[^"]*20\d{2}[^"]*)"/i)?.[1] ?? "");
+  const parsedDates = parseAckDateRange(dateText);
+  const aboutDescription = stripTags(
+    detailHtml.match(/<p[^>]*class="about-overview"[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? ""
+  ).replace(/\s+/g, " ").trim();
+  const description = aboutDescription || stripTags(extractMeta(detailHtml, "description") ?? "");
+  const venueLines = extractAckItemLines(detailHtml, "Venue");
+  const venueName = venueLines[0] ?? "Kyoto International Conference Center";
+  const addressText = venueLines.find((line) => /Kyoto\s+\d{3}-\d{4}\s+Japan/i.test(line)) ?? venueName;
+  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
+  const year = parsedDates.startDate?.slice(0, 4) ?? dateText.match(/20\d{2}/)?.[0] ?? "";
+
+  return {
+    title: `Art Collaboration Kyoto${year ? ` ${year}` : ""}`,
+    artist_name: null,
+    categories: ["art-fair", "art"],
+    description,
+    institution_name: source.name,
+    venue_name: venueName || "Kyoto International Conference Center",
+    address_text: addressText || "Takaragaike, Sakyo-ku, Kyoto 606-0001 Japan",
+    directions_query: source.directions_query ?? "Kyoto International Conference Center, Kyoto",
+    date_text: dateText || "See source page",
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: "Asia/Tokyo",
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+    extraction_confidence: parsedDates.startDate ? 0.8 : 0.35,
+  };
+}
+
 function extractGalleryYamahonEvent(detailHtml, source, detailUrl) {
   const englishHeading = [...detailHtml.matchAll(/<h5\b[^>]*>([\s\S]*?)<\/h5>/gi)]
     .map((match) => stripTags(match[1]))
@@ -2332,6 +2471,7 @@ function extractGalleryUnfoldDetailUrls(listingHtml, listingUrl) {
 }
 
 const detailUrlExtractors = {
+  "art-collaboration-kyoto": extractArtCollaborationKyotoDetailUrls,
   "dnp-foundation-for-cultural-promotion-gallery-ddd": extractDddDetailUrls,
   "essence-kyoto": extractEssenceDetailUrls,
   "gallery-yamahon": extractGalleryYamahonDetailUrls,
@@ -2347,6 +2487,7 @@ const detailUrlExtractors = {
 };
 
 const eventExtractors = {
+  "art-collaboration-kyoto": extractArtCollaborationKyotoEvent,
   "dnp-foundation-for-cultural-promotion-gallery-ddd": extractDddEvent,
   "essence-kyoto": extractEssenceEvent,
   "gallery-yamahon": extractGalleryYamahonEvent,
@@ -2415,8 +2556,218 @@ function appendCrawl4AiMediaHtml(html, mediaImages) {
   return `${html}\n<div data-crawl4ai-media-images="true" hidden>${imageTags}</div>`;
 }
 
-async function fetchHtmlWithCrawl4Ai(url, userAgent, env) {
+function sleep(ms) {
+  return new Promise((resolvePromise) => {
+    setTimeout(resolvePromise, ms);
+  });
+}
+
+function buildStaticFetchHeaders(userAgent) {
+  return {
+    "user-agent": userAgent,
+    accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept-language": "ja,en-US;q=0.9,en;q=0.8",
+    "cache-control": "no-cache",
+  };
+}
+
+function classifyFetchResult({ response = null, html = "", error = null }) {
+  if (error) {
+    return error?.name === "TimeoutError" || /timeout|aborted/i.test(error.message ?? "")
+      ? "timeout"
+      : "network_error";
+  }
+
+  if (!response) return "network_error";
+
+  const status = response.status;
+  const contentType = response.headers.get("content-type") ?? "";
+  const normalizedHtml = html.slice(0, 20000).toLowerCase();
+  const htmlWithoutScripts = html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ");
+  const visibleText = stripTags(htmlWithoutScripts).replace(/\s+/g, " ").trim();
+
+  if (status === 429) return "rate_limited";
+  if ([408, 425, 500, 502, 503, 504].includes(status)) return "transient_error";
+  if ([401, 403].includes(status)) return "forbidden";
+  if (!response.ok) return "http_error";
+  if (contentType && !/html|xml|text\/plain/i.test(contentType)) return "not_html";
+
+  if (
+    /<title>[^<]*(just a moment|access denied|attention required|captcha|security check|blocked)[^<]*<\/title>/i.test(html) ||
+    /cloudflare|cf-browser-verification|g-recaptcha|hcaptcha|captcha|checking your browser|access denied|request blocked/i.test(normalizedHtml)
+  ) {
+    return "bot_challenge";
+  }
+
+  if (
+    visibleText.length < 500 &&
+    /enable javascript|requires javascript|javascript is disabled|<noscript|id=["'](__next|root|app)["']|data-reactroot|webpackJsonp|window\.__NUXT__/i.test(html)
+  ) {
+    return "js_shell";
+  }
+
+  if (html.trim().length < 200) return "empty_or_suspicious";
+
+  return "ok";
+}
+
+function isRetryableFetchClassification(classification) {
+  return ["timeout", "network_error", "rate_limited", "transient_error"].includes(classification);
+}
+
+function shouldTryRenderFallback(fetched) {
+  return ["js_shell", "empty_or_suspicious"].includes(fetched?.metadata?.fetch_classification);
+}
+
+function getRetryAfterDelayMs(response) {
+  const retryAfter = response?.headers?.get("retry-after");
+  if (!retryAfter) return null;
+
+  const seconds = Number(retryAfter);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+
+  const dateMs = Date.parse(retryAfter);
+  if (!Number.isNaN(dateMs)) {
+    return Math.max(0, dateMs - Date.now());
+  }
+
+  return null;
+}
+
+function getRetryDelayMs({ attempt, baseDelayMs, response = null }) {
+  const retryAfterDelayMs = getRetryAfterDelayMs(response);
+  if (retryAfterDelayMs !== null) return retryAfterDelayMs;
+
+  const exponentialDelayMs = baseDelayMs * (2 ** Math.max(0, attempt - 1));
+  const jitterMs = Math.floor(Math.random() * Math.min(baseDelayMs, 1000));
+  return exponentialDelayMs + jitterMs;
+}
+
+function getRandomDelayMs(minDelayMs, maxDelayMs) {
+  const lower = Math.max(0, Math.min(minDelayMs, maxDelayMs));
+  const upper = Math.max(lower, maxDelayMs);
+  return lower + Math.floor(Math.random() * (upper - lower + 1));
+}
+
+function createCrawlDiagnostics(env = {}) {
+  return {
+    fetched_static_count: 0,
+    fetched_crawl4ai_count: 0,
+    retry_count: 0,
+    bot_challenge_count: 0,
+    js_shell_count: 0,
+    empty_or_suspicious_count: 0,
+    missing_image_count: 0,
+    skipped_past_count: 0,
+    skipped_old_count: 0,
+    skipped_missing_date_count: 0,
+    skipped_other_count: 0,
+    crawl4ai_render_count: 0,
+    crawl4ai_render_limit: getEnvNumber(env, "CRAWL4AI_MAX_RENDERS_PER_SOURCE", 5),
+    crawl4ai_render_skipped_count: 0,
+  };
+}
+
+function recordFetchedPage(diagnostics, fetched) {
+  if (!diagnostics || !fetched?.metadata) return;
+
+  if (fetched.metadata.fetched_via === "crawl4ai") {
+    diagnostics.fetched_crawl4ai_count += 1;
+  } else if (fetched.metadata.fetched_via === "fetch") {
+    diagnostics.fetched_static_count += 1;
+  }
+
+  const classification = fetched.metadata.fetch_classification;
+  if (classification === "bot_challenge") diagnostics.bot_challenge_count += 1;
+  if (classification === "js_shell") diagnostics.js_shell_count += 1;
+  if (classification === "empty_or_suspicious") diagnostics.empty_or_suspicious_count += 1;
+
+  const attempts = Number(fetched.metadata.fetch_attempts ?? 1);
+  if (Number.isFinite(attempts) && attempts > 1) {
+    diagnostics.retry_count += attempts - 1;
+  }
+
+  const fallbackClassification = fetched.metadata.fallback_from?.fetch_classification;
+  if (fallbackClassification === "bot_challenge") diagnostics.bot_challenge_count += 1;
+  if (fallbackClassification === "js_shell") diagnostics.js_shell_count += 1;
+  if (fallbackClassification === "empty_or_suspicious") diagnostics.empty_or_suspicious_count += 1;
+}
+
+function recordSkippedEvent(diagnostics, reason) {
+  if (!diagnostics) return;
+
+  if (reason === "missing image") {
+    diagnostics.missing_image_count += 1;
+  } else if (reason === "past event") {
+    diagnostics.skipped_past_count += 1;
+  } else if (/older than/.test(reason ?? "")) {
+    diagnostics.skipped_old_count += 1;
+  } else if (reason === "missing verifiable event date") {
+    diagnostics.skipped_missing_date_count += 1;
+  } else {
+    diagnostics.skipped_other_count += 1;
+  }
+}
+
+function pushSkippedEvent(skippedEvents, diagnostics, skippedEvent) {
+  skippedEvents.push(skippedEvent);
+  recordSkippedEvent(diagnostics, skippedEvent.reason);
+}
+
+function classifySourceOutcome({ detailUrls = [], savedEvents = [], skippedEvents = [], diagnostics = {}, usedGenericExtractor = false }) {
+  if (!detailUrls.length) return "source_empty";
+  if (savedEvents.length > 0) return diagnostics.bot_challenge_count > 0 ? "source_degraded" : "source_ok";
+  if (diagnostics.bot_challenge_count > 0) return "source_blocked";
+  if (skippedEvents.length && skippedEvents.every((event) => /past event|older than/.test(event.reason ?? ""))) {
+    return "source_no_current_events";
+  }
+  if (usedGenericExtractor || diagnostics.missing_image_count > 0 || diagnostics.skipped_missing_date_count > 0) {
+    return "source_needs_review";
+  }
+  return "source_empty";
+}
+
+async function waitForDomainDelay(url, env) {
+  const minDelayMs = getEnvNumber(env, "CRAWLER_MIN_DELAY_MS", 1000);
+  const maxDelayMs = getEnvNumber(env, "CRAWLER_MAX_DELAY_MS", 3000);
+  if (maxDelayMs <= 0) return;
+
+  let hostname = null;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    return;
+  }
+
+  const now = Date.now();
+  const availableAt = domainFetchSchedule.get(hostname) ?? 0;
+  const waitMs = Math.max(0, availableAt - now);
+  const nextAvailableAt = Math.max(now, availableAt) + getRandomDelayMs(minDelayMs, maxDelayMs);
+  domainFetchSchedule.set(hostname, nextAvailableAt);
+
+  if (waitMs > 0) {
+    await sleep(waitMs);
+  }
+}
+
+async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
   if (crawl4AiDisabled) return null;
+
+  const diagnostics = context?.diagnostics;
+  if (
+    diagnostics &&
+    diagnostics.crawl4ai_render_limit > 0 &&
+    diagnostics.crawl4ai_render_count >= diagnostics.crawl4ai_render_limit
+  ) {
+    diagnostics.crawl4ai_render_skipped_count += 1;
+    return null;
+  }
+
+  if (diagnostics) {
+    diagnostics.crawl4ai_render_count += 1;
+  }
 
   const pythonBinary = env.CRAWL4AI_PYTHON ?? "python3";
   const args = [
@@ -2435,6 +2786,7 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env) {
   if (envFlag(env, "CRAWL4AI_BYPASS_CACHE", true)) args.push("--bypass-cache");
 
   try {
+    await waitForDomainDelay(url, env);
     const result = await runJsonCommand(pythonBinary, args, {
       env: {
         ...process.env,
@@ -2475,35 +2827,89 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env) {
   }
 }
 
-async function fetchStaticHtml(url, userAgent) {
-  const response = await fetch(url, {
-    headers: {
-      "user-agent": userAgent,
-      accept: "text/html,application/xhtml+xml",
-    },
-  });
+async function fetchStaticHtml(url, userAgent, env = {}) {
+  const timeoutMs = getEnvNumber(env, "CRAWLER_FETCH_TIMEOUT_MS", 30000);
+  const maxRetries = getEnvNumber(env, "CRAWLER_FETCH_RETRIES", 2);
+  const baseDelayMs = getEnvNumber(env, "CRAWLER_RETRY_BASE_DELAY_MS", 1000);
+  const retryLog = [];
+  let lastError = null;
 
-  const html = await response.text();
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt += 1) {
+    let response = null;
+    let html = "";
+    let classification = "network_error";
 
-  return {
-    url,
-    response,
-    html,
-    title: html.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null,
-    contentType: response.headers.get("content-type"),
-    metadata: {
-      fetched_via: "fetch",
-    },
-  };
+    try {
+      await waitForDomainDelay(url, env);
+      response = await fetch(url, {
+        headers: buildStaticFetchHeaders(userAgent),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      html = await response.text();
+      classification = classifyFetchResult({ response, html });
+      lastError = null;
+    } catch (error) {
+      lastError = error;
+      classification = classifyFetchResult({ error });
+    }
+
+    retryLog.push({
+      attempt,
+      classification,
+      status: response?.status ?? null,
+      final_url: response?.url ?? null,
+    });
+
+    if (!isRetryableFetchClassification(classification) || attempt > maxRetries) {
+      if (!response && lastError) {
+        throw new Error(`Fetch failed for ${url} after ${attempt} attempt${attempt === 1 ? "" : "s"}: ${lastError.message}`);
+      }
+
+      return {
+        url,
+        response,
+        html,
+        title: html.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null,
+        contentType: response.headers.get("content-type"),
+        metadata: {
+          fetched_via: "fetch",
+          fetch_classification: classification,
+          fetch_attempts: attempt,
+          fetch_timeout_ms: timeoutMs,
+          retry_log: retryLog,
+        },
+      };
+    }
+
+    const delayMs = getRetryDelayMs({ attempt, baseDelayMs, response });
+    await sleep(delayMs);
+  }
+
+  throw new Error(`Fetch failed for ${url}`);
 }
 
 async function fetchHtml(url, userAgent, env = {}, options = {}) {
   if (options.renderMode === "always") {
-    const rendered = await fetchHtmlWithCrawl4Ai(url, userAgent, env);
+    const rendered = await fetchHtmlWithCrawl4Ai(url, userAgent, env, options.context);
     if (rendered) return rendered;
   }
 
-  return fetchStaticHtml(url, userAgent);
+  const staticPage = await fetchStaticHtml(url, userAgent, env);
+
+  if (options.renderMode === "auto" && shouldTryRenderFallback(staticPage)) {
+    const rendered = await fetchHtmlWithCrawl4Ai(url, userAgent, env, options.context);
+    if (rendered) {
+      return {
+        ...rendered,
+        metadata: {
+          ...rendered.metadata,
+          fallback_from: staticPage.metadata,
+        },
+      };
+    }
+  }
+
+  return staticPage;
 }
 
 async function supabaseRequest({ env, path, method = "GET", body = null }) {
@@ -2680,6 +3086,8 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
     sourceOverrides[sourceSlug]
   );
   const crawlRun = await createCrawlRun(env, source.id);
+  const diagnostics = createCrawlDiagnostics(env);
+  const crawlContext = { diagnostics };
 
   try {
     const listingUrls = [...new Set(source.start_urls?.filter(Boolean) ?? [])];
@@ -2692,9 +3100,11 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
 
     for (const listingUrl of listingUrls) {
       const listingPage = await fetchHtml(listingUrl, userAgent, env, {
-        renderMode: renderMode === "always" ? "always" : "never",
+        renderMode,
+        context: crawlContext,
       });
       pagesFetched += 1;
+      recordFetchedPage(diagnostics, listingPage);
       await upsertRawPage(env, source.id, crawlRun.id, "listing", listingPage);
       listingPages.push(listingPage);
     }
@@ -2709,29 +3119,72 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
           ))];
 
     if (!detailUrls.length) {
-      throw new Error(`No detail URLs were extracted for source "${source.slug}"`);
+      const sourceOutcome = classifySourceOutcome({ detailUrls, diagnostics });
+      await updateCrawlRun(env, crawlRun.id, {
+        status: "success",
+        finished_at: new Date().toISOString(),
+        pages_queued: listingPages.length,
+        pages_fetched: pagesFetched,
+        pages_parsed: 0,
+        events_created: 0,
+        events_updated: 0,
+        logs: [
+          {
+            level: "warn",
+            message: `No detail URLs were extracted for source "${source.slug}".`,
+          },
+          {
+            level: "info",
+            message: `Source outcome: ${sourceOutcome}`,
+          },
+          {
+            level: "info",
+            message: "Crawl diagnostics",
+            diagnostics,
+          },
+        ],
+      });
+
+      return {
+        crawlRunId: crawlRun.id,
+        source: source.slug,
+        status: "success",
+        sourceOutcome,
+        usedGenericExtractor: !detailUrlExtractor,
+        renderMode,
+        diagnostics,
+        detailUrls,
+        events: [],
+        archivedEvents: 0,
+      };
     }
 
     let sourceContext = {};
     if (source.slug === "the-national-museum-of-modern-art") {
       const accessPage = await fetchHtml("https://www.momak.go.jp/English/guide/access.html", userAgent, env, {
         renderMode: "never",
+        context: crawlContext,
       });
       pagesFetched += 1;
+      recordFetchedPage(diagnostics, accessPage);
       await upsertRawPage(env, source.id, crawlRun.id, "detail", accessPage);
       sourceContext = { accessHtml: accessPage.html };
     } else if (source.slug === "sen-oku-hakukokan-museum") {
       const accessPage = await fetchHtml("https://sen-oku.or.jp/kyoto/facility/access", userAgent, env, {
         renderMode: "never",
+        context: crawlContext,
       });
       pagesFetched += 1;
+      recordFetchedPage(diagnostics, accessPage);
       await upsertRawPage(env, source.id, crawlRun.id, "detail", accessPage);
       sourceContext = { accessHtml: accessPage.html };
     } else if (source.slug === "kyotographie") {
       const planPage = await fetchHtml("https://www.kyotographie.jp/en/plan_your_visit/", userAgent, env, {
         renderMode: "never",
+        context: crawlContext,
       });
       pagesFetched += 1;
+      recordFetchedPage(diagnostics, planPage);
       await upsertRawPage(env, source.id, crawlRun.id, "detail", planPage);
       sourceContext = { festivalSchedule: extractKyotographieFestivalSchedule(planPage.html) };
     }
@@ -2747,18 +3200,21 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
 
     for (const detailUrl of detailUrls) {
       let detailPage = await fetchHtml(detailUrl, userAgent, env, {
-        renderMode: renderMode === "always" ? "always" : "never",
+        renderMode,
+        context: crawlContext,
       });
       pagesFetched += 1;
+      recordFetchedPage(diagnostics, detailPage);
       let extractedEvent = withSourceCategories(
         eventExtractor(detailPage.html, source, detailUrl, sourceContext),
         source
       );
 
-      if (renderMode === "auto" && !hasExtractedImage(extractedEvent)) {
-        const renderedDetailPage = await fetchHtmlWithCrawl4Ai(detailUrl, userAgent, env);
+      if (renderMode === "auto" && detailPage.metadata?.fetched_via !== "crawl4ai" && !hasExtractedImage(extractedEvent)) {
+        const renderedDetailPage = await fetchHtmlWithCrawl4Ai(detailUrl, userAgent, env, crawlContext);
         if (renderedDetailPage) {
           pagesFetched += 1;
+          recordFetchedPage(diagnostics, renderedDetailPage);
           const renderedEvent = withSourceCategories(
             eventExtractor(renderedDetailPage.html, source, detailUrl, sourceContext),
             source
@@ -2777,7 +3233,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
           (Array.isArray(extractedEvent.occurrence_dates) && extractedEvent.occurrence_dates.length > 0);
 
         if (!hasVerifiedDate) {
-          skippedEvents.push({
+          pushSkippedEvent(skippedEvents, diagnostics, {
             detailUrl,
             title: extractedEvent.title,
             reason: "missing verifiable event date",
@@ -2786,7 +3242,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
         }
 
         if (classifyEventTiming(extractedEvent, todayJapan) === "past") {
-          skippedEvents.push({
+          pushSkippedEvent(skippedEvents, diagnostics, {
             detailUrl,
             title: extractedEvent.title,
             reason: "past event",
@@ -2797,7 +3253,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
 
       const latestEventDate = getLatestEventDateOnly(extractedEvent);
       if (latestEventDate && oneYearAgoJapan && latestEventDate < oneYearAgoJapan) {
-        skippedEvents.push({
+        pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
           title: extractedEvent.title,
           reason: `older than one year (${latestEventDate})`,
@@ -2809,7 +3265,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
         const latestEventYearHint = getLatestEventYearHint(extractedEvent, detailUrl);
 
         if (latestEventYearHint && latestEventYearHint < previousYear) {
-          skippedEvents.push({
+          pushSkippedEvent(skippedEvents, diagnostics, {
             detailUrl,
             title: extractedEvent.title,
             reason: `older than previous year (${latestEventYearHint})`,
@@ -2819,7 +3275,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       }
 
       if (!hasExtractedImage(extractedEvent)) {
-        skippedEvents.push({
+        pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
           title: extractedEvent.title,
           reason: "missing image",
@@ -2845,6 +3301,14 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
     }
 
     const archivedEvents = await archiveStaleEvents(env, source.id, activeDedupeKeys);
+    const usedGenericExtractor = !eventExtractors[source.slug];
+    const sourceOutcome = classifySourceOutcome({
+      detailUrls,
+      savedEvents,
+      skippedEvents,
+      diagnostics,
+      usedGenericExtractor,
+    });
 
     await updateCrawlRun(env, crawlRun.id, {
       status: "success",
@@ -2859,10 +3323,19 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
           level: "info",
           message: `Crawl4AI render mode: ${renderMode}`,
         },
-        ...(eventExtractors[source.slug] ? [] : [{
+        {
+          level: "info",
+          message: `Source outcome: ${sourceOutcome}`,
+        },
+        {
+          level: "info",
+          message: "Crawl diagnostics",
+          diagnostics,
+        },
+        ...(usedGenericExtractor ? [{
           level: "warn",
           message: "Used generic fallback extraction; review output and add a source-specific extractor when needed.",
-        }]),
+        }] : []),
         ...savedEvents.map((savedEvent) => ({
           level: "info",
           message: `Stored event ${savedEvent.eventId} from ${savedEvent.detailUrl}`,
@@ -2884,8 +3357,10 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       crawlRunId: crawlRun.id,
       source: source.slug,
       status: "success",
-      usedGenericExtractor: !eventExtractors[source.slug],
+      sourceOutcome,
+      usedGenericExtractor,
       renderMode,
+      diagnostics,
       detailUrls,
       events: savedEvents,
       archivedEvents,
@@ -2895,12 +3370,25 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       status: "failed",
       finished_at: new Date().toISOString(),
       error_message: error instanceof Error ? error.message : String(error),
+      logs: [
+        {
+          level: "error",
+          message: `Source outcome: source_failed`,
+        },
+        {
+          level: "info",
+          message: "Crawl diagnostics",
+          diagnostics,
+        },
+      ],
     });
 
     return {
       crawlRunId: crawlRun.id,
       source: source.slug,
       status: "failed",
+      sourceOutcome: "source_failed",
+      diagnostics,
       error: error instanceof Error ? error.message : String(error),
     };
   }
@@ -2965,4 +3453,16 @@ async function main() {
   }
 }
 
-await main();
+export {
+  classifyFetchResult,
+  classifySourceOutcome,
+  createCrawlDiagnostics,
+  extractGenericDetailUrls,
+  extractGenericEvent,
+  hasExtractedImage,
+  recordFetchedPage,
+};
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}

@@ -48,6 +48,20 @@
       "source_categories": ["photography", "festival", "art"]
     },
     {
+      "slug": "art-collaboration-kyoto",
+      "name": "Art Collaboration Kyoto",
+      "source_type": "art-fair",
+      "language": "en",
+      "base_url": "https://a-c-k.jp/en/",
+      "start_urls": ["https://a-c-k.jp/en/"],
+      "allowed_domains": ["a-c-k.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/"],
+      "notes": "Annual art fair. The homepage exposes the next edition dates and venue in the Visitor Information section; extract the homepage itself as the single yearly event.",
+      "is_active": true,
+      "source_categories": ["art-fair", "art"]
+    },
+    {
       "slug": "hosoo-gallery",
       "name": "HOSOO GALLERY",
       "source_type": "gallery",

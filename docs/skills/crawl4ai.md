@@ -80,9 +80,28 @@ Current lazy-image policy:
 
 - `apps/crawler/src/run-once.mjs` still uses static HTML as the first pass.
 - With `CRAWL4AI_RENDER_MODE=auto`, detail pages that extract no image are retried through `apps/crawler/src/crawl4ai-fetch.py`.
+- With `CRAWL4AI_RENDER_MODE=auto`, listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried through Crawl4AI before extraction continues.
 - The Crawl4AI retry uses `wait_for_images`, `scan_full_page`, and `scroll_delay` by default, then appends `result.media.images` to the rendered HTML as hidden image tags so the existing event extractors can keep doing deterministic image selection.
 - Use `--render=always` or `CRAWL4AI_RENDER_MODE=always` only when discovery itself needs browser rendering, such as JavaScript-built listing pages.
 - Use `CRAWL4AI_RENDER_MODE=never` for local static-only tuning or when Crawl4AI is not installed.
+
+Current static fetch resilience policy:
+
+- Static fetches use browser-compatible `Accept`, `Accept-Language`, and `Cache-Control` headers while keeping the project user agent explicit.
+- Static fetches time out via `CRAWLER_FETCH_TIMEOUT_MS`.
+- Fetch results are classified as `ok`, `timeout`, `network_error`, `rate_limited`, `transient_error`, `forbidden`, `http_error`, `not_html`, `bot_challenge`, `js_shell`, or `empty_or_suspicious`.
+- Only transient classifications are retried: `timeout`, `network_error`, `rate_limited`, and `transient_error`.
+- Retries use exponential backoff with jitter and honor `Retry-After` when a server provides it.
+- Source-page requests are spaced per domain with a random delay between `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`; Supabase and Netlify API calls are not part of this delay path.
+- Each source run records structured diagnostics in `crawl_runs.logs`, including static fetch count, Crawl4AI fetch count, retry count, challenge/shell counts, skip counts, and Crawl4AI budget usage.
+- `CRAWL4AI_MAX_RENDERS_PER_SOURCE` caps browser renders so one broken source cannot dominate a scheduled crawl.
+- Each completed run gets a source outcome such as `source_ok`, `source_degraded`, `source_blocked`, `source_empty`, `source_no_current_events`, `source_needs_review`, or `source_failed`.
+
+Current extractor test policy:
+
+- Keep small saved HTML fixtures under `apps/crawler/test/fixtures`.
+- Use `node --test apps/crawler/test/*.test.mjs` for extractor and classifier tests.
+- Add a fixture before changing important source-specific extraction logic when possible.
 
 ### 4. Keep extraction deterministic
 
