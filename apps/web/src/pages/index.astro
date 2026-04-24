@@ -48,6 +48,16 @@ type CalendarEvent = {
   calendar_ends_at: string | null;
 };
 
+type SourceConfig = {
+  slug: string;
+  base_url: string;
+  start_urls?: string[];
+  allowed_domains?: string[];
+  event_page_patterns?: string[];
+  source_categories?: string[];
+  is_active?: boolean;
+};
+
 const { data, error } = await supabase
   .from("events")
   .select(
@@ -62,21 +72,6 @@ if (error) {
 
 // Collapse duplicates caused by source slug changes or alternate URLs for the same event.
 const events = dedupeEvents((data ?? []) as EventRow[]);
-const sourceRowsResponse = await supabase.from("sources").select("id, slug");
-
-if (sourceRowsResponse.error) {
-  throw sourceRowsResponse.error;
-}
-
-const configuredSourceCategories = new Map(
-  sourcesPayload.sources.map((source) => [source.slug, source.source_categories ?? []])
-);
-const sourceCategoryById = new Map(
-  (sourceRowsResponse.data ?? []).map((source) => [
-    source.id,
-    configuredSourceCategories.get(source.slug) ?? [],
-  ])
-);
 
 const normalizeCategory = (value: string) =>
   value
@@ -85,6 +80,9 @@ const normalizeCategory = (value: string) =>
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+const normalizeCategoryList = (values: string[]) =>
+  [...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean))];
 
 const titleCaseCategory = (value: string) =>
   value
@@ -112,6 +110,68 @@ const preferredCategoryOrder = [
   "festival",
   "fair",
 ];
+
+const configuredSources = (sourcesPayload.sources as SourceConfig[])
+  .filter((source) => source.is_active !== false)
+  .map((source) => ({
+    ...source,
+    source_categories: normalizeCategoryList(source.source_categories ?? []),
+  }));
+
+const normalizeUrl = (value: string | undefined) => {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    url.hash = "";
+    url.search = "";
+    url.pathname = url.pathname.replace(/\/+$/, "") || "/";
+    return url;
+  } catch {
+    return null;
+  }
+};
+
+const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
+  const url = normalizeUrl(eventUrl);
+  if (!url) return 0;
+
+  const hostname = url.hostname.toLowerCase();
+  let score = 0;
+
+  for (const domain of source.allowed_domains ?? []) {
+    const normalizedDomain = domain.toLowerCase();
+    if (hostname === normalizedDomain || hostname.endsWith(`.${normalizedDomain}`)) {
+      score = Math.max(score, 10);
+    }
+  }
+
+  for (const candidateUrl of [source.base_url, ...(source.start_urls ?? [])]) {
+    const normalizedCandidate = normalizeUrl(candidateUrl);
+    if (!normalizedCandidate) continue;
+
+    if (url.toString().startsWith(normalizedCandidate.toString())) {
+      score = Math.max(score, 100 + normalizedCandidate.pathname.length);
+    }
+  }
+
+  for (const pattern of source.event_page_patterns ?? []) {
+    if (pattern && url.pathname.includes(pattern)) {
+      score = Math.max(score, 40 + pattern.length);
+    }
+  }
+
+  return score;
+};
+
+const sourceCategoriesForEvent = (event: EventRow) => {
+  const bestSource = configuredSources
+    .map((source) => ({ source, score: sourceMatchScore(event.source_url, source) }))
+    .filter((match) => match.score > 0 && match.source.source_categories.length > 0)
+    .sort((a, b) => b.score - a.score)[0]?.source;
+
+  return bestSource?.source_categories.length ? bestSource.source_categories : normalizeCategoryList(event.categories ?? []);
+};
 
 const decodeHtml = (value: string) =>
   value
@@ -259,7 +319,7 @@ const toJapanDate = (value: Date) =>
 const today = toJapanDate(new Date());
 
 const formattedEvents: ClassifiedEvent[] = events.map((event) => {
-  const sourceCategories = sourceCategoryById.get(event.source_id);
+  const sourceCategories = sourceCategoriesForEvent(event);
   const fallbackCalendarYear = event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
   const parsedCalendarDates =
     event.calendar_starts_at && event.calendar_ends_at
@@ -275,7 +335,7 @@ const formattedEvents: ClassifiedEvent[] = events.map((event) => {
 
   return {
     ...eventWithCalendarDates,
-    categories: sourceCategories?.length ? sourceCategories : [],
+    categories: sourceCategories,
     date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
     timing: classifyEventTiming(eventWithCalendarDates, today),
   };
