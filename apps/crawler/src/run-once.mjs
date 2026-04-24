@@ -110,13 +110,11 @@ function normalizeCategoryList(values) {
   )];
 }
 
-function withSourceCategories(eventData, source) {
+function withConfiguredSourceCategories(eventData, source) {
+  // Public categories are owned by source config, not extractor heuristics.
   return {
     ...eventData,
-    categories: normalizeCategoryList([
-      eventData.categories ?? [],
-      source.source_categories ?? [],
-    ]),
+    categories: normalizeCategoryList(source.source_categories ?? []),
   };
 }
 
@@ -3218,7 +3216,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
       });
       pagesFetched += 1;
       recordFetchedPage(diagnostics, detailPage);
-      let extractedEvent = withSourceCategories(
+      let extractedEvent = withConfiguredSourceCategories(
         eventExtractor(detailPage.html, source, detailUrl, sourceContext),
         source
       );
@@ -3228,7 +3226,7 @@ async function crawlSource({ env, sourceSlug, userAgent, sourceOverrides, generi
         if (renderedDetailPage) {
           pagesFetched += 1;
           recordFetchedPage(diagnostics, renderedDetailPage);
-          const renderedEvent = withSourceCategories(
+          const renderedEvent = withConfiguredSourceCategories(
             eventExtractor(renderedDetailPage.html, source, detailUrl, sourceContext),
             source
           );
