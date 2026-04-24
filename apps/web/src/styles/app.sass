@@ -50,6 +50,7 @@ $type-scale-ratio: 1.618
 
 :root
   --color-green: #138e00
+  --color-mudgreen: #889488
   --color-beige: #efefef
   --color-white: #ffffff
 
@@ -80,9 +81,17 @@ $type-scale-ratio: 1.618
   --dot-button: 1.5rem
   --dot-card: max(2rem, 5vmin)
 
+:root[data-theme='mud']
+  --main-color: var(--color-white)
+  --main-background: var(--color-mudgreen)
+  --stroke: var(--color-white)
+
 @media (any-pointer: coarse)
   :root
     --main-background: var(--color-white)
+
+  :root[data-theme='mud']
+    --main-background: var(--color-mudgreen)
 
 *,
 *::before,
