@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { applySourceOverride, loadSourceOverrides, loadSourcesConfig } from "../../../data/sources/source-config.mjs";
+import { applySourceOverride, loadSourcesConfig } from "../../../data/sources/source-config.mjs";
 import { buildEventDedupeKey } from "../../../packages/shared/event-dedupe.mjs";
 import { buildScheduleFields, classifyEventTiming, normalizeDateOnly } from "../../../packages/shared/event-schedule.mjs";
 
@@ -3412,14 +3412,17 @@ async function main() {
   const userAgent = env.CRAWLER_USER_AGENT ?? "kyo-no-kyoto-bot/0.1";
   const genericDetailLimit = getNumberArg("generic-limit", 8);
   const renderMode = getCrawl4AiRenderMode(env);
-  const sourceOverrides = await loadSourceOverrides();
+  const configuredSources = await loadSourcesConfig();
+  const sourceOverrides = Object.fromEntries(
+    configuredSources.map((source) => [source.slug, source])
+  );
 
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
   }
 
   const sourceSlugs = sourceSlug === "all"
-    ? (await loadSourcesConfig())
+    ? configuredSources
         .filter((source) => source.is_active !== false)
         .map((source) => source.slug)
     : [sourceSlug];

@@ -8,16 +8,33 @@ type Props = {
 const { label = "Upcoming" } = Astro.props;
 const items = Array.from({ length: 25 });
 const tracks = [
-  "time-divider__track--left",
-  "time-divider__track--right",
-  "time-divider__track--left-slow",
+  {
+    className: "time-divider__track--left",
+    direction: "left",
+    travel: 50,
+  },
+  {
+    className: "time-divider__track--right",
+    direction: "right",
+    travel: 50,
+  },
+  {
+    className: "time-divider__track--left-slow",
+    direction: "left",
+    travel: 36,
+  },
 ];
 ---
 
-<div class="time-divider" aria-label={`${label} events`}>
+<div class="time-divider" aria-label={`${label} events`} data-time-divider>
   <div class="time-divider__scroller" aria-hidden="true">
-    {tracks.map((trackClass) => (
-      <div class:list={["time-divider__track", trackClass]}>
+    {tracks.map((track) => (
+      <div
+        class:list={["time-divider__track", track.className]}
+        data-time-divider-track
+        data-direction={track.direction}
+        data-travel={track.travel}
+      >
         <div class="time-divider__group">
           {items.map(() => (
             <>
@@ -38,3 +55,83 @@ const tracks = [
     ))}
   </div>
 </div>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  type TimeDividerWindow = Window &
+    typeof globalThis & {
+      __timeDividerBound?: boolean;
+      __timeDividerCleanup?: () => void;
+    };
+
+  const dividerWindow = window as TimeDividerWindow;
+  const dividerSelector = "[data-time-divider]";
+  const trackSelector = "[data-time-divider-track]";
+
+  const cleanupTimeDividers = () => {
+    dividerWindow.__timeDividerCleanup?.();
+    dividerWindow.__timeDividerCleanup = undefined;
+  };
+
+  const scheduleScrollTriggerRefresh = () => {
+    window.requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+  };
+
+  const buildTimeDividerAnimations = () => {
+    cleanupTimeDividers();
+
+    const dividers = gsap.utils.toArray<HTMLElement>(dividerSelector);
+    const contexts = dividers.map((divider) =>
+      gsap.context(() => {
+        const tracks = gsap.utils.toArray<HTMLElement>(trackSelector, divider);
+
+        tracks.forEach((track) => {
+          const direction = track.dataset.direction === "right" ? "right" : "left";
+          const travel = Number.parseFloat(track.dataset.travel || "50");
+          const distance = Number.isFinite(travel) ? travel : 50;
+          const startX = direction === "right" ? -distance : 0;
+          const endX = direction === "right" ? 0 : -distance;
+
+          gsap.fromTo(
+            track,
+            { xPercent: startX },
+            {
+              xPercent: endX,
+              ease: "none",
+              scrollTrigger: {
+                trigger: divider,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+                invalidateOnRefresh: true,
+              },
+            },
+          );
+        });
+      }, divider),
+    );
+
+    dividerWindow.__timeDividerCleanup = () => {
+      contexts.forEach((context) => context.revert());
+    };
+
+    scheduleScrollTriggerRefresh();
+  };
+
+  buildTimeDividerAnimations();
+
+  if (!dividerWindow.__timeDividerBound) {
+    document.addEventListener("astro:page-load", buildTimeDividerAnimations);
+    document.addEventListener("astro:before-swap", cleanupTimeDividers);
+    document.addEventListener("event-filter:updated", scheduleScrollTriggerRefresh);
+    window.addEventListener("load", scheduleScrollTriggerRefresh, { once: true });
+    window.addEventListener("resize", scheduleScrollTriggerRefresh);
+    dividerWindow.__timeDividerBound = true;
+  }
+</script>

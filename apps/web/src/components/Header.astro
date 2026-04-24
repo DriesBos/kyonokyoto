@@ -25,7 +25,7 @@ const timingFilters = [
 
   {
     categories.length > 0 || timingFilters.length > 0 ? (
-      <div class="category-filter" aria-label="Filter events by category" role="group">
+      <div class="category-filter" aria-label="Filter events" role="group">
         <div class="category-filter__toolbar">
           <GeneralButton
             class="site-header__filter-toggle"
@@ -51,16 +51,6 @@ const timingFilters = [
           />
         </div>
         <div class="category-filter__options" id="category-filter-options" data-filter-options>
-          {timingFilters.map((filter) => (
-            <GeneralButton
-              label={filter.label}
-              pressed={false}
-              showDot={true}
-              dataTiming={filter.slug}
-              dataTimingButton={true}
-              dataFilterButton={true}
-            />
-          ))}
           {categories.map((category) => (
             <GeneralButton
               label={"#" + category.label}
@@ -68,6 +58,16 @@ const timingFilters = [
               showDot={true}
               dataCategory={category.slug}
               dataCategoryButton={true}
+              dataFilterButton={true}
+            />
+          ))}
+          {timingFilters.map((filter) => (
+            <GeneralButton
+              label={filter.label}
+              pressed={false}
+              showDot={true}
+              dataTiming={filter.slug}
+              dataTimingButton={true}
               dataFilterButton={true}
             />
           ))}

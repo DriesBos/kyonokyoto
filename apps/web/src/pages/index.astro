@@ -7,9 +7,11 @@ import TimeDivider from "../components/TimeDivider.astro";
 import { supabase } from "../lib/supabase";
 import { dedupeEvents } from "../../../../packages/shared/event-dedupe.mjs";
 import { classifyEventTiming, normalizeDateOnly } from "../../../../packages/shared/event-schedule.mjs";
+import sourcesPayload from "../../../../data/sources/kyoto-sources.json";
 
 type EventRow = {
   id: string;
+  source_id: string;
   title: string;
   artist_name: string | null;
   categories: string[];
@@ -49,7 +51,7 @@ type CalendarEvent = {
 const { data, error } = await supabase
   .from("events")
   .select(
-    "id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at"
+    "id, source_id, title, artist_name, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at"
   )
   .eq("status", "published")
   .order("start_date", { ascending: true, nullsFirst: false });
@@ -60,6 +62,21 @@ if (error) {
 
 // Collapse duplicates caused by source slug changes or alternate URLs for the same event.
 const events = dedupeEvents((data ?? []) as EventRow[]);
+const sourceRowsResponse = await supabase.from("sources").select("id, slug");
+
+if (sourceRowsResponse.error) {
+  throw sourceRowsResponse.error;
+}
+
+const configuredSourceCategories = new Map(
+  sourcesPayload.sources.map((source) => [source.slug, source.source_categories ?? []])
+);
+const sourceCategoryById = new Map(
+  (sourceRowsResponse.data ?? []).map((source) => [
+    source.id,
+    configuredSourceCategories.get(source.slug) ?? [],
+  ])
+);
 
 const normalizeCategory = (value: string) =>
   value
@@ -242,6 +259,7 @@ const toJapanDate = (value: Date) =>
 const today = toJapanDate(new Date());
 
 const formattedEvents: ClassifiedEvent[] = events.map((event) => {
+  const sourceCategories = sourceCategoryById.get(event.source_id);
   const fallbackCalendarYear = event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
   const parsedCalendarDates =
     event.calendar_starts_at && event.calendar_ends_at
@@ -257,6 +275,7 @@ const formattedEvents: ClassifiedEvent[] = events.map((event) => {
 
   return {
     ...eventWithCalendarDates,
+    categories: sourceCategories?.length ? sourceCategories : [],
     date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
     timing: classifyEventTiming(eventWithCalendarDates, today),
   };
