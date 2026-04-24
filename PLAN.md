@@ -1,5 +1,9 @@
 # Plan
 
+## To Do
+
+- [ ] Deploy .env with crawler settings updates to VPS
+
 ## Product
 
 Build a Kyoto cultural events app that crawls museums, galleries, festival pages, and venue sites, then turns that data into a clean editorial cultural event calendar.

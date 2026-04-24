@@ -97,23 +97,49 @@ const preferredCategoryOrder = [
 ];
 
 const decodeHtml = (value: string) =>
-  value.replace(/&(nbsp|amp|quot|apos|ndash|mdash|lsquo|rsquo|ldquo|rdquo|hellip);/gi, (match, entity) => {
-    const entities: Record<string, string> = {
-      nbsp: " ",
-      amp: "&",
-      quot: "\"",
-      apos: "'",
-      ndash: "–",
-      mdash: "—",
-      lsquo: "'",
-      rsquo: "'",
-      ldquo: "\"",
-      rdquo: "\"",
-      hellip: "…",
-    };
+  value
+    .replace(/&(nbsp|amp|quot|apos|lt|gt|ndash|mdash|lsquo|rsquo|ldquo|rdquo|hellip);?/gi, (match, entity) => {
+      const entities: Record<string, string> = {
+        nbsp: " ",
+        amp: "&",
+        quot: "\"",
+        apos: "'",
+        lt: "<",
+        gt: ">",
+        ndash: "–",
+        mdash: "—",
+        lsquo: "'",
+        rsquo: "'",
+        ldquo: "\"",
+        rdquo: "\"",
+        hellip: "…",
+      };
 
-    return entities[entity.toLowerCase()] ?? match;
-  });
+      return entities[entity.toLowerCase()] ?? match;
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
+    })
+    .replace(/&#(\d+);/g, (_, decimal) => {
+      const codePoint = Number.parseInt(decimal, 10);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
+    });
+
+const cleanDisplayText = (value: string) => {
+  const decoded = decodeHtml(value);
+
+  return decodeHtml(
+    decoded
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim()
+  );
+};
 
 const parseEnglishMonthDateRange = (dateText: string, fallbackYear?: string | null) => {
   const months: Record<string, string> = {
@@ -282,7 +308,9 @@ const googleCalendarUrl = (event: CalendarEvent) => {
 
   const end = normalizeDateOnly(event.calendar_ends_at);
   const exclusiveEnd = addDays(end ?? start, 1);
-  const details = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
+  const details = event.description
+    ? cleanDisplayText(event.description)
+    : `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
   const location = event.address_text ?? event.venue_name ?? event.institution_name;
 
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(exclusiveEnd)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
@@ -290,7 +318,7 @@ const googleCalendarUrl = (event: CalendarEvent) => {
 
 const excerpt = (value: string | null) => {
   if (!value) return "More details available on the original source page.";
-  return value;
+  return cleanDisplayText(value);
 };
 
 ---

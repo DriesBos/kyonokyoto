@@ -76,6 +76,14 @@ Escalation order:
 
 If browser rendering becomes the default for a source, document why in source notes or code comments.
 
+Current lazy-image policy:
+
+- `apps/crawler/src/run-once.mjs` still uses static HTML as the first pass.
+- With `CRAWL4AI_RENDER_MODE=auto`, detail pages that extract no image are retried through `apps/crawler/src/crawl4ai-fetch.py`.
+- The Crawl4AI retry uses `wait_for_images`, `scan_full_page`, and `scroll_delay` by default, then appends `result.media.images` to the rendered HTML as hidden image tags so the existing event extractors can keep doing deterministic image selection.
+- Use `--render=always` or `CRAWL4AI_RENDER_MODE=always` only when discovery itself needs browser rendering, such as JavaScript-built listing pages.
+- Use `CRAWL4AI_RENDER_MODE=never` for local static-only tuning or when Crawl4AI is not installed.
+
 ### 4. Keep extraction deterministic
 
 Favor explicit parsing over broad summarization when fields matter to downstream UX.

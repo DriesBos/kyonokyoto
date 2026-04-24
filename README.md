@@ -73,6 +73,7 @@ DATABASE_URL=
 CRAWLER_TIMEZONE=Asia/Tokyo
 CRAWLER_SCHEDULE=15 3 * * *
 NETLIFY_BUILD_HOOK_URL=
+CRAWL4AI_RENDER_MODE=auto
 ```
 
 Current automation recommendation:
@@ -147,6 +148,7 @@ Useful flags:
 node scripts/run-crawl-cycle.mjs --skip-deploy
 node scripts/run-crawl-cycle.mjs --skip-sync
 node scripts/run-crawl-cycle.mjs --generic-limit=8
+cd apps/crawler && npm run crawl:once -- --source=<slug> --render=always
 node scripts/create-netlify-build-hook.mjs --name="Daily crawler deploy"
 ```
 
@@ -159,6 +161,8 @@ How to tune effectively:
   one detail URL extractor and one event extractor.
 - Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
 - When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
+- Lazy-loaded images are handled as a second pass when `CRAWL4AI_RENDER_MODE=auto`: the crawler keeps the normal static fetch first, then asks Crawl4AI to render and scroll detail pages whose extracted event has no image.
+- Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
 
 Rule of thumb:
 - Fix source config first.

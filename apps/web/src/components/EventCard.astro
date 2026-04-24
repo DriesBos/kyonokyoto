@@ -84,7 +84,53 @@ const imageEntries = await Promise.all(
 );
 const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? "";
 const calendarEndDate = event.calendar_ends_at?.slice(0, 10) ?? "";
-const calendarDetails = event.description ?? `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
+const decodeHtml = (value: string) =>
+  value
+    .replace(/&(nbsp|amp|quot|apos|lt|gt|ndash|mdash|lsquo|rsquo|ldquo|rdquo|hellip);?/gi, (match, entity) => {
+      const entities: Record<string, string> = {
+        nbsp: " ",
+        amp: "&",
+        quot: "\"",
+        apos: "'",
+        lt: "<",
+        gt: ">",
+        ndash: "–",
+        mdash: "—",
+        lsquo: "'",
+        rsquo: "'",
+        ldquo: "\"",
+        rdquo: "\"",
+        hellip: "…",
+      };
+
+      return entities[entity.toLowerCase()] ?? match;
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
+    })
+    .replace(/&#(\d+);/g, (_, decimal) => {
+      const codePoint = Number.parseInt(decimal, 10);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
+    });
+
+const cleanCalendarText = (value: string) => {
+  const decoded = decodeHtml(value);
+
+  return decodeHtml(
+    decoded
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim()
+  );
+};
+const calendarDetails = event.description
+  ? cleanCalendarText(event.description)
+  : `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
 const calendarLocation = event.address_text ?? event.venue_name ?? event.institution_name;
 ---
 
