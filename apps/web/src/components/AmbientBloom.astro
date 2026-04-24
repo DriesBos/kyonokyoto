@@ -96,6 +96,10 @@
         } else {
           await engine.start();
           syncButtons(true);
+          engine.playInteraction({
+            viewportX: event.clientX / Math.max(1, window.innerWidth),
+            velocity: 0.78,
+          });
         }
       } finally {
         button.removeAttribute("disabled");

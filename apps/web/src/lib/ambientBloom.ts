@@ -20,7 +20,6 @@ type AmbientInteractionOptions = {
 };
 
 type AmbientNoteOptions = AmbientInteractionOptions & {
-  interaction?: boolean;
   notify?: boolean;
 };
 
@@ -54,7 +53,6 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
   let delayFilter: BiquadFilterNode | null = null;
   let dryGain: GainNode | null = null;
   let wetGain: GainNode | null = null;
-  let timer = 0;
   let noteId = 0;
   let active = false;
   let frequencyData: Uint8Array | null = null;
@@ -104,39 +102,32 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     return context;
   };
 
-  const chooseNote = (range = scale) => {
-    const index = Math.floor(Math.random() * range.length);
-    return range[index];
-  };
-
   const chooseInteractionNote = () => {
     const range = scale.slice(3, 8);
     const index = Math.floor(Math.random() * range.length);
     return range[index];
   };
 
-  const emitNote = ({ viewportX, velocity, interaction = false, notify = true }: AmbientNoteOptions = {}) => {
+  const emitNote = ({ viewportX, velocity, notify = true }: AmbientNoteOptions = {}) => {
     const audioContext = ensureContext();
     if (!active || !masterGain || !dryGain || !delay) return;
 
     const now = audioContext.currentTime;
-    const selected = interaction ? chooseInteractionNote() : chooseNote();
-    const noteVelocity = interaction
-      ? clamp(velocity ?? randomBetween(0.58, 0.82), 0.48, 0.82)
-      : clamp(velocity ?? randomBetween(0.32, 0.82), 0.32, 0.82);
-    const duration = interaction ? randomBetween(2.2, 3.6) : randomBetween(4.8, 8.4);
+    const selected = chooseInteractionNote();
+    const noteVelocity = clamp(velocity ?? randomBetween(0.58, 0.82), 0.48, 0.82);
+    const duration = randomBetween(2.2, 3.6);
     const noteViewportX = clamp(viewportX ?? randomBetween(0.1, 0.9), 0.1, 0.9);
     const viewportY = randomBetween(0.14, 0.86);
     const pan = clamp(noteViewportX * 2 - 1, -0.85, 0.85);
     const loudness = noteVelocity * randomBetween(0.72, 1);
-    const attackDuration = interaction ? 0.028 : 0.08;
-    const gainPeak = interaction ? 0.085 : 0.07;
+    const attackDuration = 0.028;
+    const gainPeak = 0.085;
 
     const oscillator = audioContext.createOscillator();
     const gain = audioContext.createGain();
     const panner = audioContext.createStereoPanner();
 
-    oscillator.type = interaction || Math.random() > 0.35 ? "sine" : "triangle";
+    oscillator.type = "sine";
     oscillator.frequency.setValueAtTime(selected.frequency, now);
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(gainPeak * noteVelocity, now + attackDuration);
@@ -170,17 +161,7 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
   const playInteraction = ({ viewportX = 0.5, velocity = 0.7 }: AmbientInteractionOptions = {}) => {
     if (!active) return;
 
-    emitNote({ viewportX, velocity, interaction: true, notify: false });
-  };
-
-  const scheduleNext = () => {
-    if (!active) return;
-
-    const delayMs = randomBetween(950, 2600);
-    timer = window.setTimeout(() => {
-      emitNote();
-      scheduleNext();
-    }, delayMs);
+    emitNote({ viewportX, velocity, notify: false });
   };
 
   const start = async () => {
@@ -197,16 +178,12 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
       masterGain.gain.setTargetAtTime(0.56, now, 0.42);
     }
 
-    window.clearTimeout(timer);
-    emitNote();
-    scheduleNext();
   };
 
   const stop = async () => {
     if (!context) return;
 
     active = false;
-    window.clearTimeout(timer);
 
     if (masterGain) {
       const now = context.currentTime;
@@ -253,7 +230,6 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
 
   const dispose = async () => {
     active = false;
-    window.clearTimeout(timer);
 
     if (context && context.state !== "closed") {
       await context.close();

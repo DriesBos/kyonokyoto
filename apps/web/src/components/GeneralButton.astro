@@ -158,6 +158,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       const button = target.closest(buttonSelector);
       if (!(button instanceof HTMLElement)) return;
       if (!button.querySelector(dotSelector)) return;
+      if (button.hasAttribute("data-ambient-sound-button")) return;
 
       const wasPressed = pressedStateBeforeClick.get(button) === true;
       pressedStateBeforeClick.delete(button);
