@@ -130,7 +130,6 @@ const tracks = [
 
   const trackSelector = "[data-time-divider-track]";
   const viewportSelector = "[data-time-divider-viewport]";
-  const scrollerSelector = ".time-divider__scroller";
   const mobileBreakpoint = 768;
   const scrollScrubSeconds = 0.33;
 
@@ -160,8 +159,7 @@ const tracks = [
   class AstroTimeDivider extends HTMLElement {
     buildFrame = 0;
     refreshFrame = 0;
-    media: gsap.MatchMedia | null = null;
-    resizeObserver: ResizeObserver | null = null;
+    context: gsap.Context | null = null;
     releaseFontReady: (() => void) | null = null;
 
     handleFilterUpdate = () => {
@@ -169,14 +167,17 @@ const tracks = [
     };
 
     handleResize = () => {
-      this.scheduleRefresh();
+      this.scheduleBuild();
+    };
+
+    handleLoad = () => {
+      this.scheduleBuild();
     };
 
     connectedCallback() {
-      this.disconnectObservers();
-      this.observeLayout();
       document.addEventListener("event-filter:updated", this.handleFilterUpdate);
       window.addEventListener("resize", this.handleResize);
+      window.addEventListener("load", this.handleLoad, { once: true });
 
       const fontsReady = document.fonts?.ready;
       if (fontsReady) {
@@ -199,6 +200,7 @@ const tracks = [
     disconnectedCallback() {
       document.removeEventListener("event-filter:updated", this.handleFilterUpdate);
       window.removeEventListener("resize", this.handleResize);
+      window.removeEventListener("load", this.handleLoad);
       this.releaseFontReady?.();
       this.releaseFontReady = null;
 
@@ -213,32 +215,11 @@ const tracks = [
       }
 
       this.cleanupAnimations();
-      this.disconnectObservers();
     }
 
     cleanupAnimations() {
-      this.media?.revert();
-      this.media = null;
-    }
-
-    disconnectObservers() {
-      this.resizeObserver?.disconnect();
-      this.resizeObserver = null;
-    }
-
-    observeLayout() {
-      if (typeof ResizeObserver !== "function") return;
-
-      this.resizeObserver = new ResizeObserver(() => {
-        this.scheduleRefresh();
-      });
-
-      this.resizeObserver.observe(this);
-
-      const scroller = this.querySelector<HTMLElement>(scrollerSelector);
-      if (scroller) {
-        this.resizeObserver.observe(scroller);
-      }
+      this.context?.revert();
+      this.context = null;
     }
 
     scheduleBuild() {
@@ -277,43 +258,57 @@ const tracks = [
       const viewport = this.querySelector<HTMLElement>(viewportSelector);
       if (!viewport) return;
 
-      this.media = gsap.matchMedia(this);
-      this.media.add(
-        {
-          isMobile: `(max-width: ${mobileBreakpoint}px)`,
-        },
-        (context) => {
-          const { isMobile } = context.conditions as { isMobile?: boolean };
-          const tracks = gsap.utils
-            .toArray<HTMLElement>(trackSelector, this)
-            .filter((track) => track.getClientRects().length > 0);
+      this.context = gsap.context(() => {
+        const media = gsap.matchMedia();
 
-          if (!tracks.length) return;
+        media.add(
+          {
+            isMobile: `(max-width: ${mobileBreakpoint}px)`,
+          },
+          (context) => {
+            const { isMobile } = context.conditions as { isMobile?: boolean };
+            const tracks = gsap.utils
+              .toArray<HTMLElement>(trackSelector, this)
+              .filter((track) => track.getClientRects().length > 0);
 
-          const timeline = gsap.timeline({
-            defaults: { ease: "none" },
-            scrollTrigger: {
-              trigger: this,
-              start: "top top",
-              end: () => {
-                const span = Math.max(viewport.offsetHeight, window.innerHeight) * (isMobile ? 1.2 : 1);
-                return `+=${Math.round(span)}`;
+            if (!tracks.length) return;
+
+            tracks.forEach((track) => {
+              const { startX } = parseDistance(track);
+              gsap.set(track, { xPercent: startX });
+            });
+
+            const timeline = gsap.timeline({
+              defaults: { ease: "none" },
+              scrollTrigger: {
+                trigger: viewport,
+                start: "top top",
+                end: () => {
+                  const span = Math.max(viewport.offsetHeight, window.innerHeight) * (isMobile ? 1.2 : 1);
+                  return `+=${Math.round(span)}`;
+                },
+                scrub: scrollScrubSeconds,
+                pin: true,
+                anticipatePin: 1,
+                invalidateOnRefresh: true,
               },
-              scrub: scrollScrubSeconds,
-              pin: viewport,
-              anticipatePin: 1,
-              invalidateOnRefresh: true,
-            },
-          });
+            });
 
-          tracks.forEach((track) => {
-            const { startX, endX } = parseDistance(track);
-            timeline.fromTo(track, { xPercent: startX }, { xPercent: endX, duration: 1 }, 0);
-          });
+            tracks.forEach((track) => {
+              const { startX, endX } = parseDistance(track);
+              timeline.to(track, { xPercent: endX, duration: 1 }, 0);
+            });
 
-          this.scheduleRefresh();
-        },
-      );
+            timeline.scrollTrigger?.refresh();
+          },
+        );
+
+        return () => {
+          media.revert();
+        };
+      }, this);
+
+      this.scheduleRefresh();
     }
   }
 
