@@ -611,6 +611,8 @@ a
   cursor: var(--dot-cursor)
   overflow: hidden
   transition: background-color 140ms ease
+  @media (any-pointer: coarse)
+    gap: 1rem
 
   > *
     pointer-events: none
@@ -697,11 +699,9 @@ a
     flex: 1 1 auto
     display: flex
     flex-direction: column
-    gap: 1.25rem
+    gap: 1rem
     min-width: 0
     max-width: 60%
-    @media (orientation: portrait)
-      gap: 1rem
 
     &__header
       display: flex
@@ -712,11 +712,14 @@ a
     &__content
       display: flex
       flex-direction: column
-      gap: 1.25rem
+      gap: 1rem
       overflow: hidden
       padding: 0 var(--page-padding-x)
       padding-left: 1rem
       overflow: visible
+      @media (max-width: $mobile-breakpoint)
+        padding-left: 0
+
 
   &__headermeta
     display: none
