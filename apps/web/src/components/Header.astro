@@ -9,16 +9,34 @@ type CategoryOption = {
 
 type Props = {
   categories: CategoryOption[];
+  activeCategory?: string;
+  activeTiming?: "ongoing" | "upcoming" | "";
 };
 
-const { categories } = Astro.props;
+const { categories, activeCategory = "", activeTiming = "" } = Astro.props;
 const timingFilters = [
   { slug: "ongoing", label: "ongoing" },
   { slug: "upcoming", label: "upcoming" },
 ];
+
+const filterHref = ({
+  category = activeCategory,
+  timing = activeTiming,
+}: {
+  category?: string;
+  timing?: "ongoing" | "upcoming" | "";
+}) => {
+  const params = new URLSearchParams();
+
+  if (category) params.set("category", category);
+  if (timing) params.set("timing", timing);
+
+  const query = params.toString();
+  return query ? `/?${query}` : "/";
+};
 ---
 
-<header class="site-header" data-category-filter>
+<header class="site-header" data-category-filter data-active-category={activeCategory} data-active-timing={activeTiming}>
   <a class="site-header__logo" href="/" aria-label="KyōNoKyōto home">
     <Logo />
   </a>
@@ -53,22 +71,30 @@ const timingFilters = [
           {categories.map((category) => (
             <GeneralButton
               label={"#" + category.label}
-              pressed={false}
+              href={filterHref({
+                category: activeCategory === category.slug ? "" : category.slug,
+              })}
+              pressed={activeCategory === category.slug}
               showDot={true}
               dataCategory={category.slug}
               dataCategoryButton={true}
               dataFilterButton={true}
+              data-filter-link
             />
           ))}
           {timingFilters.map((filter) => (
             <GeneralButton
               label={filter.label}
-              pressed={false}
+              href={filterHref({
+                timing: activeTiming === filter.slug ? "" : filter.slug as "ongoing" | "upcoming",
+              })}
+              pressed={activeTiming === filter.slug}
               showDot={true}
               dataTiming={filter.slug}
               dataTimingButton={true}
               dataFilterButton={true}
               canPlaySound={true}
+              data-filter-link
             />
           ))}
         </div>
@@ -107,8 +133,8 @@ const timingFilters = [
     const themeRoot = document.documentElement;
 
     const total = cards.length;
-    let activeCategory = "";
-    let activeTiming = "";
+    let activeCategory = root instanceof HTMLElement ? root.dataset.activeCategory || "" : "";
+    let activeTiming = root instanceof HTMLElement ? root.dataset.activeTiming || "" : "";
     let filterExpandedScrollOrigin = null;
     const filterButtons = buttons.filter((button): button is HTMLElement => button instanceof HTMLElement);
 
@@ -300,6 +326,8 @@ const timingFilters = [
 
     categoryButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        if (button instanceof HTMLAnchorElement && button.hasAttribute("data-filter-link")) return;
+
         const nextCategory = button.dataset.category || "";
         activeCategory = activeCategory === nextCategory ? "" : nextCategory;
 
@@ -314,6 +342,8 @@ const timingFilters = [
 
     timingButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        if (button instanceof HTMLAnchorElement && button.hasAttribute("data-filter-link")) return;
+
         const nextTiming = button.dataset.timing || "";
         activeTiming = activeTiming === nextTiming ? "" : nextTiming;
 
@@ -343,7 +373,15 @@ const timingFilters = [
       });
     });
 
-    updateCount(total, "");
+    const initialActiveLabels = [
+      timingButtons.find((button) => button.dataset.timing === activeTiming),
+      categoryButtons.find((button) => button.dataset.category === activeCategory),
+    ]
+      .filter(Boolean)
+      .map((button) => button.querySelector(".general-button__label")?.textContent || "")
+      .filter(Boolean);
+
+    updateCount(total, initialActiveLabels.join(" + "));
     syncFilterDisclosureButtonState();
     syncThemeButtons();
 

@@ -135,7 +135,6 @@ const tracks = [
   const dividerWindow = window as TimeDividerWindow;
   const dividerSelector = "[data-time-divider]";
   const trackSelector = "[data-time-divider-track]";
-  const scrollDistanceMultiplier = 5;
   const scrollScrubSeconds = 0.33;
 
   const cleanupTimeDividers = () => {
@@ -177,7 +176,7 @@ const tracks = [
               scrollTrigger: {
                 trigger: divider,
                 start: "top bottom",
-                end: () => `+=${(divider.offsetHeight + window.innerHeight) * scrollDistanceMultiplier}`,
+                end: "bottom top",
                 scrub: scrollScrubSeconds,
                 invalidateOnRefresh: true,
               },

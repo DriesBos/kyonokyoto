@@ -9,6 +9,17 @@ import { dedupeEvents } from "../../../../packages/shared/event-dedupe.mjs";
 import { classifyEventTiming, normalizeDateOnly } from "../../../../packages/shared/event-schedule.mjs";
 import sourcesPayload from "../../../../data/sources/kyoto-sources.json";
 
+export const prerender = false;
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=60, s-maxage=300, stale-while-revalidate=86400"
+);
+Astro.response.headers.set(
+  "Netlify-CDN-Cache-Control",
+  "public, s-maxage=300, stale-while-revalidate=86400"
+);
+
 type EventRow = {
   id: string;
   source_id: string;
@@ -342,8 +353,8 @@ const formattedEvents: ClassifiedEvent[] = events.map((event) => {
 });
 
 const displayEvents = formattedEvents.filter((event) => event.timing !== "past");
-const ongoingEvents = displayEvents.filter((event) => event.timing === "ongoing");
-const upcomingEvents = displayEvents.filter((event) => event.timing === "upcoming");
+const requestedCategory = normalizeCategory(Astro.url.searchParams.get("category") ?? "");
+const requestedTiming = Astro.url.searchParams.get("timing") ?? "";
 
 const categoryMap = new Map<string, string>();
 
@@ -366,6 +377,18 @@ const categories = [...categoryMap.entries()]
     if (bIndex === -1) return -1;
     return aIndex - bIndex;
   });
+
+const activeCategory = categoryMap.has(requestedCategory) ? requestedCategory : "";
+const activeTiming = requestedTiming === "ongoing" || requestedTiming === "upcoming" ? requestedTiming : "";
+const isFilteringActive = Boolean(activeCategory || activeTiming);
+const filteredEvents = displayEvents.filter((event) => {
+  const matchesCategory = !activeCategory || event.categories.map(normalizeCategory).includes(activeCategory);
+  const matchesTiming = !activeTiming || event.timing === activeTiming;
+
+  return matchesCategory && matchesTiming;
+});
+const ongoingEvents = filteredEvents.filter((event) => event.timing === "ongoing");
+const upcomingEvents = filteredEvents.filter((event) => event.timing === "upcoming");
 
 const mapsUrl = (event: EventRow) => {
   const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
@@ -405,11 +428,11 @@ const excerpt = (value: string | null) => {
 <BaseLayout>
   <main class="page-shell">
     <PageEdgeStrokes position="top" lines={6} />
-    <Header categories={categories} />
+    <Header categories={categories} activeCategory={activeCategory} activeTiming={activeTiming} />
 
     <section class="events-section">
 
-      <div class="empty-state empty-state--filtered" data-filter-empty hidden>
+      <div class="empty-state empty-state--filtered" data-filter-empty hidden={filteredEvents.length > 0 || !isFilteringActive}>
         <h3>No events match these filters</h3>
         <p>Choose another filter or click an active one again to show everything.</p>
       </div>
