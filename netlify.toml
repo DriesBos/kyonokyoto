@@ -3,5 +3,13 @@
   command = "npm ci --prefix apps/web && npm --prefix apps/web run build"
   publish = "apps/web/dist"
 
+[functions]
+  directory = "apps/web/.netlify/v1/functions"
+
 [build.environment]
   NODE_VERSION = "22.22.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/ssr"
+  status = 200
