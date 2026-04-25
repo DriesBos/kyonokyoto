@@ -570,8 +570,10 @@ a
   &__track
     display: flex
     width: max-content
-    will-change: transform
     gap: 2px
+
+    @media (hover: hover) and (pointer: fine)
+      will-change: transform
 
     &--mobile-extra
       display: none
@@ -833,6 +835,9 @@ a
 
     &__track--mobile-extra
       display: flex
+
+    &__track--mobile-hidden
+      display: none
 
 .event-card-dot
   position: absolute

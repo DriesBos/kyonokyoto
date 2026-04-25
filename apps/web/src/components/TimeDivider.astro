@@ -1,7 +1,7 @@
 ---
 import Icon from "./Icon.astro";
 
-const items = Array.from({ length: 25 });
+const items = Array.from({ length: 20 });
 const tracks = [
   {
     label: "upcoming",
@@ -50,6 +50,7 @@ const tracks = [
     direction: "right",
     travel: 19,
     mobileOnly: true,
+    mobileHidden: true,
   },
   {
     label: "upcoming",
@@ -57,34 +58,7 @@ const tracks = [
     direction: "right",
     travel: 11,
     mobileOnly: true,
-  },
-  {
-    label: "upcoming",
-    className: "time-divider__track--right",
-    direction: "right",
-    travel: 12,
-    mobileOnly: true,
-  },
-  {
-    label: "upcoming",
-    className: "time-divider__track--right",
-    direction: "right",
-    travel: 14,
-    mobileOnly: true,
-  },
-  {
-    label: "upcoming",
-    className: "time-divider__track--right",
-    direction: "right",
-    travel: 17,
-    mobileOnly: true,
-  },
-  {
-    label: "upcoming",
-    className: "time-divider__track--right",
-    direction: "right",
-    travel: 18,
-    mobileOnly: true,
+    mobileHidden: true,
   },
 ];
 ---
@@ -94,7 +68,14 @@ const tracks = [
     <div class="time-divider__scroller" aria-hidden="true">
       {tracks.map((track) => (
         <div
-          class:list={["time-divider__track", track.className, { "time-divider__track--mobile-extra": track.mobileOnly }]}
+          class:list={[
+            "time-divider__track",
+            track.className,
+            {
+              "time-divider__track--mobile-extra": track.mobileOnly,
+              "time-divider__track--mobile-hidden": track.mobileHidden,
+            },
+          ]}
           data-time-divider-track
           data-direction={track.direction}
           data-travel={"travel" in track ? track.travel : undefined}
@@ -166,12 +147,18 @@ const tracks = [
     buildToken = 0;
     context: gsap.Context | null = null;
     releaseFontReady: (() => void) | null = null;
+    lastMeasuredWidth: number | null = null;
 
     handleFilterUpdate = () => {
       this.scheduleBuild();
     };
 
     handleResize = () => {
+      const currentWidth = window.innerWidth;
+      if (this.lastMeasuredWidth !== null && currentWidth === this.lastMeasuredWidth) {
+        return;
+      }
+
       this.scheduleBuild();
     };
 
@@ -273,6 +260,7 @@ const tracks = [
         });
 
         ScrollTrigger.refresh();
+        this.lastMeasuredWidth = window.innerWidth;
       }, this);
     }
   }
