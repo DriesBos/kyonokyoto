@@ -6,6 +6,8 @@ import {
   classifyFetchResult,
   classifySourceOutcome,
   createCrawlDiagnostics,
+  detailUrlExtractors,
+  eventExtractors,
   extractChushinDetailUrls,
   extractChushinEvent,
   extractGenericDetailUrls,
@@ -17,6 +19,8 @@ import {
   normalizeEventImagesForSource,
   parseImageDimensionsFromBytes,
   recordFetchedPage,
+  sourceContextLoaders,
+  sourceSpecificSkipMatchers,
 } from "../src/run-once.mjs";
 
 const fixturesRoot = resolve(import.meta.dirname, "fixtures");
@@ -302,4 +306,26 @@ test("diagnostics and source outcome summarize crawl health", () => {
     }),
     "source_needs_review"
   );
+});
+
+test("source-specific crawler registries only reference configured source slugs", async () => {
+  const payload = JSON.parse(
+    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+  );
+  const configuredSlugs = new Set(payload.sources.map((source) => source.slug));
+  const registryEntries = [
+    ["detailUrlExtractors", Object.keys(detailUrlExtractors)],
+    ["eventExtractors", Object.keys(eventExtractors)],
+    ["sourceContextLoaders", Object.keys(sourceContextLoaders)],
+    ["sourceSpecificSkipMatchers", Object.keys(sourceSpecificSkipMatchers)],
+  ];
+
+  for (const [label, slugs] of registryEntries) {
+    const unknownSlugs = slugs.filter((slug) => !configuredSlugs.has(slug));
+    assert.deepEqual(
+      unknownSlugs,
+      [],
+      `${label} contains unknown source slugs: ${unknownSlugs.join(", ")}`
+    );
+  }
 });

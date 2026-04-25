@@ -3351,13 +3351,91 @@ const eventExtractors = {
   zenbi: extractZenbiEvent,
 };
 
-function getSourceSpecificSkipReason(source, eventData) {
-  if (source.slug === 'momak' && /\bcalendar\b/i.test(eventData?.title ?? '')) {
-    return 'title contains calendar';
-  }
+const sourceSpecificSkipMatchers = {
+  momak(eventData) {
+    return /\bcalendar\b/i.test(eventData?.title ?? '')
+      ? 'title contains calendar'
+      : null;
+  },
+};
 
-  return null;
+function getSourceSpecificSkipReason(source, eventData) {
+  const matcher = sourceSpecificSkipMatchers[source.slug];
+  return matcher ? matcher(eventData) : null;
 }
+
+const sourceContextLoaders = {
+  async momak({ userAgent, env, crawlContext, diagnostics, source, crawlRun }) {
+    const accessPage = await fetchHtml(
+      'https://www.momak.go.jp/English/guide/access.html',
+      userAgent,
+      env,
+      {
+        renderMode: 'never',
+        context: crawlContext,
+      },
+    );
+    recordFetchedPage(diagnostics, accessPage);
+    await upsertRawPage(env, source.id, crawlRun.id, 'detail', accessPage);
+
+    return {
+      sourceContext: { accessHtml: accessPage.html },
+      pagesFetched: 1,
+    };
+  },
+  async 'sen-oku-hakukokan'({
+    userAgent,
+    env,
+    crawlContext,
+    diagnostics,
+    source,
+    crawlRun,
+  }) {
+    const accessPage = await fetchHtml(
+      'https://sen-oku.or.jp/kyoto/facility/access',
+      userAgent,
+      env,
+      {
+        renderMode: 'never',
+        context: crawlContext,
+      },
+    );
+    recordFetchedPage(diagnostics, accessPage);
+    await upsertRawPage(env, source.id, crawlRun.id, 'detail', accessPage);
+
+    return {
+      sourceContext: { accessHtml: accessPage.html },
+      pagesFetched: 1,
+    };
+  },
+  async kyotographie({
+    userAgent,
+    env,
+    crawlContext,
+    diagnostics,
+    source,
+    crawlRun,
+  }) {
+    const planPage = await fetchHtml(
+      'https://www.kyotographie.jp/en/plan_your_visit/',
+      userAgent,
+      env,
+      {
+        renderMode: 'never',
+        context: crawlContext,
+      },
+    );
+    recordFetchedPage(diagnostics, planPage);
+    await upsertRawPage(env, source.id, crawlRun.id, 'detail', planPage);
+
+    return {
+      sourceContext: {
+        festivalSchedule: extractKyotographieFestivalSchedule(planPage.html),
+      },
+      pagesFetched: 1,
+    };
+  },
+};
 
 function runJsonCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -4273,50 +4351,18 @@ async function crawlSource({
     }
 
     let sourceContext = {};
-    if (source.slug === 'momak') {
-      const accessPage = await fetchHtml(
-        'https://www.momak.go.jp/English/guide/access.html',
+    const loadSourceContext = sourceContextLoaders[source.slug];
+    if (loadSourceContext) {
+      const loaded = await loadSourceContext({
         userAgent,
         env,
-        {
-          renderMode: 'never',
-          context: crawlContext,
-        },
-      );
-      pagesFetched += 1;
-      recordFetchedPage(diagnostics, accessPage);
-      await upsertRawPage(env, source.id, crawlRun.id, 'detail', accessPage);
-      sourceContext = { accessHtml: accessPage.html };
-    } else if (source.slug === 'sen-oku-hakukokan') {
-      const accessPage = await fetchHtml(
-        'https://sen-oku.or.jp/kyoto/facility/access',
-        userAgent,
-        env,
-        {
-          renderMode: 'never',
-          context: crawlContext,
-        },
-      );
-      pagesFetched += 1;
-      recordFetchedPage(diagnostics, accessPage);
-      await upsertRawPage(env, source.id, crawlRun.id, 'detail', accessPage);
-      sourceContext = { accessHtml: accessPage.html };
-    } else if (source.slug === 'kyotographie') {
-      const planPage = await fetchHtml(
-        'https://www.kyotographie.jp/en/plan_your_visit/',
-        userAgent,
-        env,
-        {
-          renderMode: 'never',
-          context: crawlContext,
-        },
-      );
-      pagesFetched += 1;
-      recordFetchedPage(diagnostics, planPage);
-      await upsertRawPage(env, source.id, crawlRun.id, 'detail', planPage);
-      sourceContext = {
-        festivalSchedule: extractKyotographieFestivalSchedule(planPage.html),
-      };
+        crawlContext,
+        diagnostics,
+        source,
+        crawlRun,
+      });
+      sourceContext = loaded?.sourceContext ?? {};
+      pagesFetched += loaded?.pagesFetched ?? 0;
     }
 
     const eventExtractor = eventExtractors[source.slug] ?? extractGenericEvent;
@@ -4656,6 +4702,8 @@ export {
   classifyFetchResult,
   classifySourceOutcome,
   createCrawlDiagnostics,
+  detailUrlExtractors,
+  eventExtractors,
   extractChushinDetailUrls,
   extractChushinEvent,
   extractGenericDetailUrls,
@@ -4667,6 +4715,8 @@ export {
   recordFetchedPage,
   extractRakuMuseumEvent,
   extractSenOkuEvent,
+  sourceContextLoaders,
+  sourceSpecificSkipMatchers,
 };
 
 if (
