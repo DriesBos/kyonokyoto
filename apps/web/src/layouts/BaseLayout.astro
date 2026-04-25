@@ -14,6 +14,8 @@ const {
 } = Astro.props;
 
 const appName = "KyōNoKyōto";
+
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 ---
 
 <html lang="en">
@@ -42,6 +44,7 @@ const appName = "KyōNoKyōto";
     <meta name="apple-mobile-web-app-title" content={appName} />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
     <script is:inline>
       (() => {
         const storageKey = "kyo-theme";
