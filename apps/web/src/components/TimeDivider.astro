@@ -88,37 +88,39 @@ const tracks = [
 ];
 ---
 
-<div class="time-divider" aria-label="upcoming events" data-time-divider>
-  <div class="time-divider__scroller" aria-hidden="true">
-    {tracks.map((track) => (
-      <div
-        class:list={["time-divider__track", track.className, { "time-divider__track--mobile-extra": track.mobileOnly }]}
-        data-time-divider-track
-        data-direction={track.direction}
-        data-travel={"travel" in track ? track.travel : undefined}
-        data-start={"start" in track ? track.start : undefined}
-        data-end={"end" in track ? track.end : undefined}
-      >
-        <div class="time-divider__group">
-          {items.map(() => (
-            <>
-              <span>{track.label}</span>
-              <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
-            </>
-          ))}
+<astro-time-divider class="time-divider" aria-label="upcoming events" data-time-divider>
+  <div class="time-divider__viewport" data-time-divider-viewport>
+    <div class="time-divider__scroller" aria-hidden="true">
+      {tracks.map((track) => (
+        <div
+          class:list={["time-divider__track", track.className, { "time-divider__track--mobile-extra": track.mobileOnly }]}
+          data-time-divider-track
+          data-direction={track.direction}
+          data-travel={"travel" in track ? track.travel : undefined}
+          data-start={"start" in track ? track.start : undefined}
+          data-end={"end" in track ? track.end : undefined}
+        >
+          <div class="time-divider__group">
+            {items.map(() => (
+              <>
+                <span>{track.label}</span>
+                <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
+              </>
+            ))}
+          </div>
+          <div class="time-divider__group">
+            {items.map(() => (
+              <>
+                <span>{track.label}</span>
+                <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
+              </>
+            ))}
+          </div>
         </div>
-        <div class="time-divider__group">
-          {items.map(() => (
-            <>
-              <span>{track.label}</span>
-              <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
-            </>
-          ))}
-        </div>
-      </div>
-    ))}
+      ))}
+    </div>
   </div>
-</div>
+</astro-time-divider>
 
 <script>
   import { gsap } from "gsap";
@@ -126,144 +128,196 @@ const tracks = [
 
   gsap.registerPlugin(ScrollTrigger);
 
-  type TimeDividerWindow = Window &
-    typeof globalThis & {
-      __timeDividerBound?: boolean;
-      __timeDividerCleanup?: () => void;
-      __timeDividerBuildFrame?: number;
-      __timeDividerRefreshFrame?: number;
-      __timeDividerResizeObserver?: ResizeObserver;
-    };
-
-  const dividerWindow = window as TimeDividerWindow;
-  const dividerSelector = "[data-time-divider]";
   const trackSelector = "[data-time-divider-track]";
+  const viewportSelector = "[data-time-divider-viewport]";
+  const scrollerSelector = ".time-divider__scroller";
+  const mobileBreakpoint = 768;
   const scrollScrubSeconds = 0.33;
 
-  const cleanupTimeDividers = () => {
-    dividerWindow.__timeDividerCleanup?.();
-    dividerWindow.__timeDividerCleanup = undefined;
-    dividerWindow.__timeDividerResizeObserver?.disconnect();
-    dividerWindow.__timeDividerResizeObserver = undefined;
-  };
-
-  const runAfterLayoutPaint = (callback: FrameRequestCallback) => {
+  const afterNextPaint = (callback: () => void) => {
     window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(callback);
-    });
-  };
-
-  const scheduleScrollTriggerRefresh = () => {
-    if (dividerWindow.__timeDividerRefreshFrame) {
-      window.cancelAnimationFrame(dividerWindow.__timeDividerRefreshFrame);
-    }
-
-    dividerWindow.__timeDividerRefreshFrame = window.requestAnimationFrame(() => {
-      dividerWindow.__timeDividerRefreshFrame = 0;
-      ScrollTrigger.refresh();
-      ScrollTrigger.update();
-    });
-  };
-
-  const observeTimeDividerLayout = (dividers: HTMLElement[]) => {
-    dividerWindow.__timeDividerResizeObserver?.disconnect();
-
-    if (typeof ResizeObserver !== "function") return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      scheduleScrollTriggerRefresh();
-    });
-
-    dividers.forEach((divider) => {
-      resizeObserver.observe(divider);
-      const scroller = divider.querySelector<HTMLElement>(".time-divider__scroller");
-      if (scroller) resizeObserver.observe(scroller);
-    });
-
-    if (document.body) {
-      resizeObserver.observe(document.body);
-    }
-
-    dividerWindow.__timeDividerResizeObserver = resizeObserver;
-  };
-
-  const buildTimeDividerAnimations = () => {
-    cleanupTimeDividers();
-
-    const dividers = gsap.utils.toArray<HTMLElement>(dividerSelector);
-    if (!dividers.length) return;
-
-    const contexts = dividers.map((divider) =>
-      gsap.context(() => {
-        const tracks = gsap.utils.toArray<HTMLElement>(trackSelector, divider);
-
-        tracks.forEach((track) => {
-          const direction = track.dataset.direction === "right" ? "right" : "left";
-          const travel = Number.parseFloat(track.dataset.travel || "50");
-          const distance = Number.isFinite(travel) ? travel : 50;
-          const customStart = Number.parseFloat(track.dataset.start || "");
-          const customEnd = Number.parseFloat(track.dataset.end || "");
-          const defaultStartX = direction === "right" ? -distance : 0;
-          const defaultEndX = direction === "right" ? 0 : -distance;
-          const startX = Number.isFinite(customStart) ? customStart : defaultStartX;
-          const endX = Number.isFinite(customEnd) ? customEnd : defaultEndX;
-
-          gsap.fromTo(
-            track,
-            { xPercent: startX },
-            {
-              xPercent: endX,
-              ease: "none",
-              scrollTrigger: {
-                trigger: divider,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: scrollScrubSeconds,
-                invalidateOnRefresh: true,
-              },
-            },
-          );
-        });
-      }, divider),
-    );
-
-    dividerWindow.__timeDividerCleanup = () => {
-      contexts.forEach((context) => context.revert());
-    };
-
-    observeTimeDividerLayout(dividers);
-    runAfterLayoutPaint(() => {
-      scheduleScrollTriggerRefresh();
-    });
-  };
-
-  const scheduleBuildTimeDividers = () => {
-    if (dividerWindow.__timeDividerBuildFrame) {
-      window.cancelAnimationFrame(dividerWindow.__timeDividerBuildFrame);
-    }
-
-    dividerWindow.__timeDividerBuildFrame = window.requestAnimationFrame(() => {
-      dividerWindow.__timeDividerBuildFrame = 0;
-      runAfterLayoutPaint(() => {
-        buildTimeDividerAnimations();
+      window.requestAnimationFrame(() => {
+        callback();
       });
     });
   };
 
-  scheduleBuildTimeDividers();
+  const parseDistance = (track: HTMLElement) => {
+    const direction = track.dataset.direction === "right" ? "right" : "left";
+    const travel = Number.parseFloat(track.dataset.travel || "50");
+    const distance = Number.isFinite(travel) ? travel : 50;
+    const customStart = Number.parseFloat(track.dataset.start || "");
+    const customEnd = Number.parseFloat(track.dataset.end || "");
+    const defaultStartX = direction === "right" ? -distance : 0;
+    const defaultEndX = direction === "right" ? 0 : -distance;
 
-  document.fonts?.ready
-    .then(() => {
-      scheduleBuildTimeDividers();
-    })
-    .catch(() => {});
+    return {
+      startX: Number.isFinite(customStart) ? customStart : defaultStartX,
+      endX: Number.isFinite(customEnd) ? customEnd : defaultEndX,
+    };
+  };
 
-  if (!dividerWindow.__timeDividerBound) {
-    document.addEventListener("astro:page-load", scheduleBuildTimeDividers);
-    document.addEventListener("astro:before-swap", cleanupTimeDividers);
-    document.addEventListener("event-filter:updated", scheduleScrollTriggerRefresh);
-    window.addEventListener("load", scheduleBuildTimeDividers, { once: true });
-    window.addEventListener("resize", scheduleScrollTriggerRefresh);
-    dividerWindow.__timeDividerBound = true;
+  class AstroTimeDivider extends HTMLElement {
+    buildFrame = 0;
+    refreshFrame = 0;
+    media: gsap.MatchMedia | null = null;
+    resizeObserver: ResizeObserver | null = null;
+    releaseFontReady: (() => void) | null = null;
+
+    handleFilterUpdate = () => {
+      this.scheduleBuild();
+    };
+
+    handleResize = () => {
+      this.scheduleRefresh();
+    };
+
+    connectedCallback() {
+      this.disconnectObservers();
+      this.observeLayout();
+      document.addEventListener("event-filter:updated", this.handleFilterUpdate);
+      window.addEventListener("resize", this.handleResize);
+
+      const fontsReady = document.fonts?.ready;
+      if (fontsReady) {
+        let active = true;
+        this.releaseFontReady = () => {
+          active = false;
+        };
+
+        fontsReady
+          .then(() => {
+            if (!active) return;
+            this.scheduleBuild();
+          })
+          .catch(() => {});
+      }
+
+      this.scheduleBuild();
+    }
+
+    disconnectedCallback() {
+      document.removeEventListener("event-filter:updated", this.handleFilterUpdate);
+      window.removeEventListener("resize", this.handleResize);
+      this.releaseFontReady?.();
+      this.releaseFontReady = null;
+
+      if (this.buildFrame) {
+        window.cancelAnimationFrame(this.buildFrame);
+        this.buildFrame = 0;
+      }
+
+      if (this.refreshFrame) {
+        window.cancelAnimationFrame(this.refreshFrame);
+        this.refreshFrame = 0;
+      }
+
+      this.cleanupAnimations();
+      this.disconnectObservers();
+    }
+
+    cleanupAnimations() {
+      this.media?.revert();
+      this.media = null;
+    }
+
+    disconnectObservers() {
+      this.resizeObserver?.disconnect();
+      this.resizeObserver = null;
+    }
+
+    observeLayout() {
+      if (typeof ResizeObserver !== "function") return;
+
+      this.resizeObserver = new ResizeObserver(() => {
+        this.scheduleRefresh();
+      });
+
+      this.resizeObserver.observe(this);
+
+      const scroller = this.querySelector<HTMLElement>(scrollerSelector);
+      if (scroller) {
+        this.resizeObserver.observe(scroller);
+      }
+    }
+
+    scheduleBuild() {
+      if (this.buildFrame) {
+        window.cancelAnimationFrame(this.buildFrame);
+      }
+
+      this.buildFrame = window.requestAnimationFrame(() => {
+        this.buildFrame = 0;
+        afterNextPaint(() => {
+          this.buildAnimations();
+        });
+      });
+    }
+
+    scheduleRefresh() {
+      if (this.refreshFrame) {
+        window.cancelAnimationFrame(this.refreshFrame);
+      }
+
+      this.refreshFrame = window.requestAnimationFrame(() => {
+        this.refreshFrame = 0;
+        ScrollTrigger.refresh(true);
+      });
+    }
+
+    isRenderable() {
+      return !this.closest("[hidden]") && this.getClientRects().length > 0 && this.offsetHeight > 0;
+    }
+
+    buildAnimations() {
+      this.cleanupAnimations();
+
+      if (!this.isConnected || !this.isRenderable()) return;
+
+      const viewport = this.querySelector<HTMLElement>(viewportSelector);
+      if (!viewport) return;
+
+      this.media = gsap.matchMedia(this);
+      this.media.add(
+        {
+          isMobile: `(max-width: ${mobileBreakpoint}px)`,
+        },
+        (context) => {
+          const { isMobile } = context.conditions as { isMobile?: boolean };
+          const tracks = gsap.utils
+            .toArray<HTMLElement>(trackSelector, this)
+            .filter((track) => track.getClientRects().length > 0);
+
+          if (!tracks.length) return;
+
+          const timeline = gsap.timeline({
+            defaults: { ease: "none" },
+            scrollTrigger: {
+              trigger: this,
+              start: "top top",
+              end: () => {
+                const span = Math.max(viewport.offsetHeight, window.innerHeight) * (isMobile ? 1.2 : 1);
+                return `+=${Math.round(span)}`;
+              },
+              scrub: scrollScrubSeconds,
+              pin: viewport,
+              anticipatePin: 1,
+              invalidateOnRefresh: true,
+            },
+          });
+
+          tracks.forEach((track) => {
+            const { startX, endX } = parseDistance(track);
+            timeline.fromTo(track, { xPercent: startX }, { xPercent: endX, duration: 1 }, 0);
+          });
+
+          this.scheduleRefresh();
+        },
+      );
+    }
+  }
+
+  if (!customElements.get("astro-time-divider")) {
+    customElements.define("astro-time-divider", AstroTimeDivider);
   }
 </script>

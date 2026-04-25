@@ -547,16 +547,27 @@ a
   display: block
 
 .time-divider
+  display: block
+  position: relative
   width: 100%
-  overflow: hidden
+  min-height: 100dvh
+  overflow: clip
+
+  &__viewport
+    position: relative
+    display: flex
+    align-items: center
+    min-height: 100dvh
+    overflow: hidden
 
   &__scroller
     display: flex
-    flex-direction: column  
+    flex-direction: column
+    justify-content: center
     gap: 3rem
     width: 100%
     overflow: hidden
-    padding: 12vh 0
+    padding: 10vh 0
 
   &__track
     display: flex
@@ -828,6 +839,14 @@ a
       width: 100%
 
   .time-divider
+    min-height: 100svh
+
+    &__viewport
+      min-height: 100svh
+
+    &__scroller
+      gap: 2rem
+
     &__track--mobile-extra
       display: flex
 
