@@ -63,6 +63,11 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   --control-gap: 0.75rem
   --icon-size: 1.5625rem
 
+  @media (any-pointer: coarse)
+    --color-dark: #000000
+    --color-beige: #ffffff
+    --control-gap: 1rem
+
   --type-scale-ratio: #{$type-scale-ratio}
   --type-step-0: #{type-step(0)}
   --type-step-1: #{type-step(1)}
@@ -89,11 +94,6 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   --main-background: var(--color-dark)
   --stroke: var(--color-green)
   --grain-background-image: var(--grain-texture)
-
-@media (any-pointer: coarse)
-  --color-dark: #000000
-  --color-beige: #ffffff
-  --control-gap: 1rem
 
 :root[data-theme-ready='true'] body,
 :root[data-theme-ready='true'] .site-header,
