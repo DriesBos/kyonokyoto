@@ -725,11 +725,12 @@ a
     text-transform: uppercase
     user-select: auto
     padding: 0 var(--page-padding-x)
-
     @media (max-width: $mobile-breakpoint)
       display: flex
       flex-direction: row
-      gap: 1rem
+      flex-wrap: wrap
+      column-gap: var(--control-gap)
+      row-gap: 0
 
   &__meta
     display: flex
@@ -738,7 +739,6 @@ a
     text-transform: uppercase
     user-select: auto
     padding: 0 var(--page-padding-x)
-
     @media (max-width: $mobile-breakpoint)
       display: none
 

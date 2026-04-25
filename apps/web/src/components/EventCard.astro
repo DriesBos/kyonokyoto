@@ -164,14 +164,14 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     <div class="event-card__body__header">
       <h2 class="event-card__title">{event.title}</h2>
       <div class="event-card__headermeta">
-        <span>{event.institution_name}</span>
         <span>{event.date_text}</span>
+        <span>{event.institution_name}</span>
         {event.artist_name ? <span>{event.artist_name}</span> : null}
     </div>
     </div>
     <div class="event-card__meta">
-      <span>{event.institution_name}</span>
       <span>{event.date_text}</span>
+      <span>{event.institution_name}</span>
     </div>
     <div class="event-card__body__content">
       <p class="event-card__description" data-event-card-fade>{excerpt}</p>
@@ -217,7 +217,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
           canPlaySound={true}
         />
       </div>
-      {event.categories.length > 0 ? (
+      <!-- {event.categories.length > 0 ? (
           <div class="event-card__actions" data-event-card-fade>
             <ul class="event-card__categories" aria-label="Categories">
               {event.categories.map((category) => {
@@ -239,7 +239,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
               })}
             </ul>
           </div>
-        ) : null}
+        ) : null} -->
     </div>
 
   </div>
