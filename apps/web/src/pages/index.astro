@@ -461,8 +461,6 @@ const excerpt = (value: string | null) => {
 </BaseLayout>
 
 <script>
-  import { fadeIn, setFadeHidden, setFadeVisible } from "../lib/fadeTransition";
-
   type EventCardRevealWindow = Window &
     typeof globalThis & {
       __eventCardRevealBound?: boolean;
@@ -472,6 +470,10 @@ const excerpt = (value: string | null) => {
   const revealWindow = window as EventCardRevealWindow;
   const cardSelector = "[data-event-card]";
   const revealThreshold = 0.5;
+  const revealTransition = {
+    duration: 420,
+    easing: "ease",
+  };
 
   const markVisible = (card: Element) => {
     if (!(card instanceof HTMLElement)) return;
@@ -489,9 +491,16 @@ const excerpt = (value: string | null) => {
     markVisible(card);
 
     if (animate) {
-      fadeIn(card, { stagger: 0 });
+      card.style.visibility = "visible";
+      card.animate([{ opacity: 0 }, { opacity: 1 }], revealTransition)
+        .finished
+        .then(() => {
+          card.style.opacity = "1";
+        })
+        .catch(() => {});
     } else {
-      setFadeVisible(card);
+      card.style.opacity = "1";
+      card.style.visibility = "visible";
     }
   };
 
@@ -525,7 +534,8 @@ const excerpt = (value: string | null) => {
       }
 
       markQueued(card);
-      setFadeHidden(card);
+      card.style.opacity = "0";
+      card.style.visibility = "visible";
       revealWindow.__eventCardRevealObserver?.observe(card);
     });
   };

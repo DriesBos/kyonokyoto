@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Initial Kyoto cultural source batch for crawler development. This is seed data, not authoritative production data.",
+  "description": "Initial Kyoto cultural source batch for crawler development. This is seed data, not authoritative production data. Add measure_image_dimensions: true to any source that leaks logo, social, or navigation images into event media.",
   "sources": [
     {
       "slug": "kyoto-art-center",
@@ -272,7 +272,8 @@
       "event_page_patterns": ["/English/?p="],
       "notes": "Use only the English current/upcoming exhibition archive as the starting point. Avoid the Japanese archive and general information pages.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": ["art", "museum"],
+      "measure_image_dimensions": true
     },
     {
       "slug": "gallery-unfold",
@@ -407,7 +408,8 @@
       "event_page_patterns": ["/bijyutu/exhibition/"],
       "notes": "Bank-affiliated art museum with exhibition index at /bijyutu/exhibition/index.html.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": ["art", "museum"],
+      "measure_image_dimensions": true
     },
     {
       "slug": "shokokuji-jotenkaku-museum",
@@ -509,7 +511,8 @@
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Gallery exhibition listing.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": ["art", "gallery"],
+      "measure_image_dimensions": true
     },
     {
       "slug": "kankakari",

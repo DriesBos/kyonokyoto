@@ -168,6 +168,7 @@ How to tune effectively:
 - Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
 - When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
 - Lazy-loaded images are handled as a second pass when `CRAWL4AI_RENDER_MODE=auto`: the crawler keeps the normal static fetch first, then asks Crawl4AI to render and scroll detail pages whose extracted event has no image.
+- If a source leaks logo, social, or navigation images without useful HTML dimensions, add `"measure_image_dimensions": true` to that source in `data/sources/kyoto-sources.json` or to its slug in `data/sources/source-overrides.json`.
 - JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
 - Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.

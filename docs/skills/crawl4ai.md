@@ -85,6 +85,12 @@ Current lazy-image policy:
 - Use `--render=always` or `CRAWL4AI_RENDER_MODE=always` only when discovery itself needs browser rendering, such as JavaScript-built listing pages.
 - Use `CRAWL4AI_RENDER_MODE=never` for local static-only tuning or when Crawl4AI is not installed.
 
+Current image filtering policy:
+
+- Event media is capped at four stored image URLs per event.
+- The shared image finalizer rejects known UI/social/logo images and images whose known width or height is under 100px.
+- If a source still leaks icons without useful HTML dimensions, set `measure_image_dimensions: true` on that source in `data/sources/kyoto-sources.json` or `data/sources/source-overrides.json`. The crawler will download only the selected image candidates, measure their natural dimensions from the image bytes, and reject measured images under the same 100px threshold.
+
 Current static fetch resilience policy:
 
 - Static fetches use browser-compatible `Accept`, `Accept-Language`, and `Cache-Control` headers while keeping the project user agent explicit.

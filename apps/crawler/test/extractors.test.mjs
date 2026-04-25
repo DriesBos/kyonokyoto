@@ -6,9 +6,13 @@ import {
   classifyFetchResult,
   classifySourceOutcome,
   createCrawlDiagnostics,
+  extractChushinDetailUrls,
+  extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
   hasExtractedImage,
+  normalizeEventImagesForSource,
+  parseImageDimensionsFromBytes,
   recordFetchedPage,
 } from "../src/run-once.mjs";
 
@@ -44,7 +48,126 @@ test("generic event extraction returns title, dates, and images", async () => {
   assert.equal(event.end_date, "2026-05-31");
   assert.equal(event.primary_image_url, "https://example.test/images/install-view.jpg");
   assert.equal(event.image_urls.includes("https://example.test/media/quiet-forms.jpg"), true);
+  assert.equal(event.image_urls.includes("https://example.test/images/venue-mark.jpg"), false);
+  assert.equal(event.image_urls.includes("https://example.test/media/event-strip-300x80.jpg"), false);
+  assert.equal(event.image_urls.includes("https://example.test/media/cdn-thumb.jpg?width=240&height=80"), false);
+  assert.equal(event.image_urls.includes("https://example.test/images/program-thumb.jpg"), false);
   assert.equal(hasExtractedImage(event), true);
+});
+
+test("image normalization caps stored images and probes offender source dimensions", async () => {
+  const diagnostics = createCrawlDiagnostics();
+  const source = {
+    measure_image_dimensions: true,
+  };
+  const event = {
+    primary_image_url: "https://example.test/icon.jpg",
+    image_urls: [
+      "https://example.test/icon.jpg",
+      "https://example.test/hero.jpg",
+      "https://example.test/gallery-1.jpg",
+      "https://example.test/gallery-2.jpg",
+      "https://example.test/gallery-3.jpg",
+    ],
+  };
+
+  const normalized = await normalizeEventImagesForSource(event, source, {
+    diagnostics,
+    fetchImageDimensionsFn: async (url) =>
+      url.includes("icon")
+        ? { width: 320, height: 72 }
+        : { width: 1200, height: 800 },
+  });
+
+  assert.deepEqual(normalized.image_urls, [
+    "https://example.test/hero.jpg",
+    "https://example.test/gallery-1.jpg",
+    "https://example.test/gallery-2.jpg",
+  ]);
+  assert.equal(normalized.primary_image_url, "https://example.test/hero.jpg");
+  assert.equal(diagnostics.image_dimension_probe_count, 4);
+  assert.equal(diagnostics.image_dimension_probe_rejected_count, 1);
+});
+
+test("image normalization caps non-offender event images at four", async () => {
+  const normalized = await normalizeEventImagesForSource({
+    primary_image_url: "https://example.test/hero.jpg",
+    image_urls: [
+      "https://example.test/hero.jpg",
+      "https://example.test/gallery-1.jpg",
+      "https://example.test/gallery-2.jpg",
+      "https://example.test/gallery-3.jpg",
+      "https://example.test/gallery-4.jpg",
+    ],
+  }, {});
+
+  assert.deepEqual(normalized.image_urls, [
+    "https://example.test/hero.jpg",
+    "https://example.test/gallery-1.jpg",
+    "https://example.test/gallery-2.jpg",
+    "https://example.test/gallery-3.jpg",
+  ]);
+});
+
+test("image byte parser reads common remote image dimensions", () => {
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAASwAAABQCAIAAAD2HxkiAAAAAklEQVR4nGNgGAWjYBSMglEwCkbBKBgFo2AUrIIBAAAMAAGQvR6bAAAAAElFTkSuQmCC",
+    "base64"
+  );
+
+  assert.deepEqual(parseImageDimensionsFromBytes(png, "image/png"), {
+    width: 300,
+    height: 80,
+  });
+});
+
+test("Chushin extraction treats exh sections as individual events", () => {
+  const listingHtml = `
+    <section id="">
+      <a href="/bijyutu/access/">施設案内</a>
+    </section>
+    <section class="" id="exh073">
+      <h2 class="cate_heading02">山本容子版画展　物語をつつむ</h2>
+      <div class="bijyutu_flex">
+        <img src="/bijyutu/exhibition/images/img_bijyutu_exhibition_73.jpg" alt="">
+        <div class="bijyutu_text">
+          <h3 class="cate_heading03">2026年5月12日（火）～<br>6月26日（金）<br>休館日：月曜日</h3>
+          <p>都会的で洗練された色彩で、独自の銅版画の世界を確立する山本容子氏の展覧会を開催いたします。</p>
+        </div>
+      </div>
+    </section>
+    <section class="" id="exh072">
+      <h2 class="cate_heading02">西野康造　<ruby>空<rt>そら</rt>・<rt>・</rt>宙<rt>そら</ruby><br><span class="label close">終了</span></h2>
+      <h3 class="cate_heading03">2026年2月10日（火）～3月19日（木）</h3>
+      <p>彫刻家 西野康造氏の展覧会を開催いたします。</p>
+    </section>
+  `;
+  const source = {
+    name: "Chushin Museum of Art",
+    source_type: "museum",
+    source_categories: ["art", "museum"],
+  };
+
+  const urls = extractChushinDetailUrls(
+    listingHtml,
+    "https://www.chushin.co.jp/bijyutu/exhibition/index.html"
+  );
+
+  assert.deepEqual(urls, [
+    "https://www.chushin.co.jp/bijyutu/exhibition/index.html#exh073",
+    "https://www.chushin.co.jp/bijyutu/exhibition/index.html#exh072",
+  ]);
+
+  const event = extractChushinEvent(listingHtml, source, urls[0]);
+
+  assert.equal(event.title, "山本容子版画展 物語をつつむ");
+  assert.equal(event.start_date, "2026-05-12");
+  assert.equal(event.end_date, "2026-06-26");
+  assert.equal(event.primary_image_url, "https://www.chushin.co.jp/bijyutu/exhibition/images/img_bijyutu_exhibition_73.jpg");
+  assert.equal(event.source_url, urls[0]);
+
+  const rubyEvent = extractChushinEvent(listingHtml, source, urls[1]);
+  assert.equal(rubyEvent.title, "西野康造 空・宙");
 });
 
 test("fetch classification distinguishes bot challenges from renderable JS shells", () => {

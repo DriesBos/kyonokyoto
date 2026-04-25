@@ -258,6 +258,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
               sizes={`(max-width: 768px) ${image.mobileWidth}px, ${image.desktopWidth}px`}
               format="webp"
               quality="mid"
+              loading="lazy"
               aria-hidden={index === 0 ? undefined : "true"}
             />
           ) : (
@@ -280,14 +281,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 </article>
 
 <script>
-  import { fadeIn, fadeOut, killFadeTransitionTweens, setFadeHidden, setFadeVisible } from "../lib/fadeTransition";
-  import {
-    createHeightTransitionTimeline,
-    getHeightTransitionDuration,
-    killHeightTransitionTweens,
-    toHeight,
-  } from "../lib/heightTransition";
-
   if (!window.__eventCardToggleBound) {
     const actionSelector = ".event-card__actions .general-button";
     const actionContainerSelector = ".event-card__actions";
@@ -300,6 +293,99 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     const mediaScrollThreshold = 6;
     const mediaPointerState = new Map();
     const mediaScrollClickSuppressions = new WeakSet();
+    const heightTransition = {
+      duration: 250,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+    };
+    const fadeTransition = {
+      duration: 180,
+      easing: "ease",
+    };
+
+    const cancelAnimations = (targets) => {
+      const elements = Array.isArray(targets) ? targets : [targets];
+
+      elements.forEach((target) => {
+        if (!(target instanceof Element)) return;
+        target.getAnimations().forEach((animation) => animation.cancel());
+      });
+    };
+
+    const setFadeHidden = (targets) => {
+      const elements = Array.isArray(targets) ? targets : [targets];
+
+      elements.forEach((target) => {
+        if (!(target instanceof HTMLElement)) return;
+        target.style.opacity = "0";
+        target.style.visibility = "visible";
+      });
+    };
+
+    const setFadeVisible = (targets) => {
+      const elements = Array.isArray(targets) ? targets : [targets];
+
+      elements.forEach((target) => {
+        if (!(target instanceof HTMLElement)) return;
+        target.style.opacity = "1";
+        target.style.visibility = "visible";
+      });
+    };
+
+    const animateHeight = async (element, from, to) => {
+      element.style.height = `${to}px`;
+      const animation = element.animate(
+        [{ height: `${from}px` }, { height: `${to}px` }],
+        heightTransition
+      );
+
+      try {
+        await animation.finished;
+      } catch {}
+    };
+
+    const fadeIn = (targets, options = {}) => {
+      const elements = Array.isArray(targets) ? targets : [targets];
+
+      elements.forEach((target) => {
+        if (!(target instanceof HTMLElement)) return;
+        target.style.visibility = "visible";
+        target.animate(
+          [{ opacity: 0 }, { opacity: 1 }],
+          {
+            duration: options.duration ?? fadeTransition.duration,
+            delay: options.delay ?? 0,
+            easing: fadeTransition.easing,
+            fill: "forwards",
+          }
+        ).finished
+          .then(() => {
+            target.style.opacity = "1";
+          })
+          .catch(() => {});
+      });
+    };
+
+    const fadeOut = (targets, options = {}) => {
+      const elements = Array.isArray(targets) ? targets : [targets];
+
+      elements.forEach((target) => {
+        if (!(target instanceof HTMLElement)) return;
+        target.animate(
+          [{ opacity: 1 }, { opacity: 0 }],
+          {
+            duration: options.duration ?? fadeTransition.duration,
+            delay: options.delay ?? 0,
+            easing: fadeTransition.easing,
+            fill: "forwards",
+          }
+        ).finished
+          .then(() => {
+            target.style.opacity = "0";
+            target.style.visibility = "visible";
+          })
+          .catch(() => {});
+      });
+    };
 
     const canScrollMedia = (media) => media.scrollWidth > media.clientWidth + 1;
 
@@ -450,8 +536,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       const fadeTargets = Array.from(content.querySelectorAll(fadeSelector));
       card.dataset.toggleReady = "true";
 
-      killHeightTransitionTweens([card, content]);
-      killFadeTransitionTweens(fadeTargets);
+      cancelAnimations([card, content, ...fadeTargets]);
       syncActionInteractivity(card, isActive);
 
       if (isActive) {
@@ -482,8 +567,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       const targetMediaHeight = getMediaHeight(card, isActive);
       const fadeTargets = Array.from(content.querySelectorAll(fadeSelector));
 
-      killHeightTransitionTweens([card, content]);
-      killFadeTransitionTweens(fadeTargets);
+      cancelAnimations([card, content, ...fadeTargets]);
       card.toggleAttribute("data-height-transitioning", true);
       card.style.overflow = "hidden";
 
@@ -495,24 +579,20 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         card.style.height = `${startHeight}px`;
         setFadeHidden(fadeTargets);
 
-        const timeline = createHeightTransitionTimeline({
-          onComplete: () => {
-            card.style.height = "";
-            card.style.overflow = "";
-            card.toggleAttribute("data-height-transitioning", false);
-            content.style.height = "auto";
-            queueMediaScrollableSync();
-          },
-        });
+        card.style.setProperty(mediaHeightProperty, targetMediaHeight);
 
-        toHeight(timeline, card, expandedCardHeight, true, 0);
-        timeline.to(
-          card,
-          { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(true) },
-          0
-        );
-        toHeight(timeline, content, targetContentHeight, true, 0);
-        fadeIn(fadeTargets, { delay: getHeightTransitionDuration(true) });
+        Promise.all([
+          animateHeight(card, startHeight, expandedCardHeight),
+          animateHeight(content, 0, targetContentHeight),
+        ]).then(() => {
+          if (card.getAttribute("data-active") !== "true") return;
+          card.style.height = "";
+          card.style.overflow = "";
+          card.toggleAttribute("data-height-transitioning", false);
+          content.style.height = "auto";
+          queueMediaScrollableSync();
+        });
+        fadeIn(fadeTargets, { delay: heightTransition.duration });
         return;
       }
 
@@ -521,24 +601,19 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       const collapsedCardHeight = measureCardHeight(card, content, "0px", targetMediaHeight);
       card.style.height = `${startHeight}px`;
       content.style.height = `${content.offsetHeight}px`;
+      card.style.setProperty(mediaHeightProperty, targetMediaHeight);
 
-      const timeline = createHeightTransitionTimeline({
-        onComplete: () => {
-          card.style.height = "";
-          card.style.overflow = "";
-          card.toggleAttribute("data-height-transitioning", false);
-          content.style.height = "0px";
-          queueMediaScrollableSync();
-        },
+      Promise.all([
+        animateHeight(content, content.offsetHeight, 0),
+        animateHeight(card, startHeight, collapsedCardHeight),
+      ]).then(() => {
+        if (card.getAttribute("data-active") !== "false") return;
+        card.style.height = "";
+        card.style.overflow = "";
+        card.toggleAttribute("data-height-transitioning", false);
+        content.style.height = "0px";
+        queueMediaScrollableSync();
       });
-
-      timeline.to(
-        card,
-        { [mediaHeightProperty]: targetMediaHeight, duration: getHeightTransitionDuration(false) },
-        0
-      );
-      toHeight(timeline, content, 0, false);
-      toHeight(timeline, card, collapsedCardHeight, false);
     };
 
     const toggleCard = (card) => {

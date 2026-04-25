@@ -610,6 +610,8 @@ a
   border-top: var(--stroke-width) solid var(--stroke)
   cursor: var(--dot-cursor)
   overflow: hidden
+  content-visibility: auto
+  contain-intrinsic-size: auto 14rem
   transition: background-color 140ms ease
 
   > *
@@ -847,6 +849,7 @@ a
   .event-card
     --event-card-media-row-height: var(--event-card-media-row-height-mobile, 5rem)
     --event-card-media-row-height-active: var(--event-card-media-row-height-active-mobile, 10rem)
+    contain-intrinsic-size: auto 16rem
 
     flex-direction: column
 

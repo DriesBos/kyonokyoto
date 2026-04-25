@@ -1,77 +1,85 @@
 ---
 import Icon from "./Icon.astro";
 
-type Props = {
-  label?: string;
-};
-
-const { label = "Upcoming" } = Astro.props;
 const items = Array.from({ length: 25 });
 const tracks = [
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 46,
   },
   {
+    label: "get ready!",
     className: "time-divider__track--right",
     direction: "right",
-    travel: 52,
+    start: -28,
+    end: -10,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
-    travel: 39,
+    travel: 42,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 44,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 57,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 35,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 49,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 61,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 42,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 54,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 37,
     mobileOnly: true,
   },
   {
+    label: "upcoming",
     className: "time-divider__track--right",
     direction: "right",
     travel: 48,
@@ -80,19 +88,21 @@ const tracks = [
 ];
 ---
 
-<div class="time-divider" aria-label={`${label} events`} data-time-divider>
+<div class="time-divider" aria-label="upcoming events" data-time-divider>
   <div class="time-divider__scroller" aria-hidden="true">
     {tracks.map((track) => (
       <div
         class:list={["time-divider__track", track.className, { "time-divider__track--mobile-extra": track.mobileOnly }]}
         data-time-divider-track
         data-direction={track.direction}
-        data-travel={track.travel}
+        data-travel={"travel" in track ? track.travel : undefined}
+        data-start={"start" in track ? track.start : undefined}
+        data-end={"end" in track ? track.end : undefined}
       >
         <div class="time-divider__group">
           {items.map(() => (
             <>
-              <span>{label}</span>
+              <span>{track.label}</span>
               <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
             </>
           ))}
@@ -100,7 +110,7 @@ const tracks = [
         <div class="time-divider__group">
           {items.map(() => (
             <>
-              <span>{label}</span>
+              <span>{track.label}</span>
               <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
             </>
           ))}
@@ -151,8 +161,12 @@ const tracks = [
           const direction = track.dataset.direction === "right" ? "right" : "left";
           const travel = Number.parseFloat(track.dataset.travel || "50");
           const distance = Number.isFinite(travel) ? travel : 50;
-          const startX = direction === "right" ? -distance : 0;
-          const endX = direction === "right" ? 0 : -distance;
+          const customStart = Number.parseFloat(track.dataset.start || "");
+          const customEnd = Number.parseFloat(track.dataset.end || "");
+          const defaultStartX = direction === "right" ? -distance : 0;
+          const defaultEndX = direction === "right" ? 0 : -distance;
+          const startX = Number.isFinite(customStart) ? customStart : defaultStartX;
+          const endX = Number.isFinite(customEnd) ? customEnd : defaultEndX;
 
           gsap.fromTo(
             track,
