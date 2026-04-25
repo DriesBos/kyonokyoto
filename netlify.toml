@@ -8,8 +8,3 @@
 
 [build.environment]
   NODE_VERSION = "22.22.0"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/ssr"
-  status = 200
