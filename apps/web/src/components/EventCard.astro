@@ -187,13 +187,35 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             data-calendar-end={calendarEndDate}
             data-calendar-details={calendarDetails}
             data-calendar-location={calendarLocation}
+            canPlaySound={true}
           />
         ) : null}
         {googleCalendarUrl ? (
-          <GeneralButton label="Google" icon="calendar" href={googleCalendarUrl} target="_blank" rel="noreferrer" />
+          <GeneralButton
+            label="Google"
+            icon="calendar"
+            href={googleCalendarUrl}
+            target="_blank"
+            rel="noreferrer"
+            canPlaySound={true}
+          />
         ) : null}
-        <GeneralButton label="Directions" icon="map" href={mapsUrl} target="_blank" rel="noreferrer" />
-        <GeneralButton label="Website" icon="exit" href={event.source_url} target="_blank" rel="noreferrer" />
+        <GeneralButton
+          label="Directions"
+          icon="map"
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          canPlaySound={true}
+        />
+        <GeneralButton
+          label="Website"
+          icon="exit"
+          href={event.source_url}
+          target="_blank"
+          rel="noreferrer"
+          canPlaySound={true}
+        />
       </div>
       {event.categories.length > 0 ? (
           <div class="event-card__actions" data-event-card-fade>

@@ -24,6 +24,7 @@ type Props = {
   dataTimingButton?: boolean;
   dataFilterButton?: boolean;
   dataAmbientSoundButton?: boolean;
+  canPlaySound?: boolean;
   ariaControls?: string;
 };
 
@@ -47,6 +48,7 @@ const {
   dataTimingButton = false,
   dataFilterButton = false,
   dataAmbientSoundButton = false,
+  canPlaySound = false,
   ariaControls,
   ...rest
 } = Astro.props;
@@ -67,6 +69,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
       data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
+      data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -85,6 +88,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
       data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
+      data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -105,6 +109,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
       data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
+      data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -120,6 +125,8 @@ const classes = ["general-button", disabled && "general-button--disabled", class
   if (!window.__generalButtonDotBound) {
     const buttonSelector = ".general-button";
     const dotSelector = ".general-button__dot";
+    const ambientSoundButtonAttribute = "data-ambient-sound-button";
+    const ambientInteractionButtonAttribute = "data-ambient-interaction-button";
     const pressedStateBeforeClick = new WeakMap();
 
     const setButtonDotPosition = (button, clientX, clientY) => {
@@ -157,16 +164,27 @@ const classes = ["general-button", disabled && "general-button--disabled", class
 
       const button = target.closest(buttonSelector);
       if (!(button instanceof HTMLElement)) return;
-      if (!button.querySelector(dotSelector)) return;
+      if (!button.querySelector(dotSelector) && !button.hasAttribute(ambientInteractionButtonAttribute)) return;
       if (button.hasAttribute("data-ambient-sound-button")) return;
 
       const wasPressed = pressedStateBeforeClick.get(button) === true;
       pressedStateBeforeClick.delete(button);
+      const hasDot = Boolean(button.querySelector(dotSelector));
+      const shouldPlayPlainInteraction = button.hasAttribute(ambientInteractionButtonAttribute);
 
       window.requestAnimationFrame(() => {
-        if (wasPressed || button.getAttribute("aria-pressed") !== "true") return;
+        if (hasDot) {
+          if (wasPressed || button.getAttribute("aria-pressed") !== "true") {
+            if (!shouldPlayPlainInteraction) return;
+          } else {
+            playAmbientInteractionSound(event.clientX, button.hasAttribute(ambientSoundButtonAttribute) ? 0.78 : 0.62);
+            return;
+          }
+        }
 
-        playAmbientInteractionSound(event.clientX, button.hasAttribute("data-ambient-sound-button") ? 0.78 : 0.62);
+        if (shouldPlayPlainInteraction) {
+          playAmbientInteractionSound(event.clientX, 0.7);
+        }
       });
     });
 
