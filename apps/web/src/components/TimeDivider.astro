@@ -129,16 +129,20 @@ const tracks = [
   gsap.registerPlugin(ScrollTrigger);
 
   const trackSelector = "[data-time-divider-track]";
-  const viewportSelector = "[data-time-divider-viewport]";
-  const mobileBreakpoint = 768;
   const scrollScrubSeconds = 0.33;
+  const layoutSettledFrameCount = 3;
 
-  const afterNextPaint = (callback: () => void) => {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
+  const afterLayoutSettled = (callback: () => void, frameCount = layoutSettledFrameCount) => {
+    const tick = (remainingFrames: number) => {
+      if (remainingFrames <= 0) {
         callback();
-      });
-    });
+        return;
+      }
+
+      window.requestAnimationFrame(() => tick(remainingFrames - 1));
+    };
+
+    tick(frameCount);
   };
 
   const parseDistance = (track: HTMLElement) => {
@@ -158,7 +162,7 @@ const tracks = [
 
   class AstroTimeDivider extends HTMLElement {
     buildFrame = 0;
-    refreshFrame = 0;
+    buildToken = 0;
     context: gsap.Context | null = null;
     releaseFontReady: (() => void) | null = null;
 
@@ -209,11 +213,6 @@ const tracks = [
         this.buildFrame = 0;
       }
 
-      if (this.refreshFrame) {
-        window.cancelAnimationFrame(this.refreshFrame);
-        this.refreshFrame = 0;
-      }
-
       this.cleanupAnimations();
     }
 
@@ -223,26 +222,19 @@ const tracks = [
     }
 
     scheduleBuild() {
+      const token = this.buildToken + 1;
+      this.buildToken = token;
+
       if (this.buildFrame) {
         window.cancelAnimationFrame(this.buildFrame);
       }
 
       this.buildFrame = window.requestAnimationFrame(() => {
         this.buildFrame = 0;
-        afterNextPaint(() => {
+        afterLayoutSettled(() => {
+          if (token !== this.buildToken) return;
           this.buildAnimations();
         });
-      });
-    }
-
-    scheduleRefresh() {
-      if (this.refreshFrame) {
-        window.cancelAnimationFrame(this.refreshFrame);
-      }
-
-      this.refreshFrame = window.requestAnimationFrame(() => {
-        this.refreshFrame = 0;
-        ScrollTrigger.refresh(true);
       });
     }
 
@@ -255,60 +247,32 @@ const tracks = [
 
       if (!this.isConnected || !this.isRenderable()) return;
 
-      const viewport = this.querySelector<HTMLElement>(viewportSelector);
-      if (!viewport) return;
-
       this.context = gsap.context(() => {
-        const media = gsap.matchMedia();
+        const tracks = gsap.utils
+          .toArray<HTMLElement>(trackSelector, this)
+          .filter((track) => track.getClientRects().length > 0);
 
-        media.add(
-          {
-            isMobile: `(max-width: ${mobileBreakpoint}px)`,
+        if (!tracks.length) return;
+
+        const timeline = gsap.timeline({
+          defaults: { ease: "none" },
+          scrollTrigger: {
+            id: "time-divider",
+            trigger: this,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: scrollScrubSeconds,
+            invalidateOnRefresh: true,
           },
-          (context) => {
-            const { isMobile } = context.conditions as { isMobile?: boolean };
-            const tracks = gsap.utils
-              .toArray<HTMLElement>(trackSelector, this)
-              .filter((track) => track.getClientRects().length > 0);
+        });
 
-            if (!tracks.length) return;
+        tracks.forEach((track) => {
+          const { startX, endX } = parseDistance(track);
+          timeline.fromTo(track, { xPercent: startX }, { xPercent: endX, duration: 1 }, 0);
+        });
 
-            tracks.forEach((track) => {
-              const { startX } = parseDistance(track);
-              gsap.set(track, { xPercent: startX });
-            });
-
-            const timeline = gsap.timeline({
-              defaults: { ease: "none" },
-              scrollTrigger: {
-                trigger: viewport,
-                start: "top top",
-                end: () => {
-                  const span = Math.max(viewport.offsetHeight, window.innerHeight) * (isMobile ? 1.2 : 1);
-                  return `+=${Math.round(span)}`;
-                },
-                scrub: scrollScrubSeconds,
-                pin: true,
-                anticipatePin: 1,
-                invalidateOnRefresh: true,
-              },
-            });
-
-            tracks.forEach((track) => {
-              const { startX, endX } = parseDistance(track);
-              timeline.to(track, { xPercent: endX, duration: 1 }, 0);
-            });
-
-            timeline.scrollTrigger?.refresh();
-          },
-        );
-
-        return () => {
-          media.revert();
-        };
+        ScrollTrigger.refresh();
       }, this);
-
-      this.scheduleRefresh();
     }
   }
 
