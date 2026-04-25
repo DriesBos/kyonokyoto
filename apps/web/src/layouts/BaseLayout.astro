@@ -18,30 +18,6 @@ const appName = "KyōNoKyōto";
 
 <html lang="en">
   <head>
-    <script is:inline>
-      (() => {
-        const storageKey = "kyo-theme";
-        const root = document.documentElement;
-        let theme = null;
-
-        try {
-          theme = localStorage.getItem(storageKey);
-        } catch {}
-
-        if (theme !== "light" && theme !== "dark") {
-          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        }
-
-        root.dataset.theme = theme;
-        root.style.colorScheme = theme;
-
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            root.dataset.themeReady = "true";
-          });
-        });
-      })();
-    </script>
     <meta charset="utf-8" />
     <link
       rel="preload"
@@ -60,13 +36,37 @@ const appName = "KyōNoKyōto";
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#EFEFEF" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1f1f1f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#EFEFEF" data-theme-color />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content={appName} />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      (() => {
+        const storageKey = "kyo-theme";
+        const root = document.documentElement;
+        const themeColor = document.querySelector("meta[data-theme-color]");
+        let theme = "light";
+
+        try {
+          const storedTheme = localStorage.getItem(storageKey);
+          if (storedTheme === "light" || storedTheme === "dark") {
+            theme = storedTheme;
+          }
+        } catch {}
+
+        root.dataset.theme = theme;
+        root.style.colorScheme = theme;
+        themeColor?.setAttribute("content", theme === "dark" ? "#1f1f1f" : "#EFEFEF");
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            root.dataset.themeReady = "true";
+          });
+        });
+      })();
+    </script>
     <title>{title}</title>
     <meta name="description" content={description} />
   </head>

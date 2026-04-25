@@ -293,6 +293,7 @@ a
   background-image: var(--grain-background-image)
   background-size: 180px 180px
   background-repeat: repeat
+  overflow: visible
   &::after
     content: ""
     position: absolute
@@ -364,7 +365,7 @@ a
     gap: var(--control-gap)
     width: min(100%, 48rem)
     height: 0
-    overflow: hidden !important
+    overflow: visible
     pointer-events: none
 
     &[data-mobile-open]

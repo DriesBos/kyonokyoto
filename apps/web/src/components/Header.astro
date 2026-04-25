@@ -107,6 +107,7 @@ const timingFilters = [
     const filteredEmptyState = document.querySelector("[data-filter-empty]");
     const countLabel = document.querySelector("[data-event-count]");
     const themeRoot = document.documentElement;
+    const themeColorMeta = document.querySelector("meta[data-theme-color]");
 
     const total = cards.length;
     let activeCategory = root instanceof HTMLElement ? root.dataset.activeCategory || "" : "";
@@ -148,6 +149,7 @@ const timingFilters = [
       const theme = nextTheme === "dark" ? "dark" : "light";
       themeRoot.setAttribute("data-theme", theme);
       themeRoot.style.colorScheme = theme;
+      themeColorMeta?.setAttribute("content", theme === "dark" ? "#1f1f1f" : "#EFEFEF");
 
       try {
         localStorage.setItem(themeStorageKey, theme);

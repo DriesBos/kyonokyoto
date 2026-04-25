@@ -130,6 +130,9 @@ const tracks = [
     typeof globalThis & {
       __timeDividerBound?: boolean;
       __timeDividerCleanup?: () => void;
+      __timeDividerBuildFrame?: number;
+      __timeDividerRefreshFrame?: number;
+      __timeDividerResizeObserver?: ResizeObserver;
     };
 
   const dividerWindow = window as TimeDividerWindow;
@@ -140,18 +143,56 @@ const tracks = [
   const cleanupTimeDividers = () => {
     dividerWindow.__timeDividerCleanup?.();
     dividerWindow.__timeDividerCleanup = undefined;
+    dividerWindow.__timeDividerResizeObserver?.disconnect();
+    dividerWindow.__timeDividerResizeObserver = undefined;
+  };
+
+  const runAfterLayoutPaint = (callback: FrameRequestCallback) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(callback);
+    });
   };
 
   const scheduleScrollTriggerRefresh = () => {
-    window.requestAnimationFrame(() => {
+    if (dividerWindow.__timeDividerRefreshFrame) {
+      window.cancelAnimationFrame(dividerWindow.__timeDividerRefreshFrame);
+    }
+
+    dividerWindow.__timeDividerRefreshFrame = window.requestAnimationFrame(() => {
+      dividerWindow.__timeDividerRefreshFrame = 0;
       ScrollTrigger.refresh();
+      ScrollTrigger.update();
     });
+  };
+
+  const observeTimeDividerLayout = (dividers: HTMLElement[]) => {
+    dividerWindow.__timeDividerResizeObserver?.disconnect();
+
+    if (typeof ResizeObserver !== "function") return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      scheduleScrollTriggerRefresh();
+    });
+
+    dividers.forEach((divider) => {
+      resizeObserver.observe(divider);
+      const scroller = divider.querySelector<HTMLElement>(".time-divider__scroller");
+      if (scroller) resizeObserver.observe(scroller);
+    });
+
+    if (document.body) {
+      resizeObserver.observe(document.body);
+    }
+
+    dividerWindow.__timeDividerResizeObserver = resizeObserver;
   };
 
   const buildTimeDividerAnimations = () => {
     cleanupTimeDividers();
 
     const dividers = gsap.utils.toArray<HTMLElement>(dividerSelector);
+    if (!dividers.length) return;
+
     const contexts = dividers.map((divider) =>
       gsap.context(() => {
         const tracks = gsap.utils.toArray<HTMLElement>(trackSelector, divider);
@@ -190,16 +231,38 @@ const tracks = [
       contexts.forEach((context) => context.revert());
     };
 
-    scheduleScrollTriggerRefresh();
+    observeTimeDividerLayout(dividers);
+    runAfterLayoutPaint(() => {
+      scheduleScrollTriggerRefresh();
+    });
   };
 
-  buildTimeDividerAnimations();
+  const scheduleBuildTimeDividers = () => {
+    if (dividerWindow.__timeDividerBuildFrame) {
+      window.cancelAnimationFrame(dividerWindow.__timeDividerBuildFrame);
+    }
+
+    dividerWindow.__timeDividerBuildFrame = window.requestAnimationFrame(() => {
+      dividerWindow.__timeDividerBuildFrame = 0;
+      runAfterLayoutPaint(() => {
+        buildTimeDividerAnimations();
+      });
+    });
+  };
+
+  scheduleBuildTimeDividers();
+
+  document.fonts?.ready
+    .then(() => {
+      scheduleBuildTimeDividers();
+    })
+    .catch(() => {});
 
   if (!dividerWindow.__timeDividerBound) {
-    document.addEventListener("astro:page-load", buildTimeDividerAnimations);
+    document.addEventListener("astro:page-load", scheduleBuildTimeDividers);
     document.addEventListener("astro:before-swap", cleanupTimeDividers);
     document.addEventListener("event-filter:updated", scheduleScrollTriggerRefresh);
-    window.addEventListener("load", scheduleScrollTriggerRefresh, { once: true });
+    window.addEventListener("load", scheduleBuildTimeDividers, { once: true });
     window.addEventListener("resize", scheduleScrollTriggerRefresh);
     dividerWindow.__timeDividerBound = true;
   }
