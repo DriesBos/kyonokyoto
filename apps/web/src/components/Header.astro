@@ -113,6 +113,16 @@ const timingFilters = [
 
     const isFilterExpanded = () =>
       disclosure instanceof HTMLElement && disclosure.getAttribute("aria-expanded") === "true";
+    const isFilteringActive = () => Boolean(activeCategory || activeTiming);
+
+    const syncFilterDisclosureButtonState = () => {
+      if (!(disclosure instanceof HTMLElement)) return;
+
+      const isExpanded = isFilterExpanded();
+      const filteringActive = isFilteringActive();
+      disclosure.setAttribute("aria-pressed", String(isExpanded || filteringActive));
+      disclosure.dataset.filteringActive = String(filteringActive);
+    };
 
     const themeStorageKey = "kyo-theme";
     const isDarkTheme = () => themeRoot.getAttribute("data-theme") === "dark";
@@ -147,7 +157,7 @@ const timingFilters = [
       if (!(disclosure instanceof HTMLElement)) return;
 
       disclosure.setAttribute("aria-expanded", String(nextExpanded));
-      disclosure.setAttribute("aria-pressed", String(nextExpanded));
+      syncFilterDisclosureButtonState();
       filterExpandedScrollOrigin = nextExpanded ? window.scrollY : null;
       animateFilterDisclosure(nextExpanded);
     };
@@ -283,6 +293,7 @@ const timingFilters = [
       }
 
       updateCount(visibleCount || (activeCategory || activeTiming ? 0 : total), activeLabel);
+      syncFilterDisclosureButtonState();
       document.dispatchEvent(new CustomEvent("event-filter:updated"));
     };
 
@@ -332,6 +343,7 @@ const timingFilters = [
     });
 
     updateCount(total, "");
+    syncFilterDisclosureButtonState();
     syncThemeButtons();
 
     const stickyOffset = () => {
