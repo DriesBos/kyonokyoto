@@ -1,6 +1,9 @@
 {
   "name": "Kyō no Kyōto",
   "short_name": "KyōNoKyōto",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -29,5 +32,6 @@
   ],
   "theme_color": "#EFEFEF",
   "background_color": "#EFEFEF",
-  "display": "standalone"
+  "display": "standalone",
+  "display_override": ["standalone"]
 }
