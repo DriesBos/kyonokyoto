@@ -94,7 +94,7 @@ test("Raku Museum extraction keeps only the first image", async () => {
   assert.deepEqual(event.image_urls, ["https://www.raku-yaki.or.jp/images/install-view.jpg"]);
 });
 
-test("Sen-Oku extraction keeps only the first two images", () => {
+test("Sen-Oku extraction removes the trailing ad image", () => {
   const detailHtml = `
     <meta property="og:image" content="https://sen-oku.or.jp/wp-content/uploads/hero.jpg">
     <div class="catchArea wrap">
@@ -127,6 +127,7 @@ test("Sen-Oku extraction keeps only the first two images", () => {
   assert.deepEqual(event.image_urls, [
     "https://sen-oku.or.jp/wp-content/uploads/hero.jpg",
     "https://sen-oku.or.jp/wp-content/uploads/detail-1.jpg",
+    "https://sen-oku.or.jp/wp-content/uploads/detail-2.jpg",
   ]);
 });
 

@@ -2687,7 +2687,8 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
     ],
     detailUrl,
   );
-  const uniqueImageUrls = allImageUrls.slice(0, 2);
+  const uniqueImageUrls =
+    allImageUrls.length > 1 ? allImageUrls.slice(0, -1) : allImageUrls;
   const parsedDates = parseDottedDateRange(dateText);
   const addressText =
     (context.accessHtml ? extractSenOkuAddress(context.accessHtml) : null) ??
@@ -3322,9 +3323,9 @@ const detailUrlExtractors = {
   'kyoto-national-museum': extractKyohakuDetailUrls,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraDetailUrls,
   momak: extractMomakDetailUrls,
+  'sen-oku-hakukokan': extractSenOkuDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
   zenbi: extractZenbiDetailUrls,
-  'sen-oku-hakukokan-museum': extractSenOkuDetailUrls,
   'gallery-unfold': extractGalleryUnfoldDetailUrls,
 };
 
@@ -3344,10 +3345,10 @@ const eventExtractors = {
   'raku-museum': extractRakuMuseumEvent,
   momak: extractMomakEvent,
   mtk: extractMtkEvent,
+  'sen-oku-hakukokan': extractSenOkuEvent,
   sibasi: extractSibasiEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
   zenbi: extractZenbiEvent,
-  'sen-oku-hakukokan-museum': extractSenOkuEvent,
 };
 
 function getSourceSpecificSkipReason(source, eventData) {
@@ -4286,7 +4287,7 @@ async function crawlSource({
       recordFetchedPage(diagnostics, accessPage);
       await upsertRawPage(env, source.id, crawlRun.id, 'detail', accessPage);
       sourceContext = { accessHtml: accessPage.html };
-    } else if (source.slug === 'sen-oku-hakukokan-museum') {
+    } else if (source.slug === 'sen-oku-hakukokan') {
       const accessPage = await fetchHtml(
         'https://sen-oku.or.jp/kyoto/facility/access',
         userAgent,
