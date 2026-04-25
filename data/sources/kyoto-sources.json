@@ -412,22 +412,6 @@
       "measure_image_dimensions": true
     },
     {
-      "slug": "shokokuji-jotenkaku-museum",
-      "name": "Shokokuji Jotenkaku Museum",
-      "source_type": "museum",
-      "language": "en",
-      "base_url": "https://www.shokokuji.jp/en/museum/exhibition/shokokuji-kindai/",
-      "start_urls": [
-        "https://www.shokokuji.jp/en/museum/exhibition/shokokuji-kindai/"
-      ],
-      "allowed_domains": ["www.shokokuji.jp", "shokokuji.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/museum/exhibition/", "/museum/exhibition/"],
-      "notes": "Temple museum; English exhibition index for the Shokokuji Kindai wing.",
-      "is_active": true,
-      "source_categories": ["art", "museum"]
-    },
-    {
       "slug": "raku-museum",
       "name": "Raku Museum",
       "source_type": "museum",
