@@ -2687,8 +2687,7 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
     ],
     detailUrl,
   );
-  const uniqueImageUrls =
-    allImageUrls.length > 1 ? allImageUrls.slice(0, -1) : allImageUrls;
+  const uniqueImageUrls = allImageUrls.slice(0, 2);
   const parsedDates = parseDottedDateRange(dateText);
   const addressText =
     (context.accessHtml ? extractSenOkuAddress(context.accessHtml) : null) ??
@@ -3133,6 +3132,17 @@ function extractKankakariEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractRakuMuseumEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const firstImageUrl = event.image_urls?.[0] ?? null;
+
+  return {
+    ...event,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
 function extractMtkEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const descriptionBlock =
@@ -3311,9 +3321,9 @@ const detailUrlExtractors = {
   'kyoto-art-center': extractKacDetailUrls,
   'kyoto-national-museum': extractKyohakuDetailUrls,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraDetailUrls,
+  momak: extractMomakDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
   zenbi: extractZenbiDetailUrls,
-  'the-national-museum-of-modern-art': extractMomakDetailUrls,
   'sen-oku-hakukokan-museum': extractSenOkuDetailUrls,
   'gallery-unfold': extractGalleryUnfoldDetailUrls,
 };
@@ -3331,13 +3341,22 @@ const eventExtractors = {
   kyotographie: extractKyotographieEvent,
   kyotophonie: extractKyotophonieEvent,
   kankakari: extractKankakariEvent,
+  'raku-museum': extractRakuMuseumEvent,
+  momak: extractMomakEvent,
   mtk: extractMtkEvent,
   sibasi: extractSibasiEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
   zenbi: extractZenbiEvent,
-  'the-national-museum-of-modern-art': extractMomakEvent,
   'sen-oku-hakukokan-museum': extractSenOkuEvent,
 };
+
+function getSourceSpecificSkipReason(source, eventData) {
+  if (source.slug === 'momak' && /\bcalendar\b/i.test(eventData?.title ?? '')) {
+    return 'title contains calendar';
+  }
+
+  return null;
+}
 
 function runJsonCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -4253,7 +4272,7 @@ async function crawlSource({
     }
 
     let sourceContext = {};
-    if (source.slug === 'the-national-museum-of-modern-art') {
+    if (source.slug === 'momak') {
       const accessPage = await fetchHtml(
         'https://www.momak.go.jp/English/guide/access.html',
         userAgent,
@@ -4380,6 +4399,20 @@ async function crawlSource({
           });
           continue;
         }
+      }
+
+      const sourceSpecificSkipReason = getSourceSpecificSkipReason(
+        source,
+        extractedEvent,
+      );
+
+      if (sourceSpecificSkipReason) {
+        pushSkippedEvent(skippedEvents, diagnostics, {
+          detailUrl,
+          title: extractedEvent.title,
+          reason: sourceSpecificSkipReason,
+        });
+        continue;
       }
 
       const latestEventDate = getLatestEventDateOnly(extractedEvent);
@@ -4626,10 +4659,13 @@ export {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  getSourceSpecificSkipReason,
   hasExtractedImage,
   normalizeEventImagesForSource,
   parseImageDimensionsFromBytes,
   recordFetchedPage,
+  extractRakuMuseumEvent,
+  extractSenOkuEvent,
 };
 
 if (

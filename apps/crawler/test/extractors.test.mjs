@@ -10,6 +10,9 @@ import {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractRakuMuseumEvent,
+  extractSenOkuEvent,
+  getSourceSpecificSkipReason,
   hasExtractedImage,
   normalizeEventImagesForSource,
   parseImageDimensionsFromBytes,
@@ -55,6 +58,78 @@ test("generic event extraction returns title, dates, and images", async () => {
   assert.equal(hasExtractedImage(event), true);
 });
 
+test("source-specific skip rule drops MOMAK calendar pages", () => {
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: "momak" },
+      { title: "Calendar of Events" }
+    ),
+    "title contains calendar"
+  );
+
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: "momak" },
+      { title: "Antonio Fontanesi: Transcending Landscape" }
+    ),
+    null
+  );
+});
+
+test("Raku Museum extraction keeps only the first image", async () => {
+  const detailHtml = await readFile(resolve(fixturesRoot, "generic-detail.html"), "utf8");
+  const source = {
+    name: "Raku Museum",
+    source_type: "museum",
+    source_categories: ["art", "museum"],
+  };
+
+  const event = extractRakuMuseumEvent(
+    detailHtml,
+    source,
+    "https://www.raku-yaki.or.jp/e/museum/exhibition/forthcoming_exhibitions.html"
+  );
+
+  assert.equal(event.primary_image_url, "https://www.raku-yaki.or.jp/images/install-view.jpg");
+  assert.deepEqual(event.image_urls, ["https://www.raku-yaki.or.jp/images/install-view.jpg"]);
+});
+
+test("Sen-Oku extraction keeps only the first two images", () => {
+  const detailHtml = `
+    <meta property="og:image" content="https://sen-oku.or.jp/wp-content/uploads/hero.jpg">
+    <div class="catchArea wrap">
+      <div class="catch">Special Exhibition</div>
+      <div class="dataSetList"></div>
+    </div>
+    <span class="num">2026.04.01</span>
+    <span class="num">2026.05.31</span>
+    <div class="spot">Sen-Oku Hakukokan Museum Kyoto</div>
+    <div class="leadArea">
+      <p class="copy">An exhibition drawn from the museum collection.</p>
+    </div>
+    <img src="https://sen-oku.or.jp/wp-content/uploads/detail-1.jpg">
+    <img src="https://sen-oku.or.jp/wp-content/uploads/detail-2.jpg">
+    <img src="https://sen-oku.or.jp/wp-content/uploads/detail-3.jpg">
+  `;
+  const source = {
+    name: "Sen-Oku Hakukokan Museum",
+    source_type: "museum",
+    source_categories: ["art", "museum"],
+  };
+
+  const event = extractSenOkuEvent(
+    detailHtml,
+    source,
+    "https://sen-oku.or.jp/program/202604_special/"
+  );
+
+  assert.equal(event.primary_image_url, "https://sen-oku.or.jp/wp-content/uploads/hero.jpg");
+  assert.deepEqual(event.image_urls, [
+    "https://sen-oku.or.jp/wp-content/uploads/hero.jpg",
+    "https://sen-oku.or.jp/wp-content/uploads/detail-1.jpg",
+  ]);
+});
+
 test("image normalization caps stored images and probes offender source dimensions", async () => {
   const diagnostics = createCrawlDiagnostics();
   const source = {
@@ -83,13 +158,14 @@ test("image normalization caps stored images and probes offender source dimensio
     "https://example.test/hero.jpg",
     "https://example.test/gallery-1.jpg",
     "https://example.test/gallery-2.jpg",
+    "https://example.test/gallery-3.jpg",
   ]);
   assert.equal(normalized.primary_image_url, "https://example.test/hero.jpg");
-  assert.equal(diagnostics.image_dimension_probe_count, 4);
+  assert.equal(diagnostics.image_dimension_probe_count, 5);
   assert.equal(diagnostics.image_dimension_probe_rejected_count, 1);
 });
 
-test("image normalization caps non-offender event images at four", async () => {
+test("image normalization caps non-offender event images at five", async () => {
   const normalized = await normalizeEventImagesForSource({
     primary_image_url: "https://example.test/hero.jpg",
     image_urls: [
@@ -106,6 +182,7 @@ test("image normalization caps non-offender event images at four", async () => {
     "https://example.test/gallery-1.jpg",
     "https://example.test/gallery-2.jpg",
     "https://example.test/gallery-3.jpg",
+    "https://example.test/gallery-4.jpg",
   ]);
 });
 
