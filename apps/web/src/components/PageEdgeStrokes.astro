@@ -43,6 +43,14 @@ const hasScrollTop = position === "bottom" && showScrollTop;
       if (!(button instanceof HTMLElement)) return;
 
       event.preventDefault();
+      document.dispatchEvent(
+        new CustomEvent("ambient-sound:interaction", {
+          detail: {
+            viewportX: event.clientX / Math.max(1, window.innerWidth),
+            velocity: 0.7,
+          },
+        })
+      );
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
