@@ -353,8 +353,6 @@ const formattedEvents: ClassifiedEvent[] = events.map((event) => {
 });
 
 const displayEvents = formattedEvents.filter((event) => event.timing !== "past");
-const requestedCategory = normalizeCategory(Astro.url.searchParams.get("category") ?? "");
-const requestedTiming = Astro.url.searchParams.get("timing") ?? "";
 
 const categoryMap = new Map<string, string>();
 
@@ -378,17 +376,8 @@ const categories = [...categoryMap.entries()]
     return aIndex - bIndex;
   });
 
-const activeCategory = categoryMap.has(requestedCategory) ? requestedCategory : "";
-const activeTiming = requestedTiming === "ongoing" || requestedTiming === "upcoming" ? requestedTiming : "";
-const isFilteringActive = Boolean(activeCategory || activeTiming);
-const filteredEvents = displayEvents.filter((event) => {
-  const matchesCategory = !activeCategory || event.categories.map(normalizeCategory).includes(activeCategory);
-  const matchesTiming = !activeTiming || event.timing === activeTiming;
-
-  return matchesCategory && matchesTiming;
-});
-const ongoingEvents = filteredEvents.filter((event) => event.timing === "ongoing");
-const upcomingEvents = filteredEvents.filter((event) => event.timing === "upcoming");
+const ongoingEvents = displayEvents.filter((event) => event.timing === "ongoing");
+const upcomingEvents = displayEvents.filter((event) => event.timing === "upcoming");
 
 const mapsUrl = (event: EventRow) => {
   const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
@@ -428,11 +417,11 @@ const excerpt = (value: string | null) => {
 <BaseLayout>
   <main class="page-shell">
     <PageEdgeStrokes position="top" lines={6} />
-    <Header categories={categories} activeCategory={activeCategory} activeTiming={activeTiming} />
+    <Header categories={categories} />
 
     <section class="events-section">
 
-      <div class="empty-state empty-state--filtered" data-filter-empty hidden={filteredEvents.length > 0 || !isFilteringActive}>
+      <div class="empty-state empty-state--filtered" data-filter-empty hidden>
         <h3>No events match these filters</h3>
         <p>Choose another filter or click an active one again to show everything.</p>
       </div>

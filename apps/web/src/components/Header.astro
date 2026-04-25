@@ -18,22 +18,6 @@ const timingFilters = [
   { slug: "ongoing", label: "ongoing" },
   { slug: "upcoming", label: "upcoming" },
 ];
-
-const filterHref = ({
-  category = activeCategory,
-  timing = activeTiming,
-}: {
-  category?: string;
-  timing?: "ongoing" | "upcoming" | "";
-}) => {
-  const params = new URLSearchParams();
-
-  if (category) params.set("category", category);
-  if (timing) params.set("timing", timing);
-
-  const query = params.toString();
-  return query ? `/?${query}` : "/";
-};
 ---
 
 <header class="site-header" data-category-filter data-active-category={activeCategory} data-active-timing={activeTiming}>
@@ -71,30 +55,22 @@ const filterHref = ({
           {categories.map((category) => (
             <GeneralButton
               label={"#" + category.label}
-              href={filterHref({
-                category: activeCategory === category.slug ? "" : category.slug,
-              })}
               pressed={activeCategory === category.slug}
               showDot={true}
               dataCategory={category.slug}
               dataCategoryButton={true}
               dataFilterButton={true}
-              data-filter-link
             />
           ))}
           {timingFilters.map((filter) => (
             <GeneralButton
               label={filter.label}
-              href={filterHref({
-                timing: activeTiming === filter.slug ? "" : filter.slug as "ongoing" | "upcoming",
-              })}
               pressed={activeTiming === filter.slug}
               showDot={true}
               dataTiming={filter.slug}
               dataTimingButton={true}
               dataFilterButton={true}
               canPlaySound={true}
-              data-filter-link
             />
           ))}
         </div>
@@ -326,8 +302,6 @@ const filterHref = ({
 
     categoryButtons.forEach((button) => {
       button.addEventListener("click", () => {
-        if (button instanceof HTMLAnchorElement && button.hasAttribute("data-filter-link")) return;
-
         const nextCategory = button.dataset.category || "";
         activeCategory = activeCategory === nextCategory ? "" : nextCategory;
 
@@ -342,8 +316,6 @@ const filterHref = ({
 
     timingButtons.forEach((button) => {
       button.addEventListener("click", () => {
-        if (button instanceof HTMLAnchorElement && button.hasAttribute("data-filter-link")) return;
-
         const nextTiming = button.dataset.timing || "";
         activeTiming = activeTiming === nextTiming ? "" : nextTiming;
 
