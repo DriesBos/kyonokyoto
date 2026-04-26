@@ -69,6 +69,8 @@ const skipDeploy = hasFlag("--skip-deploy");
 const genericLimit = getArg("generic-limit", "6");
 const buildHookUrl = env.NETLIFY_BUILD_HOOK_URL ?? env.WEB_REDEPLOY_HOOK_URL ?? null;
 
+await runStep("Pull latest code", "git", ["pull", "--ff-only"]);
+
 if (!skipSync) {
   await runStep("Sync sources", "node", ["scripts/sync-sources.mjs"]);
 }
