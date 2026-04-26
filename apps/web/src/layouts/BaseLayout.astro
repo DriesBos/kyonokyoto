@@ -10,10 +10,11 @@ type Props = {
 
 const {
   title = "Kyō no Kyōto",
-  description = "Kyōto cultural calendar.",
+  description = "Enjoy Kyōto fondly with KyōNoKyōto culture calendar",
 } = Astro.props;
 
 const appName = "KyōNoKyōto";
+const ogImage = new URL("/og.png", Astro.url).href;
 
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 ---
@@ -82,6 +83,14 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     </script>
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
   </head>
   <body>
     <AmbientBloom />
