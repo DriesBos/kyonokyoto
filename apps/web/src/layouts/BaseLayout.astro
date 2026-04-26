@@ -91,6 +91,13 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImage} />
+    <script is:inline type="text/partytown" src="https://www.googletagmanager.com/gtag/js?id=G-4EYJPD08Y4" async></script>
+    <script is:inline type="text/partytown">
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-4EYJPD08Y4');
+    </script>
   </head>
   <body>
     <AmbientBloom />
