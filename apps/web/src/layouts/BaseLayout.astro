@@ -49,6 +49,7 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <script is:inline>
       (() => {
+        history.scrollRestoration = "manual";
         const storageKey = "kyo-theme";
         const root = document.documentElement;
         const themeColor = document.querySelector("meta[data-theme-color]");
