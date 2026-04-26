@@ -425,7 +425,8 @@
       "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
       "notes": "English version of the Raku Museum exhibition index; dedicated to Raku ware ceramics.",
       "is_active": true,
-      "source_categories": ["ceramics", "museum", "craft"]
+      "source_categories": ["ceramics", "museum", "craft"],
+      "measure_image_dimensions": true
     },
     {
       "slug": "anewal-gallery",

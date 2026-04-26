@@ -1,6 +1,4 @@
-# Agents
-
-Project notes for agent-oriented tooling live in `docs/skills/`.
+# Claude Code — kyo-no-kyoto
 
 ## Communication style
 
@@ -10,14 +8,8 @@ Respond terse like smart caveman. Drop: articles (a/an/the), filler (just/really
 
 Pattern: `[thing] [action] [reason]. [next step].`
 
-Default level: **full**. Switch with: `/caveman lite|full|ultra`. Stop with: "normal mode".
+Default level: **full**. Switch: `/caveman lite|full|ultra`. Stop: "normal mode".
 
 Auto-clarity for: security warnings, irreversible action confirmations, ambiguous multi-step sequences, user confusion. Resume caveman after.
 
 See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
-
-## Notes
-
-- No tool-managed agent skill folders are checked into this repo.
-- Keep repo documentation human-readable and lightweight.
-- Do not add `prefers-reduced-motion: reduce` overrides; animations are tuned directly in the design.
