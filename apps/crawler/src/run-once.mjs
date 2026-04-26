@@ -428,7 +428,7 @@ function parseEnglishMonthDateRangeWithOptionalStartYear(dateText) {
     .trim();
 
   const match = cleaned.match(
-    /([A-Za-z]+)\s+(\d{1,2})(?:,\s*(\d{4}))?\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/,
+    /([A-Za-z]+)\s+(\d{1,2})(?:,\s*(\d{4}))?\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})\s*,\s*(\d{4})/,
   );
 
   if (!match) {
@@ -1796,12 +1796,10 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
   }
 
   const englishRow =
-    topRows.find(
-      (row) => /[A-Za-z]/.test(row.title) && /Dates:/i.test(row.bodyText),
-    ) ?? topRows[0];
+    topRows.find((row) => /exhib/i.test(row.title)) ?? topRows[0];
   const bilingualTitle = topRows[0]?.title ?? englishRow.title;
   const englishTitle = englishRow.title;
-  const dateTextMatch = englishRow.bodyText.match(/Dates:\s*([^\n]+)/i);
+  const dateTextMatch = englishRow.bodyText.match(/Dates[：:]\s*([^\n<]+)/i);
   const dateText = dateTextMatch?.[1]?.trim() ?? 'See source page';
   const detailYear = detailUrl.match(/20\d{2}/)?.[0];
   const pageYear = englishRow.bodyText.match(/20\d{2}/)?.[0];
@@ -1809,13 +1807,16 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
     timeZone: 'Asia/Tokyo',
     year: 'numeric',
   }).format(new Date());
-  const parsedDateRange = parseEnglishMonthDateRangeWithWeekdays(dateText);
-  const parsedDates = parsedDateRange.startDate
-    ? parsedDateRange
-    : parseEnglishMonthDayRangeWithYear(
-        dateText,
-        detailYear ?? pageYear ?? currentJapanYear,
-      );
+  const parsedDateRange =
+    parseEnglishMonthDateRangeWithWeekdays(dateText).startDate
+      ? parseEnglishMonthDateRangeWithWeekdays(dateText)
+      : parseDottedDateRange(dateText).startDate
+        ? parseDottedDateRange(dateText)
+        : parseEnglishMonthDayRangeWithYear(
+            dateText,
+            detailYear ?? pageYear ?? currentJapanYear,
+          );
+  const parsedDates = parsedDateRange;
   const openText =
     englishRow.bodyText.match(/Open:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
   const description = englishRow.bodyText
@@ -3122,12 +3123,53 @@ function extractKyotophonieEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function parseKankakariTitleDate(title) {
+  // Matches: "M/D-D" (same month) or "M/D-M/D" (cross-month), optional "YYYY/" prefix
+  const pattern = /(?:(\d{4})\/)?(\d{1,2})\/(\d{1,2})-(?:(\d{1,2})\/)?(\d{1,2})/;
+  const match = title.match(pattern);
+
+  if (!match) return null;
+
+  const [fullMatch, explicitYear, sm, sd, em, ed] = match;
+  const currentYear = new Date().getFullYear();
+  const startMonth = parseInt(sm, 10);
+  const endMonth = em ? parseInt(em, 10) : startMonth;
+  let year = explicitYear ? parseInt(explicitYear, 10) : currentYear;
+  const endYear = endMonth < startMonth ? year + 1 : year;
+
+  const startDate = `${year}-${String(startMonth).padStart(2, '0')}-${sd.padStart(2, '0')}`;
+  const endDate = `${endYear}-${String(endMonth).padStart(2, '0')}-${ed.padStart(2, '0')}`;
+  const cleanTitle = title.slice(0, match.index).trim();
+
+  return {
+    cleanTitle: cleanTitle || title,
+    dateText: fullMatch,
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
 function extractKankakariEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const firstImageUrl = event.image_urls?.[0] ?? null;
+  const parsedTitle = parseKankakariTitleDate(event.title ?? '');
 
   return {
     ...event,
+    ...(parsedTitle ? {
+      title: parsedTitle.cleanTitle,
+      date_text: parsedTitle.dateText,
+      start_date: parsedTitle.startDate,
+      end_date: parsedTitle.endDate,
+      calendar_starts_at: parsedTitle.calendarStartsAt,
+      calendar_ends_at: parsedTitle.calendarEndsAt,
+      ...buildScheduleFields({
+        startDate: parsedTitle.startDate,
+        endDate: parsedTitle.endDate,
+      }),
+    } : {}),
     primary_image_url: firstImageUrl,
     image_urls: firstImageUrl ? [firstImageUrl] : [],
   };

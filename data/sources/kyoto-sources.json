@@ -397,21 +397,6 @@
       "source_categories": ["art", "gallery"]
     },
     {
-      "slug": "chushin-bijutsu",
-      "name": "Chushin Museum of Art",
-      "source_type": "museum",
-      "language": "ja",
-      "base_url": "https://www.chushin.co.jp/bijyutu/exhibition/index.html",
-      "start_urls": ["https://www.chushin.co.jp/bijyutu/exhibition/index.html"],
-      "allowed_domains": ["www.chushin.co.jp", "chushin.co.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/bijyutu/exhibition/"],
-      "notes": "Bank-affiliated art museum with exhibition index at /bijyutu/exhibition/index.html.",
-      "is_active": true,
-      "source_categories": ["art", "museum"],
-      "measure_image_dimensions": true
-    },
-    {
       "slug": "raku-museum",
       "name": "Raku Museum",
       "source_type": "museum",
@@ -461,12 +446,12 @@
       "name": "Insho-Domoto Museum of Fine Arts",
       "source_type": "museum",
       "language": "ja",
-      "base_url": "https://insho-domoto.com/schedule/",
-      "start_urls": ["https://insho-domoto.com/schedule/"],
+      "base_url": "https://insho-domoto.com/exhibitions/",
+      "start_urls": ["https://insho-domoto.com/exhibitions/"],
       "allowed_domains": ["insho-domoto.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
-      "notes": "Use the schedule listing as the entry point, but prefer linked exhibition detail pages under `/exhibitions/<id>/`.",
+      "notes": "Use the exhibitions listing as the entry point for exhibition detail pages under `/exhibitions/<id>/`.",
       "is_active": true,
       "source_categories": ["art", "museum"]
     },
