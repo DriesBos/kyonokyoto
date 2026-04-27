@@ -101,6 +101,80 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <AmbientBloom />
     <slot />
     <script>
+      if (!window.__siteCursorBound) {
+        const supportsSiteCursor = window.matchMedia("(hover: hover) and (pointer: fine)");
+        const activeCursorSelector = [
+          ".general-button:not(.general-button--disabled):not([aria-disabled='true']):not([disabled])",
+          ".page-edge-strokes__scroll-top:not([disabled])",
+          "a[href]",
+          "button:not([disabled])",
+        ].join(",");
+        let cursorDot = null;
+        let cursorEnabled = false;
+
+        const ensureCursorDot = () => {
+          if (cursorDot) return cursorDot;
+
+          cursorDot = document.createElement("div");
+          cursorDot.className = "site-cursor-dot";
+          cursorDot.setAttribute("aria-hidden", "true");
+          document.body.append(cursorDot);
+          return cursorDot;
+        };
+
+        const setCursorScale = (target) => {
+          const dot = ensureCursorDot();
+          let scale = 1;
+
+          if (target instanceof Element) {
+            scale = target.closest(activeCursorSelector) ? 0.5 : 1;
+          }
+
+          dot.style.setProperty("--cursor-dot-scale", String(scale));
+        };
+
+        const handlePointerMove = (event) => {
+          const dot = ensureCursorDot();
+          dot.style.setProperty("--cursor-dot-x", `${event.clientX}px`);
+          dot.style.setProperty("--cursor-dot-y", `${event.clientY}px`);
+          dot.style.opacity = "1";
+          setCursorScale(event.target);
+        };
+
+        const handlePointerLeave = () => {
+          if (cursorDot) cursorDot.style.opacity = "0";
+        };
+
+        const handlePointerOver = (event) => {
+          setCursorScale(event.target);
+        };
+
+        const syncSiteCursor = () => {
+          if (supportsSiteCursor.matches) {
+            ensureCursorDot();
+            if (cursorEnabled) return;
+
+            document.addEventListener("pointermove", handlePointerMove, { passive: true });
+            document.addEventListener("pointerover", handlePointerOver, { passive: true });
+            document.addEventListener("pointerleave", handlePointerLeave, { passive: true });
+            cursorEnabled = true;
+            return;
+          }
+
+          cursorDot?.remove();
+          cursorDot = null;
+          document.removeEventListener("pointermove", handlePointerMove);
+          document.removeEventListener("pointerover", handlePointerOver);
+          document.removeEventListener("pointerleave", handlePointerLeave);
+          cursorEnabled = false;
+        };
+
+        syncSiteCursor();
+        supportsSiteCursor.addEventListener("change", syncSiteCursor);
+        window.__siteCursorBound = true;
+      }
+    </script>
+    <script>
       const elasticLinesEnabled = false;
 
       // Temporary kill switch so the decorative lines stay static.

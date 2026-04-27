@@ -81,6 +81,8 @@ $type-scale-ratio: 1.618
   --page-padding-y: 0.5rem
 
   --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23fd69ba'/%3E%3C/svg%3E") 12 12, auto
+  --cursor-dot-size: 24px
+  --cursor-dot-scale: 1
   --dot-button: 1.5rem
   --dot-card: max(2rem, 5vmin)
   color-scheme: light
@@ -136,6 +138,47 @@ main
   display: flex
   flex-direction: column
   gap: 0
+
+@media (hover: hover) and (pointer: fine)
+  :root
+    --dot-cursor: none
+
+  html,
+  body,
+  html *,
+  html *::before,
+  html *::after,
+  svg,
+  svg *
+    cursor: none !important
+
+.site-cursor-dot
+  position: fixed
+  z-index: 2147483647
+  top: 0
+  left: 0
+  width: var(--cursor-dot-size)
+  height: var(--cursor-dot-size)
+  border-radius: 50%
+  pointer-events: none
+  opacity: 0
+  transform: translate3d(var(--cursor-dot-x, 0), var(--cursor-dot-y, 0), 0) translate(-50%, -50%)
+  transition: opacity 120ms ease
+  will-change: transform, opacity
+
+  &::before
+    content: ""
+    position: absolute
+    inset: 0
+    border-radius: inherit
+    background: #fd69ba
+    transform: scale(var(--cursor-dot-scale))
+    transition: transform 150ms ease
+    will-change: transform
+
+@media (hover: none), (pointer: coarse)
+  .site-cursor-dot
+    display: none
 
 .ambient-bloom-field
   position: absolute
@@ -483,7 +526,8 @@ a
   max-width: 100%
   margin: 0
   padding: 0.25rem
-  padding-bottom: 0.5rem
+  padding-bottom: 0.73rem
+  padding-right: var(--control-gap)
   background: var(--main-background)
   color: var(--main-color)
   font-size: var(--type-body-size)
