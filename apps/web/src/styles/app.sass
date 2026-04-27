@@ -11,7 +11,6 @@ $fluid-type-intercept: $fluid-type-min-size - (math.div($fluid-type-slope, 100) 
 $image-placeholder: #dcdcdc
 $type-scale-base: 1rem
 $type-scale-ratio: 1.618
-$grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E")
 
 @function type-step($step)
   $size: $type-scale-base
@@ -52,7 +51,6 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 :root
   --color-green: #138e00
   --color-beige: #efefef
-  --color-dark: #1f1f1f
 
   --main-color: var(--color-green)
   --main-background: var(--color-beige)
@@ -64,7 +62,6 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   --icon-size: 1.5625rem
 
   @media (any-pointer: coarse)
-    --color-dark: #000000
     --color-beige: #ffffff
     --control-gap: 1rem
 
@@ -86,20 +83,7 @@ $grain-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
   --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23fd69ba'/%3E%3C/svg%3E") 12 12, auto
   --dot-button: 1.5rem
   --dot-card: max(2rem, 5vmin)
-  --grain-texture: #{$grain-texture}
-  --grain-background-image: none
-
-:root[data-theme='dark']
-  --main-color: var(--color-green)
-  --main-background: var(--color-dark)
-  --stroke: var(--color-green)
-  --grain-background-image: var(--grain-texture)
-
-:root[data-theme-ready='true'] body,
-:root[data-theme-ready='true'] .site-header,
-:root[data-theme-ready='true'] .page-shell,
-:root[data-theme-ready='true'] .page-edge-strokes__scroll-top
-  transition: background-color 1s ease, color 1s ease, border-color 1s ease
+  color-scheme: light
 
 *,
 *::before,
@@ -260,9 +244,6 @@ a
   margin: 0 auto
   padding: var(--page-padding-y) var(--page-padding-x)
   background-color: var(--main-background)
-  background-image: var(--grain-background-image)
-  background-size: 180px 180px
-  background-repeat: repeat
 
 @keyframes site-header-logo-shrink
   from
@@ -287,9 +268,6 @@ a
   gap: 1.5rem
   padding: var(--stroke-gap) 0
   background-color: var(--main-background)
-  background-image: var(--grain-background-image)
-  background-size: 180px 180px
-  background-repeat: repeat
   overflow: visible
   &::after
     content: ""

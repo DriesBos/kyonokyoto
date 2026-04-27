@@ -44,12 +44,6 @@ const timingFilters = [
             showDot={true}
             dataAmbientSoundButton={true}
           />
-          <GeneralButton
-            label="color"
-            pressed={false}
-            showDot={true}
-            data-theme-toggle
-          />
         </div>
         <div class="category-filter__options" id="category-filter-options" data-filter-options>
           {categories.map((category) => (
@@ -99,15 +93,12 @@ const timingFilters = [
     const timingButtons = Array.from(root.querySelectorAll("[data-timing-button]"));
     const buttons = [...timingButtons, ...headerCategoryButtons];
     const disclosure = root.querySelector("[data-filter-disclosure]");
-    const themeToggleButtons = Array.from(root.querySelectorAll("[data-theme-toggle]"));
     const filterPanel = root.querySelector("[data-filter-options]");
     const cards = Array.from(document.querySelectorAll("[data-event-card]"));
     const groups = Array.from(document.querySelectorAll("[data-event-group]"));
     const divider = document.querySelector("[data-event-divider]");
     const filteredEmptyState = document.querySelector("[data-filter-empty]");
     const countLabel = document.querySelector("[data-event-count]");
-    const themeRoot = document.documentElement;
-    const themeColorMeta = document.querySelector("meta[data-theme-color]");
 
     const total = cards.length;
     let activeCategory = root instanceof HTMLElement ? root.dataset.activeCategory || "" : "";
@@ -126,36 +117,6 @@ const timingFilters = [
       const filteringActive = isFilteringActive();
       disclosure.setAttribute("aria-pressed", String(isExpanded || filteringActive));
       disclosure.dataset.filteringActive = String(filteringActive);
-    };
-
-    const themeStorageKey = "kyo-theme";
-    const isDarkTheme = () => themeRoot.getAttribute("data-theme") === "dark";
-
-    const syncThemeButtons = () => {
-      const isActive = isDarkTheme();
-
-      themeToggleButtons.forEach((button) => {
-        if (!(button instanceof HTMLElement)) return;
-        button.setAttribute("aria-pressed", String(isActive));
-        button.dataset.themeState = isActive ? "dark" : "light";
-        const label = button.querySelector(".general-button__label");
-        if (label) {
-          label.textContent = isActive ? "dark" : "light";
-        }
-      });
-    };
-
-    const setTheme = (nextTheme) => {
-      const theme = nextTheme === "dark" ? "dark" : "light";
-      themeRoot.setAttribute("data-theme", theme);
-      themeRoot.style.colorScheme = theme;
-      themeColorMeta?.setAttribute("content", theme === "dark" ? "#1f1f1f" : "#EFEFEF");
-
-      try {
-        localStorage.setItem(themeStorageKey, theme);
-      } catch {}
-
-      syncThemeButtons();
     };
 
     const setFilterDisclosureExpanded = (nextExpanded) => {
@@ -339,14 +300,6 @@ const timingFilters = [
       });
     }
 
-    themeToggleButtons.forEach((button) => {
-      if (!(button instanceof HTMLElement)) return;
-
-      button.addEventListener("click", () => {
-        setTheme(isDarkTheme() ? "light" : "dark");
-      });
-    });
-
     const initialActiveLabels = [
       timingButtons.find((button) => button.dataset.timing === activeTiming),
       categoryButtons.find((button) => button.dataset.category === activeCategory),
@@ -357,7 +310,6 @@ const timingFilters = [
 
     updateCount(total, initialActiveLabels.join(" + "));
     syncFilterDisclosureButtonState();
-    syncThemeButtons();
 
     const stickyOffset = () => {
       const pagePaddingY = Number.parseFloat(

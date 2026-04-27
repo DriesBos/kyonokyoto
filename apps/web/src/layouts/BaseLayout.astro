@@ -40,7 +40,7 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#EFEFEF" data-theme-color />
+    <meta name="theme-color" content="#EFEFEF" />
     <meta name="application-name" content={appName} />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -49,30 +49,7 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <meta name="generator" content={Astro.generator} />
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <script is:inline>
-      (() => {
-        history.scrollRestoration = "manual";
-        const storageKey = "kyo-theme";
-        const root = document.documentElement;
-        const themeColor = document.querySelector("meta[data-theme-color]");
-        let theme = "light";
-
-        try {
-          const storedTheme = localStorage.getItem(storageKey);
-          if (storedTheme === "light" || storedTheme === "dark") {
-            theme = storedTheme;
-          }
-        } catch {}
-
-        root.dataset.theme = theme;
-        root.style.colorScheme = theme;
-        themeColor?.setAttribute("content", theme === "dark" ? "#1f1f1f" : "#EFEFEF");
-
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            root.dataset.themeReady = "true";
-          });
-        });
-      })();
+      history.scrollRestoration = "manual";
     </script>
     <script is:inline>
       if ("serviceWorker" in navigator) {
