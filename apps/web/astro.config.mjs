@@ -7,6 +7,9 @@ import partytown from '@astrojs/partytown';
 export default defineConfig({
   output: 'server',
   adapter: netlify(),
+  devToolbar: {
+    enabled: false,
+  },
   integrations: [
     partytown({ config: { forward: ['dataLayer.push'] } }),
   ],
