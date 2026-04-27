@@ -10,6 +10,7 @@ type Props = {
 const { position, lines = 4, showScrollTop = false } = Astro.props;
 const strokeCount = Math.max(0, Math.floor(lines));
 const hasScrollTop = position === "bottom" && showScrollTop;
+const hasSiteCredit = position === "bottom";
 ---
 
 <div class:list={["page-edge-strokes", `page-edge-strokes--${position}`, hasScrollTop && "page-edge-strokes--interactive"]}>
@@ -22,6 +23,19 @@ const hasScrollTop = position === "bottom" && showScrollTop;
       <button class="page-edge-strokes__scroll-top" type="button" aria-label="Scroll to top" data-scroll-top-button>
         <Icon name="arrow-long" rotation="top" />
       </button>
+    ) : null
+  }
+
+  {
+    hasSiteCredit ? (
+      <div class="page-edge-strokes__credit">
+        <p>
+          Site by{" "}
+          <a href="https://driesbos.com" target="_blank" rel="noopener noreferrer">
+            Dries Bos
+          </a>
+        </p>
+      </div>
     ) : null
   }
 </div>

@@ -15,6 +15,7 @@ const {
 
 const appName = "KyōNoKyōto";
 const ogImage = new URL("/og.png", Astro.url).href;
+const shouldRegisterServiceWorker = import.meta.env.PROD;
 
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 ---
@@ -51,15 +52,33 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <script is:inline>
       history.scrollRestoration = "manual";
     </script>
-    <script is:inline>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js").catch(() => {
-            // Ignore registration failures so the app still loads normally.
-          });
-        });
-      }
-    </script>
+    {
+      shouldRegisterServiceWorker ? (
+        <script is:inline>
+          if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+              navigator.serviceWorker.register("/sw.js").catch(() => {
+                // Ignore registration failures so the app still loads normally.
+              });
+            });
+          }
+        </script>
+      ) : (
+        <script is:inline>
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+              registrations.forEach((registration) => registration.unregister());
+            });
+          }
+
+          if ("caches" in window) {
+            caches.keys().then((keys) => {
+              keys.filter((key) => key.startsWith("kyo-no-kyoto")).forEach((key) => caches.delete(key));
+            });
+          }
+        </script>
+      )
+    }
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
