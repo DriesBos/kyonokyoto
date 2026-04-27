@@ -45,7 +45,13 @@ const timingFilters = [
             dataAmbientSoundButton={true}
           />
         </div>
-        <div class="category-filter__options" id="category-filter-options" data-filter-options>
+        <div
+          class="category-filter__options"
+          id="category-filter-options"
+          data-filter-options
+          aria-hidden="true"
+          inert
+        >
           {categories.map((category) => (
             <GeneralButton
               label={"#" + category.label}
