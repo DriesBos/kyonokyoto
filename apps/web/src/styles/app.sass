@@ -492,13 +492,11 @@ a
   min-height: calc(var(--icon-size) * 2)
 
 .page-edge-strokes__scroll-top
-  justify-self: end
-  align-self: end
   display: grid
   place-items: center
   width: calc(var(--icon-size) + 1rem)
   height: calc(var(--icon-size) * 2 + 1rem)
-  margin-block-start: calc((var(--icon-size) * -2) - 1rem - var(--stroke-gap))
+  margin: 0
   padding: 0.25rem
   border: 0
   appearance: none
@@ -507,7 +505,6 @@ a
   z-index: +1
   color: currentColor
   cursor: var(--dot-cursor)
-
   &:hover,
   &:active,
   &:focus-visible
@@ -517,18 +514,32 @@ a
   &:focus-visible
     box-shadow: inset 0 0 0 var(--stroke-width) var(--stroke)
 
-.page-edge-strokes__credit
+.page-edge-strokes__footer
   position: absolute
-  inset-inline-start: 0
-  inset-block-end: 0
+  left: 0
+  bottom: 0
+  right: 0
   z-index: 1
-  display: inline-flex
-  width: max-content
+  display: flex
+  flex-direction: row
+  align-items: flex-end
+  justify-content: space-between
+  gap: var(--control-gap)
   max-width: 100%
+
+.page-edge-strokes__left
+  display: flex
+  flex-direction: row
+  flex-wrap: wrap
+  align-items: flex-end
+  gap: 4rem
+
+.page-edge-strokes__credit,
+.page-edge-strokes__note
+  display: inline-flex
   margin: 0
-  padding: 0.25rem
-  padding-bottom: 0.73rem
-  padding-right: var(--control-gap)
+  padding: 0.25rem var(--control-gap)
+  padding-bottom: 0
   background: var(--main-background)
   color: var(--main-color)
   font-size: var(--type-body-size)
@@ -543,6 +554,15 @@ a
     padding: 0 1px 3px
     border-bottom: var(--stroke-width) solid var(--stroke)
     text-decoration: none
+
+.page-edge-strokes__credit
+  padding-left: 0
+  padding-right: var(--control-gap)
+
+.page-edge-strokes__note
+  padding-bottom: .25rem
+  @media (max-width: 425px)
+    display: none
 
 .section-heading
   display: flex
@@ -563,7 +583,7 @@ a
     margin: 0
 
   p
-    margin-top: 0.75rem
+    margin-top: 0.5rem
 
 .empty-state--filtered
   border-top: 0

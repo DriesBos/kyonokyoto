@@ -19,22 +19,28 @@ const hasSiteCredit = position === "bottom";
   ))}
 
   {
-    hasScrollTop ? (
-      <button class="page-edge-strokes__scroll-top" type="button" aria-label="Scroll to top" data-scroll-top-button>
-        <Icon name="arrow-long" rotation="top" />
-      </button>
-    ) : null
-  }
-
-  {
     hasSiteCredit ? (
-      <div class="page-edge-strokes__credit">
-        <p>
-          Site by{" "}
-          <a href="https://driesbos.com" target="_blank" rel="noopener noreferrer">
-            Dries Bos
-          </a>
-        </p>
+      <div class="page-edge-strokes__footer">
+        <div class="page-edge-strokes__left">
+            <div class="page-edge-strokes__credit">
+            <p>
+              Site by{" "}
+              <a href="https://driesbos.com" target="_blank" rel="noopener noreferrer">
+                Dries Bos
+              </a>
+            </p>
+          </div>
+          <div class="page-edge-strokes__note">
+            <p>Enjoy Kyōto Culture</p>
+          </div>
+        </div>
+        {
+          hasScrollTop ? (
+            <button class="page-edge-strokes__scroll-top" type="button" aria-label="Scroll to top" data-scroll-top-button>
+              <Icon name="arrow-long" rotation="top" />
+            </button>
+          ) : null
+        }
       </div>
     ) : null
   }
