@@ -530,11 +530,14 @@ a
 .page-edge-strokes__left
   display: flex
   flex-direction: row
-  flex-wrap: wrap
+  flex-wrap: nowrap
   align-items: flex-end
   gap: 4rem
   @media (max-width: 425px)
-    gap: 1rem
+    width: 100%
+    gap: unset
+    justify-content: space-around
+
 
 .page-edge-strokes__credit,
 .page-edge-strokes__note
@@ -560,6 +563,9 @@ a
 .page-edge-strokes__credit
   padding-left: 0
   padding-right: var(--control-gap)
+  @media screen and ( max-width: 425px )
+    padding-left: var(--control-gap)
+    
 
 .page-edge-strokes__note
   padding-bottom: .25rem
