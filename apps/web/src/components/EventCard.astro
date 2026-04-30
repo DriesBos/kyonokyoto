@@ -372,6 +372,16 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       return dot;
     };
 
+    const randomBetween = (min, max) => min + Math.random() * (max - min);
+
+    const setOrganicDotShape = (dot) => {
+      const variant = Math.floor(Math.random() * 3) + 1;
+      dot.style.setProperty("--dot-mask", `var(--dot-mask-${variant})`);
+      dot.style.setProperty("--dot-rotation", `${randomBetween(-18, 18).toFixed(2)}deg`);
+      dot.style.setProperty("--dot-scale-x", randomBetween(0.94, 1.06).toFixed(3));
+      dot.style.setProperty("--dot-scale-y", randomBetween(0.96, 1.08).toFixed(3));
+    };
+
     const hasActiveCardBefore = (card) =>
       Array.from(document.querySelectorAll(`${cardSelector}[data-active='true']`)).some((activeCard) => {
         if (!(activeCard instanceof HTMLElement) || activeCard === card) return false;
@@ -394,6 +404,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         dot.style.setProperty("--event-card-dot-translate-y", "-50%");
       }
 
+      setOrganicDotShape(dot);
       dot.hidden = false;
     };
 

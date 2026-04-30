@@ -50,7 +50,8 @@ $type-scale-ratio: 1.618
 
 :root
   --color-green: #138e00
-  --color-dark-green: #107000
+  --color-dark-green-text: #106600
+  --color-dark-green-dot: #107000
   // --color-pink: #fd69ba
   --color-pink: #EF7BA7
   --color-beige: #efefef
@@ -86,6 +87,13 @@ $type-scale-ratio: 1.618
   --page-padding-y: 0.5rem
 
   --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23EF7BA7'/%3E%3C/svg%3E") 12 12, auto
+  --dot-mask-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='63' height='63' viewBox='0 0 63 63'%3E%3Cpath d='M35.6423 0.0300276C48.2437 0.501075 58.715 9.52914 62.1384 21.644C65.1909 32.4465 58.3914 42.4162 49.5953 49.4079C38.9332 57.8828 25.6193 67.1092 14.1122 59.8182C0.985474 51.5009 -3.01613 34.0102 2.24325 19.4051C7.05885 6.03244 21.4164 -0.501747 35.6423 0.0300276Z' fill='black'/%3E%3C/svg%3E")
+  --dot-mask-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='63' viewBox='0 0 64 63'%3E%3Cpath d='M31.593 0.920265C40.5925 0.463048 50.8047 -2.10275 57.4107 4.03377C64.1093 10.2563 63.7229 20.7851 62.7734 29.8847C61.9341 37.9276 58.1454 45.0365 52.5261 50.8448C46.7959 56.7678 39.7839 61.2551 31.593 62.1139C22.4252 63.0752 12.1955 62.3589 5.76265 55.7482C-0.625424 49.1836 -0.235473 39.0384 0.230601 29.8847C0.665877 21.336 1.98466 12.334 8.26866 6.53043C14.3788 0.887481 23.2913 1.34203 31.593 0.920265Z' fill='black'/%3E%3C/svg%3E")
+  --dot-mask-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='63' height='64' viewBox='0 0 63 64'%3E%3Cpath d='M39.7348 0.184949C52.3336 1.32214 58.1132 14.5373 61.5051 26.724C64.3427 36.9189 63.0894 47.9679 54.8995 54.6697C44.9552 62.8071 31.3992 67.0744 20.488 60.2883C6.87291 51.8205 -3.67355 36.5518 1.21622 21.2822C6.15212 5.86847 23.6155 -1.27001 39.7348 0.184949Z' fill='black'/%3E%3C/svg%3E")
+  --dot-mask: var(--dot-mask-1)
+  --dot-rotation: 0deg
+  --dot-scale-x: 1
+  --dot-scale-y: 1
   --cursor-dot-size: 24px
   --cursor-dot-scale: 1
   --dot-button: 1.5rem
@@ -93,11 +101,11 @@ $type-scale-ratio: 1.618
   color-scheme: light
 
 :root[data-theme='pink']
-  --main-color: var(--color-dark-green)
+  --main-color: var(--color-dark-green-text)
   --main-background: var(--color-pink)
-  --stroke: var(--color-dark-green)
-  --dot-color: var(--color-dark-green)
-  --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%2381d742'/%3E%3C/svg%3E") 12 12, auto
+  --stroke: var(--color-dark-green-text)
+  --dot-color: var(--color-dark-green-dot)
+  --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23107000'/%3E%3C/svg%3E") 12 12, auto
 
 *,
 *::before,
@@ -173,7 +181,6 @@ main
   left: 0
   width: var(--cursor-dot-size)
   height: var(--cursor-dot-size)
-  border-radius: 50%
   pointer-events: none
   opacity: 0
   transform: translate3d(var(--cursor-dot-x, 0), var(--cursor-dot-y, 0), 0) translate(-50%, -50%)
@@ -184,8 +191,9 @@ main
     content: ""
     position: absolute
     inset: 0
-    border-radius: inherit
     background: var(--dot-color)
+    mask: var(--dot-mask-1) center / contain no-repeat
+    -webkit-mask: var(--dot-mask-1) center / contain no-repeat
     transform: scale(var(--cursor-dot-scale))
     transition: transform 150ms ease, background-color var(--transition-theme)
     will-change: transform
@@ -447,10 +455,12 @@ a
   top: var(--general-button-dot-top, 50%)
   width: var(--dot-button)
   height: var(--dot-button)
-  border-radius: 50%
   background: var(--dot-color)
+  mask: var(--dot-mask) center / contain no-repeat
+  -webkit-mask: var(--dot-mask) center / contain no-repeat
   opacity: 0
-  transform: translate(-50%, -50%)
+  transform: translate(-50%, -50%) rotate(var(--dot-rotation)) scaleX(var(--dot-scale-x)) scaleY(var(--dot-scale-y))
+  transform-origin: center
   transition: opacity 140ms ease, background-color var(--transition-theme)
 
 .general-button[aria-pressed='true'] .general-button__dot
@@ -940,10 +950,12 @@ a
   z-index: 20
   width: var(--dot-card)
   height: var(--dot-card)
-  border-radius: 50%
   background: var(--dot-color)
+  mask: var(--dot-mask) center / contain no-repeat
+  -webkit-mask: var(--dot-mask) center / contain no-repeat
   transition: background-color var(--transition-theme)
-  transform: translate(-50%, var(--event-card-dot-translate-y, -50%))
+  transform: translate(-50%, var(--event-card-dot-translate-y, -50%)) rotate(var(--dot-rotation)) scaleX(var(--dot-scale-x)) scaleY(var(--dot-scale-y))
+  transform-origin: center
   pointer-events: none
 
 @media (min-width: $desktop-breakpoint)
