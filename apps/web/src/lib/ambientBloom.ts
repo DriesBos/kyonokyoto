@@ -29,22 +29,26 @@ type AudioContextWindow = Window &
   };
 
 const scale = [
-  { note: "A3", frequency: 220 },
-  { note: "C4", frequency: 261.63 },
-  { note: "D4", frequency: 293.66 },
-  { note: "E4", frequency: 329.63 },
-  { note: "G4", frequency: 392 },
-  { note: "A4", frequency: 440 },
-  { note: "C5", frequency: 523.25 },
-  { note: "D5", frequency: 587.33 },
-  { note: "E5", frequency: 659.25 },
-  { note: "G5", frequency: 783.99 },
+  { note: 'A3', frequency: 220 },
+  { note: 'C4', frequency: 261.63 },
+  { note: 'D4', frequency: 293.66 },
+  { note: 'E4', frequency: 329.63 },
+  { note: 'G4', frequency: 392 },
+  { note: 'A4', frequency: 440 },
+  { note: 'C5', frequency: 523.25 },
+  { note: 'D5', frequency: 587.33 },
+  { note: 'E5', frequency: 659.25 },
+  { note: 'G5', frequency: 783.99 },
 ];
 
-const randomBetween = (min: number, max: number) => min + Math.random() * (max - min);
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const randomBetween = (min: number, max: number) =>
+  min + Math.random() * (max - min);
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
 
-export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions = {}) => {
+export const createAmbientBloomEngine = ({
+  onNote,
+}: AmbientBloomEngineOptions = {}) => {
   let context: AudioContext | null = null;
   let analyser: AnalyserNode | null = null;
   let masterGain: GainNode | null = null;
@@ -65,7 +69,7 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
       window.AudioContext || (window as AudioContextWindow).webkitAudioContext;
 
     if (!AudioContextClass) {
-      throw new Error("This browser does not support the Web Audio API.");
+      throw new Error('This browser does not support the Web Audio API.');
     }
 
     context = new AudioContextClass();
@@ -82,7 +86,7 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     wetGain.gain.value = 0.2;
     delay.delayTime.value = 0.46;
     delayFeedback.gain.value = 0.36;
-    delayFilter.type = "lowpass";
+    delayFilter.type = 'lowpass';
     delayFilter.frequency.value = 1800;
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = 0.88;
@@ -108,13 +112,21 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     return range[index];
   };
 
-  const emitNote = ({ viewportX, velocity, notify = true }: AmbientNoteOptions = {}) => {
+  const emitNote = ({
+    viewportX,
+    velocity,
+    notify = true,
+  }: AmbientNoteOptions = {}) => {
     const audioContext = ensureContext();
     if (!active || !masterGain || !dryGain || !delay) return;
 
     const now = audioContext.currentTime;
     const selected = chooseInteractionNote();
-    const noteVelocity = clamp(velocity ?? randomBetween(0.58, 0.82), 0.48, 0.82);
+    const noteVelocity = clamp(
+      velocity ?? randomBetween(0.58, 0.82),
+      0.48,
+      0.82,
+    );
     const duration = randomBetween(2.2, 3.6);
     const noteViewportX = clamp(viewportX ?? randomBetween(0.1, 0.9), 0.1, 0.9);
     const viewportY = randomBetween(0.14, 0.86);
@@ -127,10 +139,13 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     const gain = audioContext.createGain();
     const panner = audioContext.createStereoPanner();
 
-    oscillator.type = "sine";
+    oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(selected.frequency, now);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(gainPeak * noteVelocity, now + attackDuration);
+    gain.gain.exponentialRampToValueAtTime(
+      gainPeak * noteVelocity,
+      now + attackDuration,
+    );
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     panner.pan.setValueAtTime(pan, now);
 
@@ -158,7 +173,10 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     noteId += 1;
   };
 
-  const playInteraction = ({ viewportX = 0.5, velocity = 0.7 }: AmbientInteractionOptions = {}) => {
+  const playInteraction = ({
+    viewportX = 0.5,
+    velocity = 0.7,
+  }: AmbientInteractionOptions = {}) => {
     if (!active) return;
 
     emitNote({ viewportX, velocity, notify: false });
@@ -168,16 +186,15 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
     const audioContext = ensureContext();
     active = true;
 
-    if (audioContext.state !== "running") {
+    if (audioContext.state !== 'running') {
       await audioContext.resume();
     }
 
     if (masterGain) {
       const now = audioContext.currentTime;
       masterGain.gain.cancelScheduledValues(now);
-      masterGain.gain.setTargetAtTime(0.56, now, 0.42);
+      masterGain.gain.setTargetAtTime(0.75, now, 0.42);
     }
-
   };
 
   const stop = async () => {
@@ -193,7 +210,7 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
 
     await new Promise((resolve) => window.setTimeout(resolve, 520));
 
-    if (!active && context.state === "running") {
+    if (!active && context.state === 'running') {
       await context.suspend();
     }
   };
@@ -231,7 +248,7 @@ export const createAmbientBloomEngine = ({ onNote }: AmbientBloomEngineOptions =
   const dispose = async () => {
     active = false;
 
-    if (context && context.state !== "closed") {
+    if (context && context.state !== 'closed') {
       await context.close();
     }
 
