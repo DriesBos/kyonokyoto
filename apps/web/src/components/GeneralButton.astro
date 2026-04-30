@@ -23,6 +23,7 @@ type Props = {
   dataTiming?: string;
   dataTimingButton?: boolean;
   dataFilterButton?: boolean;
+  dataThemeButton?: boolean;
   dataAmbientSoundButton?: boolean;
   canPlaySound?: boolean;
   ariaControls?: string;
@@ -47,6 +48,7 @@ const {
   dataTiming,
   dataTimingButton = false,
   dataFilterButton = false,
+  dataThemeButton = false,
   dataAmbientSoundButton = false,
   canPlaySound = false,
   ariaControls,
@@ -68,6 +70,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-theme-button={dataThemeButton ? "" : undefined}
       data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
       data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
@@ -87,6 +90,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-theme-button={dataThemeButton ? "" : undefined}
       data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
       data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
@@ -108,6 +112,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-theme-button={dataThemeButton ? "" : undefined}
       data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
       data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}

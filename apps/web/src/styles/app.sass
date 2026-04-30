@@ -50,10 +50,15 @@ $type-scale-ratio: 1.618
 
 :root
   --color-green: #138e00
+  --color-dark-green: #107000
+  // --color-pink: #fd69ba
+  --color-pink: #EF7BA7
   --color-beige: #efefef
 
   --main-color: var(--color-green)
   --main-background: var(--color-beige)
+  --dot-color: var(--color-pink)
+  --transition-theme: 0.5s ease
 
   --stroke-width: 2px
   --stroke: var(--color-green)
@@ -80,12 +85,19 @@ $type-scale-ratio: 1.618
   --page-padding-x: 0.5rem
   --page-padding-y: 0.5rem
 
-  --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23fd69ba'/%3E%3C/svg%3E") 12 12, auto
+  --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23EF7BA7'/%3E%3C/svg%3E") 12 12, auto
   --cursor-dot-size: 24px
   --cursor-dot-scale: 1
   --dot-button: 1.5rem
   --dot-card: max(2rem, 5vmin)
   color-scheme: light
+
+:root[data-theme='pink']
+  --main-color: var(--color-dark-green)
+  --main-background: var(--color-pink)
+  --stroke: var(--color-dark-green)
+  --dot-color: var(--color-dark-green)
+  --dot-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%2381d742'/%3E%3C/svg%3E") 12 12, auto
 
 *,
 *::before,
@@ -105,6 +117,7 @@ html
   overflow-x: clip
   overscroll-behavior: none
   overscroll-behavior-x: none
+  transition: background var(--transition-theme)
 
 html::-webkit-scrollbar,
 body::-webkit-scrollbar
@@ -130,6 +143,7 @@ body
   overflow-x: clip
   overscroll-behavior: none
   overscroll-behavior-x: none
+  transition: background var(--transition-theme), color var(--transition-theme)
 
 main
   position: relative
@@ -171,9 +185,9 @@ main
     position: absolute
     inset: 0
     border-radius: inherit
-    background: #fd69ba
+    background: var(--dot-color)
     transform: scale(var(--cursor-dot-scale))
-    transition: transform 150ms ease
+    transition: transform 150ms ease, background-color var(--transition-theme)
     will-change: transform
 
 @media (hover: none), (pointer: coarse)
@@ -287,6 +301,7 @@ a
   margin: 0 auto
   padding: var(--page-padding-y) var(--page-padding-x)
   background-color: var(--main-background)
+  transition: background-color var(--transition-theme)
 
 @keyframes site-header-logo-shrink
   from
@@ -312,6 +327,7 @@ a
   padding: var(--stroke-gap) 0
   background-color: var(--main-background)
   overflow: visible
+  transition: background-color var(--transition-theme)
   &::after
     content: ""
     position: absolute
@@ -322,7 +338,7 @@ a
     opacity: 0
     pointer-events: none
     @supports not (animation-timeline: scroll())
-      transition: opacity 165ms ease
+      transition: opacity 165ms ease, border-color var(--transition-theme)
     @supports (animation-timeline: scroll())
       animation: site-header-border-appear linear both
       animation-timeline: scroll(root)
@@ -410,6 +426,7 @@ a
   cursor: var(--dot-cursor)
   pointer-events: auto
   overflow: visible
+  transition: border-color var(--transition-theme), color var(--transition-theme)
 
 .general-button__label
   position: relative
@@ -431,10 +448,10 @@ a
   width: var(--dot-button)
   height: var(--dot-button)
   border-radius: 50%
-  background: #fd69ba
+  background: var(--dot-color)
   opacity: 0
   transform: translate(-50%, -50%)
-  transition: opacity 140ms ease
+  transition: opacity 140ms ease, background-color var(--transition-theme)
 
 .general-button[aria-pressed='true'] .general-button__dot
   opacity: 1
@@ -470,6 +487,7 @@ a
     stroke: var(--stroke)
     stroke-width: var(--stroke-width)
     vector-effect: non-scaling-stroke
+    transition: stroke var(--transition-theme)
 
 .page-edge-strokes
   position: relative
@@ -480,6 +498,7 @@ a
     display: block
     width: 100%
     border-top: var(--stroke-width) solid var(--stroke)
+    transition: border-color var(--transition-theme)
 
 .page-edge-strokes--top
   padding-top: 0
@@ -505,6 +524,7 @@ a
   z-index: +1
   color: currentColor
   cursor: var(--dot-cursor)
+  transition: background-color var(--transition-theme), color var(--transition-theme), box-shadow var(--transition-theme)
   &:hover,
   &:active,
   &:focus-visible
@@ -548,6 +568,7 @@ a
   color: var(--main-color)
   font-size: var(--type-body-size)
   line-height: 1
+  transition: background-color var(--transition-theme), color var(--transition-theme)
   p
     margin: 0
   a
@@ -558,6 +579,7 @@ a
     padding: 0 1px 3px
     border-bottom: var(--stroke-width) solid var(--stroke)
     text-decoration: none
+    transition: border-color var(--transition-theme)
 
 .page-edge-strokes__credit
   padding-left: 0
@@ -919,7 +941,8 @@ a
   width: var(--dot-card)
   height: var(--dot-card)
   border-radius: 50%
-  background: #fd69ba
+  background: var(--dot-color)
+  transition: background-color var(--transition-theme)
   transform: translate(-50%, var(--event-card-dot-translate-y, -50%))
   pointer-events: none
 

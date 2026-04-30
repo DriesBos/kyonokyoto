@@ -44,6 +44,13 @@ const timingFilters = [
             showDot={true}
             dataAmbientSoundButton={true}
           />
+          <GeneralButton
+            label="theme"
+            pressed={false}
+            showDot={true}
+            dataThemeButton={true}
+            canPlaySound={true}
+          />
         </div>
         <div
           class="category-filter__options"
@@ -99,6 +106,7 @@ const timingFilters = [
     const timingButtons = Array.from(root.querySelectorAll("[data-timing-button]"));
     const buttons = [...timingButtons, ...headerCategoryButtons];
     const disclosure = root.querySelector("[data-filter-disclosure]");
+    const themeButton = root.querySelector("[data-theme-button]");
     const filterPanel = root.querySelector("[data-filter-options]");
     const cards = Array.from(document.querySelectorAll("[data-event-card]"));
     const groups = Array.from(document.querySelectorAll("[data-event-group]"));
@@ -123,6 +131,44 @@ const timingFilters = [
       const filteringActive = isFilteringActive();
       disclosure.setAttribute("aria-pressed", String(isExpanded || filteringActive));
       disclosure.dataset.filteringActive = String(filteringActive);
+    };
+
+    const themeStorageKey = "kyo-no-kyoto-theme";
+    const themeName = "pink";
+    const defaultThemeColor = "#EFEFEF";
+    const pinkThemeColor = "#EF7BA7";
+    const metaThemeColor = document.querySelector("meta[name='theme-color']");
+
+    const isPinkTheme = () => document.documentElement.dataset.theme === themeName;
+
+    const syncThemeButtonState = () => {
+      if (!(themeButton instanceof HTMLElement)) return;
+
+      themeButton.setAttribute("aria-pressed", String(isPinkTheme()));
+    };
+
+    const setPinkTheme = (isActive, persist = true) => {
+      if (isActive) {
+        document.documentElement.dataset.theme = themeName;
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
+
+      metaThemeColor?.setAttribute("content", isActive ? pinkThemeColor : defaultThemeColor);
+
+      if (persist) {
+        try {
+          if (isActive) {
+            localStorage.setItem(themeStorageKey, themeName);
+          } else {
+            localStorage.removeItem(themeStorageKey);
+          }
+        } catch {
+          // Ignore storage failures; the current page state still updates.
+        }
+      }
+
+      syncThemeButtonState();
     };
 
     const setFilterDisclosureExpanded = (nextExpanded) => {
@@ -303,6 +349,13 @@ const timingFilters = [
 
       disclosure.addEventListener("click", () => {
         setFilterDisclosureExpanded(!isFilterExpanded());
+      });
+    }
+
+    if (themeButton instanceof HTMLElement) {
+      setPinkTheme(isPinkTheme(), false);
+      themeButton.addEventListener("click", () => {
+        setPinkTheme(!isPinkTheme());
       });
     }
 

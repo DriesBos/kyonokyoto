@@ -42,6 +42,21 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#EFEFEF" />
+    <script is:inline>
+      (() => {
+        const themeStorageKey = "kyo-no-kyoto-theme";
+        const themeName = "pink";
+
+        try {
+          if (localStorage.getItem(themeStorageKey) === themeName) {
+            document.documentElement.dataset.theme = themeName;
+            document.querySelector("meta[name='theme-color']")?.setAttribute("content", "#EF7BA7");
+          }
+        } catch {
+          // Ignore storage failures so first paint still works.
+        }
+      })();
+    </script>
     <meta name="application-name" content={appName} />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
