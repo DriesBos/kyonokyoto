@@ -475,6 +475,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
 
       closeFilterDisclosure();
       setMapVisible(false);
+      document.dispatchEvent(new CustomEvent("event-card:deactivate-all"));
     });
     getScrollRoot().addEventListener("scroll", syncStickyState, { passive: true });
     getScrollRoot().addEventListener("scroll", maybeCloseFilterOnScroll, { passive: true });

@@ -40,7 +40,8 @@ const normalizeCategory = (value: string) =>
     .replace(/^-+|-+$/g, "");
 
 const categorySlugs = event.categories.map(normalizeCategory);
-const imageUrls = (event.image_urls ?? []).filter(Boolean);
+const maxImagesPerCard = 3;
+const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
 const desktopImageHeightRem = 10;
 const mobileImageHeightRem = 7.5;
@@ -294,20 +295,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
     const canScrollMedia = (media) => media.scrollWidth > media.clientWidth + 1;
 
-    const syncMediaScrollableState = (media) => {
-      media.setAttribute("data-scrollable", String(canScrollMedia(media)));
-    };
-
-    const syncAllMediaScrollableStates = () => {
-      document.querySelectorAll(mediaSelector).forEach((media) => {
-        if (media instanceof HTMLElement) syncMediaScrollableState(media);
-      });
-    };
-
-    const queueMediaScrollableSync = () => {
-      window.requestAnimationFrame(syncAllMediaScrollableStates);
-    };
-
     const releaseMediaPointer = (pointerId, state) => {
       if (!state?.capturedPointer) return;
       if (typeof state.media.hasPointerCapture !== "function") return;
@@ -509,7 +496,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
           card.style.overflow = "";
           card.toggleAttribute("data-height-transitioning", false);
           content.style.height = "auto";
-          queueMediaScrollableSync();
         });
         fadeIn(fadeTargets, { delay: heightTransition.duration });
         return;
@@ -532,7 +518,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         card.style.overflow = "";
         card.toggleAttribute("data-height-transitioning", false);
         content.style.height = "0px";
-        queueMediaScrollableSync();
       });
     };
 
@@ -559,6 +544,13 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         if (otherCard.getAttribute("data-active") === String(shouldActivate)) return;
 
         animateCardState(otherCard, shouldActivate);
+      });
+    };
+
+    const deactivateAllCards = () => {
+      hideCardDot();
+      document.querySelectorAll(`${cardSelector}[data-active='true']`).forEach((card) => {
+        if (card instanceof HTMLElement) animateCardState(card, false);
       });
     };
 
@@ -613,26 +605,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       if (!(card instanceof HTMLElement)) return;
       setContentState(card, card.getAttribute("data-active") === "true");
     });
-    queueMediaScrollableSync();
-
-    if (typeof ResizeObserver === "function") {
-      const mediaResizeObserver = new ResizeObserver(queueMediaScrollableSync);
-      document.querySelectorAll(mediaSelector).forEach((media) => {
-        if (media instanceof HTMLElement) mediaResizeObserver.observe(media);
-      });
-      window.__eventCardMediaResizeObserver = mediaResizeObserver;
-    }
-
-    window.addEventListener("resize", queueMediaScrollableSync, { passive: true });
-    window.addEventListener("load", queueMediaScrollableSync, { once: true });
-    document.addEventListener(
-      "load",
-      (event) => {
-        const target = event.target;
-        if (target instanceof HTMLImageElement && target.closest(mediaSelector)) queueMediaScrollableSync();
-      },
-      true
-    );
 
     document.addEventListener("pointerdown", (event) => {
       const target = event.target;
@@ -780,6 +752,8 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       if (targetCard instanceof HTMLElement) activateCard(targetCard);
     });
 
+    document.addEventListener("event-card:deactivate-all", deactivateAllCards);
+
     window.__eventCardToggleBound = true;
   }
 
@@ -899,49 +873,50 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       contain-intrinsic-size: auto 14rem
 
     &__media
-      flex: 1 1 auto
-      display: flex
-      justify-content: flex-start
+      flex: 0 1 auto
+      display: grid
+      grid-auto-flow: column
+      grid-auto-columns: max-content
+      align-items: start
+      justify-content: start
       gap: var(--event-card-media-gap)
       min-width: 0
       max-height: var(--event-card-media-row-height-current)
-      max-width: 66%
+      inline-size: fit-content
+      max-inline-size: 66%
       overflow-x: auto
       overflow-y: hidden
       overscroll-behavior-x: contain
-      flex-wrap: nowrap
       pointer-events: auto
-      touch-action: pan-x
+      touch-action: auto
       -webkit-overflow-scrolling: touch
-      scrollbar-width: none
+      scrollbar-width: thin
 
       &::-webkit-scrollbar
-        display: none
-        width: 0
-        height: 0
+        height: 0.25rem
+
+      &::-webkit-scrollbar-thumb
+        background-color: currentColor
 
       @media screen and (max-width: $desktop-breakpoint)
-        max-width: 60%
+        max-inline-size: 60%
 
       @media screen and (max-width: $mobile-breakpoint)
-        max-width: 100%
-
-      &[data-scrollable='true']
-        overflow-x: scroll
+        max-inline-size: 100%
 
     &__image-frame
       position: relative
-      flex: 0 0 auto
+      display: block
+      width: max-content
       height: var(--event-card-media-row-height-current)
-      max-width: 100%
       overflow: hidden
-
-      &:first-child
-        margin-left: auto
+      pointer-events: auto
 
     &__image
+      display: block
       width: auto
       height: var(--event-card-media-row-height-current)
+      pointer-events: auto
 
     &__body
       flex: 1 1 auto
@@ -999,11 +974,8 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
     &__media
       flex-basis: auto
-      width: 100%
-      max-width: 100%
-
-    &__image-frame:first-child
-      margin-left: 0
+      inline-size: fit-content
+      max-inline-size: 100%
 
     &__body
       max-width: 100%
@@ -1038,8 +1010,5 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       &__media
         flex-basis: auto
-        width: 100%
-
-      &__image-frame:first-child
-        margin-left: 0
+        max-inline-size: 100%
 </style>
