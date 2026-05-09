@@ -50,6 +50,7 @@ const sourcesJson = JSON.stringify(sources);
     map: unknown | null;
     zIndex?: number | null;
     addEventListener?: (eventName: string, callback: () => void) => void;
+    addListener?: (eventName: string, callback: () => void) => unknown;
   };
 
   type AdvancedMarkerConstructor = new (options: {
@@ -57,6 +58,7 @@ const sourcesJson = JSON.stringify(sources);
     position: { lat: number; lng: number };
     title: string;
     content: HTMLElement;
+    gmpClickable?: boolean;
   }) => AdvancedMarkerInstance;
 
   type MapsWindow = Window &
@@ -269,6 +271,20 @@ const sourcesJson = JSON.stringify(sources);
         );
       };
 
+      let lastMarkerActivationSlug = "";
+      let lastMarkerActivationTime = 0;
+      const activateMarkerSource = (sourceSlug: string) => {
+        const now = performance.now();
+
+        if (lastMarkerActivationSlug === sourceSlug && now - lastMarkerActivationTime < 80) return;
+
+        lastMarkerActivationSlug = sourceSlug;
+        lastMarkerActivationTime = now;
+        highlightSource(sourceSlug, true);
+        activateSourceEvent(sourceSlug);
+        scrollToSourceEvent(sourceSlug);
+      };
+
       const markerRecords = sources.map((source) => {
         const content = createMarkerContent(source);
         const marker = new AdvancedMarkerElement({
@@ -276,14 +292,17 @@ const sourcesJson = JSON.stringify(sources);
           position: { lat: source.lat, lng: source.lng },
           title: source.name,
           content,
+          gmpClickable: true,
         });
         marker.zIndex = 0;
 
-        marker.addEventListener?.("gmp-click", () => {
-          highlightSource(source.slug, true);
-          activateSourceEvent(source.slug);
-          scrollToSourceEvent(source.slug);
+        content.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          activateMarkerSource(source.slug);
         });
+        marker.addEventListener?.("gmp-click", () => activateMarkerSource(source.slug));
+        marker.addListener?.("click", () => activateMarkerSource(source.slug));
 
         return { marker, source, content };
       });
@@ -361,7 +380,12 @@ const sourcesJson = JSON.stringify(sources);
         const detail = event.detail ?? {};
         const sourceSlug = typeof detail.sourceSlug === "string" ? detail.sourceSlug : "";
 
-        if (!detail.active || !sourceSlug) {
+        if (!detail.active) {
+          syncActiveCardHighlight();
+          return;
+        }
+
+        if (!sourceSlug) {
           clearHighlight();
           return;
         }
@@ -475,16 +499,14 @@ const sourcesJson = JSON.stringify(sources);
 
   :global(.map-marker__dot)
     display: block
+    box-sizing: border-box
     width: 100%
     height: 100%
     background: var(--color-pink)
-    border: var(--map-marker-border-width, 0) solid var(--color-green)
+    border: 2px solid var(--color-green)
     border-radius: 999px
     box-shadow: none
     transition: transform 160ms ease
-
-  :global(.map-marker[data-highlighted] .map-marker__dot)
-    --map-marker-border-width: 1px
 
   :global(.map-marker:hover .map-marker__dot),
   :global(.map-marker:focus-visible .map-marker__dot)
