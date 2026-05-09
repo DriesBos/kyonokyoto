@@ -1,0 +1,156 @@
+---
+import Icon from "./Icon.astro";
+import PageEdgeStrokes from "./PageEdgeStrokes.astro";
+
+type Props = {
+  lines?: number;
+  scrollTopLabel?: string;
+};
+
+const { lines = 24, scrollTopLabel = "Scroll to top" } = Astro.props;
+---
+
+<footer class="site-footer" data-site-footer>
+  <PageEdgeStrokes position="bottom" lines={lines} />
+  <div class="site-footer__content page-edge-strokes__footer">
+    <div class="site-footer__left page-edge-strokes__left">
+      <div class="site-footer__credit page-edge-strokes__credit">
+        <p>
+          Site by{" "}
+          <a href="https://driesbos.com" target="_blank" rel="noopener noreferrer">
+            Dries Bos
+          </a>
+        </p>
+      </div>
+      <div class="site-footer__note page-edge-strokes__note">
+        <p>Enjoy Kyōto Culture</p>
+      </div>
+    </div>
+    <button
+      class="site-footer__scroll-top page-edge-strokes__scroll-top"
+      type="button"
+      aria-label={scrollTopLabel}
+      data-scroll-top-button
+    >
+      <Icon name="arrow-long" rotation="top" />
+    </button>
+  </div>
+</footer>
+
+<script>
+  type ScrollTopWindow = Window &
+    typeof globalThis & {
+      __siteFooterScrollTopBound?: boolean;
+    };
+
+  const scrollTopWindow = window as ScrollTopWindow;
+
+  if (!scrollTopWindow.__siteFooterScrollTopBound) {
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const button = target.closest("[data-scroll-top-button]");
+      if (!(button instanceof HTMLElement)) return;
+
+      event.preventDefault();
+      const eventsSection = button.closest("[data-events-section]");
+      if (eventsSection instanceof HTMLElement) {
+        eventsSection.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    scrollTopWindow.__siteFooterScrollTopBound = true;
+  }
+</script>
+
+<style lang="sass">
+  .site-footer
+    position: relative
+    width: 100%
+    padding-bottom: var(--page-padding-y)
+
+  .site-footer__content
+    position: absolute
+    left: 0
+    right: 0
+    bottom: var(--page-padding-y)
+    z-index: 1
+    display: flex
+    flex-direction: row
+    align-items: flex-end
+    justify-content: space-between
+    gap: var(--control-gap)
+    max-width: 100%
+
+  .site-footer__left
+    display: flex
+    flex-direction: row
+    flex-wrap: nowrap
+    align-items: flex-end
+    gap: 4rem
+
+    @media (max-width: 425px)
+      width: 100%
+      gap: 1.5rem
+
+  .site-footer__credit,
+  .site-footer__note
+    display: inline-flex
+    margin: 0
+    padding: 0.25rem var(--control-gap)
+    padding-bottom: 0
+    background: var(--color-beige)
+    color: var(--color-green)
+    font-size: var(--type-body-size)
+    line-height: 1
+
+    p
+      margin: 0
+
+    a
+      display: inline-flex
+      align-items: center
+      justify-content: flex-start
+      gap: 4px
+      padding: 0 1px 3px
+      border-bottom: var(--stroke-width) solid var(--stroke)
+      text-decoration: none
+
+  .site-footer__credit
+    padding-left: 0
+    padding-right: var(--control-gap)
+
+    @media screen and (max-width: 425px)
+      padding-left: var(--control-gap)
+
+  .site-footer__note
+    padding-bottom: 0.25rem
+
+  .site-footer__scroll-top
+    display: grid
+    place-items: center
+    width: calc(var(--icon-size) + 1rem)
+    height: calc(var(--icon-size) * 2 + 1rem)
+    margin: 0
+    padding: 0.25rem
+    border: 0
+    appearance: none
+    -webkit-tap-highlight-color: transparent
+    background: var(--color-beige) !important
+    z-index: 1
+    color: currentColor
+    cursor: var(--dot-cursor)
+
+    &:hover,
+    &:active,
+    &:focus-visible
+      outline: none
+      background: var(--color-beige)
+
+    &:focus-visible
+      box-shadow: inset 0 0 0 var(--stroke-width) var(--stroke)
+</style>

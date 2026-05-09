@@ -1,16 +1,27 @@
 ---
 import Icon from "./Icon.astro";
 
+type Props = {
+  label?: string;
+  readyLabel?: string;
+  ariaLabel?: string;
+};
+
+const {
+  label = "upcoming",
+  readyLabel = "get ready!",
+  ariaLabel = "upcoming events",
+} = Astro.props;
 const items = Array.from({ length: 20 });
 const tracks = [
   {
-    label: "upcoming",
+    label,
     className: "time-divider__track--right",
     direction: "right",
     travel: 16,
   },
   {
-    label: "get ready!",
+    label: readyLabel,
     className: "time-divider__track--right",
     direction: "right",
     start: -28,
@@ -18,34 +29,34 @@ const tracks = [
     travel: 14,
   },
   {
-    label: "upcoming",
+    label,
     className: "time-divider__track--right",
     direction: "right",
     travel: 12,
   },
   {
-    label: "upcoming",
+    label,
     className: "time-divider__track--right",
     direction: "right",
     travel: 14,
     mobileOnly: true,
   },
   {
-    label: "upcoming",
+    label,
     className: "time-divider__track--right",
     direction: "right",
     travel: 17,
     mobileOnly: true,
   },
   {
-    label: "upcoming",
+    label,
     className: "time-divider__track--right",
     direction: "right",
     travel: 15,
     mobileOnly: true,
   },
   {
-    label: "upcoming",
+    label,
     className: "time-divider__track--right",
     direction: "right",
     travel: 19,
@@ -53,7 +64,7 @@ const tracks = [
     mobileHidden: true,
   },
   {
-    label: "upcoming",
+    label,
     className: "time-divider__track--right",
     direction: "right",
     travel: 11,
@@ -63,7 +74,7 @@ const tracks = [
 ];
 ---
 
-<astro-time-divider class="time-divider" aria-label="upcoming events" data-time-divider>
+<astro-time-divider class="time-divider" aria-label={ariaLabel} data-time-divider>
   <div class="time-divider__viewport" data-time-divider-viewport>
     <div class="time-divider__scroller" aria-hidden="true">
       {tracks.map((track) => (
@@ -111,6 +122,7 @@ const tracks = [
   gsap.registerPlugin(ScrollTrigger);
 
   const trackSelector = "[data-time-divider-track]";
+  const eventsSectionSelector = "[data-events-section]";
   const scrollScrubSeconds = 0.33;
   const layoutSettledFrameCount = 3;
 
@@ -230,6 +242,11 @@ const tracks = [
       return !this.closest("[hidden]") && this.getClientRects().length > 0 && this.offsetHeight > 0;
     }
 
+    getScrollRoot() {
+      const scrollRoot = this.closest(eventsSectionSelector);
+      return scrollRoot instanceof HTMLElement ? scrollRoot : null;
+    }
+
     buildAnimations() {
       this.cleanupAnimations();
 
@@ -242,16 +259,23 @@ const tracks = [
 
         if (!tracks.length) return;
 
+        const scrollRoot = this.getScrollRoot();
+        const scrollTriggerConfig: ScrollTrigger.Vars = {
+          id: "time-divider",
+          trigger: this,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: scrollScrubSeconds,
+          invalidateOnRefresh: true,
+        };
+
+        if (scrollRoot) {
+          scrollTriggerConfig.scroller = scrollRoot;
+        }
+
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
-          scrollTrigger: {
-            id: "time-divider",
-            trigger: this,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: scrollScrubSeconds,
-            invalidateOnRefresh: true,
-          },
+          scrollTrigger: scrollTriggerConfig,
         });
 
         tracks.forEach((track) => {
@@ -269,3 +293,67 @@ const tracks = [
     customElements.define("astro-time-divider", AstroTimeDivider);
   }
 </script>
+
+<style lang="sass">
+  $mobile-breakpoint: 768px
+
+  .time-divider
+    display: block
+    position: relative
+    width: 100%
+    overflow: clip
+
+    &__viewport
+      position: relative
+      display: flex
+      align-items: center
+      overflow: hidden
+
+    &__scroller
+      display: flex
+      flex-direction: column
+      justify-content: center
+      gap: 3rem
+      width: 100%
+      overflow: hidden
+      padding: 10vh 0
+
+    &__track
+      display: flex
+      width: max-content
+      gap: 2px
+
+      @media (hover: hover) and (pointer: fine)
+        will-change: transform
+
+      &--mobile-extra
+        display: none
+
+    &__group
+      display: flex
+      flex: 0 0 auto
+      align-items: center
+      gap: 2rem
+      padding-right: 4px
+      white-space: nowrap
+
+    :global(.time-divider__icon)
+      --icon-size: var(--type-title-size)
+
+    span
+      flex: 0 0 auto
+      font-size: var(--type-title-size)
+      line-height: 1
+      letter-spacing: 0
+
+  @media (max-width: $mobile-breakpoint)
+    .time-divider
+      &__scroller
+        gap: 2rem
+
+      &__track--mobile-extra
+        display: flex
+
+      &__track--mobile-hidden
+        display: none
+</style>

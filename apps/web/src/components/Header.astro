@@ -1,6 +1,9 @@
 ---
 import Logo from "./Logo.astro";
 import GeneralButton from "./GeneralButton.astro";
+import PageEdgeStrokes from "./PageEdgeStrokes.astro";
+import type { AppLocale } from "../lib/i18n";
+import { LOCALE_COOKIE, LOCALE_STORAGE_KEY, uiText } from "../lib/i18n";
 
 type CategoryOption = {
   slug: string;
@@ -8,82 +11,115 @@ type CategoryOption = {
 };
 
 type Props = {
-  categories: CategoryOption[];
+  categories?: CategoryOption[];
   activeCategory?: string;
   activeTiming?: "ongoing" | "upcoming" | "";
+  showFilters?: boolean;
+  showTimingFilters?: boolean;
+  compact?: boolean;
+  locale?: AppLocale;
 };
 
-const { categories, activeCategory = "", activeTiming = "" } = Astro.props;
-const timingFilters = [
-  { slug: "ongoing", label: "ongoing" },
-  { slug: "upcoming", label: "upcoming" },
-];
+const {
+  categories = [],
+  activeCategory = "",
+  activeTiming = "",
+  showFilters = true,
+  showTimingFilters = true,
+  compact = false,
+  locale = "en",
+} = Astro.props;
+const copy = uiText.en;
+const homeHref = `/${locale}/`;
+const localePathFor = (targetLocale: AppLocale) => `/${targetLocale}/`;
+const nextLocale: AppLocale = locale === "en" ? "ja" : "en";
+const languageLabels: Record<AppLocale, string> = {
+  en: "eng",
+  ja: "jp",
+};
+const timingFilters = showTimingFilters
+  ? [
+      { slug: "ongoing", label: copy.ongoing },
+      { slug: "upcoming", label: copy.upcoming },
+    ]
+  : [];
+const showFilterControls = showFilters && (categories.length > 0 || timingFilters.length > 0);
 ---
 
-<header class="site-header" data-category-filter data-active-category={activeCategory} data-active-timing={activeTiming}>
-  <a class="site-header__logo" href="/" aria-label="KyōNoKyōto home">
-    <Logo />
-  </a>
+<header class="headerWrapper" data-category-filter data-active-category={activeCategory} data-active-timing={activeTiming}>
+  <PageEdgeStrokes position="top" lines={6} />
+  <div class:list={["mainHeader", compact && "mainHeader--compact"]} data-main-header data-stuck={compact ? "" : undefined}>
+    <a class="mainHeader__logo" href={homeHref} aria-label={copy.homeAria}>
+      <Logo />
+    </a>
 
-  {
-    categories.length > 0 || timingFilters.length > 0 ? (
-      <div class="category-filter" aria-label="Filter events" role="group">
-        <div class="category-filter__toolbar">
-          <GeneralButton
-            class="site-header__filter-toggle"
-            label="filter"
-            pressed={false}
-            showDot={true}
-            data-filter-disclosure
-            aria-expanded="false"
-            aria-controls="category-filter-options"
-          />
-          <GeneralButton
-            label="sound"
-            pressed={false}
-            showDot={true}
-            dataAmbientSoundButton={true}
-          />
-          <GeneralButton
-            label="theme"
-            pressed={false}
-            showDot={true}
-            dataThemeButton={true}
-            canPlaySound={true}
-          />
-        </div>
-        <div
-          class="category-filter__options"
-          id="category-filter-options"
-          data-filter-options
-          aria-hidden="true"
-          inert
-        >
-          {categories.map((category) => (
+    <div class="category-filter" aria-label={showFilterControls ? copy.filtersAria : copy.controlsAria} role="group">
+      <div class="category-filter__toolbar">
+        {
+          showFilterControls ? (
             <GeneralButton
-              label={"#" + category.label}
-              pressed={activeCategory === category.slug}
+              class="mainHeader__filter-toggle"
+              label={copy.filter}
+              pressed={false}
               showDot={true}
-              dataCategory={category.slug}
-              dataCategoryButton={true}
-              dataFilterButton={true}
+              data-filter-disclosure
+              aria-expanded="false"
+              aria-controls="category-filter-options"
             />
-          ))}
-          {timingFilters.map((filter) => (
-            <GeneralButton
-              label={filter.label}
-              pressed={activeTiming === filter.slug}
-              showDot={true}
-              dataTiming={filter.slug}
-              dataTimingButton={true}
-              dataFilterButton={true}
-              canPlaySound={true}
-            />
-          ))}
-        </div>
+          ) : null
+        }
+        <GeneralButton
+          label={copy.map}
+          pressed={false}
+          showDot={true}
+          data-map-toggle
+          aria-expanded="false"
+          aria-controls="map-section"
+        />
+        <GeneralButton
+          label={languageLabels[locale]}
+          aria-label={`${copy.languageAria}: ${languageLabels[locale]}`}
+          data-locale-toggle
+          data-locale-cookie={LOCALE_COOKIE}
+          data-locale-storage={LOCALE_STORAGE_KEY}
+          data-locale-option={nextLocale}
+          data-locale-href={localePathFor(nextLocale)}
+        />
       </div>
-    ) : null
-  }
+      {
+        showFilterControls ? (
+          <div
+            class="category-filter__options"
+            id="category-filter-options"
+            data-filter-options
+            aria-hidden="true"
+            inert
+          >
+            {categories.map((category) => (
+              <GeneralButton
+                label={"#" + category.label}
+                pressed={activeCategory === category.slug}
+                showDot={true}
+                dataCategory={category.slug}
+                dataCategoryButton={true}
+                dataFilterButton={true}
+              />
+            ))}
+            {timingFilters.map((filter) => (
+              <GeneralButton
+                label={filter.label}
+                pressed={activeTiming === filter.slug}
+                showDot={true}
+                dataTiming={filter.slug}
+                dataTimingButton={true}
+                dataFilterButton={true}
+              />
+            ))}
+          </div>
+        ) : null
+      }
+    </div>
+  </div>
 </header>
 
 <script>
@@ -106,19 +142,32 @@ const timingFilters = [
     const timingButtons = Array.from(root.querySelectorAll("[data-timing-button]"));
     const buttons = [...timingButtons, ...headerCategoryButtons];
     const disclosure = root.querySelector("[data-filter-disclosure]");
-    const themeButton = root.querySelector("[data-theme-button]");
     const filterPanel = root.querySelector("[data-filter-options]");
     const cards = Array.from(document.querySelectorAll("[data-event-card]"));
     const groups = Array.from(document.querySelectorAll("[data-event-group]"));
     const divider = document.querySelector("[data-event-divider]");
     const filteredEmptyState = document.querySelector("[data-filter-empty]");
     const countLabel = document.querySelector("[data-event-count]");
+    const mapToggle = root.querySelector("[data-map-toggle]");
+    const contentContainer = document.querySelector("[data-content-container]");
+    const mapSection = document.querySelector("[data-map-section]");
+    const eventsSection = document.querySelector("[data-events-section]");
+    const mainHeader = root.querySelector("[data-main-header]");
 
     const total = cards.length;
     let activeCategory = root instanceof HTMLElement ? root.dataset.activeCategory || "" : "";
     let activeTiming = root instanceof HTMLElement ? root.dataset.activeTiming || "" : "";
     let filterExpandedScrollOrigin = null;
     const filterButtons = buttons.filter((button): button is HTMLElement => button instanceof HTMLElement);
+    const getScrollRoot = () => (eventsSection instanceof HTMLElement ? eventsSection : window);
+    const getScrollTop = () => {
+      const scrollRoot = getScrollRoot();
+      return scrollRoot instanceof HTMLElement ? scrollRoot.scrollTop : window.scrollY;
+    };
+    const getScrollHeight = () => {
+      const scrollRoot = getScrollRoot();
+      return scrollRoot instanceof HTMLElement ? scrollRoot.clientHeight : window.innerHeight;
+    };
 
     const isFilterExpanded = () =>
       disclosure instanceof HTMLElement && disclosure.getAttribute("aria-expanded") === "true";
@@ -133,50 +182,12 @@ const timingFilters = [
       disclosure.dataset.filteringActive = String(filteringActive);
     };
 
-    const themeStorageKey = "kyo-no-kyoto-theme";
-    const themeName = "pink";
-    const defaultThemeColor = "#EFEFEF";
-    const pinkThemeColor = "#EF7BA7";
-    const metaThemeColor = document.querySelector("meta[name='theme-color']");
-
-    const isPinkTheme = () => document.documentElement.dataset.theme === themeName;
-
-    const syncThemeButtonState = () => {
-      if (!(themeButton instanceof HTMLElement)) return;
-
-      themeButton.setAttribute("aria-pressed", String(isPinkTheme()));
-    };
-
-    const setPinkTheme = (isActive, persist = true) => {
-      if (isActive) {
-        document.documentElement.dataset.theme = themeName;
-      } else {
-        document.documentElement.removeAttribute("data-theme");
-      }
-
-      metaThemeColor?.setAttribute("content", isActive ? pinkThemeColor : defaultThemeColor);
-
-      if (persist) {
-        try {
-          if (isActive) {
-            localStorage.setItem(themeStorageKey, themeName);
-          } else {
-            localStorage.removeItem(themeStorageKey);
-          }
-        } catch {
-          // Ignore storage failures; the current page state still updates.
-        }
-      }
-
-      syncThemeButtonState();
-    };
-
     const setFilterDisclosureExpanded = (nextExpanded) => {
       if (!(disclosure instanceof HTMLElement)) return;
 
       disclosure.setAttribute("aria-expanded", String(nextExpanded));
       syncFilterDisclosureButtonState();
-      filterExpandedScrollOrigin = nextExpanded ? window.scrollY : null;
+      filterExpandedScrollOrigin = nextExpanded ? getScrollTop() : null;
       animateFilterDisclosure(nextExpanded);
     };
 
@@ -345,17 +356,10 @@ const timingFilters = [
 
     if (disclosure && filterPanel) {
       syncFilterPanelState();
-      filterExpandedScrollOrigin = isFilterExpanded() ? window.scrollY : null;
+      filterExpandedScrollOrigin = isFilterExpanded() ? getScrollTop() : null;
 
       disclosure.addEventListener("click", () => {
         setFilterDisclosureExpanded(!isFilterExpanded());
-      });
-    }
-
-    if (themeButton instanceof HTMLElement) {
-      setPinkTheme(isPinkTheme(), false);
-      themeButton.addEventListener("click", () => {
-        setPinkTheme(!isPinkTheme());
       });
     }
 
@@ -370,6 +374,70 @@ const timingFilters = [
     updateCount(total, initialActiveLabels.join(" + "));
     syncFilterDisclosureButtonState();
 
+    const setMapVisible = (nextVisible) => {
+      if (!(contentContainer instanceof HTMLElement) || !(mapSection instanceof HTMLElement)) return;
+
+      const isVisible = contentContainer.hasAttribute("data-map-visible");
+      if (isVisible === nextVisible) return;
+
+      if (nextVisible) {
+        mapSection.hidden = false;
+        mapSection.removeAttribute("data-map-closing");
+        mapSection.removeAttribute("inert");
+
+        window.requestAnimationFrame(() => {
+          contentContainer.toggleAttribute("data-map-visible", true);
+        });
+      } else {
+        mapSection.toggleAttribute("data-map-closing", true);
+        contentContainer.toggleAttribute("data-map-visible", false);
+        mapSection.toggleAttribute("inert", true);
+
+        const hideAfterTransition = (event) => {
+          if (event.target !== mapSection) return;
+          if (contentContainer.hasAttribute("data-map-visible")) {
+            mapSection.removeEventListener("transitionend", hideAfterTransition);
+            return;
+          }
+
+          mapSection.hidden = true;
+          mapSection.removeAttribute("data-map-closing");
+          mapSection.removeEventListener("transitionend", hideAfterTransition);
+        };
+
+        mapSection.addEventListener("transitionend", hideAfterTransition);
+        window.setTimeout(() => {
+          if (!contentContainer.hasAttribute("data-map-visible")) {
+            mapSection.hidden = true;
+            mapSection.removeAttribute("data-map-closing");
+            mapSection.removeEventListener("transitionend", hideAfterTransition);
+          }
+        }, 360);
+      }
+
+      mapSection.toggleAttribute("inert", !nextVisible);
+
+      if (mapToggle instanceof HTMLElement) {
+        mapToggle.setAttribute("aria-pressed", String(nextVisible));
+        mapToggle.setAttribute("aria-expanded", String(nextVisible));
+      }
+
+      if (nextVisible) {
+        window.setTimeout(() => {
+          document.dispatchEvent(new CustomEvent("map-layout:updated"));
+          window.dispatchEvent(new Event("resize"));
+        }, 280);
+      }
+    };
+
+    if (mapToggle instanceof HTMLElement) {
+      mapSection?.toggleAttribute("inert", true);
+      mapToggle.addEventListener("click", () => {
+        const nextVisible = !(contentContainer instanceof HTMLElement && contentContainer.hasAttribute("data-map-visible"));
+        setMapVisible(nextVisible);
+      });
+    }
+
     const stickyOffset = () => {
       const pagePaddingY = Number.parseFloat(
         getComputedStyle(document.documentElement).getPropertyValue("--page-padding-y")
@@ -378,16 +446,17 @@ const timingFilters = [
     };
 
     const syncStickyState = () => {
-      if (!(root instanceof HTMLElement)) return;
-      const isStuck = root.getBoundingClientRect().top <= stickyOffset() + 0.5;
-      root.toggleAttribute("data-stuck", isStuck);
+      if (!(mainHeader instanceof HTMLElement)) return;
+      const scrollRootTop = eventsSection instanceof HTMLElement ? eventsSection.getBoundingClientRect().top : 0;
+      const isStuck = mainHeader.getBoundingClientRect().top <= scrollRootTop + stickyOffset() + 0.5;
+      mainHeader.toggleAttribute("data-stuck", isStuck);
     };
 
     const maybeCloseFilterOnScroll = () => {
       if (filterExpandedScrollOrigin === null) return;
 
-      const scrollDelta = Math.abs(window.scrollY - filterExpandedScrollOrigin);
-      if (scrollDelta > window.innerHeight * 0.5) {
+      const scrollDelta = Math.abs(getScrollTop() - filterExpandedScrollOrigin);
+      if (scrollDelta > getScrollHeight() * 0.5) {
         closeFilterDisclosure();
       }
     };
@@ -405,8 +474,189 @@ const timingFilters = [
 
       closeFilterDisclosure();
     });
-    window.addEventListener("scroll", syncStickyState, { passive: true });
-    window.addEventListener("scroll", maybeCloseFilterOnScroll, { passive: true });
+    getScrollRoot().addEventListener("scroll", syncStickyState, { passive: true });
+    getScrollRoot().addEventListener("scroll", maybeCloseFilterOnScroll, { passive: true });
     window.addEventListener("resize", syncStickyState);
+  }
+</script>
+
+<style lang="sass">
+  $mobile-breakpoint: 768px
+
+  .headerWrapper
+    display: contents
+    :global(.page-edge-strokes--top)
+      margin-bottom: calc(var(--page-padding-y) - var(--events-section-gap, 0px))
+
+  .mainHeader
+    position: sticky
+    top: 0
+    z-index: 100
+    isolation: isolate
+    display: flex
+    justify-content: space-between
+    align-items: flex-start
+    gap: 1.5rem
+    padding: var(--stroke-gap) 0
+    background-color: var(--color-beige)
+    overflow: visible
+
+    &::after
+      content: ""
+      position: absolute
+      z-index: 2
+      inset-inline: 0
+      bottom: 0
+      border-top: var(--stroke-width) solid var(--stroke)
+      opacity: 0
+      pointer-events: none
+
+      transition: opacity 165ms ease
+
+    &[data-stuck]
+      :global(.mainHeader__logo svg)
+        height: calc(var(--type-title-size) * 1.22)
+
+      &::after
+        opacity: 1
+
+    &__logo
+      position: relative
+      z-index: 1
+      flex: 0 0 auto
+      display: block
+      padding: 0.125rem 0.25rem 0 0
+
+    &__logo :global(svg)
+      width: auto
+      height: calc(var(--type-logo-size) * 1.22)
+      display: block
+      transition: height 165ms ease
+
+  .mainHeader--compact
+    &::after
+      opacity: 1
+
+    :global(.mainHeader__logo svg)
+      height: calc(var(--type-title-size) * 1.22)
+
+  .category-filter
+    position: relative
+    z-index: 1
+    display: flex
+    flex-direction: column
+    align-items: flex-end
+    gap: var(--stroke-gap)
+    margin-left: auto
+    min-width: 0
+    overflow: visible
+
+    &__toolbar
+      display: inline-flex
+      align-items: flex-start
+      justify-content: flex-end
+      flex-wrap: wrap
+      gap: var(--control-gap)
+
+    &__options
+      display: flex
+      flex-wrap: wrap
+      justify-content: flex-end
+      gap: var(--control-gap)
+      width: min(100%, 48rem)
+      height: 0
+      overflow: hidden
+      pointer-events: none
+
+      &[data-mobile-open]
+        overflow: visible
+        pointer-events: auto
+
+  @media (max-width: $mobile-breakpoint)
+    .mainHeader
+      gap: 1rem
+      flex-direction: row
+      align-items: flex-start
+
+      &__logo :global(svg)
+        height: calc(var(--type-logo-size) * 0.96)
+
+    :global(.mainHeader__filter-toggle)
+      display: inline-flex
+      align-items: center
+      justify-content: flex-start
+
+    .category-filter
+      flex: 1 1 auto
+      flex-direction: column
+      align-items: flex-end
+
+      &__toolbar,
+      &__options
+        width: 100%
+
+      &__options
+        height: 0
+        pointer-events: none
+
+        :global([data-filter-button])
+          opacity: 0
+          pointer-events: none
+
+      &__options[data-mobile-open]
+        pointer-events: auto
+
+        :global([data-filter-button])
+          pointer-events: auto
+</style>
+
+<script>
+  import { LOCALE_COOKIE, LOCALE_STORAGE_KEY } from "../lib/i18n";
+
+  if (!window.__localeToggleBound) {
+    const localeCookie = LOCALE_COOKIE;
+    const localeStorageKey = LOCALE_STORAGE_KEY;
+    const maxAgeSeconds = 60 * 60 * 24 * 365;
+    const normalizeLocale = (value) => {
+      if (typeof value !== "string") return null;
+      const normalized = value.trim().toLowerCase();
+      if (normalized === "jp" || normalized.startsWith("ja")) return "ja";
+      if (normalized.startsWith("en")) return "en";
+      return null;
+    };
+    const getCookieLocale = () => {
+      const match = document.cookie
+        .split(";")
+        .map((part) => part.trim())
+        .find((part) => part.startsWith(`${localeCookie}=`));
+
+      return normalizeLocale(match ? decodeURIComponent(match.slice(localeCookie.length + 1)) : "");
+    };
+    const setLocale = (locale) => {
+      document.cookie = `${localeCookie}=${encodeURIComponent(locale)}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
+      window.localStorage?.setItem(localeStorageKey, locale);
+    };
+    const renderedLocale = normalizeLocale(document.documentElement.lang) ?? "en";
+
+    if (getCookieLocale() !== renderedLocale) {
+      setLocale(renderedLocale);
+    }
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const button = target.closest("[data-locale-option]");
+      if (!(button instanceof HTMLElement)) return;
+
+      const nextLocale = normalizeLocale(button.dataset.localeOption);
+      if (!nextLocale || nextLocale === renderedLocale) return;
+
+      event.preventDefault();
+      setLocale(nextLocale);
+      window.location.assign(button.dataset.localeHref || `/${nextLocale}/`);
+    });
+
+    window.__localeToggleBound = true;
   }
 </script>

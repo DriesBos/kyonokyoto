@@ -1,6 +1,5 @@
-const CACHE_NAME = "kyo-no-kyoto-v1";
+const CACHE_NAME = "kyo-no-kyoto-v2";
 const APP_SHELL = [
-  "/",
   "/site.webmanifest",
   "/favicon.svg",
   "/favicon-32x32.png",
@@ -56,11 +55,13 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const response = await fetch(request);
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(request, response.clone());
+          if (response.ok && !response.redirected && url.pathname !== "/" && url.pathname !== "/map") {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, response.clone());
+          }
           return response;
         } catch {
-          return (await caches.match(request)) ?? (await caches.match("/")) ?? Response.error();
+          return (await caches.match(request)) ?? (await caches.match("/en/")) ?? Response.error();
         }
       })(),
     );

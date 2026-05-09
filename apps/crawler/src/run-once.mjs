@@ -19,7 +19,17 @@ const appRoot = resolve(__dirname, '..');
 const envPath = resolve(appRoot, '.env');
 const crawl4AiFetchPath = resolve(__dirname, 'crawl4ai-fetch.py');
 let crawl4AiDisabled = false;
+let googleTranslationClientPromise = null;
 const domainFetchSchedule = new Map();
+const supportedTranslationLocales = ['en', 'ja'];
+const localizedEventFields = [
+  'title',
+  'description',
+  'institution_name',
+  'venue_name',
+  'address_text',
+  'date_text',
+];
 
 function parseEnvFile(contents) {
   const env = {};
@@ -68,6 +78,22 @@ function envFlag(env, name, fallback = true) {
   const value = env[name];
   if (value === undefined) return fallback;
   return !/^(0|false|no|off)$/i.test(String(value).trim());
+}
+
+function normalizeLocaleCode(value) {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'jp' || normalized.startsWith('ja')) return 'ja';
+  if (normalized.startsWith('en')) return 'en';
+  return null;
+}
+
+function getSourceLocale(source) {
+  return normalizeLocaleCode(source?.language) ?? 'ja';
+}
+
+function getMissingLocale(locale) {
+  return locale === 'ja' ? 'en' : 'ja';
 }
 
 function decodeHtml(value) {
@@ -1687,17 +1713,12 @@ function extractKacEvent(detailHtml, source, detailUrl) {
     ),
   ];
 
-  const artistSeed = title.split('個展')[0] ?? '';
-  const artistName =
-    artistSeed.replace(/^[A-ZＡ-Ｚ0-9０-９#＃\s]+/u, '').trim() || null;
-
   const parsedDates = parseJapaneseDateRange(dateText);
   const addressText = venueName ?? source.address_text ?? source.name;
   const directionsQuery = source.directions_query ?? `${addressText} Kyoto`;
 
   return {
     title,
-    artist_name: artistName,
     categories,
     description: stripTags(descriptionBlock),
     institution_name: source.name,
@@ -1743,7 +1764,6 @@ function extractSibasiEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: [category, source.source_type].filter(Boolean),
     description: extractGenericDescription(detailHtml),
     institution_name: source.name,
@@ -1844,7 +1864,6 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
 
   return {
     title: englishTitle || bilingualTitle,
-    artist_name: null,
     categories: ['exhibition', 'gallery'],
     description: description || extractGenericDescription(detailHtml),
     institution_name: source.name,
@@ -1937,7 +1956,6 @@ function extractHosooEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: [...new Set(categories.filter(Boolean))],
     description: description || extractGenericDescription(detailHtml),
     institution_name: source.name,
@@ -2015,7 +2033,6 @@ function extractZenbiEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: [
       ...new Set(
         ['exhibition', 'museum', exhibitionType.toLowerCase()].filter(Boolean),
@@ -2086,7 +2103,6 @@ function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: ['exhibition', 'gallery'],
     description: appointmentText
       ? `${appointmentText}\n\n${description}`.trim()
@@ -2173,7 +2189,6 @@ function extractKyohakuEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: ['exhibition', 'museum', 'special-exhibition'],
     description: description || extractGenericDescription(detailHtml),
     institution_name: source.name,
@@ -2312,24 +2327,6 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
 
   const timeText =
     stripTags(extractDefinitionValue(detailHtml, 'Time') ?? '') || null;
-  const artistSection = detailHtml.match(
-    /<div class="tab_cont_inner post_artist">([\s\S]*?)<\/div>\s*<\/div>/i,
-  )?.[1];
-  const artistNames = artistSection
-    ? [
-        ...artistSection.matchAll(
-          /<h4 class="frame_heading">([\s\S]*?)<\/h4>/gi,
-        ),
-      ]
-        .map((match) => stripTags(match[1]))
-        .filter(Boolean)
-    : titleLines.slice(1).flatMap((line) =>
-        line
-          .split(/\s*,\s*/)
-          .map((value) => value.trim())
-          .filter(Boolean),
-      );
-
   const allImageUrls = finalizeImageUrls(
     [
       { url: extractMeta(detailHtml, 'og:image'), source: 'og:image' },
@@ -2367,7 +2364,6 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: artistNames.length ? artistNames.join(', ') : null,
     categories,
     description: stripTags(`${heading}\n\n${descriptionHtml}`),
     institution_name: source.name,
@@ -2411,7 +2407,6 @@ function extractDddEvent(detailHtml, source, detailUrl) {
 
     return {
       title: entry.title,
-      artist_name: null,
       categories: ['exhibition', 'gallery', 'design'],
       description:
         entry.seriesTitle ||
@@ -2469,7 +2464,6 @@ function extractDddEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: ['exhibition', 'gallery', 'design'],
     description,
     institution_name: source.name,
@@ -2614,7 +2608,6 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
 
   return {
     title,
-    artist_name: null,
     categories: ['exhibition', 'museum', 'modern-art'],
     description,
     institution_name: source.name,
@@ -2698,7 +2691,6 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
 
   return {
     title,
-    artist_name: null,
     categories: ['exhibition', 'museum'],
     description,
     institution_name: source.name,
@@ -2765,7 +2757,6 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: [source.source_type, 'needs-review'].filter(Boolean),
     description: extractGenericDescription(detailHtml),
     institution_name: source.name,
@@ -2987,7 +2978,6 @@ function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
 
   return {
     title: `Art Collaboration Kyoto${year ? ` ${year}` : ''}`,
-    artist_name: null,
     categories: ['art-fair', 'art'],
     description,
     institution_name: source.name,
@@ -3057,11 +3047,6 @@ function extractGalleryYamahonEvent(detailHtml, source, detailUrl) {
       .find((line) => /^MAP\s*:/i.test(line))
       ?.replace(/^MAP\s*:\s*/i, '')
       .trim() || source.name;
-  const artistName =
-    title
-      .replace(/^No\.\s*\d+\s*/i, '')
-      .split(':')[0]
-      ?.trim() || null;
   const paragraphs = [...detailHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
     .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
     .filter(Boolean);
@@ -3085,7 +3070,6 @@ function extractGalleryYamahonEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: artistName,
     categories: ['exhibition'],
     description,
     institution_name: source.name,
@@ -3327,7 +3311,6 @@ function extractChushinEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    artist_name: null,
     categories: [source.source_type, 'needs-review'].filter(Boolean),
     description,
     institution_name: source.name,
@@ -4194,6 +4177,157 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
   );
 }
 
+function buildEventTranslationPayload(eventId, locale, eventData) {
+  return {
+    event_id: eventId,
+    locale,
+    title: eventData.title,
+    description: eventData.description ?? null,
+    institution_name: eventData.institution_name,
+    venue_name: eventData.venue_name ?? null,
+    address_text: eventData.address_text ?? null,
+    date_text: eventData.date_text,
+    source_url: eventData.source_url,
+  };
+}
+
+async function upsertEventTranslation(env, eventId, locale, eventData) {
+  const normalizedLocale = normalizeLocaleCode(locale);
+  if (!normalizedLocale) return null;
+
+  const rows = await supabaseRequest({
+    env,
+    path: 'event_translations?on_conflict=event_id,locale',
+    method: 'POST',
+    body: [buildEventTranslationPayload(eventId, normalizedLocale, eventData)],
+  });
+
+  return rows?.[0] ?? null;
+}
+
+function getGoogleTranslateProjectId(env) {
+  return (
+    env.GOOGLE_TRANSLATE_PROJECT_ID ??
+    env.GOOGLE_CLOUD_PROJECT ??
+    env.GCLOUD_PROJECT ??
+    null
+  );
+}
+
+async function getGoogleTranslationClient() {
+  if (!googleTranslationClientPromise) {
+    googleTranslationClientPromise = import('@google-cloud/translate').then(
+      (module) => {
+        const TranslationServiceClient =
+          module.TranslationServiceClient ??
+          module.v3?.TranslationServiceClient ??
+          module.default?.TranslationServiceClient ??
+          module.default?.v3?.TranslationServiceClient;
+
+        if (!TranslationServiceClient) {
+          throw new Error(
+            'Could not find TranslationServiceClient in @google-cloud/translate',
+          );
+        }
+
+        return new TranslationServiceClient();
+      },
+    );
+  }
+
+  return googleTranslationClientPromise;
+}
+
+async function translateTextFields(env, fields, sourceLocale, targetLocale) {
+  const projectId = getGoogleTranslateProjectId(env);
+  if (!projectId) return null;
+
+  const entries = Object.entries(fields).filter(([, value]) => {
+    return typeof value === 'string' && value.trim();
+  });
+
+  if (!entries.length) return {};
+
+  const location = env.GOOGLE_TRANSLATE_LOCATION ?? 'global';
+  const client = await getGoogleTranslationClient();
+  const [response] = await client.translateText({
+    parent: `projects/${projectId}/locations/${location}`,
+    contents: entries.map(([, value]) => value),
+    mimeType: 'text/plain',
+    sourceLanguageCode: sourceLocale,
+    targetLanguageCode: targetLocale,
+  });
+  const translations = response?.translations ?? [];
+
+  return Object.fromEntries(
+    entries.map(([field], index) => [
+      field,
+      translations[index]?.translatedText ?? fields[field],
+    ]),
+  );
+}
+
+async function buildMachineTranslatedEvent(env, eventData, sourceLocale, targetLocale) {
+  const fields = Object.fromEntries(
+    localizedEventFields.map((field) => [field, eventData[field] ?? null]),
+  );
+  const translatedFields = await translateTextFields(
+    env,
+    fields,
+    sourceLocale,
+    targetLocale,
+  );
+
+  if (!translatedFields) return null;
+
+  return {
+    ...eventData,
+    ...translatedFields,
+    source_url: eventData.source_url,
+    title: translatedFields.title ?? eventData.title,
+    institution_name:
+      translatedFields.institution_name ?? eventData.institution_name,
+    date_text: translatedFields.date_text ?? eventData.date_text,
+  };
+}
+
+async function upsertEventTranslations(env, source, savedEvent, eventData) {
+  const sourceLocale = getSourceLocale(source);
+  const targetLocale = getMissingLocale(sourceLocale);
+  const savedTranslations = [sourceLocale];
+
+  await upsertEventTranslation(env, savedEvent.id, sourceLocale, eventData);
+
+  if (supportedTranslationLocales.includes(targetLocale)) {
+    try {
+      const translatedEvent = await buildMachineTranslatedEvent(
+        env,
+        eventData,
+        sourceLocale,
+        targetLocale,
+      );
+
+      if (translatedEvent) {
+        await upsertEventTranslation(
+          env,
+          savedEvent.id,
+          targetLocale,
+          translatedEvent,
+        );
+        savedTranslations.push(targetLocale);
+      }
+    } catch (error) {
+      console.warn(
+        `Machine translation skipped for ${savedEvent.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  return savedTranslations;
+}
+
 async function archiveStaleEvents(env, sourceId, activeDedupeKeys) {
   const rows = await supabaseRequest({
     env,
@@ -4562,11 +4696,18 @@ async function crawlSource({
         extractedEvent,
         dedupeKey,
       );
+      const savedTranslations = await upsertEventTranslations(
+        env,
+        source,
+        savedEvent,
+        extractedEvent,
+      );
 
       savedEvents.push({
         detailUrl,
         eventId: savedEvent.id,
         title: savedEvent.title,
+        translations: savedTranslations,
       });
     }
 

@@ -74,6 +74,8 @@ CRAWLER_TIMEZONE=Asia/Tokyo
 CRAWLER_SCHEDULE=15 3 * * *
 NETLIFY_BUILD_HOOK_URL=
 CRAWL4AI_RENDER_MODE=auto
+GOOGLE_CLOUD_PROJECT=
+GOOGLE_TRANSLATE_LOCATION=global
 ```
 
 Current automation recommendation:
@@ -110,27 +112,33 @@ Next:
 
 Best quick loop for finetuning the crawler:
 
-1. Seed sources:
+1. Apply the database schema:
+
+```bash
+psql "$DATABASE_URL" -f supabase/schema.sql
+```
+
+2. Seed sources:
 
 ```bash
 PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/sync-sources.mjs
 ```
 
-2. Crawl one source while tuning:
+3. Crawl one source while tuning:
 
 ```bash
 cd apps/crawler
 PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:once -- --source=<slug>
 ```
 
-3. Crawl everything for QA:
+4. Crawl everything for QA:
 
 ```bash
 cd apps/crawler
 PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:all -- --generic-limit=6
 ```
 
-4. Run the full production-style cycle locally:
+5. Run the full production-style cycle locally:
 
 ```bash
 PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/run-crawl-cycle.mjs
@@ -172,6 +180,7 @@ How to tune effectively:
 - JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
 - Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
+- Missing English/Japanese event translations are machine-translated during crawl only when `GOOGLE_CLOUD_PROJECT` or `GOOGLE_TRANSLATE_PROJECT_ID` is set and Google credentials are available.
 - Each crawl run records structured diagnostics and a source outcome in `crawl_runs.logs`.
 - Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
 

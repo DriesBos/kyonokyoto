@@ -5,8 +5,35 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const sourcesPath = resolve(__dirname, "kyoto-sources.json");
 const overridesPath = resolve(__dirname, "source-overrides.json");
+const supportedLocales = new Set(["en", "ja"]);
+
+function normalizeLocale(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "jp") return "ja";
+  return supportedLocales.has(normalized) ? normalized : null;
+}
+
+function normalizeLocaleConfig(value = {}) {
+  const locales = {};
+
+  for (const [rawLocale, rawConfig] of Object.entries(value ?? {})) {
+    const locale = normalizeLocale(rawLocale);
+    if (!locale || !rawConfig || typeof rawConfig !== "object") continue;
+
+    locales[locale] = {
+      start_urls: Array.isArray(rawConfig.start_urls) ? rawConfig.start_urls : [],
+      event_page_patterns: Array.isArray(rawConfig.event_page_patterns) ? rawConfig.event_page_patterns : [],
+    };
+  }
+
+  return locales;
+}
 
 export function applySourceOverride(source, override = {}) {
+  const sourceLocales = normalizeLocaleConfig(source.locales);
+  const overrideLocales = normalizeLocaleConfig(override.locales);
+
   return {
     ...source,
     ...override,
@@ -14,6 +41,10 @@ export function applySourceOverride(source, override = {}) {
     allowed_domains: override.allowed_domains ?? source.allowed_domains ?? [],
     event_page_patterns: override.event_page_patterns ?? source.event_page_patterns ?? [],
     source_categories: override.source_categories ?? source.source_categories ?? [],
+    locales: {
+      ...sourceLocales,
+      ...overrideLocales,
+    },
   };
 }
 

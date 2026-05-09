@@ -1,7 +1,7 @@
 ---
 import Icon from "./Icon.astro";
 
-type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map" | "sound";
+type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map";
 type IconDirection = "top" | "right" | "bottom" | "left";
 
 type Props = {
@@ -23,9 +23,6 @@ type Props = {
   dataTiming?: string;
   dataTimingButton?: boolean;
   dataFilterButton?: boolean;
-  dataThemeButton?: boolean;
-  dataAmbientSoundButton?: boolean;
-  canPlaySound?: boolean;
   ariaControls?: string;
 };
 
@@ -48,9 +45,6 @@ const {
   dataTiming,
   dataTimingButton = false,
   dataFilterButton = false,
-  dataThemeButton = false,
-  dataAmbientSoundButton = false,
-  canPlaySound = false,
   ariaControls,
   ...rest
 } = Astro.props;
@@ -70,9 +64,6 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
-      data-theme-button={dataThemeButton ? "" : undefined}
-      data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
-      data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -90,9 +81,6 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
-      data-theme-button={dataThemeButton ? "" : undefined}
-      data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
-      data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -112,9 +100,6 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
-      data-theme-button={dataThemeButton ? "" : undefined}
-      data-ambient-sound-button={dataAmbientSoundButton ? "" : undefined}
-      data-ambient-interaction-button={canPlaySound ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -130,9 +115,6 @@ const classes = ["general-button", disabled && "general-button--disabled", class
   if (!window.__generalButtonDotBound) {
     const buttonSelector = ".general-button";
     const dotSelector = ".general-button__dot";
-    const ambientSoundButtonAttribute = "data-ambient-sound-button";
-    const ambientInteractionButtonAttribute = "data-ambient-interaction-button";
-    const pressedStateBeforeClick = new WeakMap();
 
     const randomBetween = (min, max) => min + Math.random() * (max - min);
 
@@ -151,17 +133,6 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       setOrganicDotShape(button);
     };
 
-    const playAmbientInteractionSound = (clientX, velocity = 0.62) => {
-      document.dispatchEvent(
-        new CustomEvent("ambient-sound:interaction", {
-          detail: {
-            viewportX: clientX / Math.max(1, window.innerWidth),
-            velocity,
-          },
-        })
-      );
-    };
-
     document.addEventListener("pointerdown", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -170,40 +141,73 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       if (!(button instanceof HTMLElement)) return;
       if (!button.querySelector(dotSelector)) return;
 
-      pressedStateBeforeClick.set(button, button.getAttribute("aria-pressed") === "true");
       setButtonDotPosition(button, event.clientX, event.clientY);
-    });
-
-    document.addEventListener("click", (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-
-      const button = target.closest(buttonSelector);
-      if (!(button instanceof HTMLElement)) return;
-      if (!button.querySelector(dotSelector) && !button.hasAttribute(ambientInteractionButtonAttribute)) return;
-      if (button.hasAttribute("data-ambient-sound-button")) return;
-
-      const wasPressed = pressedStateBeforeClick.get(button) === true;
-      pressedStateBeforeClick.delete(button);
-      const hasDot = Boolean(button.querySelector(dotSelector));
-      const shouldPlayPlainInteraction = button.hasAttribute(ambientInteractionButtonAttribute);
-
-      window.requestAnimationFrame(() => {
-        if (hasDot) {
-          if (wasPressed || button.getAttribute("aria-pressed") !== "true") {
-            if (!shouldPlayPlainInteraction) return;
-          } else {
-            playAmbientInteractionSound(event.clientX, button.hasAttribute(ambientSoundButtonAttribute) ? 0.78 : 0.62);
-            return;
-          }
-        }
-
-        if (shouldPlayPlainInteraction) {
-          playAmbientInteractionSound(event.clientX, 0.7);
-        }
-      });
     });
 
     window.__generalButtonDotBound = true;
   }
 </script>
+
+<style lang="sass">
+  .general-button
+    position: relative
+    isolation: isolate
+    display: inline-flex
+    align-items: center
+    justify-content: flex-start
+    gap: 4px
+    padding: 3px 1px 0
+    border: 0
+    border-top: var(--stroke-width) solid var(--stroke)
+    appearance: none
+    -webkit-tap-highlight-color: transparent
+    background: transparent
+    color: currentColor
+    font-size: var(--type-button-size)
+    letter-spacing: var(--type-body-letter-spacing)
+    line-height: 1
+    cursor: var(--dot-cursor)
+    pointer-events: auto
+    overflow: visible
+
+    &:hover,
+    &:active,
+    &:focus-visible
+      outline: none
+      background: transparent
+
+    &[aria-pressed='true'] .general-button__dot
+      opacity: 1
+      overflow: visible
+
+    :global(.general-button__icon)
+      position: relative
+      z-index: 1
+      --icon-size: 1em
+
+  .general-button--disabled
+    opacity: 0.55
+    cursor: var(--dot-cursor)
+
+  .general-button__label
+    position: relative
+    z-index: 1
+    display: inline-block
+    text-transform: lowercase
+    overflow: visible
+
+  .general-button__dot
+    position: absolute
+    z-index: 0
+    left: var(--general-button-dot-left, 50%)
+    top: var(--general-button-dot-top, 50%)
+    width: var(--dot-button)
+    height: var(--dot-button)
+    background: var(--color-pink)
+    mask: var(--dot-mask) center / contain no-repeat
+    -webkit-mask: var(--dot-mask) center / contain no-repeat
+    opacity: 0
+    transform: translate(-50%, -50%) rotate(var(--dot-rotation)) scaleX(var(--dot-scale-x)) scaleY(var(--dot-scale-y))
+    transform-origin: center
+    transition: opacity 140ms ease
+</style>

@@ -7,126 +7,389 @@
       "name": "Kyoto Art Center",
       "source_type": "art-center",
       "language": "ja",
+      "address_text": "546-2 Yamabushiyama-cho, Nakagyo-ku, Kyoto 604-8156 Japan",
+      "lat": 35.005436,
+      "lng": 135.758345,
       "base_url": "https://www.kac.or.jp",
       "start_urls": [
         "https://www.kac.or.jp/events/",
         "https://www.kac.or.jp/en/events/"
       ],
-      "allowed_domains": ["www.kac.or.jp", "kac.or.jp"],
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.kac.or.jp/events/"
+          ],
+          "event_page_patterns": [
+            "/events/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.kac.or.jp/en/events/"
+          ],
+          "event_page_patterns": [
+            "/en/events/"
+          ]
+        }
+      },
+      "allowed_domains": [
+        "www.kac.or.jp",
+        "kac.or.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/events/", "/en/events/"],
+      "event_page_patterns": [
+        "/events/",
+        "/en/events/"
+      ],
       "notes": "Good mixed source for exhibitions, performances, talks, and workshops.",
       "is_active": true,
-      "source_categories": ["art", "performance", "workshop"]
+      "source_categories": [
+        "exhibition",
+        "museum"
+      ],
+      "map_visibility": true
     },
     {
       "slug": "kyoto-national-museum",
       "name": "Kyoto National Museum",
       "source_type": "museum",
       "language": "en",
+      "address_text": "527 Chaya-cho, Higashiyama-ku, Kyoto 605-0931 Japan",
+      "lat": 34.989989,
+      "lng": 135.773116,
       "base_url": "https://www.kyohaku.go.jp/eng/exhibitions/",
-      "start_urls": ["https://www.kyohaku.go.jp/eng/exhibitions/"],
-      "allowed_domains": ["www.kyohaku.go.jp", "kyohaku.go.jp"],
+      "start_urls": [
+        "https://www.kyohaku.go.jp/eng/exhibitions/"
+      ],
+      "allowed_domains": [
+        "www.kyohaku.go.jp",
+        "kyohaku.go.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/eng/exhibitions/", "/exhibitions/"],
+      "event_page_patterns": [
+        "/eng/exhibitions/",
+        "/exhibitions/"
+      ],
       "notes": "Use the English exhibitions index and keep only the first two fully populated exhibition pages listed there.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.kyohaku.go.jp/jp/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/jp/exhibitions/",
+            "/exhibitions/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.kyohaku.go.jp/eng/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/eng/exhibitions/",
+            "/exhibitions/"
+          ]
+        }
+      }
     },
     {
       "slug": "kyotographie",
       "name": "KYOTOGRAPHIE",
       "source_type": "festival",
       "language": "en",
+      "address_text": "670-10 Shokokujimonzen-cho, 672-1 Kueninmae-cho, Nakagyo-ku, Kyoto 604-0993 Japan",
+      "lat": 35.015594,
+      "lng": 135.76709,
       "base_url": "https://www.kyotographie.jp/en/programs/",
-      "start_urls": ["https://www.kyotographie.jp/en/programs/"],
-      "allowed_domains": ["www.kyotographie.jp", "kyotographie.jp"],
+      "start_urls": [
+        "https://www.kyotographie.jp/en/programs/"
+      ],
+      "allowed_domains": [
+        "www.kyotographie.jp",
+        "kyotographie.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/programs/"],
+      "event_page_patterns": [
+        "/programs/"
+      ],
       "notes": "Use the English programs index as the canonical entry point for festival program pages.",
       "is_active": true,
-      "source_categories": ["photography", "festival", "art"]
+      "source_categories": [
+        "photography",
+        "festival"
+      ],
+      "map_visibility": false,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.kyotographie.jp/programs/"
+          ],
+          "event_page_patterns": [
+            "/programs/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.kyotographie.jp/en/programs/"
+          ],
+          "event_page_patterns": [
+            "/programs/"
+          ]
+        }
+      }
     },
     {
       "slug": "art-collaboration-kyoto",
       "name": "Art Collaboration Kyoto",
       "source_type": "art-fair",
       "language": "en",
+      "address_text": "Kyoto International Conference Center, Takaragaike, Sakyo-ku, Kyoto 606-0001 Japan",
+      "lat": 35.0610839,
+      "lng": 135.7831473,
       "base_url": "https://a-c-k.jp/en/",
-      "start_urls": ["https://a-c-k.jp/en/"],
-      "allowed_domains": ["a-c-k.jp"],
+      "start_urls": [
+        "https://a-c-k.jp/en/"
+      ],
+      "allowed_domains": [
+        "a-c-k.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/"],
+      "event_page_patterns": [
+        "/en/"
+      ],
       "notes": "Annual art fair. The homepage exposes the next edition dates and venue in the Visitor Information section; extract the homepage itself as the single yearly event.",
       "is_active": true,
-      "source_categories": ["art-fair", "art"]
+      "source_categories": [
+        "art-fair"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://a-c-k.jp/"
+          ],
+          "event_page_patterns": [
+            "/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://a-c-k.jp/en/"
+          ],
+          "event_page_patterns": [
+            "/en/"
+          ]
+        }
+      }
     },
     {
       "slug": "hosoo-gallery",
       "name": "HOSOO GALLERY",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "2F HOSOO FLAGSHIP STORE, 412 Kakimoto-cho, Nakagyo-ku, Kyoto 604-8173 Japan",
+      "lat": 35.0097097,
+      "lng": 135.7590123,
       "base_url": "https://www.hosoogallery.jp/en/exhibitions/",
-      "start_urls": ["https://www.hosoogallery.jp/en/exhibitions/"],
-      "allowed_domains": ["www.hosoogallery.jp", "hosoogallery.jp"],
+      "start_urls": [
+        "https://www.hosoogallery.jp/en/exhibitions/"
+      ],
+      "allowed_domains": [
+        "www.hosoogallery.jp",
+        "hosoogallery.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "event_page_patterns": [
+        "/en/exhibitions/",
+        "/exhibitions/"
+      ],
       "notes": "Use the English exhibitions archive and only extract links from the exhibition article cards, so research pages and section indexes do not leak into the crawl.",
       "is_active": true,
-      "source_categories": ["design", "craft", "gallery"]
+      "source_categories": [
+        "design",
+        "craft",
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.hosoogallery.jp/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/exhibitions/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.hosoogallery.jp/en/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/en/exhibitions/",
+            "/exhibitions/"
+          ]
+        }
+      }
     },
     {
       "slug": "huko",
       "name": "HUKO",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "22-21 Okazakinishifukunokawa-cho, Sakyo-ku, Kyoto 606-8326 Japan",
+      "lat": 35.0188918,
+      "lng": 135.7835589,
       "base_url": "https://huko.jp/blogs/exhibition/",
-      "start_urls": ["https://huko.jp/blogs/exhibition/"],
-      "allowed_domains": ["huko.jp"],
+      "start_urls": [
+        "https://huko.jp/blogs/exhibition/"
+      ],
+      "allowed_domains": [
+        "huko.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/blogs/exhibition/"],
+      "event_page_patterns": [
+        "/blogs/exhibition/"
+      ],
       "notes": "Use the dedicated exhibition blog listing page, which links into individual exhibition entries under /blogs/exhibition/.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://huko.jp/blogs/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/blogs/exhibition/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://huko.jp/en/blogs/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/en/blogs/exhibition/"
+          ]
+        }
+      }
     },
     {
       "slug": "gallery-yamahon",
       "name": "Gallery Yamahon",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "2F Enjudo Minamikan, 95-3 Enoki-cho, Nakagyo-ku, Kyoto 604-0931 Japan",
+      "lat": 35.012672,
+      "lng": 135.767914,
       "base_url": "https://gallery-yamahon.com/?page_id=1396",
-      "start_urls": ["https://gallery-yamahon.com/?page_id=1396"],
-      "allowed_domains": ["gallery-yamahon.com"],
+      "start_urls": [
+        "https://gallery-yamahon.com/?page_id=1396"
+      ],
+      "allowed_domains": [
+        "gallery-yamahon.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/"],
+      "event_page_patterns": [
+        "/"
+      ],
       "notes": "Use the dedicated Kyoto exhibition page. The page starts with Japanese content and repeats the current exhibition in English lower down; prefer the English heading and description.",
       "is_active": true,
-      "source_categories": ["craft", "ceramics", "gallery"]
+      "source_categories": [
+        "craft",
+        "ceramics",
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://gallery-yamahon.com/?page_id=1396"
+          ],
+          "event_page_patterns": [
+            "/?page_id=1396"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://gallery-yamahon.com/?page_id=1396"
+          ],
+          "event_page_patterns": [
+            "/?page_id=1396"
+          ]
+        }
+      }
     },
     {
       "slug": "kyotophonie",
       "name": "KYOTOPHONIE",
       "source_type": "festival",
       "language": "ja",
+      "address_text": "672-1 Kueninmae-cho, Nakagyo-ku, Kyoto 604-0993 Japan",
+      "lat": 35.015594,
+      "lng": 135.76709,
       "base_url": "https://kyotophonie.jp/",
-      "start_urls": ["https://kyotophonie.jp/"],
-      "allowed_domains": ["kyotophonie.jp"],
+      "start_urls": [
+        "https://kyotophonie.jp/"
+      ],
+      "allowed_domains": [
+        "kyotophonie.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/program", "/programs", "/en/"],
+      "event_page_patterns": [
+        "/program",
+        "/programs",
+        "/en/"
+      ],
       "notes": "Festival source that may behave similarly to KYOTOGRAPHIE with program-style pages.",
       "is_active": true,
-      "source_categories": ["music", "festival"]
+      "source_categories": [
+        "music",
+        "festival"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://kyotophonie.jp/"
+          ],
+          "event_page_patterns": [
+            "/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://kyotophonie.jp/en"
+          ],
+          "event_page_patterns": [
+            "/en/"
+          ]
+        }
+      }
     },
     {
       "slug": "taka-ishii-gallery",
       "name": "Taka Ishii Gallery",
       "source_type": "gallery",
-      "language": "en",
+      "language": "ja",
+      "address_text": "123 Yada-cho, Shimogyo-ku, Kyoto 600-8442 Japan",
+      "lat": 35.0021615,
+      "lng": 135.7560215,
       "base_url": "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
       "start_urls": [
         "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
       ],
-      "allowed_domains": ["www.takaishiigallery.com", "takaishiigallery.com"],
+      "allowed_domains": [
+        "www.takaishiigallery.com",
+        "takaishiigallery.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": [
         "/en/exhibitions/kyoto-yada-cho/",
@@ -134,197 +397,607 @@
       ],
       "notes": "Use the Kyoto (Yada-cho) location page directly and extract only the linked Kyoto exhibition archive detail pages.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/"
+          ],
+          "event_page_patterns": [
+            "/exhibitions/kyoto-yada-cho/",
+            "/archives/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
+          ],
+          "event_page_patterns": [
+            "/en/exhibitions/kyoto-yada-cho/",
+            "/en/archives/"
+          ]
+        }
+      }
     },
     {
       "slug": "essence-kyoto",
       "name": "Essence Kyoto",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "2F, 36-1 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan",
+      "lat": 35.011101,
+      "lng": 135.780533,
       "base_url": "https://essencekyoto.com/",
-      "start_urls": ["https://essencekyoto.com/"],
-      "allowed_domains": ["essencekyoto.com"],
+      "start_urls": [
+        "https://essencekyoto.com/"
+      ],
+      "allowed_domains": [
+        "essencekyoto.com"
+      ],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/"],
-      "notes": "The exhibition is surfaced directly on the homepage beneath the hero. Extract only the top homepage exhibition rows and ignore the storefront content below.",
+      "event_page_patterns": [
+        "/exhibition",
+        "/"
+      ],
+      "notes": "Japanese-only source. The exhibition is surfaced directly on the homepage beneath the hero. Extract only the top homepage exhibition rows and ignore the storefront content below.",
       "is_active": true,
-      "source_categories": ["design", "craft", "gallery"]
+      "source_categories": [
+        "design",
+        "craft",
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://essencekyoto.com/"
+          ],
+          "event_page_patterns": [
+            "/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "sibasi",
       "name": "Sibasi",
       "source_type": "venue",
       "language": "ja",
+      "address_text": "76-16 Okazaki Tenno-cho, Sakyo-ku, Kyoto 606-8335 Japan",
+      "lat": 35.0160636,
+      "lng": 135.7862949,
       "base_url": "https://sibasi.jp/events/",
       "start_urls": [
         "https://sibasi.jp/category/live/",
         "https://sibasi.jp/category/exhibitions/"
       ],
-      "allowed_domains": ["sibasi.jp"],
+      "allowed_domains": [
+        "sibasi.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/category/live/", "/category/exhibitions/"],
+      "event_page_patterns": [
+        "/category/live/",
+        "/category/exhibitions/"
+      ],
       "notes": "Use the live and exhibitions category pages, then only publish items whose actual event or exhibition dates are ongoing or upcoming.",
       "is_active": true,
-      "source_categories": ["music", "art"]
+      "source_categories": [
+        "music, exhibition"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://sibasi.jp/category/live/",
+            "https://sibasi.jp/category/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/category/live/",
+            "/category/exhibitions/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "kojin",
       "name": "Kojin",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "248-6 Kamiikesu-cho, Kamigyo-ku, Kyoto 602-0855 Japan",
+      "lat": 35.021312,
+      "lng": 135.7708038,
       "base_url": "https://kojin-kyoto.com/event/",
-      "start_urls": ["https://kojin-kyoto.com/event/"],
-      "allowed_domains": ["kojin-kyoto.com"],
+      "start_urls": [
+        "https://kojin-kyoto.com/event/"
+      ],
+      "allowed_domains": [
+        "kojin-kyoto.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/event/"],
+      "event_page_patterns": [
+        "/event/"
+      ],
       "notes": "Use the dedicated event listing. The homepage event rail links into `/event/<slug>/` detail pages.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://kojin-kyoto.com/event/"
+          ],
+          "event_page_patterns": [
+            "/event/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "kyoto-art-month",
       "name": "Kyoto Art Month",
       "source_type": "festival",
       "language": "ja",
+      "address_text": "Kyoto, Japan",
+      "lat": 35.0265418,
+      "lng": 135.7688931,
       "base_url": "https://kyoto-art-month.jp/",
-      "start_urls": ["https://kyoto-art-month.jp/"],
-      "allowed_domains": ["kyoto-art-month.jp"],
+      "start_urls": [
+        "https://kyoto-art-month.jp/"
+      ],
+      "allowed_domains": [
+        "kyoto-art-month.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/program", "/event", "/"],
+      "event_page_patterns": [
+        "/program",
+        "/event",
+        "/"
+      ],
       "notes": "Current homepage behaves as an off-domain directory linking straight to partner venues rather than hosting stable on-domain program detail pages. Keep inactive until we add a source-specific aggregator.",
       "is_active": false,
-      "source_categories": ["art", "festival"]
+      "source_categories": [
+        "festival"
+      ],
+      "map_visibility": false,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://kyoto-art-month.jp/"
+          ],
+          "event_page_patterns": [
+            "/program",
+            "/event",
+            "/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "zenbi",
       "name": "ZENBI",
       "source_type": "museum",
       "language": "ja",
+      "address_text": "570-107 Gion-machi Minamigawa, Higashiyama-ku, Kyoto 605-0074 Japan",
+      "lat": 35.0029747,
+      "lng": 135.7729893,
       "base_url": "https://zenbi.kagizen.com/exhibition/",
-      "start_urls": ["https://zenbi.kagizen.com/exhibition/"],
-      "allowed_domains": ["zenbi.kagizen.com"],
+      "start_urls": [
+        "https://zenbi.kagizen.com/exhibition/"
+      ],
+      "allowed_domains": [
+        "zenbi.kagizen.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition/"],
+      "event_page_patterns": [
+        "/exhibition/"
+      ],
       "notes": "Exhibitions are listed on the dedicated exhibition index. Prefer current and upcoming exhibition cards and ignore linked news posts surfaced inside exhibition pages.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://zenbi.kagizen.com/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/exhibition/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
+    },
+    {
+      "slug": "chushin-bijutsu",
+      "name": "Chushin Art Museum",
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "136-3 Nishioji-cho, Kamigyo-ku, Kyoto 602-8048 Japan",
+      "lat": 35.020164,
+      "lng": 135.75383,
+      "base_url": "https://www.chushin.co.jp/bijyutu/exhibition/index.html",
+      "start_urls": [
+        "https://www.chushin.co.jp/bijyutu/exhibition/index.html"
+      ],
+      "allowed_domains": [
+        "www.chushin.co.jp",
+        "chushin.co.jp"
+      ],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": [
+        "/bijyutu/exhibition/index.html"
+      ],
+      "notes": "Source-specific extractor splits exhibition sections on the single listing page; keep inactive until manually reviewed.",
+      "is_active": false,
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.chushin.co.jp/bijyutu/exhibition/index.html"
+          ],
+          "event_page_patterns": [
+            "/bijyutu/exhibition/index.html"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "mtk",
       "name": "MTK",
       "source_type": "gallery",
-      "language": "en",
+      "language": "ja",
+      "address_text": "20-1 Okazaki Minamigoshocho, Sakyo-ku, Kyoto 606-8334 Japan",
+      "lat": 35.014393,
+      "lng": 135.785355,
       "base_url": "https://mtkcontemporaryart.com/en/exhibition/",
-      "start_urls": ["https://mtkcontemporaryart.com/en/exhibition/"],
-      "allowed_domains": ["mtkcontemporaryart.com"],
+      "start_urls": [
+        "https://mtkcontemporaryart.com/en/exhibition/"
+      ],
+      "allowed_domains": [
+        "mtkcontemporaryart.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "event_page_patterns": [
+        "/en/exhibition/",
+        "/exhibition/"
+      ],
       "notes": "Exhibitions are listed on the English exhibition index, while some linked detail pages resolve under /exhibition/<slug>/.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://mtkcontemporaryart.com/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/exhibition/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://mtkcontemporaryart.com/en/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/en/exhibition/"
+          ]
+        }
+      }
     },
     {
       "slug": "dnp-foundation-for-cultural-promotion-gallery-ddd",
       "name": "kyoto ddd gallery",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "3F COCON KARASUMA, 620 Suiginya-cho, Shimogyo-ku, Kyoto 600-8411 Japan",
+      "lat": 35.0030675,
+      "lng": 135.7591268,
       "base_url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2",
       "start_urls": [
         "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"
       ],
-      "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
+      "allowed_domains": [
+        "www.dnpfcp.jp",
+        "dnpfcp.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": [
         "/CGI/gallery/schedule/list.cgi",
         "/CGI/gallery/schedule/detail.cgi",
         "/gallery/ddd/"
       ],
-      "notes": "Use the English DDD Coming up page and keep only the first two exhibition blocks listed there, including the upcoming unlinked schedule entry.",
+      "notes": "Language toggle does not change the URL. Both locales use the same DDD schedule URL; crawler locale handling should select the Japanese or English content from page state/content, then keep only the first two exhibition blocks listed there, including the upcoming unlinked schedule entry.",
       "is_active": true,
-      "source_categories": ["design", "gallery"]
+      "source_categories": [
+        "design",
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"
+          ],
+          "event_page_patterns": [
+            "/CGI/gallery/schedule/list.cgi",
+            "/CGI/gallery/schedule/detail.cgi",
+            "/gallery/ddd/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"
+          ],
+          "event_page_patterns": [
+            "/CGI/gallery/schedule/list.cgi",
+            "/CGI/gallery/schedule/detail.cgi",
+            "/gallery/ddd/"
+          ]
+        }
+      }
     },
     {
       "slug": "kyoto-city-kyocera-museum-of-art",
       "name": "KYOCERA Museum",
       "source_type": "museum",
       "language": "ja",
+      "address_text": "124 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan",
+      "lat": 35.012493,
+      "lng": 135.783798,
       "base_url": "https://kyotocity-kyocera.museum/",
       "start_urls": [
         "https://kyotocity-kyocera.museum/en/exhibition/",
         "https://kyotocity-kyocera.museum/exhibition/"
       ],
-      "allowed_domains": ["kyotocity-kyocera.museum"],
+      "allowed_domains": [
+        "kyotocity-kyocera.museum"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition/"],
+      "event_page_patterns": [
+        "/exhibition/"
+      ],
       "notes": "Strong institutional source with likely structured exhibition pages.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://kyotocity-kyocera.museum/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/exhibition/"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://kyotocity-kyocera.museum/en/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/en/exhibition/"
+          ]
+        }
+      }
     },
     {
       "slug": "momak",
       "name": "MoMAK",
       "source_type": "museum",
       "language": "en",
+      "address_text": "26-1 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan",
+      "lat": 35.0123995,
+      "lng": 135.7821446,
       "base_url": "https://www.momak.go.jp/English/exhibitionArchive/",
-      "start_urls": ["https://www.momak.go.jp/English/exhibitionArchive/"],
-      "allowed_domains": ["www.momak.go.jp", "momak.go.jp"],
+      "start_urls": [
+        "https://www.momak.go.jp/English/exhibitionArchive/"
+      ],
+      "allowed_domains": [
+        "www.momak.go.jp",
+        "momak.go.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/English/?p="],
+      "event_page_patterns": [
+        "/English/?p="
+      ],
       "notes": "Use only the English current/upcoming exhibition archive as the starting point. Avoid the Japanese archive and general information pages.",
       "is_active": true,
-      "source_categories": ["art", "museum"],
-      "measure_image_dimensions": true
+      "source_categories": [
+        "museum"
+      ],
+      "measure_image_dimensions": true,
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.momak.go.jp/exhibitionArchive/"
+          ],
+          "event_page_patterns": [
+            "/?p="
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.momak.go.jp/English/exhibitionArchive/"
+          ],
+          "event_page_patterns": [
+            "/English/?p="
+          ]
+        }
+      }
     },
     {
       "slug": "gallery-unfold",
       "name": "Gallery Unfold",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "1-3 Jodojibamba-cho, Sakyo-ku, Kyoto 606-8412 Japan",
+      "lat": 35.0234897,
+      "lng": 135.7926449,
       "base_url": "https://galleryunfold.com/archive",
-      "start_urls": ["https://galleryunfold.com/archive"],
-      "allowed_domains": ["galleryunfold.com"],
+      "start_urls": [
+        "https://galleryunfold.com/archive"
+      ],
+      "allowed_domains": [
+        "galleryunfold.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/archive"],
-      "notes": "Only extract the first (most recent) item from the archive listing. Upcoming events lack images and content and should be skipped.",
+      "event_page_patterns": [
+        "/archive"
+      ],
+      "notes": "Language toggle does not change the URL. Both locales use the same archive URL; crawler locale handling should select Japanese or English content from page state/content. Only extract the first (most recent) item from the archive listing. Upcoming events lack images and content and should be skipped.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://galleryunfold.com/archive"
+          ],
+          "event_page_patterns": [
+            "/archive"
+          ]
+        },
+        "en": {
+          "start_urls": [
+            "https://galleryunfold.com/archive"
+          ],
+          "event_page_patterns": [
+            "/archive"
+          ]
+        }
+      }
     },
     {
       "slug": "hakusasonso",
       "name": "Hakusa Son-so",
       "source_type": "museum",
       "language": "ja",
+      "address_text": "37 Jodoji Ishibashi-cho, Sakyo-ku, Kyoto 606-8406 Japan",
+      "lat": 35.027157,
+      "lng": 135.793796,
       "base_url": "http://www.hakusasonso.jp/exhibition/index.html",
-      "start_urls": ["http://www.hakusasonso.jp/exhibition/index.html"],
-      "allowed_domains": ["www.hakusasonso.jp", "hakusasonso.jp"],
+      "start_urls": [
+        "http://www.hakusasonso.jp/exhibition/index.html"
+      ],
+      "allowed_domains": [
+        "www.hakusasonso.jp",
+        "hakusasonso.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition/detail/"],
-      "notes": "Use the exhibition index and prefer linked detail pages under `/exhibition/detail/` over archive and index links.",
+      "event_page_patterns": [
+        "/exhibition/detail/"
+      ],
+      "notes": "Japanese-only exhibition crawl. The English site is a general-information landing page and does not expose usable exhibition detail content. Use the Japanese exhibition index and prefer linked detail pages under `/exhibition/detail/` over archive and index links.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "http://www.hakusasonso.jp/exhibition/index.html"
+          ],
+          "event_page_patterns": [
+            "/exhibition/detail/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "sen-oku-hakukokan",
       "name": "Sen-Oku Hakukokan",
       "source_type": "museum",
       "language": "ja",
+      "address_text": "24 Shimomiyanomae-cho, Shishigatani, Sakyo-ku, Kyoto 606-8431 Japan",
+      "lat": 35.0176144,
+      "lng": 135.7928201,
       "base_url": "https://sen-oku.or.jp/kyoto/",
       "start_urls": [
         "https://www.sen-oku.or.jp/kyoto",
         "https://sen-oku.or.jp/kyoto"
       ],
-      "allowed_domains": ["www.sen-oku.or.jp", "sen-oku.or.jp"],
+      "allowed_domains": [
+        "www.sen-oku.or.jp",
+        "sen-oku.or.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/program/"],
+      "event_page_patterns": [
+        "/program/"
+      ],
       "notes": "Kyoto museum homepage surfaces ongoing and upcoming exhibition program pages.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.sen-oku.or.jp/kyoto",
+            "https://sen-oku.or.jp/kyoto"
+          ],
+          "event_page_patterns": [
+            "/program/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "gallery-morning-kyoto",
       "name": "Gallery Morning Kyoto",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "207 Nakano-cho, Higashiyama-ku, Kyoto 605-0034 Japan",
+      "lat": 35.0092913,
+      "lng": 135.7848362,
       "base_url": "https://gallerymorningkyoto.blogspot.com/",
       "start_urls": [
         "https://gallerymorningkyoto.com/",
@@ -335,205 +1008,586 @@
         "gallerymorningkyoto.blogspot.com"
       ],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/20"],
+      "event_page_patterns": [
+        "/20"
+      ],
       "notes": "Homepage cards point to Blogspot post URLs like `/2026/04/...html`. Allow the Blogspot domain and prefer dated post URLs over archive pages.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://gallerymorningkyoto.com/",
+            "https://gallerymorningkyoto.blogspot.com/"
+          ],
+          "event_page_patterns": [
+            "/20"
+          ]
+        }
+      }
     },
     {
       "slug": "nonaka-hill",
       "name": "Nonaka-Hill",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "201-4 Nishino-cho, Shinmonzen-dori, Higashiyama-ku, Kyoto 605-0088 Japan",
+      "lat": 35.0067041,
+      "lng": 135.773449,
       "base_url": "https://www.nonaka-hill.com/exhibitions/",
-      "start_urls": ["https://www.nonaka-hill.com/exhibitions/"],
-      "allowed_domains": ["www.nonaka-hill.com", "nonaka-hill.com"],
+      "start_urls": [
+        "https://www.nonaka-hill.com/exhibitions/"
+      ],
+      "allowed_domains": [
+        "www.nonaka-hill.com",
+        "nonaka-hill.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions/"],
+      "event_page_patterns": [
+        "/exhibitions/"
+      ],
       "notes": "Only extract current and upcoming exhibitions; skip the archive section further down the page.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://www.nonaka-hill.com/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/exhibitions/"
+          ]
+        }
+      }
     },
     {
       "slug": "kcua-gallery",
       "name": "KCUA Gallery",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "57-1 Shimono-cho, Shimogyo-ku, Kyoto 600-8601 Japan",
+      "lat": 35.0113537,
+      "lng": 135.7524549,
       "base_url": "https://gallery.kcua.ac.jp/en/exhibitions-en/",
-      "start_urls": ["https://gallery.kcua.ac.jp/en/exhibitions-en/"],
-      "allowed_domains": ["gallery.kcua.ac.jp"],
+      "start_urls": [
+        "https://gallery.kcua.ac.jp/en/exhibitions-en/"
+      ],
+      "allowed_domains": [
+        "gallery.kcua.ac.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/archives/", "/archives/"],
+      "event_page_patterns": [
+        "/en/archives/",
+        "/archives/"
+      ],
       "notes": "The English exhibitions landing page links into detail pages under `/en/archives/<year>/<id>/`. Prefer those archive detail URLs over menu and news links.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://gallery.kcua.ac.jp/en/exhibitions-en/"
+          ],
+          "event_page_patterns": [
+            "/en/archives/",
+            "/archives/"
+          ]
+        }
+      }
     },
     {
       "slug": "the-terminal-kyoto",
       "name": "The Terminal Kyoto",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan",
+      "lat": 35.0007069,
+      "lng": 135.7568866,
       "base_url": "https://kyoto.theterminal.jp/event_type/exhibition/",
-      "start_urls": ["https://kyoto.theterminal.jp/event_type/exhibition/"],
-      "allowed_domains": ["kyoto.theterminal.jp"],
+      "start_urls": [
+        "https://kyoto.theterminal.jp/event_type/exhibition/"
+      ],
+      "allowed_domains": [
+        "kyoto.theterminal.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/event_type/exhibition/", "/event/"],
+      "event_page_patterns": [
+        "/event_type/exhibition/",
+        "/event/"
+      ],
       "notes": "Exhibition-type filtered event listing.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://kyoto.theterminal.jp/event_type/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/event_type/exhibition/",
+            "/event/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "artro",
       "name": "Artro",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "556 Kaiya-cho, Nakagyo-ku, Kyoto 604-8126 Japan",
+      "lat": 35.0059464,
+      "lng": 135.7625443,
       "base_url": "https://artro.jp/exhibition/",
-      "start_urls": ["https://artro.jp/exhibition/"],
-      "allowed_domains": ["artro.jp"],
+      "start_urls": [
+        "https://artro.jp/exhibition/"
+      ],
+      "allowed_domains": [
+        "artro.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition/"],
+      "event_page_patterns": [
+        "/exhibition/"
+      ],
       "notes": "Dedicated exhibition listing page.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://artro.jp/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/exhibition/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "raku-museum",
       "name": "Raku Museum",
       "source_type": "museum",
       "language": "en",
+      "address_text": "84 Aburahashizume-cho, Kamigyo-ku, Kyoto 602-0923 Japan",
+      "lat": 35.0255428,
+      "lng": 135.753455,
       "base_url": "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html",
       "start_urls": [
         "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"
       ],
-      "allowed_domains": ["www.raku-yaki.or.jp", "raku-yaki.or.jp"],
+      "allowed_domains": [
+        "www.raku-yaki.or.jp",
+        "raku-yaki.or.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
+      "event_page_patterns": [
+        "/e/museum/exhibition/",
+        "/museum/exhibition/"
+      ],
       "notes": "English version of the Raku Museum exhibition index; dedicated to Raku ware ceramics.",
       "is_active": true,
-      "source_categories": ["ceramics", "museum", "craft"],
-      "measure_image_dimensions": true
+      "source_categories": [
+        "ceramics",
+        "museum",
+        "craft"
+      ],
+      "measure_image_dimensions": true,
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"
+          ],
+          "event_page_patterns": [
+            "/e/museum/exhibition/",
+            "/museum/exhibition/"
+          ]
+        }
+      }
     },
     {
       "slug": "anewal-gallery",
       "name": "Anewal Gallery",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "#317, 281 Naramono-cho, Kamigyo-ku, Kyoto 602-8243 Japan",
+      "lat": 35.0230431,
+      "lng": 135.7515771,
       "base_url": "https://www.anewal.gallery/",
-      "start_urls": ["https://www.anewal.gallery/"],
-      "allowed_domains": ["www.anewal.gallery", "anewal.gallery"],
+      "start_urls": [
+        "https://www.anewal.gallery/"
+      ],
+      "allowed_domains": [
+        "www.anewal.gallery",
+        "anewal.gallery"
+      ],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/"],
+      "event_page_patterns": [
+        "/exhibition",
+        "/"
+      ],
       "notes": "Current schedule is homepage-only and mostly points to PDFs, social posts, and external event pages. Keep inactive until we add a source-specific homepage extractor.",
       "is_active": false,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.anewal.gallery/"
+          ],
+          "event_page_patterns": [
+            "/exhibition",
+            "/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "kusakabe-gallery",
       "name": "Kusakabe Gallery",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "486 Nakatsukasa-cho, Kamigyo-ku, Kyoto 602-8158 Japan",
+      "lat": 35.0186698,
+      "lng": 135.7453615,
       "base_url": "https://www.kusakabeg.com/",
-      "start_urls": ["https://www.kusakabeg.com/"],
-      "allowed_domains": ["www.kusakabeg.com", "kusakabeg.com"],
+      "start_urls": [
+        "https://www.kusakabeg.com/"
+      ],
+      "allowed_domains": [
+        "www.kusakabeg.com",
+        "kusakabeg.com"
+      ],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/news", "/"],
+      "event_page_patterns": [
+        "/exhibition",
+        "/news",
+        "/"
+      ],
       "notes": "Exhibitions surfaced on the homepage.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.kusakabeg.com/"
+          ],
+          "event_page_patterns": [
+            "/exhibition",
+            "/news",
+            "/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "insho-domoto",
       "name": "Insho-Domoto Museum of Fine Arts",
       "source_type": "museum",
       "language": "ja",
+      "address_text": "26-3 Hirano Kamiyanagi-cho, Kita-ku, Kyoto 603-8355 Japan",
+      "lat": 35.0351347,
+      "lng": 135.7260355,
       "base_url": "https://insho-domoto.com/exhibitions/",
-      "start_urls": ["https://insho-domoto.com/exhibitions/"],
-      "allowed_domains": ["insho-domoto.com"],
+      "start_urls": [
+        "https://insho-domoto.com/exhibitions/"
+      ],
+      "allowed_domains": [
+        "insho-domoto.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions/"],
+      "event_page_patterns": [
+        "/exhibitions/"
+      ],
       "notes": "Use the exhibitions listing as the entry point for exhibition detail pages under `/exhibitions/<id>/`.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://insho-domoto.com/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/exhibitions/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "kuramonzen",
       "name": "Kuramonzen",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "23 Murasakino Monzencho, Kita-ku, Kyoto 603-8216 Japan",
+      "lat": 35.0429155,
+      "lng": 135.7479959,
       "base_url": "https://kuramonzen.com/blogs/exhibitions",
-      "start_urls": ["https://kuramonzen.com/blogs/exhibitions"],
-      "allowed_domains": ["kuramonzen.com"],
+      "start_urls": [
+        "https://kuramonzen.com/blogs/exhibitions"
+      ],
+      "allowed_domains": [
+        "kuramonzen.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/blogs/exhibitions"],
+      "event_page_patterns": [
+        "/blogs/exhibitions"
+      ],
       "notes": "Exhibition blog listing; similar structure to HUKO.",
       "is_active": true,
-      "source_categories": ["art", "gallery"]
+      "source_categories": [
+        "gallery"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://kuramonzen.com/blogs/exhibitions"
+          ],
+          "event_page_patterns": [
+            "/blogs/exhibitions"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "oscaar-mouligne",
       "name": "Oscaar Mouligne",
       "source_type": "gallery",
       "language": "en",
+      "address_text": "1 Murasakino Higashino-cho, Kita-ku, Kyoto 603-8232 Japan",
+      "lat": 35.0407977,
+      "lng": 135.7440355,
       "base_url": "https://oscaarmouligne.com/exhibitions/",
-      "start_urls": ["https://oscaarmouligne.com/exhibitions/"],
-      "allowed_domains": ["oscaarmouligne.com"],
+      "start_urls": [
+        "https://oscaarmouligne.com/exhibitions/"
+      ],
+      "allowed_domains": [
+        "oscaarmouligne.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions/"],
+      "event_page_patterns": [
+        "/exhibitions/"
+      ],
       "notes": "Gallery exhibition listing.",
       "is_active": true,
-      "source_categories": ["art", "gallery"],
-      "measure_image_dimensions": true
+      "source_categories": [
+        "gallery"
+      ],
+      "measure_image_dimensions": true,
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://oscaarmouligne.com/exhibitions/"
+          ],
+          "event_page_patterns": [
+            "/exhibitions/"
+          ]
+        }
+      }
     },
     {
       "slug": "kankakari",
       "name": "Kankakari",
       "source_type": "gallery",
       "language": "ja",
+      "address_text": "15 Murasakino Shimotsukiyama-cho, Kita-ku, Kyoto Japan",
+      "lat": 35.0388386,
+      "lng": 135.7460082,
       "base_url": "https://www.kankakari.com/news",
-      "start_urls": ["https://www.kankakari.com/news"],
-      "allowed_domains": ["www.kankakari.com", "kankakari.com"],
+      "start_urls": [
+        "https://www.kankakari.com/news"
+      ],
+      "allowed_domains": [
+        "www.kankakari.com",
+        "kankakari.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/single-post/"],
+      "event_page_patterns": [
+        "/single-post/"
+      ],
       "notes": "Use the Wix news listing as the index and follow exhibition posts under `/single-post/`.",
       "is_active": true,
-      "source_categories": ["art", "gallery", "craft"]
+      "source_categories": [
+        "gallery",
+        "craft"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.kankakari.com/news"
+          ],
+          "event_page_patterns": [
+            "/single-post/"
+          ]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
     },
     {
       "slug": "samac",
       "name": "SAMAC",
       "source_type": "museum",
       "language": "en",
+      "address_text": "11 Sagatenryuji Susukinobabacho, Ukyo-ku, Kyoto 616-8385 Japan",
+      "lat": 35.0135656,
+      "lng": 135.673984,
       "base_url": "https://www.samac.jp/en/exhibition/index.php",
       "start_urls": [
         "https://www.samac.jp/en/exhibition/index.php",
         "https://www.samac.jp/en/exhibition/index.php?m=future"
       ],
-      "allowed_domains": ["www.samac.jp", "samac.jp"],
+      "allowed_domains": [
+        "www.samac.jp",
+        "samac.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition/"],
+      "event_page_patterns": [
+        "/en/exhibition/"
+      ],
       "notes": "Crawl both the current (index.php) and upcoming (index.php?m=future) exhibition index pages.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://www.samac.jp/en/exhibition/index.php",
+            "https://www.samac.jp/en/exhibition/index.php?m=future"
+          ],
+          "event_page_patterns": [
+            "/en/exhibition/"
+          ]
+        }
+      }
     },
     {
       "slug": "fukuda-art-museum",
       "name": "Fukuda Art Museum",
       "source_type": "museum",
       "language": "en",
+      "address_text": "3-16 Sagatenryuji Susukinobaba-cho, Ukyo-ku, Kyoto 616-8385 Japan",
+      "lat": 35.0137922,
+      "lng": 135.6762262,
       "base_url": "https://fukuda-art-museum.jp/en/exhibition",
-      "start_urls": ["https://fukuda-art-museum.jp/en/exhibition"],
-      "allowed_domains": ["fukuda-art-museum.jp"],
+      "start_urls": [
+        "https://fukuda-art-museum.jp/en/exhibition"
+      ],
+      "allowed_domains": [
+        "fukuda-art-museum.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition", "/exhibition"],
+      "event_page_patterns": [
+        "/en/exhibition",
+        "/exhibition"
+      ],
       "notes": "English exhibition listing.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://fukuda-art-museum.jp/en/exhibition"
+          ],
+          "event_page_patterns": [
+            "/en/exhibition",
+            "/exhibition"
+          ]
+        }
+      }
     },
     {
       "slug": "oyamazaki-villa-museum",
       "name": "Asahi Beer Oyamazaki Villa Museum",
       "source_type": "museum",
       "language": "en",
+      "address_text": "5-3 Zenihara, Oyamazaki-cho, Otokuni-gun, Kyoto 618-0071 Japan",
+      "lat": 34.8955629,
+      "lng": 135.6796672,
       "base_url": "https://www.asahigroup-oyamazaki.com/english/exhibition/",
       "start_urls": [
         "https://www.asahigroup-oyamazaki.com/english/exhibition/"
@@ -543,27 +1597,76 @@
         "asahigroup-oyamazaki.com"
       ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/english/exhibition/", "/exhibition/"],
+      "event_page_patterns": [
+        "/english/exhibition/",
+        "/exhibition/"
+      ],
       "notes": "English exhibition listing for the Oyamazaki Villa Museum, just outside Kyoto.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://www.asahigroup-oyamazaki.com/english/exhibition/"
+          ],
+          "event_page_patterns": [
+            "/english/exhibition/",
+            "/exhibition/"
+          ]
+        }
+      }
     },
     {
       "slug": "miho-museum",
       "name": "MIHO Museum",
       "source_type": "museum",
       "language": "en",
+      "address_text": "300 Momodani, Tashiro, Shigaraki-cho, Koka, Shiga 529-1814 Japan",
+      "lat": 34.8432756,
+      "lng": 135.8847758,
       "base_url": "https://www.miho.jp/en/current_exhibition/",
       "start_urls": [
         "https://www.miho.jp/en/current_exhibition/",
         "https://www.miho.jp/en/upcoming_exhibition/"
       ],
-      "allowed_domains": ["www.miho.jp", "miho.jp"],
+      "allowed_domains": [
+        "www.miho.jp",
+        "miho.jp"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "event_page_patterns": [
+        "/en/exhibition/",
+        "/exhibition/"
+      ],
       "notes": "Use the current and upcoming exhibition landing pages, which link into exhibition detail pages under `/en/exhibition/<slug>/`.",
       "is_active": true,
-      "source_categories": ["art", "museum"]
+      "source_categories": [
+        "museum"
+      ],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": [],
+          "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": [
+            "https://www.miho.jp/en/current_exhibition/",
+            "https://www.miho.jp/en/upcoming_exhibition/"
+          ],
+          "event_page_patterns": [
+            "/en/exhibition/",
+            "/exhibition/"
+          ]
+        }
+      }
     }
   ]
 }

@@ -14,5 +14,8 @@
     "crawl:momak": "node src/run-once.mjs --source=the-national-museum-of-modern-art",
     "crawl:sen-oku": "node src/run-once.mjs --source=sen-oku-hakukokan-museum",
     "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@google-cloud/translate": "^9.4.1"
   }
 }

@@ -1,10 +1,10 @@
 ---
 import GeneralButton from "./GeneralButton.astro";
+import { uiText } from "../lib/i18n";
 
 type EventRow = {
   id: string;
   title: string;
-  artist_name: string | null;
   categories: string[];
   date_text: string;
   timing?: "ongoing" | "upcoming" | "past";
@@ -22,12 +22,14 @@ type EventRow = {
 
 type Props = {
   event: EventRow;
+  mapSourceSlug?: string | null;
   mapsUrl: string;
   googleCalendarUrl: string | null;
   excerpt: string;
 };
 
-const { event, mapsUrl, googleCalendarUrl, excerpt } = Astro.props;
+const { event, mapSourceSlug, mapsUrl, googleCalendarUrl, excerpt } = Astro.props;
+const copy = uiText.en;
 
 const normalizeCategory = (value: string) =>
   value
@@ -36,15 +38,6 @@ const normalizeCategory = (value: string) =>
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-
-const formatCategoryLabel = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 
 const categorySlugs = event.categories.map(normalizeCategory);
 const maxImagesPerCard = 3;
@@ -110,10 +103,9 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   class="event-card"
   data-event-card
   data-event-card-toggle
-  data-elastic-line="top"
-  data-elastic-strength="1.15"
-  data-elastic-lift="18"
   data-reveal-state="pending"
+  data-event-id={event.id}
+  data-map-source-slug={mapSourceSlug ?? undefined}
   data-active="false"
   data-timing={event.timing}
   data-categories={categorySlugs.join("|")}
@@ -124,24 +116,22 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 >
   <div class="event-card__body">
     <div class="event-card__body__header">
-      <h2 class="event-card__title">{event.title}</h2>
-      <div class="event-card__headermeta">
+      <div class="event-card__body__meta">
         <span>{event.date_text}</span>
         <span>{event.institution_name}</span>
-        {event.artist_name ? <span>{event.artist_name}</span> : null}
+      </div>
+      <div class="event-card__body__title">
+        <h2 class="event-card__title">{event.title}</h2>
+      </div>
     </div>
-    </div>
-    <div class="event-card__meta">
-      <span>{event.date_text}</span>
-      <span>{event.institution_name}</span>
-    </div>
+
     <div class="event-card__body__content">
-      <p class="event-card__description" data-event-card-fade>{excerpt}</p>
-      <div class="event-card__actions" data-event-card-fade>
+      <p class="event-card__body__description" data-event-card-fade>{excerpt}</p>
+      <div class="event-card__body__actions" data-event-card-fade>
       
         {calendarStartDate ? (
           <GeneralButton
-            label="Apple"
+            label={copy.apple}
             icon="calendar"
             data-apple-calendar-button
             data-calendar-title={event.title}
@@ -149,65 +139,38 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             data-calendar-end={calendarEndDate}
             data-calendar-details={calendarDetails}
             data-calendar-location={calendarLocation}
-            canPlaySound={true}
           />
         ) : null}
         {googleCalendarUrl ? (
           <GeneralButton
-            label="Google"
+            label={copy.google}
             icon="calendar"
             href={googleCalendarUrl}
             target="_blank"
             rel="noreferrer"
-            canPlaySound={true}
           />
         ) : null}
         <GeneralButton
-          label="Directions"
+          label={copy.directions}
           icon="map"
           href={mapsUrl}
           target="_blank"
           rel="noreferrer"
-          canPlaySound={true}
         />
         <GeneralButton
-          label="Website"
+          label={copy.website}
           icon="exit"
           href={event.source_url}
           target="_blank"
           rel="noreferrer"
-          canPlaySound={true}
         />
       </div>
-      <!-- {event.categories.length > 0 ? (
-          <div class="event-card__actions" data-event-card-fade>
-            <ul class="event-card__categories" aria-label="Categories">
-              {event.categories.map((category) => {
-                const categorySlug = normalizeCategory(category);
-                const categoryLabel = formatCategoryLabel(category);
-
-                return (
-                  <li>
-                    <GeneralButton
-                      label={"#" + categoryLabel}
-                      pressed={false}
-                      showDot={true}
-                      dataCategory={categorySlug}
-                      dataCategoryButton={true}
-                      aria-label={`Filter events by ${categoryLabel}`}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : null} -->
     </div>
 
   </div>
+  {images.length > 0 ? (
     <div class="event-card__media">
-    {images.length > 0 ? (
-      images.map((imageUrl, index) => (
+      {images.map((imageUrl, index) => (
         <span class="event-card__image-frame">
           <img
             class="event-card__image"
@@ -218,19 +181,15 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
             aria-hidden={index === 0 ? undefined : "true"}
           />
         </span>
-      ))
-    ) : (
-      <span class="event-card__image-frame event-card__image-frame--placeholder">
-        <span class="event-card__image event-card__image--placeholder">KyōNoKyōto</span>
-      </span>
-    )}
-  </div>
+      ))}
+    </div>
+  ) : null}
 </article>
 
 <script>
   if (!window.__eventCardToggleBound) {
-    const actionSelector = ".event-card__actions .general-button";
-    const actionContainerSelector = ".event-card__actions";
+    const actionSelector = ".event-card__body__actions .general-button";
+    const actionContainerSelector = ".event-card__body__actions";
     const cardSelector = "[data-event-card-toggle]";
     const cardDotClass = "event-card-dot";
     const contentSelector = ".event-card__body__content";
@@ -413,17 +372,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       if (dot instanceof HTMLElement) dot.hidden = true;
     };
 
-    const playAmbientInteractionSound = (clientX) => {
-      document.dispatchEvent(
-        new CustomEvent("ambient-sound:interaction", {
-          detail: {
-            viewportX: clientX / Math.max(1, window.innerWidth),
-            velocity: 0.9,
-          },
-        })
-      );
-    };
-
     const getMediaHeight = (card, isActive) => {
       const styles = window.getComputedStyle(card);
       return styles
@@ -487,6 +435,18 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       });
     };
 
+    const emitCardActiveChange = (card, isActive) => {
+      document.dispatchEvent(
+        new CustomEvent("event-card:active-change", {
+          detail: {
+            active: isActive,
+            eventId: card.dataset.eventId || "",
+            sourceSlug: card.dataset.mapSourceSlug || "",
+          },
+        })
+      );
+    };
+
     const setContentState = (card, isActive) => {
       const content = card.querySelector(contentSelector);
       if (!(content instanceof HTMLElement)) return;
@@ -518,6 +478,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       const content = card.querySelector(contentSelector);
       if (!(content instanceof HTMLElement)) {
         setCardActiveState(card, isActive);
+        emitCardActiveChange(card, isActive);
         return;
       }
 
@@ -531,6 +492,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
       if (isActive) {
         setCardActiveState(card, true);
+        emitCardActiveChange(card, true);
         const targetContentHeight = content.scrollHeight;
         const expandedCardHeight = measureCardHeight(card, content, "auto", targetMediaHeight);
         content.style.height = "0px";
@@ -555,6 +517,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       }
 
       setCardActiveState(card, false);
+      emitCardActiveChange(card, false);
       fadeOut(fadeTargets);
       const collapsedCardHeight = measureCardHeight(card, content, "0px", targetMediaHeight);
       card.style.height = `${startHeight}px`;
@@ -697,7 +660,6 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
         hideCardDot();
       } else {
         setCardDotPosition(card, event.clientX, event.clientY, hasActiveCardBefore(card));
-        playAmbientInteractionSound(event.clientX);
       }
       toggleCard(card);
     });
@@ -792,3 +754,193 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     window.__appleCalendarBound = true;
   }
 </script>
+
+<style lang="sass">
+  $mobile-breakpoint: 768px
+  $desktop-breakpoint: 1440px
+
+  [data-event-card][data-reveal-state='queued']
+    opacity: 0
+    will-change: opacity
+
+  .event-card
+    --event-card-media-row-height: var(--event-card-media-row-height-desktop, 10rem)
+    --event-card-media-row-height-active: var(--event-card-media-row-height-active-desktop, 20rem)
+    --event-card-media-row-height-current: var(--event-card-media-row-height)
+    --event-card-media-gap: 0.5rem
+    position: relative
+    display: flex
+    gap: 1rem
+    align-items: flex-start
+    padding: 0.5rem 0 2rem
+    border-top: var(--stroke-width) solid var(--stroke)
+    cursor: var(--dot-cursor)
+    overflow: hidden
+    @media (max-width: $mobile-breakpoint)
+      flex-direction: column
+    > *
+      pointer-events: none
+
+    &:not([data-toggle-ready='true'])[data-active='false'] .event-card__body__content
+      display: none
+
+    [data-event-card-fade]
+      opacity: 0
+      pointer-events: none
+
+    &[data-active='true'] [data-event-card-fade]
+      pointer-events: auto
+
+    &[data-active='false'] .event-card__body__actions,
+    &[data-active='false'] .event-card__body__actions :global(.general-button)
+      pointer-events: none
+
+    &[data-active='true'] .event-card__body__actions,
+    &[data-active='true'] .event-card__body__actions :global(.general-button)
+      pointer-events: auto
+
+    &[data-timing='upcoming']
+      content-visibility: auto
+      contain-intrinsic-size: auto 14rem
+
+    &__media
+      flex: 1 1 auto
+      display: flex
+      justify-content: flex-start
+      gap: var(--event-card-media-gap)
+      min-width: 0
+      max-height: var(--event-card-media-row-height-current)
+      max-width: 66%
+      overflow-x: auto
+      overflow-y: hidden
+      overscroll-behavior-x: contain
+      flex-wrap: nowrap
+      pointer-events: auto
+      -webkit-overflow-scrolling: touch
+      scrollbar-width: none
+
+      &::-webkit-scrollbar
+        display: none
+        width: 0
+        height: 0
+
+      @media screen and (max-width: $desktop-breakpoint)
+        max-width: 60%
+
+      @media screen and (max-width: $mobile-breakpoint)
+        max-width: 100%
+
+      &[data-scrollable='true']
+        overflow-x: scroll
+
+    &__image-frame
+      position: relative
+      flex: 0 0 auto
+      height: var(--event-card-media-row-height-current)
+      max-width: 100%
+      overflow: hidden
+
+      &:first-child
+        margin-left: auto
+
+    &__image
+      width: auto
+      height: var(--event-card-media-row-height-current)
+
+    &__body
+      flex: 1 1 auto
+      display: flex
+      flex-direction: column
+      min-width: 0
+      max-width: 40%
+      @media (max-width: $mobile-breakpoint)
+        max-width: 100%
+
+      &__header
+        display: flex
+        flex-direction: column
+        gap: 1rem
+        user-select: auto
+
+      &__title
+        padding-left: var(--page-padding-x)
+        @media (max-width: $mobile-breakpoint)
+          padding-left: 0
+
+      &__meta
+        display: flex
+        flex-direction: column
+        // gap: 2px
+        font-size: var(--type-meta-size)
+        text-transform: uppercase
+        user-select: auto
+
+      &__content
+        display: flex
+        flex-direction: column
+        gap: 1rem
+        will-change: height
+
+      &__description
+        margin-top: 1rem
+        display: -webkit-box
+        -webkit-box-orient: vertical
+        -webkit-line-clamp: 5
+        overflow: hidden
+        user-select: auto
+        @media (max-width: $mobile-breakpoint)
+          -webkit-line-clamp: 3
+
+      &__actions
+        display: flex
+        flex-wrap: wrap
+        gap: var(--control-gap)
+        pointer-events: none
+        overflow: visible
+
+  :global([data-content-container][data-map-visible]) .event-card
+    flex-direction: column
+
+    &__media
+      flex-basis: auto
+      width: 100%
+      max-width: 100%
+
+    &__image-frame:first-child
+      margin-left: 0
+
+    &__body
+      max-width: 100%
+
+      &__title
+        padding-left: 0
+
+      &__description
+        -webkit-line-clamp: 3
+
+  :global(.event-card-dot)
+    position: absolute
+    z-index: -1
+    width: var(--dot-card)
+    height: var(--dot-card)
+    background: var(--color-pink)
+    mask: var(--dot-mask) center / contain no-repeat
+    -webkit-mask: var(--dot-mask) center / contain no-repeat
+    transform: translate(-50%, var(--event-card-dot-translate-y, -50%)) rotate(var(--dot-rotation)) scaleX(var(--dot-scale-x)) scaleY(var(--dot-scale-y))
+    transform-origin: center
+    pointer-events: none
+
+  @media (max-width: $mobile-breakpoint)
+    .event-card
+      --event-card-media-row-height: 10rem
+      --event-card-media-row-height-active: 10rem
+
+      flex-direction: column
+
+      &[data-timing='upcoming']
+        contain-intrinsic-size: auto 16rem
+
+      &__media
+        flex-basis: auto
+        width: 100%
+</style>

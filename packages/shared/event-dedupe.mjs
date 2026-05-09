@@ -103,7 +103,6 @@ export function scoreEventRecord(event) {
   score += getTextLength(event?.primary_image_url) > 0 ? 20 : 0;
   score += Math.min(getArrayLength(event?.image_urls), 4) * 3;
   score += Math.min(getArrayLength(event?.categories), 4) * 2;
-  score += getTextLength(event?.artist_name) > 0 ? 8 : 0;
   score += getTextLength(event?.venue_name) > 0 ? 6 : 0;
   score += getTextLength(event?.address_text) > 0 ? 6 : 0;
   score += getTextLength(event?.date_text) > 0 ? 6 : 0;

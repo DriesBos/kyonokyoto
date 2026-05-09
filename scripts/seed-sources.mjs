@@ -45,6 +45,7 @@ const sources = sourceConfig.map((source) => ({
   allowed_domains: source.allowed_domains ?? [],
   crawl_strategy: source.crawl_strategy ?? "listing-and-detail-pages",
   event_page_patterns: source.event_page_patterns ?? [],
+  locales: source.locales ?? {},
   notes: source.notes ?? null,
   is_active: source.is_active ?? true,
 }));

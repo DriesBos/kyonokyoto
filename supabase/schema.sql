@@ -11,11 +11,23 @@ create table if not exists public.sources (
   allowed_domains jsonb not null default '[]'::jsonb,
   crawl_strategy text not null default 'listing-and-detail-pages',
   event_page_patterns jsonb not null default '[]'::jsonb,
+  locales jsonb not null default '{}'::jsonb,
   notes text,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.sources
+  add column if not exists locales jsonb not null default '{}'::jsonb;
+
+update public.sources
+set locales = '{}'::jsonb
+where locales is null;
+
+alter table public.sources
+  alter column locales set default '{}'::jsonb,
+  alter column locales set not null;
 
 create table if not exists public.crawl_runs (
   id uuid primary key default gen_random_uuid(),
@@ -62,7 +74,6 @@ create table if not exists public.events (
 
   -- Core list item content
   title text not null,
-  artist_name text,
   categories text[] not null default '{}',
   description text,
 
@@ -103,6 +114,92 @@ create table if not exists public.events (
   )
 );
 
+create table if not exists public.event_translations (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references public.events(id) on delete cascade,
+  locale text not null check (locale in ('en', 'ja')),
+  title text not null,
+  description text,
+  institution_name text not null,
+  venue_name text,
+  address_text text,
+  date_text text not null,
+  source_url text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (event_id, locale)
+);
+
+alter table public.event_translations
+  add column if not exists id uuid default gen_random_uuid(),
+  add column if not exists event_id uuid,
+  add column if not exists locale text,
+  add column if not exists title text,
+  add column if not exists description text,
+  add column if not exists institution_name text,
+  add column if not exists venue_name text,
+  add column if not exists address_text text,
+  add column if not exists date_text text,
+  add column if not exists source_url text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+update public.event_translations
+set id = gen_random_uuid()
+where id is null;
+
+alter table public.event_translations
+  alter column id set default gen_random_uuid(),
+  alter column id set not null,
+  alter column created_at set default now(),
+  alter column created_at set not null,
+  alter column updated_at set default now(),
+  alter column updated_at set not null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.event_translations'::regclass
+      and contype = 'p'
+  ) then
+    alter table public.event_translations
+      add constraint event_translations_pkey primary key (id);
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.event_translations'::regclass
+      and conname = 'event_translations_event_id_fkey'
+  ) then
+    alter table public.event_translations
+      add constraint event_translations_event_id_fkey
+      foreign key (event_id) references public.events(id) on delete cascade;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.event_translations'::regclass
+      and conname = 'event_translations_locale_check'
+  ) then
+    alter table public.event_translations
+      add constraint event_translations_locale_check
+      check (locale in ('en', 'ja'));
+  end if;
+end;
+$$;
+
 create unique index if not exists sources_slug_idx on public.sources (slug);
 create index if not exists crawl_runs_source_id_idx on public.crawl_runs (source_id, created_at desc);
 create index if not exists raw_pages_source_id_idx on public.raw_pages (source_id, fetched_at desc);
@@ -116,6 +213,9 @@ create index if not exists events_last_seen_at_idx on public.events (last_seen_a
 create index if not exists events_institution_name_idx on public.events (institution_name);
 create index if not exists events_categories_gin_idx on public.events using gin (categories);
 create unique index if not exists events_dedupe_key_idx on public.events (dedupe_key);
+create unique index if not exists event_translations_event_id_locale_idx on public.event_translations (event_id, locale);
+create index if not exists event_translations_event_id_idx on public.event_translations (event_id);
+create index if not exists event_translations_locale_idx on public.event_translations (locale);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -139,7 +239,14 @@ before update on public.events
 for each row
 execute function public.set_updated_at();
 
+drop trigger if exists set_event_translations_updated_at on public.event_translations;
+create trigger set_event_translations_updated_at
+before update on public.event_translations
+for each row
+execute function public.set_updated_at();
+
 alter table public.events enable row level security;
+alter table public.event_translations enable row level security;
 
 drop policy if exists "Public can read published events" on public.events;
 create policy "Public can read published events"
@@ -147,3 +254,17 @@ on public.events
 for select
 to anon, authenticated
 using (status = 'published');
+
+drop policy if exists "Public can read published event translations" on public.event_translations;
+create policy "Public can read published event translations"
+on public.event_translations
+for select
+to anon, authenticated
+using (
+  exists (
+    select 1
+    from public.events
+    where events.id = event_translations.event_id
+      and events.status = 'published'
+  )
+);
