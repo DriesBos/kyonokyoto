@@ -40,11 +40,10 @@ const normalizeCategory = (value: string) =>
     .replace(/^-+|-+$/g, "");
 
 const categorySlugs = event.categories.map(normalizeCategory);
-const maxImagesPerCard = 3;
-const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
+const imageUrls = (event.image_urls ?? []).filter(Boolean);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
 const desktopImageHeightRem = 10;
-const mobileImageHeightRem = 5;
+const mobileImageHeightRem = 7.5;
 const desktopImageHeightActiveRem = 20;
 const mobileImageHeightActiveRem = 10;
 const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? "";
@@ -551,6 +550,65 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       animateCardState(card, next);
     };
 
+    const activateCard = (card) => {
+      if (!(card instanceof HTMLElement)) return;
+
+      document.querySelectorAll(cardSelector).forEach((otherCard) => {
+        if (!(otherCard instanceof HTMLElement)) return;
+        const shouldActivate = otherCard === card;
+        if (otherCard.getAttribute("data-active") === String(shouldActivate)) return;
+
+        animateCardState(otherCard, shouldActivate);
+      });
+    };
+
+    const getVisibleCards = () =>
+      Array.from(document.querySelectorAll(cardSelector)).filter((card) => {
+        if (!(card instanceof HTMLElement)) return false;
+        return !card.hidden && !card.closest("[hidden]") && card.getClientRects().length > 0;
+      });
+
+    const scrollCardIntoEventsView = (card) => {
+      const eventsSection = card.closest("[data-events-section]");
+      if (!(eventsSection instanceof HTMLElement)) {
+        card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        return;
+      }
+
+      const eventsSectionRect = eventsSection.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      const mainHeader = eventsSection.querySelector("[data-main-header]");
+      const pagePaddingY = Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--page-padding-y")
+      );
+      const stickyOffset = mainHeader instanceof HTMLElement ? mainHeader.offsetHeight : 0;
+      const scrollPadding = stickyOffset + (Number.isFinite(pagePaddingY) ? pagePaddingY : 0);
+      const nextScrollTop = eventsSection.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
+
+      eventsSection.scrollTo({
+        top: Math.max(0, nextScrollTop),
+        behavior: "smooth",
+      });
+    };
+
+    const activateAdjacentCard = (direction) => {
+      const visibleCards = getVisibleCards();
+      const activeIndex = visibleCards.findIndex(
+        (card) => card instanceof HTMLElement && card.getAttribute("data-active") === "true"
+      );
+      if (activeIndex === -1) return;
+
+      const nextIndex = activeIndex + direction;
+      if (nextIndex < 0 || nextIndex >= visibleCards.length) return;
+
+      const nextCard = visibleCards[nextIndex];
+      if (!(nextCard instanceof HTMLElement)) return;
+
+      activateCard(nextCard);
+      scrollCardIntoEventsView(nextCard);
+      nextCard.focus({ preventScroll: true });
+    };
+
     document.querySelectorAll(cardSelector).forEach((card) => {
       if (!(card instanceof HTMLElement)) return;
       setContentState(card, card.getAttribute("data-active") === "true");
@@ -685,6 +743,43 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       toggleCard(target);
     });
 
+    document.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      if (!["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(event.key)) return;
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest("input, textarea, select, button, a, [contenteditable='true']")
+      ) {
+        return;
+      }
+
+      const direction = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
+      const beforeActive = document.querySelector(`${cardSelector}[data-active='true']`);
+      if (!(beforeActive instanceof HTMLElement)) return;
+
+      event.preventDefault();
+      activateAdjacentCard(direction);
+    });
+
+    document.addEventListener("event-card:activate", (event) => {
+      if (!(event instanceof CustomEvent)) return;
+
+      const detail = event.detail ?? {};
+      const eventId = typeof detail.eventId === "string" ? detail.eventId : "";
+      const sourceSlug = typeof detail.sourceSlug === "string" ? detail.sourceSlug : "";
+      const cards = Array.from(document.querySelectorAll(cardSelector));
+      const targetCard = cards.find((card) => {
+        if (!(card instanceof HTMLElement)) return false;
+        if (card.hidden || card.closest("[hidden]") || card.getClientRects().length === 0) return false;
+        if (eventId) return card.dataset.eventId === eventId;
+        return Boolean(sourceSlug && card.dataset.mapSourceSlug === sourceSlug);
+      });
+
+      if (targetCard instanceof HTMLElement) activateCard(targetCard);
+    });
+
     window.__eventCardToggleBound = true;
   }
 
@@ -816,6 +911,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       overscroll-behavior-x: contain
       flex-wrap: nowrap
       pointer-events: auto
+      touch-action: pan-x
       -webkit-overflow-scrolling: touch
       scrollbar-width: none
 
@@ -932,8 +1028,8 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
 
   @media (max-width: $mobile-breakpoint)
     .event-card
-      --event-card-media-row-height: 10rem
-      --event-card-media-row-height-active: 10rem
+      --event-card-media-row-height: var(--event-card-media-row-height-mobile, 7.5rem)
+      --event-card-media-row-height-active: var(--event-card-media-row-height-active-mobile, 10rem)
 
       flex-direction: column
 
@@ -943,4 +1039,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
       &__media
         flex-basis: auto
         width: 100%
+
+      &__image-frame:first-child
+        margin-left: 0
 </style>

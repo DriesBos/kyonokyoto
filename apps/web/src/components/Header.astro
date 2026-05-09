@@ -434,6 +434,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
       mapSection?.toggleAttribute("inert", true);
       mapToggle.addEventListener("click", () => {
         const nextVisible = !(contentContainer instanceof HTMLElement && contentContainer.hasAttribute("data-map-visible"));
+        closeFilterDisclosure();
         setMapVisible(nextVisible);
       });
     }
@@ -473,6 +474,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
       if (event.key !== "Escape") return;
 
       closeFilterDisclosure();
+      setMapVisible(false);
     });
     getScrollRoot().addEventListener("scroll", syncStickyState, { passive: true });
     getScrollRoot().addEventListener("scroll", maybeCloseFilterOnScroll, { passive: true });

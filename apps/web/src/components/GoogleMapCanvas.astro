@@ -43,6 +43,7 @@ const sourcesJson = JSON.stringify(sources);
 
   type MapInstance = {
     panTo?: (position: { lat: number; lng: number }) => void;
+    setZoom?: (zoom: number) => void;
   };
 
   type AdvancedMarkerInstance = {
@@ -73,6 +74,8 @@ const sourcesJson = JSON.stringify(sources);
   const mapWindow = window as MapsWindow;
   const mapElements = Array.from(document.querySelectorAll("[data-google-map]"));
   const kyotoCenter = { lat: 35.0240977, lng: 135.7621436 };
+  const mobileMapQuery = window.matchMedia("(max-width: 768px)");
+  const getMapZoom = () => (mobileMapQuery.matches ? 13 : 14);
 
   const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
     mapWindow.google = mapWindow.google ?? {};
@@ -203,7 +206,7 @@ const sourcesJson = JSON.stringify(sources);
 
       const map = new MapConstructor(element, {
         center: kyotoCenter,
-        zoom: 14,
+        zoom: getMapZoom(),
         mapId,
         mapTypeId: "terrain",
         ...(ColorScheme?.LIGHT ? { colorScheme: ColorScheme.LIGHT } : {}),
@@ -213,9 +216,9 @@ const sourcesJson = JSON.stringify(sources);
         keyboardShortcuts: true,
       });
 
-      const scrollToSourceEvent = (sourceSlug: string) => {
+      const getFirstVisibleSourceCard = (sourceSlug: string) => {
         const eventsSection = document.querySelector("[data-events-section]");
-        if (!(eventsSection instanceof HTMLElement)) return;
+        if (!(eventsSection instanceof HTMLElement)) return null;
 
         const escapedSourceSlug = sourceSlug.replace(/["\\]/g, "\\$&");
         const sourceCards = Array.from(
@@ -226,6 +229,14 @@ const sourcesJson = JSON.stringify(sources);
           return !card.hidden && !card.closest("[hidden]") && card.getClientRects().length > 0;
         });
 
+        return targetCard instanceof HTMLElement ? targetCard : null;
+      };
+
+      const scrollToSourceEvent = (sourceSlug: string) => {
+        const eventsSection = document.querySelector("[data-events-section]");
+        if (!(eventsSection instanceof HTMLElement)) return;
+
+        const targetCard = getFirstVisibleSourceCard(sourceSlug);
         if (!(targetCard instanceof HTMLElement)) return;
 
         const eventsSectionRect = eventsSection.getBoundingClientRect();
@@ -244,6 +255,20 @@ const sourcesJson = JSON.stringify(sources);
         });
       };
 
+      const activateSourceEvent = (sourceSlug: string) => {
+        const targetCard = getFirstVisibleSourceCard(sourceSlug);
+        if (!(targetCard instanceof HTMLElement)) return;
+
+        document.dispatchEvent(
+          new CustomEvent("event-card:activate", {
+            detail: {
+              eventId: targetCard.dataset.eventId || "",
+              sourceSlug,
+            },
+          })
+        );
+      };
+
       const markerRecords = sources.map((source) => {
         const content = createMarkerContent(source);
         const marker = new AdvancedMarkerElement({
@@ -256,6 +281,7 @@ const sourcesJson = JSON.stringify(sources);
 
         marker.addEventListener?.("gmp-click", () => {
           highlightSource(source.slug, true);
+          activateSourceEvent(source.slug);
           scrollToSourceEvent(source.slug);
         });
 
@@ -344,6 +370,9 @@ const sourcesJson = JSON.stringify(sources);
       });
       document.addEventListener("event-filter:updated", applyMapFilter);
       document.addEventListener("map-layout:updated", syncActiveCardHighlight);
+      mobileMapQuery.addEventListener("change", () => {
+        if (isMapVisible()) map.setZoom?.(getMapZoom());
+      });
       applyMapFilter();
       syncActiveCardHighlight();
     } catch (error) {
