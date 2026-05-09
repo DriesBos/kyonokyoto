@@ -48,7 +48,7 @@ const sourcesJson = JSON.stringify(sources);
   type AdvancedMarkerInstance = {
     map: unknown | null;
     zIndex?: number | null;
-    addListener?: (eventName: string, callback: () => void) => void;
+    addEventListener?: (eventName: string, callback: () => void) => void;
   };
 
   type AdvancedMarkerConstructor = new (options: {
@@ -255,7 +255,7 @@ const sourcesJson = JSON.stringify(sources);
         });
         marker.zIndex = 0;
 
-        marker.addListener?.("click", () => {
+        marker.addEventListener?.("gmp-click", () => {
           highlightSource(source.slug, true);
           scrollToSourceEvent(source.slug);
         });
