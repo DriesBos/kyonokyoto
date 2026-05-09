@@ -97,7 +97,6 @@ const sourcesJson = JSON.stringify(sources);
             v: "weekly",
             libraries: Array.from(requestedLibraries).join(","),
             callback: "google.maps.__ib__",
-            auth_referrer_policy: "origin",
           });
 
           if (mapId) {
@@ -390,6 +389,9 @@ const sourcesJson = JSON.stringify(sources);
 
     :global(.gm-style)
       font-family: var(--font-body)
+
+    :global(.gm-style-cc)
+      opacity: 0
 
     :global(.gm-style img[alt="Google"])
       background: var(--color-beige)
