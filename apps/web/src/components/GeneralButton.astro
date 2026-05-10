@@ -156,9 +156,8 @@ const classes = ["general-button", disabled && "general-button--disabled", class
     align-items: center
     justify-content: flex-start
     gap: 4px
-    padding: 3px 1px 0
+    padding: calc(var(--stroke-width) + 3px) calc(var(--control-gap) / 2) 0
     border: 0
-    border-top: var(--stroke-width) solid var(--stroke)
     appearance: none
     -webkit-tap-highlight-color: transparent
     background: transparent
@@ -169,6 +168,15 @@ const classes = ["general-button", disabled && "general-button--disabled", class
     cursor: var(--dot-cursor)
     pointer-events: auto
     overflow: visible
+
+    &::before
+      content: ""
+      position: absolute
+      top: 0
+      left: calc(var(--control-gap) / 2)
+      right: calc(var(--control-gap) / 2)
+      border-top: var(--stroke-width) solid var(--stroke)
+      pointer-events: none
 
     &:hover,
     &:active,

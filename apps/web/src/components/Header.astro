@@ -560,13 +560,15 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
       align-items: flex-start
       justify-content: flex-end
       flex-wrap: wrap
-      gap: var(--control-gap)
+      column-gap: 0
+      row-gap: var(--control-gap)
 
     &__options
       display: flex
       flex-wrap: wrap
       justify-content: flex-end
-      gap: var(--control-gap)
+      column-gap: 0
+      row-gap: var(--control-gap)
       width: min(100%, 48rem)
       height: 0
       overflow: hidden
