@@ -488,8 +488,9 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
 
   .headerWrapper
     display: contents
+
     :global(.page-edge-strokes--top)
-      margin-bottom: calc(var(--page-padding-y) - var(--events-section-gap, 0px))
+      margin-bottom: calc(0px - var(--events-section-gap, 0px))
 
   .mainHeader
     position: sticky
@@ -499,7 +500,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
     display: flex
     justify-content: space-between
     align-items: flex-start
-    gap: 1.5rem
+    gap: 0
     padding: var(--stroke-gap) 0
     background-color: var(--color-beige)
     overflow: visible
@@ -577,7 +578,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
 
   @media (max-width: $mobile-breakpoint)
     .mainHeader
-      gap: 1rem
+      gap: 0
       flex-direction: row
       align-items: flex-start
 

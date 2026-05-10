@@ -431,6 +431,8 @@ const sourcesJson = JSON.stringify(sources);
 </script>
 
 <style lang="sass">
+  $mobile-breakpoint: 768px
+
   .map-canvas
     position: relative
     width: 100%
@@ -439,19 +441,20 @@ const sourcesJson = JSON.stringify(sources);
     background: var(--color-beige)
     color: var(--color-green)
     overflow: hidden
+    @media screen and (min-width: $mobile-breakpoint)
+      border-left: var(--stroke-width) solid var(--color-green)
+    @media screen and (max-width: $mobile-breakpoint)
+      border-bottom: var(--stroke-width) solid var(--color-green)
 
     :global(.gm-style)
       font-family: var(--font-body)
-
     :global(.gm-style-cc)
       opacity: 0
-
     :global(.gm-style img[alt="Google"])
       background: var(--color-beige)
       border-radius: 2px
       box-shadow: 0 0 0 3px var(--color-beige)
       opacity: 0
-
     :global(.gm-style-mtc)
       opacity: 0
 
@@ -474,7 +477,7 @@ const sourcesJson = JSON.stringify(sources);
       margin: 0
 
   :global(.map-marker)
-    --map-marker-size: 0.85rem
+    --map-marker-size: 1.25rem
 
     display: grid
     place-items: center
@@ -492,7 +495,7 @@ const sourcesJson = JSON.stringify(sources);
     transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1)
 
     &[data-highlighted]
-      --map-marker-scale: 2
+      --map-marker-scale: 1.66
 
     &[data-hidden]
       display: none
@@ -503,14 +506,14 @@ const sourcesJson = JSON.stringify(sources);
     width: 100%
     height: 100%
     background: var(--color-pink)
-    border: 2px solid var(--color-green)
+    border: 1px solid white
     border-radius: 999px
     box-shadow: none
     transition: transform 160ms ease
 
   :global(.map-marker:hover .map-marker__dot),
   :global(.map-marker:focus-visible .map-marker__dot)
-    transform: scale(1.18)
+    transform: scale(1.33)
 
   :global(.map-marker:focus-visible)
     outline: none
