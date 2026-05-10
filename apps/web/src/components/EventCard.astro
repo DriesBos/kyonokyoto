@@ -851,6 +851,10 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     > *
       pointer-events: none
 
+    &:focus,
+    &:focus-visible
+      outline: none
+
     &:not([data-toggle-ready='true'])[data-active='false'] .event-card__body__content
       display: none
 
