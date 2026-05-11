@@ -44,7 +44,7 @@ const mapElements = Array.from(document.querySelectorAll("[data-google-map]"));
 const kyotoCenter = { lat: 35.0240977, lng: 135.7621436 };
 const mobileMapQuery = window.matchMedia("(max-width: 768px)");
 const getMapZoom = () => (mobileMapQuery.matches ? 13 : 14);
-const userLocationZoom = 16;
+const getMapShell = (element: HTMLElement) => element.closest(".map-canvas") ?? element;
 const pxFromCssVar = (name: string) => {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name);
   const px = Number.parseFloat(value);
@@ -105,7 +105,8 @@ const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
 };
 
 const showPlaceholder = (element: Element, message?: string) => {
-  const placeholder = element.querySelector("[data-map-placeholder]");
+  const mapShell = element instanceof HTMLElement ? getMapShell(element) : element;
+  const placeholder = mapShell.querySelector("[data-map-placeholder]");
   if (!(placeholder instanceof HTMLElement)) return;
 
   placeholder.hidden = false;
@@ -115,7 +116,7 @@ const showPlaceholder = (element: Element, message?: string) => {
 };
 
 const parseSources = (element: HTMLElement): MapSource[] => {
-  const sourceScript = element.querySelector("[data-map-sources]");
+  const sourceScript = getMapShell(element).querySelector("[data-map-sources]");
   if (!(sourceScript instanceof HTMLScriptElement)) return [];
 
   try {
@@ -186,7 +187,9 @@ const initMap = async (element: Element) => {
       throw new Error("Google Maps constructors unavailable.");
     }
 
-    element.querySelector("[data-map-placeholder]")?.setAttribute("hidden", "");
+    const mapShell = getMapShell(element);
+
+    mapShell.querySelector("[data-map-placeholder]")?.setAttribute("hidden", "");
 
     const map = new MapConstructor(element, {
       center: kyotoCenter,
@@ -199,8 +202,8 @@ const initMap = async (element: Element) => {
       gestureHandling: "greedy",
       keyboardShortcuts: true,
     });
-    const findMeButton = element.querySelector("[data-map-find-me]");
-    const findMeStatus = element.querySelector("[data-map-find-me-status]");
+    const findMeButton = mapShell.querySelector("[data-map-find-me]");
+    const findMeStatus = mapShell.querySelector("[data-map-find-me-status]");
     let userWatchId: number | null = null;
     let userMarker: AdvancedMarkerInstance | null = null;
     let userMarkerContent: HTMLElement | null = null;
@@ -261,7 +264,6 @@ const initMap = async (element: Element) => {
 
       if (!hasCenteredUserLocation) {
         map.panTo?.(nextPosition);
-        map.setZoom?.(userLocationZoom);
         hasCenteredUserLocation = true;
       }
 

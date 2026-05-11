@@ -19,22 +19,19 @@ const sourcesJson = JSON.stringify(sources);
 
 <div
   class="map-canvas"
-  data-google-map
-  data-api-key={mapsApiKey}
-  data-map-id={mapsMapId}
   role="application"
   aria-label="Kyoto cultural map"
 >
   <script type="application/json" data-map-sources set:html={sourcesJson} />
+  <div
+    class="map-canvas__viewport"
+    data-google-map
+    data-api-key={mapsApiKey}
+    data-map-id={mapsMapId}
+  ></div>
   <div class="map-controls" data-map-controls>
-    <button
-      class="map-find-me"
-      type="button"
-      data-map-find-me
-      aria-pressed="false"
-      aria-describedby="map-find-me-status"
-    >
-      find me
+    <button class="map-find-me" type="button" data-map-find-me aria-pressed="false" aria-describedby="map-find-me-status">
+      <span class="map-find-me__label">Find me</span>
     </button>
     <p class="map-find-me-status" id="map-find-me-status" data-map-find-me-status aria-live="polite"></p>
   </div>
@@ -59,6 +56,12 @@ const sourcesJson = JSON.stringify(sources);
     background: var(--color-beige)
     color: var(--color-green)
     overflow: hidden
+
+    &__viewport
+      position: absolute
+      inset: 0
+      width: 100%
+      height: 100%
 
     :global(.gm-style)
       font-family: var(--font-body)
@@ -92,9 +95,9 @@ const sourcesJson = JSON.stringify(sources);
 
   .map-controls
     position: absolute
-    right: var(--page-padding-x)
-    bottom: var(--page-padding-y)
-    z-index: 2
+    right: 0
+    bottom: 0
+    z-index: 1000
     display: flex
     flex-direction: column
     align-items: flex-end
@@ -102,22 +105,18 @@ const sourcesJson = JSON.stringify(sources);
     pointer-events: none
 
   .map-find-me
-    padding: 1px
-    border: 1px solid white
-    border-radius: 4px
     appearance: none
     -webkit-tap-highlight-color: transparent
-    background: var(--color-beige)
-    color: var(--color-green)
     font: inherit
-    font-size: 12px
-    line-height: 1
-    text-transform: lowercase
     cursor: var(--dot-cursor)
     pointer-events: auto
-
-    &[aria-pressed='true']
-      background: var(--color-pink)
+    padding: 0.5rem
+    border: 0
+    background: transparent
+    color: var(--color-green)
+    font-size: 12px
+    line-height: 1
+    user-select: none
 
     &:disabled
       opacity: 0.55
@@ -125,6 +124,17 @@ const sourcesJson = JSON.stringify(sources);
     &:focus,
     &:focus-visible
       outline: none
+
+  .map-find-me__label
+    display: block
+    padding: 3px 6px
+    border: 1px solid white
+    border-radius: 1000px
+    background: var(--color-pink)
+    color: white
+
+  .map-find-me[aria-pressed='true'] .map-find-me__label
+    background: var(--color-pink)
 
   .map-find-me-status
     max-width: 12rem
@@ -214,6 +224,7 @@ const sourcesJson = JSON.stringify(sources);
     border-radius: 999px
     background: var(--color-pink)
     box-sizing: border-box
+    animation: map-user-marker-pulse 1.6s ease-out infinite
 
     &::before
       content: ""
@@ -224,7 +235,31 @@ const sourcesJson = JSON.stringify(sources);
       height: 0
       border-left: 0.28rem solid transparent
       border-right: 0.28rem solid transparent
-      border-bottom: 0.65rem solid var(--color-green)
+      border-bottom: 0.65rem solid var(--color-pink)
       transform: translateX(-50%) rotate(var(--map-user-heading))
       transform-origin: 50% calc(100% + 0.65rem)
+
+    &::after
+      content: ""
+      position: absolute
+      inset: -0.38rem
+      border: 1px solid var(--color-pink)
+      border-radius: 999px
+      animation: map-user-marker-ring 1.6s ease-out infinite
+      pointer-events: none
+
+  @keyframes map-user-marker-pulse
+    0%,
+    100%
+      opacity: 1
+    50%
+      opacity: 0.35
+
+  @keyframes map-user-marker-ring
+    0%
+      opacity: 1
+      transform: scale(0.72)
+    100%
+      opacity: 0
+      transform: scale(1.75)
 </style>
