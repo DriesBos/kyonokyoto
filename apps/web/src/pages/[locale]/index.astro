@@ -587,10 +587,11 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
           ) : (
             <>
               <section class="event-group" data-event-group data-event-group-name="ongoing" hidden={ongoingEvents.length === 0}>
-                {ongoingEvents.map((event) => (
+                {ongoingEvents.map((event, index) => (
                   <EventCard
                     event={event}
                     locale={locale}
+                    hideTopBorder={index === 0}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapsUrl={mapsUrl(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
@@ -604,10 +605,11 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
               </div>
 
               <section class="event-group" data-event-group data-event-group-name="upcoming" hidden={upcomingEvents.length === 0}>
-                {upcomingEvents.map((event) => (
+                {upcomingEvents.map((event, index) => (
                   <EventCard
                     event={event}
                     locale={locale}
+                    hideTopBorder={ongoingEvents.length === 0 && index === 0}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapsUrl={mapsUrl(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}

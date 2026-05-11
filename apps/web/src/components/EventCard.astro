@@ -28,9 +28,10 @@ type Props = {
   mapsUrl: string;
   googleCalendarUrl: string | null;
   excerpt: string;
+  hideTopBorder?: boolean;
 };
 
-const { event, locale = "en", mapSourceSlug, mapsUrl, googleCalendarUrl, excerpt } = Astro.props;
+const { event, locale = "en", mapSourceSlug, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false } = Astro.props;
 const copy = uiText[locale];
 
 const normalizeCategory = (value: string) =>
@@ -46,7 +47,7 @@ const maxImagesPerCard = 3;
 const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
 const desktopImageHeightRem = 10;
-const mobileImageHeightRem = 7.5;
+const mobileImageHeightRem = 5;
 const desktopImageHeightActiveRem = 20;
 const mobileImageHeightActiveRem = 10;
 const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? "";
@@ -111,6 +112,7 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
   data-active="false"
   data-timing={event.timing}
   data-categories={categorySlugs.join("|")}
+  data-hide-top-border={hideTopBorder ? "" : undefined}
   style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem; --event-card-media-row-height-active-desktop: ${desktopImageHeightActiveRem}rem; --event-card-media-row-height-active-mobile: ${mobileImageHeightActiveRem}rem;`}
   role="button"
   tabindex="0"
@@ -864,6 +866,10 @@ const calendarLocation = event.address_text ?? event.venue_name ?? event.institu
     border-top: var(--stroke-width) solid var(--stroke)
     cursor: var(--dot-cursor)
     overflow: hidden
+
+    &[data-hide-top-border]
+      border-top: 0
+
     @media (max-width: $mobile-breakpoint)
       flex-direction: column
     > *

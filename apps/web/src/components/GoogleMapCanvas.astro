@@ -515,6 +515,9 @@ const sourcesJson = JSON.stringify(sources);
   :global(.map-marker:focus-visible .map-marker__dot)
     transform: scale(1.33)
 
+  :global(.map-marker[data-highlighted] .map-marker__dot)
+    border-color: var(--color-green)
+
   :global(.map-marker:focus-visible)
     outline: none
 </style>
