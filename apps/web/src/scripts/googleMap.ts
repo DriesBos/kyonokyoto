@@ -136,6 +136,11 @@ const createMarkerContent = (source: MapSource) => {
   marker.setAttribute("aria-label", source.name);
   marker.innerHTML = `
     <span class="map-marker__dot" aria-hidden="true"></span>
+    <span class="map-marker__star" aria-hidden="true">
+      <svg viewBox="0 0 25 25" focusable="false">
+        <path fill="var(--color-pink)" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
+      </svg>
+    </span>
     <span class="map-marker__label">${source.name}</span>
   `;
   return marker;
@@ -156,6 +161,11 @@ const createUserMarkerContent = () => {
 const getActiveMapCategory = () => {
   const activeButton = document.querySelector("[data-category-button][aria-pressed='true']");
   return activeButton instanceof HTMLElement ? activeButton.dataset.category ?? "" : "";
+};
+
+const getActiveMapStarred = () => {
+  const activeButton = document.querySelector("[data-starred-button][aria-pressed='true']");
+  return activeButton instanceof HTMLElement;
 };
 
 const initMap = async (element: Element) => {
@@ -409,6 +419,18 @@ const initMap = async (element: Element) => {
 
     const isMapVisible = () => !element.closest("[hidden]") && element.getClientRects().length > 0;
 
+    const syncStarredMarkers = () => {
+      const starredSourceSlugs = new Set(
+        Array.from(document.querySelectorAll("[data-event-card][data-starred='true']"))
+          .map((card) => (card instanceof HTMLElement ? card.dataset.mapSourceSlug ?? "" : ""))
+          .filter(Boolean)
+      );
+
+      markerRecords.forEach(({ source, content }) => {
+        content.toggleAttribute("data-starred", starredSourceSlugs.has(source.slug));
+      });
+    };
+
     const clearHighlight = () => {
       if (!highlightedSourceSlug) return;
 
@@ -454,11 +476,26 @@ const initMap = async (element: Element) => {
       highlightSource(sourceSlug, true);
     };
 
+    const getVisibleStarredSourceSlugs = () =>
+      new Set(
+        Array.from(document.querySelectorAll("[data-event-card][data-starred='true']"))
+          .filter((card) => {
+            if (!(card instanceof HTMLElement)) return false;
+            return !card.hidden && !card.closest("[hidden]");
+          })
+          .map((card) => (card instanceof HTMLElement ? card.dataset.mapSourceSlug ?? "" : ""))
+          .filter(Boolean)
+      );
+
     const applyMapFilter = () => {
       const activeCategory = getActiveMapCategory();
+      const activeStarred = getActiveMapStarred();
+      const visibleStarredSourceSlugs = activeStarred ? getVisibleStarredSourceSlugs() : null;
 
       markerRecords.forEach(({ marker, source, content }) => {
-        const matches = !activeCategory || source.categories.includes(activeCategory);
+        const matchesCategory = !activeCategory || source.categories.includes(activeCategory);
+        const matchesStarred = !visibleStarredSourceSlugs || visibleStarredSourceSlugs.has(source.slug);
+        const matches = matchesCategory && matchesStarred;
         marker.map = matches ? map : null;
         content.toggleAttribute("data-hidden", !matches);
       });
@@ -492,11 +529,13 @@ const initMap = async (element: Element) => {
       highlightSource(sourceSlug, true);
     });
     document.addEventListener("event-filter:updated", applyMapFilter);
+    document.addEventListener("event-stars:updated", syncStarredMarkers);
     document.addEventListener("map-layout:updated", syncActiveCardHighlight);
     mobileMapQuery.addEventListener("change", () => {
       if (isMapVisible()) map.setZoom?.(getMapZoom());
     });
     applyMapFilter();
+    syncStarredMarkers();
     syncActiveCardHighlight();
   } catch (error) {
     console.error(error);

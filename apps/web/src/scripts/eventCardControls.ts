@@ -1,5 +1,6 @@
 const actionSelector = ".event-card__body__actions .general-button";
 const actionContainerSelector = ".event-card__body__actions";
+const starSelector = "[data-event-star-toggle]";
 const cardSelector = "[data-event-card-toggle]";
 const cardDotClass = "event-card-dot";
 const contentSelector = ".event-card__body__content";
@@ -499,6 +500,7 @@ export const initEventCardControls = () => {
 
     const card = target.closest(cardSelector);
     if (!(card instanceof HTMLElement)) return;
+    if (target.closest(starSelector)) return;
     if (target.closest(actionSelector)) return;
 
     if (card.getAttribute("data-active") === "true") {

@@ -1,7 +1,7 @@
 ---
 import Icon from "./Icon.astro";
 
-type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map";
+type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map" | "star";
 type IconDirection = "top" | "right" | "bottom" | "left";
 type Edge = "first" | "last";
 type VerticalPadding = "none" | "full";
@@ -27,6 +27,7 @@ type Props = {
   dataTiming?: string;
   dataTimingButton?: boolean;
   dataFilterButton?: boolean;
+  dataStarredButton?: boolean;
   ariaControls?: string;
 };
 
@@ -51,6 +52,7 @@ const {
   dataTiming,
   dataTimingButton = false,
   dataFilterButton = false,
+  dataStarredButton = false,
   ariaControls,
   ...rest
 } = Astro.props;
@@ -76,6 +78,7 @@ const classes = [
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-starred-button={dataStarredButton ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -95,6 +98,7 @@ const classes = [
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-starred-button={dataStarredButton ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
@@ -116,6 +120,7 @@ const classes = [
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? "" : undefined}
       data-filter-button={dataFilterButton ? "" : undefined}
+      data-starred-button={dataStarredButton ? "" : undefined}
       aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}

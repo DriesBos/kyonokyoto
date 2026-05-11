@@ -119,6 +119,17 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
                 dataFilterButton={true}
               />
             ))}
+            <GeneralButton
+              label={copy.starred}
+              icon="star"
+              pressed={false}
+              verticalPadding="full"
+              showDot={true}
+              dataStarredButton={true}
+              dataFilterButton={true}
+              data-locale-ui-label="starred"
+              hidden
+            />
           </div>
         ) : null
       }

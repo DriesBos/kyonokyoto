@@ -73,6 +73,13 @@ const calendarLocation = calendarLocationFor(event);
   tabindex="0"
   aria-pressed="false"
 >
+  <button class="event-card__star" type="button" data-event-star-toggle aria-label="Star event" aria-pressed="false">
+    <svg class="event-card__star-icon" viewBox="0 0 25 25" aria-hidden="true">
+      <path class="event-card__star-ring" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
+      <path class="event-card__star-ring event-card__star-ring--second" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
+      <path class="event-card__star-shape" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
+    </svg>
+  </button>
   <div class="event-card__body">
     <div class="event-card__body__header">
       <div class="event-card__body__meta">
@@ -164,8 +171,10 @@ const calendarLocation = calendarLocationFor(event);
 <script>
   import { initAppleCalendar } from "../scripts/appleCalendar";
   import { initEventCardControls } from "../scripts/eventCardControls";
+  import { initEventStars } from "../scripts/eventStars";
 
   initEventCardControls();
+  initEventStars();
   initAppleCalendar();
 </script>
 
@@ -197,8 +206,59 @@ const calendarLocation = calendarLocationFor(event);
 
     @media (max-width: $mobile-breakpoint)
       flex-direction: column
+
+    &__star
+      position: absolute
+      z-index: 4
+      top: 0
+      right: 0
+      display: grid
+      place-items: center
+      padding: 1rem
+      border: 0
+      appearance: none
+      -webkit-tap-highlight-color: transparent
+      background: transparent
+      color: var(--color-green)
+      cursor: var(--dot-cursor)
+      pointer-events: auto
+
+      &:focus,
+      &:focus-visible
+        outline: none
+
+      &[aria-pressed='true'] .event-card__star-shape
+        fill: var(--color-pink)
+
+      &[data-star-burst] .event-card__star-ring
+        animation: event-card-star-ring 0.33s ease-out forwards
+
+      &[data-star-burst] .event-card__star-ring--second
+        animation-delay: 0.12s
+
+    &__star-icon
+      display: block
+      width: 1.25rem
+      height: 1.25rem
+      overflow: visible
+
+      path
+        fill: transparent
+        stroke: currentColor
+        stroke-width: 2
+        stroke-linejoin: round
+        transform-box: fill-box
+        transform-origin: center
+
+    &__star-ring
+      opacity: 0
+      pointer-events: none
+
     > *
       pointer-events: none
+
+    > .event-card__star
+      pointer-events: auto
 
     &:focus,
     &:focus-visible
@@ -356,6 +416,14 @@ const calendarLocation = calendarLocationFor(event);
     transform: translate(-50%, var(--event-card-dot-translate-y, -50%)) rotate(var(--dot-rotation)) scaleX(var(--dot-scale-x)) scaleY(var(--dot-scale-y))
     transform-origin: center
     pointer-events: none
+
+  @keyframes event-card-star-ring
+    0%
+      opacity: 1
+      transform: scale(0.72)
+    100%
+      opacity: 0
+      transform: scale(2)
 
   @media (max-width: $mobile-breakpoint)
     .event-card

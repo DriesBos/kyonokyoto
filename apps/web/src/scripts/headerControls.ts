@@ -16,7 +16,8 @@ export const initHeaderControls = () => {
   const headerCategoryButtons = Array.from(root.querySelectorAll("[data-category-button]"));
   const categoryButtons = Array.from(document.querySelectorAll("[data-category-button]"));
   const timingButtons = Array.from(root.querySelectorAll("[data-timing-button]"));
-  const buttons = [...timingButtons, ...headerCategoryButtons];
+  const starredButton = root.querySelector("[data-starred-button]");
+  const buttons = [...timingButtons, ...headerCategoryButtons, starredButton].filter(Boolean);
   const disclosure = root.querySelector("[data-filter-disclosure]");
   const filterPanel = root.querySelector("[data-filter-options]");
   const cards = Array.from(document.querySelectorAll("[data-event-card]"));
@@ -32,6 +33,7 @@ export const initHeaderControls = () => {
 
   let activeCategory = root instanceof HTMLElement ? root.dataset.activeCategory || "" : "";
   let activeTiming = root instanceof HTMLElement ? root.dataset.activeTiming || "" : "";
+  let activeStarred = false;
   let filterExpandedScrollOrigin: number | null = null;
   const filterButtons = buttons.filter((button): button is HTMLElement => button instanceof HTMLElement);
   const getScrollRoot = () => (eventsSection instanceof HTMLElement ? eventsSection : window);
@@ -46,7 +48,7 @@ export const initHeaderControls = () => {
 
   const isFilterExpanded = () =>
     disclosure instanceof HTMLElement && disclosure.getAttribute("aria-expanded") === "true";
-  const isFilteringActive = () => Boolean(activeCategory || activeTiming);
+  const isFilteringActive = () => Boolean(activeCategory || activeTiming || activeStarred);
 
   const syncFilterDisclosureButtonState = () => {
     if (!(disclosure instanceof HTMLElement)) return;
@@ -140,8 +142,24 @@ export const initHeaderControls = () => {
     setFilterPanelInteractivity(isExpanded);
   };
 
+  const hasStarredCards = () =>
+    cards.some((card) => card instanceof HTMLElement && card.dataset.starred === "true");
+
+  const syncStarredButtonState = () => {
+    if (!(starredButton instanceof HTMLElement)) return;
+
+    const hasStars = hasStarredCards();
+    starredButton.hidden = !hasStars;
+    starredButton.toggleAttribute("inert", !hasStars);
+    if (!hasStars) {
+      activeStarred = false;
+      starredButton.setAttribute("aria-pressed", "false");
+    }
+  };
+
   const applyFilter = () => {
     let visibleCount = 0;
+    syncStarredButtonState();
 
     cards.forEach((card) => {
       const categories = (card.getAttribute("data-categories") || "")
@@ -154,7 +172,8 @@ export const initHeaderControls = () => {
         "";
       const matchesCategory = !activeCategory || categories.includes(activeCategory);
       const matchesTiming = !activeTiming || timing === activeTiming;
-      const matches = matchesCategory && matchesTiming;
+      const matchesStarred = !activeStarred || (card instanceof HTMLElement && card.dataset.starred === "true");
+      const matches = matchesCategory && matchesTiming && matchesStarred;
 
       card.toggleAttribute("hidden", !matches);
 
@@ -175,7 +194,7 @@ export const initHeaderControls = () => {
     }
 
     if (filteredEmptyState) {
-      filteredEmptyState.toggleAttribute("hidden", visibleCount > 0 || (!activeCategory && !activeTiming));
+      filteredEmptyState.toggleAttribute("hidden", visibleCount > 0 || !isFilteringActive());
     }
 
     syncFilterDisclosureButtonState();
@@ -187,6 +206,10 @@ export const initHeaderControls = () => {
       if (!(button instanceof HTMLElement)) return;
       const nextCategory = button.dataset.category || "";
       activeCategory = activeCategory === nextCategory ? "" : nextCategory;
+      activeStarred = false;
+      if (starredButton instanceof HTMLElement) {
+        starredButton.setAttribute("aria-pressed", "false");
+      }
 
       categoryButtons.forEach((item) => {
         if (!(item instanceof HTMLElement)) return;
@@ -203,6 +226,10 @@ export const initHeaderControls = () => {
       if (!(button instanceof HTMLElement)) return;
       const nextTiming = button.dataset.timing || "";
       activeTiming = activeTiming === nextTiming ? "" : nextTiming;
+      activeStarred = false;
+      if (starredButton instanceof HTMLElement) {
+        starredButton.setAttribute("aria-pressed", "false");
+      }
 
       timingButtons.forEach((item) => {
         if (!(item instanceof HTMLElement)) return;
@@ -213,6 +240,29 @@ export const initHeaderControls = () => {
       applyFilter();
     });
   });
+
+  if (starredButton instanceof HTMLElement) {
+    starredButton.addEventListener("click", () => {
+      if (starredButton.hidden) return;
+
+      activeStarred = !activeStarred;
+      starredButton.setAttribute("aria-pressed", String(activeStarred));
+      if (activeStarred) {
+        activeCategory = "";
+        activeTiming = "";
+        categoryButtons.forEach((item) => {
+          if (item instanceof HTMLElement) item.setAttribute("aria-pressed", "false");
+        });
+        timingButtons.forEach((item) => {
+          if (item instanceof HTMLElement) item.setAttribute("aria-pressed", "false");
+        });
+      }
+      applyFilter();
+    });
+  }
+
+  document.addEventListener("event-stars:updated", applyFilter);
+  syncStarredButtonState();
 
   if (disclosure && filterPanel) {
     syncFilterPanelState();

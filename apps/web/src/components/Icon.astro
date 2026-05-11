@@ -1,5 +1,5 @@
 ---
-type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map";
+type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map" | "star";
 type IconDirection = "top" | "right" | "bottom" | "left";
 
 type Props = {
@@ -79,6 +79,24 @@ const classes = ["icon", `icon--${name}`, name === "arrow-long" && "icon--long",
       <path
         d="M16.7125 23.5L9.04582 20.8167L3.10415 23.1167C2.67822 23.287 2.28424 23.2391 1.92221 22.9729C1.56017 22.7067 1.37915 22.35 1.37915 21.9028V4.01389C1.37915 3.73704 1.45901 3.49213 1.61873 3.27917C1.77846 3.0662 1.99674 2.90648 2.27359 2.8L9.04582 0.5L16.7125 3.18333L22.6542 0.883333C23.0801 0.712963 23.4741 0.76088 23.8361 1.02708C24.1981 1.29329 24.3792 1.65 24.3792 2.09722V19.9861C24.3792 20.263 24.2993 20.5079 24.1396 20.7208C23.9798 20.9338 23.7616 21.0935 23.4847 21.2L16.7125 23.5ZM15.4347 20.3694V5.41944L10.3236 3.63056V18.5806L15.4347 20.3694ZM17.9903 20.3694L21.8236 19.0917V3.95L17.9903 5.41944V20.3694ZM3.93471 20.05L7.76804 18.5806V3.63056L3.93471 4.90833V20.05Z"
         fill="currentColor"
+      />
+    </svg>
+  ) : name === "star" ? (
+    <svg
+      class:list={classes}
+      viewBox="0 0 25 25"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden={labelled ? undefined : "true"}
+      role={labelled ? "img" : undefined}
+    >
+      {title ? <title>{title}</title> : null}
+      <path
+        d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linejoin="round"
       />
     </svg>
   ) : (
