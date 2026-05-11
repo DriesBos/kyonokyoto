@@ -6,6 +6,8 @@ import {
   classifyFetchResult,
   classifySourceOutcome,
   createCrawlDiagnostics,
+  buildEventTranslationPayload,
+  buildMachineTranslatedEvent,
   detailUrlExtractors,
   eventExtractors,
   extractChushinDetailUrls,
@@ -21,9 +23,131 @@ import {
   recordFetchedPage,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
+  translateTextFields,
 } from "../src/run-once.mjs";
 
 const fixturesRoot = resolve(import.meta.dirname, "fixtures");
+
+test("translation helper calls Google client with source and target locales", async () => {
+  const calls = [];
+  const fields = await translateTextFields(
+    {
+      GOOGLE_TRANSLATE_PROJECT_ID: "test-project",
+      GOOGLE_TRANSLATE_LOCATION: "global",
+      __translationClient: {
+        async translateText(request) {
+          calls.push(request);
+          return [
+            {
+              translations: [
+                { translatedText: "English title" },
+                { translatedText: "English description" },
+              ],
+            },
+          ];
+        },
+      },
+    },
+    {
+      title: "日本語タイトル",
+      description: "日本語説明",
+      venue_name: null,
+    },
+    "ja",
+    "en",
+  );
+
+  assert.deepEqual(fields, {
+    title: "English title",
+    description: "English description",
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].parent, "projects/test-project/locations/global");
+  assert.equal(calls[0].sourceLanguageCode, "ja");
+  assert.equal(calls[0].targetLanguageCode, "en");
+  assert.deepEqual(calls[0].contents, ["日本語タイトル", "日本語説明"]);
+});
+
+test("translation helper returns null when Google project is not configured", async () => {
+  const originalWarn = console.warn;
+  console.warn = () => {};
+
+  try {
+    const fields = await translateTextFields({}, { title: "日本語タイトル" }, "ja", "en");
+    assert.equal(fields, null);
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test("machine translated event keeps source URL and required event fields", async () => {
+  const translated = await buildMachineTranslatedEvent(
+    {
+      GOOGLE_TRANSLATE_PROJECT_ID: "test-project",
+      __translationClient: {
+        async translateText() {
+          return [
+            {
+              translations: [
+                { translatedText: "English title" },
+                { translatedText: "English description" },
+                { translatedText: "English institution" },
+                { translatedText: "English venue" },
+                { translatedText: "English address" },
+                { translatedText: "English dates" },
+              ],
+            },
+          ];
+        },
+      },
+    },
+    {
+      title: "日本語タイトル",
+      description: "日本語説明",
+      institution_name: "日本語施設",
+      venue_name: "日本語会場",
+      address_text: "日本語住所",
+      date_text: "2026年1月1日",
+      source_url: "https://example.test/ja/event",
+    },
+    "ja",
+    "en",
+  );
+
+  assert.equal(translated.title, "English title");
+  assert.equal(translated.description, "English description");
+  assert.equal(translated.institution_name, "English institution");
+  assert.equal(translated.venue_name, "English venue");
+  assert.equal(translated.address_text, "English address");
+  assert.equal(translated.date_text, "English dates");
+  assert.equal(translated.source_url, "https://example.test/ja/event");
+});
+
+test("event translation payload stores only localized public fields", () => {
+  assert.deepEqual(
+    buildEventTranslationPayload("event-1", "en", {
+      title: "Title",
+      description: "Description",
+      institution_name: "Institution",
+      venue_name: "Venue",
+      address_text: "Address",
+      date_text: "Dates",
+      source_url: "https://example.test/event",
+      primary_image_url: "https://example.test/image.jpg",
+    }),
+    {
+      event_id: "event-1",
+      locale: "en",
+      title: "Title",
+      description: "Description",
+      institution_name: "Institution",
+      venue_name: "Venue",
+      address_text: "Address",
+      date_text: "Dates",
+      source_url: "https://example.test/event",
+    },
+  );
+});
 
 test("generic detail extraction prefers event and exhibition URLs", async () => {
   const listingHtml = await readFile(resolve(fixturesRoot, "generic-listing.html"), "utf8");

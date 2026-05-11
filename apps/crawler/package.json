@@ -13,6 +13,8 @@
     "crawl:kyocera": "node src/run-once.mjs --source=kyoto-city-kyocera-museum-of-art",
     "crawl:momak": "node src/run-once.mjs --source=the-national-museum-of-modern-art",
     "crawl:sen-oku": "node src/run-once.mjs --source=sen-oku-hakukokan-museum",
+    "translations:backfill": "node src/backfill-translations.mjs",
+    "translations:check": "node src/check-translations.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {

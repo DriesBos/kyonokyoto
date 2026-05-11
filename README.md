@@ -180,7 +180,8 @@ How to tune effectively:
 - JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
 - Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
-- Missing English/Japanese event translations are machine-translated during crawl only when `GOOGLE_CLOUD_PROJECT` or `GOOGLE_TRANSLATE_PROJECT_ID` is set and Google credentials are available.
+- Missing English/Japanese event translations are machine-translated during crawl only when `GOOGLE_CLOUD_PROJECT` or `GOOGLE_TRANSLATE_PROJECT_ID` is set and Google credentials are available, for example with `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-service-account.json`.
+- Use `npm run translations:check` in `apps/crawler` to audit published events for missing `en`/`ja` translation rows. Use `npm run translations:backfill -- --dry-run` first, then `npm run translations:backfill` after Google Translation credentials are configured.
 - Each crawl run records structured diagnostics and a source outcome in `crawl_runs.logs`.
 - Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
 

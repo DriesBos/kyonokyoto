@@ -20,6 +20,7 @@ const envPath = resolve(appRoot, '.env');
 const crawl4AiFetchPath = resolve(__dirname, 'crawl4ai-fetch.py');
 let crawl4AiDisabled = false;
 let googleTranslationClientPromise = null;
+let missingGoogleTranslateConfigWarningShown = false;
 const domainFetchSchedule = new Map();
 const supportedTranslationLocales = ['en', 'ja'];
 const localizedEventFields = [
@@ -47,6 +48,14 @@ function parseEnvFile(contents) {
   }
 
   return env;
+}
+
+function applyEnvToProcess(env) {
+  for (const [key, value] of Object.entries(env)) {
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
 }
 
 function getArg(name, fallback = null) {
@@ -4240,7 +4249,15 @@ async function getGoogleTranslationClient() {
 
 async function translateTextFields(env, fields, sourceLocale, targetLocale) {
   const projectId = getGoogleTranslateProjectId(env);
-  if (!projectId) return null;
+  if (!projectId) {
+    if (!missingGoogleTranslateConfigWarningShown) {
+      console.warn(
+        'Machine translation disabled: set GOOGLE_TRANSLATE_PROJECT_ID or GOOGLE_CLOUD_PROJECT plus Google credentials.',
+      );
+      missingGoogleTranslateConfigWarningShown = true;
+    }
+    return null;
+  }
 
   const entries = Object.entries(fields).filter(([, value]) => {
     return typeof value === 'string' && value.trim();
@@ -4249,7 +4266,7 @@ async function translateTextFields(env, fields, sourceLocale, targetLocale) {
   if (!entries.length) return {};
 
   const location = env.GOOGLE_TRANSLATE_LOCATION ?? 'global';
-  const client = await getGoogleTranslationClient();
+  const client = env.__translationClient ?? (await getGoogleTranslationClient());
   const [response] = await client.translateText({
     parent: `projects/${projectId}/locations/${location}`,
     contents: entries.map(([, value]) => value),
@@ -4818,7 +4835,9 @@ async function crawlSource({
 
 async function main() {
   const envContents = await readFile(envPath, 'utf8');
-  const env = parseEnvFile(envContents);
+  const fileEnv = parseEnvFile(envContents);
+  applyEnvToProcess(fileEnv);
+  const env = { ...fileEnv, ...process.env };
   const sourceSlug = getArg('source', 'kyoto-art-center');
   const userAgent = env.CRAWLER_USER_AGENT ?? 'kyo-no-kyoto-bot/0.1';
   const genericDetailLimit = getNumberArg('generic-limit', 8);
@@ -4891,6 +4910,8 @@ export {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  buildEventTranslationPayload,
+  buildMachineTranslatedEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
   normalizeEventImagesForSource,
@@ -4900,6 +4921,8 @@ export {
   extractSenOkuEvent,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
+  translateTextFields,
+  upsertEventTranslation,
 };
 
 if (
