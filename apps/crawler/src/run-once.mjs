@@ -105,6 +105,38 @@ function getMissingLocale(locale) {
   return locale === 'ja' ? 'en' : 'ja';
 }
 
+function hasLocaleCrawlConfig(source, locale) {
+  const config = source?.locales?.[locale];
+  return Boolean(
+    config &&
+      Array.isArray(config.start_urls) &&
+      config.start_urls.some(Boolean),
+  );
+}
+
+function withSourceLocaleConfig(source, locale) {
+  const normalizedLocale = normalizeLocaleCode(locale) ?? getSourceLocale(source);
+  const localeConfig = source?.locales?.[normalizedLocale] ?? null;
+
+  if (!localeConfig) {
+    return {
+      ...source,
+      language: normalizedLocale,
+    };
+  }
+
+  return {
+    ...source,
+    language: normalizedLocale,
+    start_urls: localeConfig.start_urls?.some(Boolean)
+      ? localeConfig.start_urls
+      : source.start_urls,
+    event_page_patterns: localeConfig.event_page_patterns?.length
+      ? localeConfig.event_page_patterns
+      : source.event_page_patterns,
+  };
+}
+
 function decodeHtml(value) {
   return String(value)
     .replace(
@@ -193,6 +225,166 @@ function extractMeta(html, property) {
     'i',
   );
   return html.match(pattern)?.[1] ?? null;
+}
+
+function extractTagAttribute(tag, attributeName) {
+  const pattern = new RegExp(
+    `${attributeName}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`,
+    'i',
+  );
+  const match = tag.match(pattern);
+  return match?.[2] ?? match?.[3] ?? match?.[4] ?? null;
+}
+
+function canonicalizeUrlWithoutHash(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = '';
+    parsed.protocol = parsed.protocol.toLowerCase();
+    parsed.hostname = parsed.hostname.toLowerCase();
+    return parsed.toString();
+  } catch {
+    return String(url ?? '').replace(/#.*$/, '');
+  }
+}
+
+function canonicalizeComparableUrl(url) {
+  const canonical = canonicalizeUrlWithoutHash(url);
+  try {
+    const parsed = new URL(canonical);
+    parsed.pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+    return parsed.toString();
+  } catch {
+    return canonical.replace(/\/+$/, '');
+  }
+}
+
+function resolveHref(href, baseUrl) {
+  if (!href || /^(mailto|tel|javascript):/i.test(href)) return null;
+
+  try {
+    return canonicalizeUrlWithoutHash(new URL(decodeHtml(href), baseUrl).toString());
+  } catch {
+    return null;
+  }
+}
+
+function detectLocaleFromLink({ tag = '', href = '', text = '' }) {
+  const hreflang = normalizeLocaleCode(extractTagAttribute(tag, 'hreflang'));
+  if (hreflang) return hreflang;
+
+  const lang = normalizeLocaleCode(extractTagAttribute(tag, 'lang'));
+  if (lang) return lang;
+
+  const combined = `${extractTagAttribute(tag, 'aria-label') ?? ''} ${
+    extractTagAttribute(tag, 'title') ?? ''
+  } ${stripTags(text)}`.trim();
+
+  if (/(^|\b)(english|eng|en)(\b|$)/i.test(combined)) return 'en';
+  if (/(日本語|Japanese|(^|\b)(ja|jp)(\b|$))/i.test(combined)) return 'ja';
+
+  try {
+    const parsed = new URL(href);
+    const pathParts = parsed.pathname
+      .split('/')
+      .map((part) => part.toLowerCase())
+      .filter(Boolean);
+    if (pathParts.some((part) => ['en', 'eng', 'english'].includes(part))) {
+      return 'en';
+    }
+    if (pathParts.some((part) => ['ja', 'jp', 'jpn', 'japanese'].includes(part))) {
+      return 'ja';
+    }
+    const langParam = normalizeLocaleCode(
+      parsed.searchParams.get('lang') ??
+        parsed.searchParams.get('locale') ??
+        parsed.searchParams.get('language'),
+    );
+    if (langParam) return langParam;
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function extractLocaleUrlsFromHtml(html, pageUrl) {
+  const localeUrls = {};
+
+  for (const match of html.matchAll(/<link\b[^>]*>/gi)) {
+    const tag = match[0];
+    const rel = extractTagAttribute(tag, 'rel') ?? '';
+    if (!/\balternate\b/i.test(rel)) continue;
+
+    const href = resolveHref(extractTagAttribute(tag, 'href'), pageUrl);
+    if (!href) continue;
+
+    const locale = detectLocaleFromLink({ tag, href });
+    if (locale && href !== canonicalizeUrlWithoutHash(pageUrl)) {
+      localeUrls[locale] ??= href;
+    }
+  }
+
+  for (const match of html.matchAll(/<a\b[^>]*href\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)[^>]*>[\s\S]*?<\/a>/gi)) {
+    const anchorHtml = match[0];
+    const tag = anchorHtml.match(/^<a\b[^>]*>/i)?.[0] ?? '';
+    const href = resolveHref(extractTagAttribute(tag, 'href'), pageUrl);
+    if (!href || href === canonicalizeUrlWithoutHash(pageUrl)) continue;
+
+    const locale = detectLocaleFromLink({
+      tag,
+      href,
+      text: anchorHtml.replace(/^<a\b[^>]*>|<\/a>$/gi, ''),
+    });
+    if (locale) localeUrls[locale] ??= href;
+  }
+
+  return localeUrls;
+}
+
+function inferAlternateLocaleUrlFromConfig(
+  detailUrl,
+  source,
+  sourceLocale,
+  targetLocale,
+) {
+  const sourceConfig = source?.locales?.[sourceLocale];
+  const targetConfig = source?.locales?.[targetLocale];
+  const sourceStartUrls = sourceConfig?.start_urls?.filter(Boolean) ?? [];
+  const targetStartUrls = targetConfig?.start_urls?.filter(Boolean) ?? [];
+
+  if (!sourceStartUrls.length || !targetStartUrls.length) return null;
+
+  const detail = new URL(detailUrl);
+
+  for (const sourceStartUrl of sourceStartUrls) {
+    for (const targetStartUrl of targetStartUrls) {
+      try {
+        const sourceStart = new URL(sourceStartUrl);
+        const targetStart = new URL(targetStartUrl);
+
+        if (detail.hostname !== sourceStart.hostname) continue;
+        if (sourceStart.hostname !== targetStart.hostname) continue;
+
+        const sourcePath = sourceStart.pathname.replace(/\/+$/, '/') || '/';
+        const targetPath = targetStart.pathname.replace(/\/+$/, '/') || '/';
+
+        if (!detail.pathname.startsWith(sourcePath)) continue;
+
+        const inferred = new URL(detail.toString());
+        inferred.hostname = targetStart.hostname;
+        inferred.pathname = `${targetPath}${detail.pathname.slice(sourcePath.length)}`.replace(
+          /\/{2,}/g,
+          '/',
+        );
+        return canonicalizeUrlWithoutHash(inferred.toString());
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return null;
 }
 
 function extractSectionValue(html, dtText) {
@@ -1510,9 +1702,7 @@ function extractKacDetailUrls(listingHtml, listingUrl) {
     ...listingHtml.matchAll(
       /https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/\d+\//g,
     ),
-  ].map((match) =>
-    new URL(match[0], listingUrl).toString().replace('/en/events/', '/events/'),
-  );
+  ].map((match) => new URL(match[0], listingUrl).toString());
 
   if (!matches.length) {
     throw new Error(
@@ -4308,14 +4498,121 @@ async function buildMachineTranslatedEvent(env, eventData, sourceLocale, targetL
   };
 }
 
-async function upsertEventTranslations(env, source, savedEvent, eventData) {
+async function fetchNativeLocaleEvent({
+  env,
+  source,
+  sourceLocale,
+  targetLocale,
+  detailPage,
+  detailUrl,
+  eventExtractor,
+  sourceContext,
+  userAgent,
+  renderMode,
+  crawlContext,
+  diagnostics,
+}) {
+  const discoveredLocaleUrls = extractLocaleUrlsFromHtml(detailPage.html, detailUrl);
+  const alternateUrl =
+    discoveredLocaleUrls[targetLocale] ??
+    inferAlternateLocaleUrlFromConfig(
+      detailUrl,
+      source,
+      sourceLocale,
+      targetLocale,
+    );
+
+  if (
+    !alternateUrl ||
+    alternateUrl === canonicalizeUrlWithoutHash(detailUrl)
+  ) {
+    return null;
+  }
+
+  const nativeSource = withSourceLocaleConfig(source, targetLocale);
+
+  try {
+    const nativePage = await fetchHtml(alternateUrl, userAgent, env, {
+      renderMode,
+      context: crawlContext,
+    });
+    recordFetchedPage(diagnostics, nativePage);
+
+    const finalUrl = nativePage.response?.url ?? nativePage.url;
+    if (
+      canonicalizeComparableUrl(finalUrl) !==
+      canonicalizeComparableUrl(alternateUrl)
+    ) {
+      throw new Error(`alternate URL redirected to ${finalUrl}`);
+    }
+
+    const nativeEvent = withConfiguredSourceCategories(
+      eventExtractor(nativePage.html, nativeSource, alternateUrl, sourceContext),
+      nativeSource,
+    );
+
+    if (
+      nativeEvent.source_url &&
+      canonicalizeComparableUrl(nativeEvent.source_url) !==
+        canonicalizeComparableUrl(alternateUrl)
+    ) {
+      throw new Error(
+        `alternate page extracted source URL ${nativeEvent.source_url}`,
+      );
+    }
+
+    if (
+      nativeEvent.title &&
+      nativeSource.name &&
+      nativeEvent.title.trim().toLowerCase() ===
+        nativeSource.name.trim().toLowerCase()
+    ) {
+      throw new Error(`alternate page title matched source name`);
+    }
+
+    return {
+      locale: targetLocale,
+      event: nativeEvent,
+      page: nativePage,
+      url: alternateUrl,
+    };
+  } catch (error) {
+    console.warn(
+      `Native ${targetLocale} translation skipped for ${detailUrl}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    return null;
+  }
+}
+
+async function upsertEventTranslations(
+  env,
+  source,
+  savedEvent,
+  eventData,
+  nativeTranslations = {},
+) {
   const sourceLocale = getSourceLocale(source);
-  const targetLocale = getMissingLocale(sourceLocale);
   const savedTranslations = [sourceLocale];
 
   await upsertEventTranslation(env, savedEvent.id, sourceLocale, eventData);
 
-  if (supportedTranslationLocales.includes(targetLocale)) {
+  for (const targetLocale of supportedTranslationLocales) {
+    if (targetLocale === sourceLocale) continue;
+
+    const nativeTranslation = nativeTranslations[targetLocale];
+    if (nativeTranslation) {
+      await upsertEventTranslation(
+        env,
+        savedEvent.id,
+        targetLocale,
+        nativeTranslation,
+      );
+      savedTranslations.push(targetLocale);
+      continue;
+    }
+
     try {
       const translatedEvent = await buildMachineTranslatedEvent(
         env,
@@ -4459,12 +4756,16 @@ async function crawlSource({
     await getSourceBySlug(env, sourceSlug),
     sourceOverrides[sourceSlug],
   );
+  const sourceLocale = getSourceLocale(source);
+  const crawlSourceConfig = withSourceLocaleConfig(source, sourceLocale);
   const crawlRun = await createCrawlRun(env, source.id);
   const diagnostics = createCrawlDiagnostics(env);
   const crawlContext = { diagnostics };
 
   try {
-    const listingUrls = [...new Set(source.start_urls?.filter(Boolean) ?? [])];
+    const listingUrls = [
+      ...new Set(crawlSourceConfig.start_urls?.filter(Boolean) ?? []),
+    ];
     if (!listingUrls.length) {
       throw new Error(`Source "${source.slug}" does not have a start URL`);
     }
@@ -4495,7 +4796,7 @@ async function crawlSource({
                   extractGenericDetailUrls(
                     listingPage.html,
                     listingPage.url,
-                    source,
+                    crawlSourceConfig,
                     genericDetailLimit,
                   ),
                 ),
@@ -4575,8 +4876,13 @@ async function crawlSource({
       pagesFetched += 1;
       recordFetchedPage(diagnostics, detailPage);
       let extractedEvent = withConfiguredSourceCategories(
-        eventExtractor(detailPage.html, source, detailUrl, sourceContext),
-        source,
+        eventExtractor(
+          detailPage.html,
+          crawlSourceConfig,
+          detailUrl,
+          sourceContext,
+        ),
+        crawlSourceConfig,
       );
 
       if (
@@ -4596,11 +4902,11 @@ async function crawlSource({
           const renderedEvent = withConfiguredSourceCategories(
             eventExtractor(
               renderedDetailPage.html,
-              source,
+              crawlSourceConfig,
               detailUrl,
               sourceContext,
             ),
-            source,
+            crawlSourceConfig,
           );
           detailPage = renderedDetailPage;
           extractedEvent = renderedEvent;
@@ -4687,7 +4993,7 @@ async function crawlSource({
 
       extractedEvent = await normalizeEventImagesForSource(
         extractedEvent,
-        source,
+        crawlSourceConfig,
         {
           env,
           userAgent,
@@ -4704,6 +5010,39 @@ async function crawlSource({
         continue;
       }
 
+      const nativeTranslations = {};
+      for (const targetLocale of supportedTranslationLocales) {
+        if (targetLocale === sourceLocale) continue;
+        if (!hasLocaleCrawlConfig(source, targetLocale)) continue;
+
+        const nativeTranslation = await fetchNativeLocaleEvent({
+          env,
+          source,
+          sourceLocale,
+          targetLocale,
+          detailPage,
+          detailUrl,
+          eventExtractor,
+          sourceContext,
+          userAgent,
+          renderMode,
+          crawlContext,
+          diagnostics,
+        });
+
+        if (!nativeTranslation) continue;
+
+        pagesFetched += 1;
+        await upsertRawPage(
+          env,
+          source.id,
+          crawlRun.id,
+          'detail',
+          nativeTranslation.page,
+        );
+        nativeTranslations[targetLocale] = nativeTranslation.event;
+      }
+
       const dedupeKey = buildEventDedupeKey(extractedEvent);
       activeDedupeKeys.add(dedupeKey);
       const savedEvent = await upsertEvent(
@@ -4715,9 +5054,10 @@ async function crawlSource({
       );
       const savedTranslations = await upsertEventTranslations(
         env,
-        source,
+        crawlSourceConfig,
         savedEvent,
         extractedEvent,
+        nativeTranslations,
       );
 
       savedEvents.push({
@@ -4906,6 +5246,7 @@ export {
   createCrawlDiagnostics,
   detailUrlExtractors,
   eventExtractors,
+  extractLocaleUrlsFromHtml,
   extractChushinDetailUrls,
   extractChushinEvent,
   extractGenericDetailUrls,

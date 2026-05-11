@@ -14,6 +14,7 @@ import {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractLocaleUrlsFromHtml,
   extractRakuMuseumEvent,
   extractSenOkuEvent,
   getSourceSpecificSkipReason,
@@ -162,6 +163,32 @@ test("generic detail extraction prefers event and exhibition URLs", async () => 
     "https://example.test/events/spring-show-2026/",
     "https://example.test/exhibitions/2026/quiet-forms/",
   ]);
+});
+
+test("locale URL extraction finds alternate links in header and metadata", () => {
+  const html = `
+    <html>
+      <head>
+        <link rel="alternate" hreflang="ja" href="/ja/exhibitions/quiet-forms/">
+      </head>
+      <body>
+        <nav>
+          <a href="/en/exhibitions/quiet-forms/">English</a>
+          <a href="/ja/exhibitions/quiet-forms/">日本語</a>
+        </nav>
+      </body>
+    </html>
+  `;
+
+  assert.deepEqual(
+    extractLocaleUrlsFromHtml(
+      html,
+      "https://example.test/en/exhibitions/quiet-forms/"
+    ),
+    {
+      ja: "https://example.test/ja/exhibitions/quiet-forms/",
+    }
+  );
 });
 
 test("generic event extraction returns title, dates, and images", async () => {

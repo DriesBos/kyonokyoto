@@ -181,6 +181,8 @@ How to tune effectively:
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
 - Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
 - Missing English/Japanese event translations are machine-translated during crawl only when `GOOGLE_CLOUD_PROJECT` or `GOOGLE_TRANSLATE_PROJECT_ID` is set and Google credentials are available, for example with `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-service-account.json`.
+- When a source has `locales.en`/`locales.ja`, the crawler uses the configured source locale as the canonical crawl, then looks for native alternate-locale event URLs in `<link rel="alternate" hreflang>` and header/nav/menu anchors such as `English` or `日本語`. Native alternate pages are saved into `event_translations` for the same event before Google Translate is used as a fallback.
+- Locale toggles work best when they expose real `href` URLs. Toggles that only change JavaScript state, cookies, or localStorage need source-specific browser automation.
 - Use `npm run translations:check` in `apps/crawler` to audit published events for missing `en`/`ja` translation rows. Use `npm run translations:backfill -- --dry-run` first, then `npm run translations:backfill` after Google Translation credentials are configured.
 - Each crawl run records structured diagnostics and a source outcome in `crawl_runs.logs`.
 - Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
