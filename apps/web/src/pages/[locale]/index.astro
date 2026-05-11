@@ -10,7 +10,7 @@ import { dedupeEvents } from "../../../../../packages/shared/event-dedupe.mjs";
 import { classifyEventTiming, normalizeDateOnly } from "../../../../../packages/shared/event-schedule.mjs";
 import sourcesPayload from "../../../../../data/sources/kyoto-sources.json";
 import type { AppLocale } from "../../lib/i18n";
-import { normalizeLocale, uiText } from "../../lib/i18n";
+import { normalizeLocale, supportedLocales, uiText } from "../../lib/i18n";
 
 export const prerender = false;
 
@@ -95,6 +95,7 @@ if (Astro.params.locale !== routeLocale) return Astro.redirect(`/${routeLocale}/
 
 const locale = routeLocale;
 const copy = uiText.en;
+const metaCopy = uiText[locale];
 
 const eventSelect =
   "id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at";
@@ -395,31 +396,39 @@ const toJapanDate = (value: Date) =>
 
 const today = toJapanDate(new Date());
 
-const formattedEvents: ClassifiedEvent[] = events.map((rawEvent) => {
-  const event = localizeEvent(rawEvent, locale);
-  const sourceCategories = sourceCategoriesForEvent(event);
-  const fallbackCalendarYear = event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
-  const parsedCalendarDates =
-    event.calendar_starts_at && event.calendar_ends_at
-      ? null
-      : parseEnglishMonthDateRange(event.date_text, fallbackCalendarYear);
-  const calendarStartsAt = event.calendar_starts_at ?? parsedCalendarDates?.calendar_starts_at ?? null;
-  const calendarEndsAt = event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
-  const eventWithCalendarDates = {
-    ...event,
-    calendar_starts_at: calendarStartsAt,
-    calendar_ends_at: calendarEndsAt,
-  };
+const formatEventsForLocale = (activeLocale: AppLocale): ClassifiedEvent[] =>
+  events.map((rawEvent) => {
+    const event = localizeEvent(rawEvent, activeLocale);
+    const sourceCategories = sourceCategoriesForEvent(event);
+    const fallbackCalendarYear = event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
+    const parsedCalendarDates =
+      event.calendar_starts_at && event.calendar_ends_at
+        ? null
+        : parseEnglishMonthDateRange(event.date_text, fallbackCalendarYear);
+    const calendarStartsAt = event.calendar_starts_at ?? parsedCalendarDates?.calendar_starts_at ?? null;
+    const calendarEndsAt = event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
+    const eventWithCalendarDates = {
+      ...event,
+      calendar_starts_at: calendarStartsAt,
+      calendar_ends_at: calendarEndsAt,
+    };
 
-  return {
-    ...eventWithCalendarDates,
-    categories: sourceCategories,
-    date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
-    timing: classifyEventTiming(eventWithCalendarDates, today),
-  };
-});
+    return {
+      ...eventWithCalendarDates,
+      categories: sourceCategories,
+      date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
+      timing: classifyEventTiming(eventWithCalendarDates, today),
+    };
+  });
 
-const displayEvents = formattedEvents.filter((event) => event.timing !== "past");
+const displayEventsByLocale = Object.fromEntries(
+  supportedLocales.map((supportedLocale) => [
+    supportedLocale,
+    formatEventsForLocale(supportedLocale).filter((event) => event.timing !== "past"),
+  ])
+) as Record<AppLocale, ClassifiedEvent[]>;
+
+const displayEvents = displayEventsByLocale[locale];
 
 const categoryMap = new Map<string, string>();
 
@@ -502,14 +511,63 @@ const googleCalendarUrl = (event: CalendarEvent) => {
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(exclusiveEnd)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
 };
 
-const excerpt = (value: string | null) => {
-  if (!value) return copy.fallbackExcerpt;
+const excerpt = (value: string | null, activeLocale: AppLocale = locale) => {
+  if (!value) return uiText[activeLocale].fallbackExcerpt;
   return cleanDisplayText(value);
 };
 
+const calendarDetailsFor = (event: CalendarEvent) =>
+  event.description
+    ? cleanDisplayText(event.description)
+    : `${event.institution_name}${event.venue_name ? ` — ${event.venue_name}` : ""}`;
+
+const calendarLocationFor = (event: CalendarEvent) => event.address_text ?? event.venue_name ?? event.institution_name;
+
+const eventPayloadById = Object.fromEntries(
+  displayEvents.map((event) => {
+    const localePayload = Object.fromEntries(
+      supportedLocales.map((supportedLocale) => {
+        const localizedEvent = displayEventsByLocale[supportedLocale].find((candidate) => candidate.id === event.id) ?? event;
+
+        return [
+          supportedLocale,
+          {
+            title: localizedEvent.title,
+            dateText: localizedEvent.date_text,
+            institutionName: localizedEvent.institution_name,
+            excerpt: excerpt(localizedEvent.description, supportedLocale),
+            mapsUrl: mapsUrl(localizedEvent),
+            googleCalendarUrl: googleCalendarUrl(localizedEvent),
+            sourceUrl: localizedEvent.source_url,
+            calendarTitle: localizedEvent.title,
+            calendarDetails: calendarDetailsFor(localizedEvent),
+            calendarLocation: calendarLocationFor(localizedEvent),
+          },
+        ];
+      })
+    );
+
+    return [event.id, localePayload];
+  })
+);
+
+const localePayload = {
+  events: eventPayloadById,
+  meta: Object.fromEntries(
+    supportedLocales.map((supportedLocale) => [
+      supportedLocale,
+      {
+        title: uiText[supportedLocale].title,
+        description: uiText[supportedLocale].description,
+      },
+    ])
+  ),
+};
+const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c");
+
 ---
 
-<BaseLayout locale={locale}>
+<BaseLayout locale={locale} title={metaCopy.title} description={metaCopy.description}>
   <main class="page-shell">
     <div class="content-container" data-content-container>
       <section class="events-section" data-events-section>
@@ -532,6 +590,7 @@ const excerpt = (value: string | null) => {
                 {ongoingEvents.map((event) => (
                   <EventCard
                     event={event}
+                    locale={locale}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapsUrl={mapsUrl(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
@@ -548,6 +607,7 @@ const excerpt = (value: string | null) => {
                 {upcomingEvents.map((event) => (
                   <EventCard
                     event={event}
+                    locale={locale}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapsUrl={mapsUrl(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
@@ -565,6 +625,7 @@ const excerpt = (value: string | null) => {
         <GoogleMapCanvas sources={mapSources} />
       </section>
     </div>
+    <script type="application/json" data-locale-payload set:html={localePayloadJson} />
   </main>
 </BaseLayout>
 
@@ -737,11 +798,10 @@ const excerpt = (value: string | null) => {
     overflow-y: auto
     overscroll-behavior: contain
     scrollbar-width: none
-    padding: 0 var(--page-padding-x)
     transition: flex-basis var(--layout-transition-duration) var(--layout-transition-ease), flex-grow var(--layout-transition-duration) var(--layout-transition-ease)
     &::-webkit-scrollbar
       display: none
-
+      
   .map-section
     flex: 0 1 0
     height: 100%
@@ -788,7 +848,6 @@ const excerpt = (value: string | null) => {
   @media (max-width: $mobile-breakpoint)
     .content-container
       flex-direction: column
-      gap: 0.5rem
 
       &[data-map-visible] .map-section
         order: -1

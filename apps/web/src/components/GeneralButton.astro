@@ -3,6 +3,8 @@ import Icon from "./Icon.astro";
 
 type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map";
 type IconDirection = "top" | "right" | "bottom" | "left";
+type Edge = "first" | "last";
+type VerticalPadding = "none" | "full";
 
 type Props = {
   label: string;
@@ -16,6 +18,8 @@ type Props = {
   class?: string;
   showDot?: boolean;
   disabled?: boolean;
+  edge?: Edge;
+  verticalPadding?: VerticalPadding;
   target?: string;
   rel?: string;
   dataCategory?: string;
@@ -38,6 +42,8 @@ const {
   class: className,
   showDot = false,
   disabled = false,
+  edge,
+  verticalPadding = "none",
   target,
   rel,
   dataCategory,
@@ -49,7 +55,13 @@ const {
   ...rest
 } = Astro.props;
 
-const classes = ["general-button", disabled && "general-button--disabled", className];
+const classes = [
+  "general-button",
+  disabled && "general-button--disabled",
+  edge && `general-button--edge-${edge}`,
+  verticalPadding !== "none" && `general-button--vertical-${verticalPadding}`,
+  className,
+];
 ---
 
 {
@@ -68,8 +80,10 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       aria-controls={ariaControls}
       {...rest}
     >
-      <span class="general-button__label">{label}</span>
-      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
+      <span class="general-button__content">
+        <span class="general-button__label">{label}</span>
+        {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
+      </span>
       {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
     </a>
   ) : disabled ? (
@@ -85,8 +99,10 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       aria-controls={ariaControls}
       {...rest}
     >
-      <span class="general-button__label">{label}</span>
-      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
+      <span class="general-button__content">
+        <span class="general-button__label">{label}</span>
+        {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
+      </span>
       {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
     </span>
   ) : (
@@ -104,8 +120,10 @@ const classes = ["general-button", disabled && "general-button--disabled", class
       aria-controls={ariaControls}
       {...rest}
     >
-      <span class="general-button__label">{label}</span>
-      {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
+      <span class="general-button__content">
+        <span class="general-button__label">{label}</span>
+        {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
+      </span>
       {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
     </button>
   )
@@ -155,8 +173,7 @@ const classes = ["general-button", disabled && "general-button--disabled", class
     display: inline-flex
     align-items: center
     justify-content: flex-start
-    gap: 4px
-    padding: calc(var(--stroke-width) + 3px) calc(var(--control-gap) / 2) 0
+    padding: 0
     border: 0
     appearance: none
     -webkit-tap-highlight-color: transparent
@@ -168,15 +185,6 @@ const classes = ["general-button", disabled && "general-button--disabled", class
     cursor: var(--dot-cursor)
     pointer-events: auto
     overflow: visible
-
-    &::before
-      content: ""
-      position: absolute
-      top: 0
-      left: calc(var(--control-gap) / 2)
-      right: calc(var(--control-gap) / 2)
-      border-top: var(--stroke-width) solid var(--stroke)
-      pointer-events: none
 
     &:hover,
     &:active,
@@ -197,6 +205,35 @@ const classes = ["general-button", disabled && "general-button--disabled", class
   .general-button--disabled
     opacity: 0.55
     cursor: var(--dot-cursor)
+
+  .general-button--edge-first
+    padding-left: var(--page-padding-x)
+
+  .general-button--edge-last
+    padding-right: var(--page-padding-x)
+
+  .general-button--vertical-full
+    padding-top: 0.5rem
+    padding-bottom: 0.5rem
+
+  .general-button__content
+    position: relative
+    z-index: 1
+    display: inline-flex
+    align-items: center
+    justify-content: flex-start
+    gap: 4px
+    padding: calc(var(--stroke-width) + 3px) calc(var(--control-gap) / 2) 0
+    overflow: visible
+
+    &::before
+      content: ""
+      position: absolute
+      top: 0
+      left: calc(var(--control-gap) / 2)
+      right: calc(var(--control-gap) / 2)
+      border-top: var(--stroke-width) solid var(--stroke)
+      pointer-events: none
 
   .general-button__label
     position: relative
