@@ -145,6 +145,11 @@ const createUserMarkerContent = () => {
   const marker = document.createElement("div");
   marker.className = "map-user-marker";
   marker.setAttribute("aria-hidden", "true");
+  marker.innerHTML = `
+    <span class="map-user-marker__ring"></span>
+    <span class="map-user-marker__ring map-user-marker__ring--second"></span>
+    <span class="map-user-marker__pointer"></span>
+  `;
   return marker;
 };
 

@@ -110,7 +110,7 @@ const sourcesJson = JSON.stringify(sources);
     font: inherit
     cursor: var(--dot-cursor)
     pointer-events: auto
-    padding: 0.5rem
+    padding: 1rem
     border: 0
     background: transparent
     color: var(--color-green)
@@ -224,36 +224,29 @@ const sourcesJson = JSON.stringify(sources);
     border-radius: 999px
     background: var(--color-pink)
     box-sizing: border-box
-    animation: map-user-marker-pulse 1.6s ease-out infinite
 
-    &::before
-      content: ""
-      position: absolute
-      left: 50%
-      top: -0.55rem
-      width: 0
-      height: 0
-      border-left: 0.28rem solid transparent
-      border-right: 0.28rem solid transparent
-      border-bottom: 0.65rem solid var(--color-pink)
-      transform: translateX(-50%) rotate(var(--map-user-heading))
-      transform-origin: 50% calc(100% + 0.65rem)
+  :global(.map-user-marker__pointer)
+    position: absolute
+    left: 50%
+    top: -0.55rem
+    width: 0
+    height: 0
+    border-left: 0.28rem solid transparent
+    border-right: 0.28rem solid transparent
+    border-bottom: 0.65rem solid var(--color-pink)
+    transform: translateX(-50%) rotate(var(--map-user-heading))
+    transform-origin: 50% calc(100% + 0.65rem)
 
-    &::after
-      content: ""
-      position: absolute
-      inset: -0.38rem
-      border: 1px solid var(--color-pink)
-      border-radius: 999px
-      animation: map-user-marker-ring 1.6s ease-out infinite
-      pointer-events: none
+  :global(.map-user-marker__ring)
+    position: absolute
+    inset: -0.38rem
+    border: 1px solid var(--color-green)
+    border-radius: 999px
+    animation: map-user-marker-ring 1.6s ease-out infinite
+    pointer-events: none
 
-  @keyframes map-user-marker-pulse
-    0%,
-    100%
-      opacity: 1
-    50%
-      opacity: 0.35
+  :global(.map-user-marker__ring--second)
+    animation-delay: 0.8s
 
   @keyframes map-user-marker-ring
     0%
