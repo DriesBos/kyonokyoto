@@ -48,7 +48,7 @@ const maxImagesPerCard = 3;
 const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
 const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
 const desktopImageHeightRem = 10;
-const mobileImageHeightRem = 5;
+const mobileImageHeightRem = 6;
 const desktopImageHeightActiveRem = 20;
 const mobileImageHeightActiveRem = 10;
 const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? "";
@@ -229,6 +229,7 @@ const calendarLocation = calendarLocationFor(event);
 
       &[aria-pressed='true'] .event-card__star-shape
         fill: var(--color-pink)
+        stroke: var(--color-beige)
 
       &[data-star-burst] .event-card__star-ring
         animation: event-card-star-ring 0.33s ease-out forwards
@@ -244,7 +245,6 @@ const calendarLocation = calendarLocationFor(event);
 
       path
         fill: transparent
-        stroke: white
         stroke-width: 1
         stroke-linejoin: round
         transform-box: fill-box
@@ -252,7 +252,12 @@ const calendarLocation = calendarLocationFor(event);
 
     &__star-ring
       opacity: 0
+      stroke: var(--color-green)
       pointer-events: none
+
+    &__star-icon &__star-shape
+      fill: var(--color-beige)
+      stroke: var(--color-green)
 
     > *
       pointer-events: none

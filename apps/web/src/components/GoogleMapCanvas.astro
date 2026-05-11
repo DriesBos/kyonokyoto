@@ -15,6 +15,7 @@ const { sources = [] } = Astro.props;
 const mapsApiKey = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 const mapsMapId = import.meta.env.PUBLIC_GOOGLE_MAPS_MAP_ID ?? "";
 const sourcesJson = JSON.stringify(sources);
+const showMapZoomDebug = import.meta.env.DEV;
 ---
 
 <div
@@ -29,7 +30,7 @@ const sourcesJson = JSON.stringify(sources);
     data-api-key={mapsApiKey}
     data-map-id={mapsMapId}
   ></div>
-  <p class="map-zoom-debug" data-map-zoom-debug aria-hidden="true"></p>
+  {showMapZoomDebug ? <p class="map-zoom-debug" data-map-zoom-debug aria-hidden="true"></p> : null}
   <div class="map-controls" data-map-controls>
     <button class="map-find-me" type="button" data-map-find-me aria-pressed="false" aria-describedby="map-find-me-status">
       <span class="map-find-me__label">Find me</span>
