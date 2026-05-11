@@ -78,6 +78,7 @@ const { lines = 24, scrollTopLabel = "Scroll to top" } = Astro.props;
     left: 0
     right: 0
     bottom: var(--page-padding-y)
+    padding-bottom: env(safe-area-inset-bottom)
     z-index: 1
     display: flex
     flex-direction: row
