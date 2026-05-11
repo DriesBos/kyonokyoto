@@ -126,14 +126,6 @@ const applyLocale = (locale: string, options: { updateHistory?: boolean; persist
   setMetaContent("meta[property='og:title']", meta?.title ?? copy.title);
   setMetaContent("meta[property='og:description']", meta?.description ?? copy.description);
 
-  document.querySelectorAll("[data-locale-ui-label]").forEach((element) => {
-    if (!(element instanceof HTMLElement)) return;
-    const key = element.dataset.localeUiLabel;
-    const value = key && key in copy ? copy[key as keyof typeof copy] : null;
-    if (!value) return;
-    setLabel(element, value);
-  });
-
   const logo = document.querySelector(".mainHeader__logo");
   if (logo instanceof HTMLAnchorElement) {
     logo.href = `/${locale}/`;

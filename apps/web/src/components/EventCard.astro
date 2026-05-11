@@ -32,8 +32,8 @@ type Props = {
   hideTopBorder?: boolean;
 };
 
-const { event, locale = "en", mapSourceSlug, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false } = Astro.props;
-const copy = uiText[locale];
+const { event, mapSourceSlug, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false } = Astro.props;
+const copy = uiText.en;
 
 const normalizeCategory = (value: string) =>
   value
@@ -107,7 +107,6 @@ const calendarLocation = calendarLocationFor(event);
             data-calendar-end={calendarEndDate}
             data-calendar-details={calendarDetails}
             data-calendar-location={calendarLocation}
-            data-locale-ui-label="apple"
           />
         ) : null}
         {googleCalendarUrl ? (
@@ -118,7 +117,6 @@ const calendarLocation = calendarLocationFor(event);
             icon="calendar"
             href={googleCalendarUrl}
             data-event-href="googleCalendarUrl"
-            data-locale-ui-label="google"
             target="_blank"
             rel="noreferrer"
           />
@@ -130,7 +128,6 @@ const calendarLocation = calendarLocationFor(event);
           icon="map"
           href={mapsUrl}
           data-event-href="mapsUrl"
-          data-locale-ui-label="directions"
           target="_blank"
           rel="noreferrer"
         />
@@ -141,7 +138,6 @@ const calendarLocation = calendarLocationFor(event);
           icon="exit"
           href={event.source_url}
           data-event-href="sourceUrl"
-          data-locale-ui-label="website"
           target="_blank"
           rel="noreferrer"
         />

@@ -6,7 +6,6 @@ import Header from "../../components/Header.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import TimeDivider from "../../components/TimeDivider.astro";
 import sourcesPayload from "../../../../../data/sources/kyoto-sources.json";
-import type { AppLocale } from "../../lib/i18n";
 import { normalizeLocale, supportedLocales, uiText } from "../../lib/i18n";
 import { calendarDetailsFor, calendarLocationFor, cleanDisplayText, googleCalendarUrl, mapsUrl } from "../../lib/calendar";
 import { displayEventsByLocale as buildDisplayEventsByLocale, fetchPublishedEvents } from "../../lib/events";
@@ -51,8 +50,8 @@ const upcomingEvents = displayEvents.filter((event) => event.timing === "upcomin
 const sourceSlugByEventId = new Map(displayEvents.map((event) => [event.id, sourceSlugForEvent(event, configuredSources)]));
 const mapSources = mapSourcesForEvents(displayEvents, sourceSlugByEventId, configuredSources);
 
-const excerpt = (value: string | null, activeLocale: AppLocale = locale) => {
-  if (!value) return uiText[activeLocale].fallbackExcerpt;
+const excerpt = (value: string | null) => {
+  if (!value) return uiText.en.fallbackExcerpt;
   return cleanDisplayText(value);
 };
 
@@ -68,7 +67,7 @@ const eventPayloadById = Object.fromEntries(
             title: localizedEvent.title,
             dateText: localizedEvent.date_text,
             institutionName: localizedEvent.institution_name,
-            excerpt: excerpt(localizedEvent.description, supportedLocale),
+            excerpt: excerpt(localizedEvent.description),
             mapsUrl: mapsUrl(localizedEvent),
             googleCalendarUrl: googleCalendarUrl(localizedEvent),
             sourceUrl: localizedEvent.source_url,
