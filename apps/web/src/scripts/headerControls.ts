@@ -26,6 +26,7 @@ export const initHeaderControls = () => {
   const mapToggle = root.querySelector("[data-map-toggle]");
   const contentContainer = document.querySelector("[data-content-container]");
   const mapSection = document.querySelector("[data-map-section]");
+  const mapResizer = document.querySelector("[data-map-resizer]");
   const eventsSection = document.querySelector("[data-events-section]");
   const mainHeader = root.querySelector("[data-main-header]");
 
@@ -232,6 +233,10 @@ export const initHeaderControls = () => {
 
     if (nextVisible) {
       mapSection.hidden = false;
+      if (mapResizer instanceof HTMLElement) {
+        mapResizer.hidden = false;
+        mapResizer.removeAttribute("inert");
+      }
       mapSection.removeAttribute("data-map-closing");
       mapSection.removeAttribute("inert");
 
@@ -242,6 +247,10 @@ export const initHeaderControls = () => {
       mapSection.toggleAttribute("data-map-closing", true);
       contentContainer.toggleAttribute("data-map-visible", false);
       mapSection.toggleAttribute("inert", true);
+      if (mapResizer instanceof HTMLElement) {
+        mapResizer.toggleAttribute("inert", true);
+        mapResizer.hidden = true;
+      }
 
       const hideAfterTransition = (event: Event) => {
         if (event.target !== mapSection) return;
@@ -266,6 +275,10 @@ export const initHeaderControls = () => {
     }
 
     mapSection.toggleAttribute("inert", !nextVisible);
+    if (mapResizer instanceof HTMLElement) {
+      mapResizer.toggleAttribute("inert", !nextVisible);
+      mapResizer.hidden = !nextVisible;
+    }
 
     if (mapToggle instanceof HTMLElement) {
       mapToggle.setAttribute("aria-pressed", String(nextVisible));

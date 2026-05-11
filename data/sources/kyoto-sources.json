@@ -6,7 +6,7 @@
       "slug": "kyoto-art-center",
       "name": "Kyoto Art Center",
       "source_type": "art-center",
-      "language": "ja",
+      "language": "en",
       "address_text": "546-2 Yamabushiyama-cho, Nakagyo-ku, Kyoto 604-8156 Japan",
       "lat": 35.005436,
       "lng": 135.758345,
@@ -747,18 +747,18 @@
       "allowed_domains": ["gallery.kcua.ac.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/archives/", "/archives/"],
-      "notes": "The English exhibitions landing page links into detail pages under `/en/archives/<year>/<id>/`. Prefer those archive detail URLs over menu and news links.",
+      "notes": "The EN/JA language selector is in the site menu; open the menu to switch localized versions.",
       "is_active": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
       "locales": {
         "ja": {
           "start_urls": ["https://gallery.kcua.ac.jp/exhibitions/"],
-          "event_page_patterns": ["https://gallery.kcua.ac.jp/exhibitions/"]
+          "event_page_patterns": ["/exhibitions/"]
         },
         "en": {
           "start_urls": ["https://gallery.kcua.ac.jp/exhibitions/"],
-          "event_page_patterns": ["/en/archives/", "/archives/"]
+          "event_page_patterns": ["/exhibitions/"]
         }
       }
     },
@@ -775,7 +775,7 @@
       "allowed_domains": ["kyoto.theterminal.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/event_type/exhibition/", "/event/"],
-      "notes": "Exhibition-type filtered event listing.",
+      "notes": "Japanese-only site. Use the exhibition-type filtered event listing.",
       "is_active": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
@@ -803,18 +803,18 @@
       "allowed_domains": ["artro.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
-      "notes": "Dedicated exhibition listing page.",
+      "notes": "English-only site. Use the dedicated exhibition listing page.",
       "is_active": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://artro.jp/exhibition/"],
-          "event_page_patterns": ["/exhibition/"]
-        },
-        "en": {
           "start_urls": [],
           "event_page_patterns": []
+        },
+        "en": {
+          "start_urls": ["https://artro.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
         }
       }
     },
@@ -833,15 +833,20 @@
       "allowed_domains": ["www.raku-yaki.or.jp", "raku-yaki.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
-      "notes": "English version of the Raku Museum exhibition index; dedicated to Raku ware ceramics.",
+      "notes": "English version of the Raku Museum exhibition index; dedicated to Raku ware ceramics. The header offers an English/Japanese language toggle.",
       "is_active": true,
       "source_categories": ["ceramics", "museum", "craft"],
       "measure_image_dimensions": true,
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [],
-          "event_page_patterns": []
+          "start_urls": [
+            "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"
+          ],
+          "event_page_patterns": [
+            "/e/museum/exhibition/",
+            "/museum/exhibition/"
+          ]
         },
         "en": {
           "start_urls": [
@@ -851,34 +856,6 @@
             "/e/museum/exhibition/",
             "/museum/exhibition/"
           ]
-        }
-      }
-    },
-    {
-      "slug": "anewal-gallery",
-      "name": "Anewal Gallery",
-      "source_type": "gallery",
-      "language": "ja",
-      "address_text": "#317, 281 Naramono-cho, Kamigyo-ku, Kyoto 602-8243 Japan",
-      "lat": 35.0230431,
-      "lng": 135.7515771,
-      "base_url": "https://www.anewal.gallery/",
-      "start_urls": ["https://www.anewal.gallery/"],
-      "allowed_domains": ["www.anewal.gallery", "anewal.gallery"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/"],
-      "notes": "Current schedule is homepage-only and mostly points to PDFs, social posts, and external event pages. Keep inactive until we add a source-specific homepage extractor.",
-      "is_active": false,
-      "source_categories": ["gallery"],
-      "map_visibility": true,
-      "locales": {
-        "ja": {
-          "start_urls": ["https://www.anewal.gallery/"],
-          "event_page_patterns": ["/exhibition", "/"]
-        },
-        "en": {
-          "start_urls": [],
-          "event_page_patterns": []
         }
       }
     },
@@ -951,7 +928,7 @@
       "allowed_domains": ["kuramonzen.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blogs/exhibitions"],
-      "notes": "Exhibition blog listing; similar structure to HUKO.",
+      "notes": "The header offers an English/Japanese language toggle.",
       "is_active": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
@@ -979,7 +956,7 @@
       "allowed_domains": ["oscaarmouligne.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
-      "notes": "Gallery exhibition listing.",
+      "notes": "Gallery exhibition listing. Site only in English.",
       "is_active": true,
       "source_categories": ["gallery"],
       "measure_image_dimensions": true,
@@ -1008,7 +985,7 @@
       "allowed_domains": ["www.kankakari.com", "kankakari.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/single-post/"],
-      "notes": "Use the Wix news listing as the index and follow exhibition posts under `/single-post/`.",
+      "notes": "Use the Wix news listing as the index and follow exhibition posts under `/single-post/`. Site only in Japanese language.",
       "is_active": true,
       "source_categories": ["gallery", "craft"],
       "map_visibility": true,

@@ -5,4 +5,5 @@ interface Window {
   __eventCardToggleBound?: boolean;
   __generalButtonDotBound?: boolean;
   __localeToggleBound?: boolean;
+  __mapResizerBound?: boolean;
 }

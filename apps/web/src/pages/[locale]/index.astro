@@ -156,6 +156,17 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
         <Footer />
       </section>
 
+      <div
+        class="map-resizer"
+        data-map-resizer
+        role="separator"
+        tabindex="0"
+        aria-label="Resize map"
+        aria-orientation="vertical"
+        hidden
+        inert
+      ></div>
+
       <section class="map-section" id="map-section" data-map-section hidden>
         <GoogleMapCanvas sources={mapSources} />
       </section>
@@ -166,8 +177,10 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
 
 <script>
   import { initEventCardReveal } from "../../scripts/eventCardReveal";
+  import { initMapResizer } from "../../scripts/mapResizer";
 
   initEventCardReveal();
+  initMapResizer();
 </script>
 
 <style lang="sass">
@@ -206,6 +219,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
   .content-container
     --layout-transition-duration: 260ms
     --layout-transition-ease: cubic-bezier(0.16, 1, 0.3, 1)
+    --map-resizer-hit-size: 1rem
     display: flex
     align-items: stretch
     height: 100%
@@ -252,7 +266,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       min-height: 0
 
   .content-container[data-map-visible] .events-section
-    flex: 0 0 clamp(400px, 50%, 600px)
+    flex: 0 0 var(--events-panel-size, clamp(400px, 50%, 600px))
 
   .content-container[data-map-visible] .map-section
     flex: 1 1 0
@@ -260,6 +274,57 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
     opacity: 1
     visibility: visible
     pointer-events: auto
+
+  .content-container[data-map-resizing]
+    cursor: col-resize
+    user-select: none
+
+    .events-section,
+    .map-section
+      transition: none
+
+  .map-resizer
+    position: relative
+    z-index: 20
+    flex: 0 0 0
+    align-self: stretch
+    width: 0
+    color: var(--color-green)
+    cursor: col-resize
+    touch-action: none
+    opacity: 0
+    visibility: hidden
+
+    &[hidden]
+      display: none
+
+    &::before
+      content: ""
+      position: absolute
+      top: 0
+      bottom: 0
+      left: calc(var(--map-resizer-hit-size) / -2)
+      width: var(--map-resizer-hit-size)
+      cursor: col-resize
+
+    &::after
+      content: ""
+      position: absolute
+      top: 0
+      bottom: 0
+      left: calc(var(--stroke-width) / -2)
+      border-left: var(--stroke-width) solid currentColor
+      pointer-events: none
+
+    &:focus-visible
+      outline: none
+
+      &::after
+        border-left-width: calc(var(--stroke-width) * 2)
+
+  .content-container[data-map-visible] .map-resizer
+    opacity: 1
+    visibility: visible
 
   .map-section[data-map-closing]
     visibility: visible
@@ -277,22 +342,52 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       flex-direction: column
 
       &[data-map-visible] .map-section
-        order: -1
-        flex: 0 0 min(45svh, 24.5rem)
-        max-height: min(45svh, 24.5rem)
+        order: -2
+        flex: 0 0 var(--map-panel-size, min(45svh, 24.5rem))
+        max-height: var(--map-panel-size, min(45svh, 24.5rem))
 
       .map-section[data-map-closing]
-        order: -1
+        order: -2
 
     .content-container[data-map-visible] .events-section
       flex: 1 1 auto
       min-height: 0
+
+    .content-container[data-map-resizing]
+      cursor: default
 
     .map-section
       flex: 0 0 0
       width: 100%
       max-width: 100%
       max-height: 0
+
+    .map-resizer
+      order: -1
+      align-self: stretch
+      width: 100%
+      height: 0
+      cursor: default
+
+      &::before
+        left: 0
+        right: 0
+        top: calc(var(--map-resizer-hit-size) / -2)
+        bottom: auto
+        width: auto
+        height: var(--map-resizer-hit-size)
+        cursor: default
+
+      &::after
+        top: calc(var(--stroke-width) / -2)
+        bottom: auto
+        left: 0
+        right: 0
+        border-left: 0
+        border-top: var(--stroke-width) solid currentColor
+
+      &:focus-visible::after
+        border-top-width: calc(var(--stroke-width) * 2)
 
     .section-heading
       flex-direction: column
