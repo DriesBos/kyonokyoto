@@ -15,13 +15,13 @@ const { sources = [] } = Astro.props;
 const mapsApiKey = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 const mapsMapId = import.meta.env.PUBLIC_GOOGLE_MAPS_MAP_ID ?? "";
 const sourcesJson = JSON.stringify(sources);
-const showMapZoomDebug = import.meta.env.DEV;
 ---
 
 <div
   class="map-canvas"
   role="application"
   aria-label="Kyoto cultural map"
+  data-map-loading
 >
   <script type="application/json" data-map-sources set:html={sourcesJson} />
   <div
@@ -30,14 +30,13 @@ const showMapZoomDebug = import.meta.env.DEV;
     data-api-key={mapsApiKey}
     data-map-id={mapsMapId}
   ></div>
-  {showMapZoomDebug ? <p class="map-zoom-debug" data-map-zoom-debug aria-hidden="true"></p> : null}
   <div class="map-controls" data-map-controls>
     <button class="map-find-me" type="button" data-map-find-me aria-pressed="false" aria-describedby="map-find-me-status">
       <span class="map-find-me__label">Find me</span>
     </button>
     <p class="map-find-me-status" id="map-find-me-status" data-map-find-me-status aria-live="polite"></p>
   </div>
-  <div class="map-placeholder" data-map-placeholder>
+  <div class="map-placeholder" data-map-placeholder hidden>
     <p>Map unavailable.</p>
     <p>Add PUBLIC_GOOGLE_MAPS_API_KEY and PUBLIC_GOOGLE_MAPS_MAP_ID.</p>
   </div>
@@ -104,21 +103,6 @@ const showMapZoomDebug = import.meta.env.DEV;
     flex-direction: column
     align-items: flex-end
     gap: 0.25rem
-    pointer-events: none
-
-  .map-zoom-debug
-    position: absolute
-    left: 0.5rem
-    bottom: 0.5rem
-    z-index: 1000
-    margin: 0
-    padding: 3px 6px
-    border: 1px solid white
-    border-radius: 4px
-    background: var(--color-pink)
-    color: white
-    font-size: 12px
-    line-height: 1
     pointer-events: none
 
   .map-find-me

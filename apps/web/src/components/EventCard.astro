@@ -215,6 +215,7 @@ const calendarLocation = calendarLocationFor(event);
       display: grid
       place-items: center
       padding: 1rem
+      padding-top: 0.75rem
       border: 0
       appearance: none
       -webkit-tap-highlight-color: transparent
@@ -229,7 +230,7 @@ const calendarLocation = calendarLocationFor(event);
 
       &[aria-pressed='true'] .event-card__star-shape
         fill: var(--color-pink)
-        stroke: var(--color-beige)
+        stroke: var(--color-pink)
 
       &[data-star-burst] .event-card__star-ring
         animation: event-card-star-ring 0.33s ease-out forwards
@@ -239,13 +240,13 @@ const calendarLocation = calendarLocationFor(event);
 
     &__star-icon
       display: block
-      width: 1.5rem
-      height: 1.5rem
+      width: 1.25rem
+      height: 1.25rem
       overflow: visible
 
       path
         fill: transparent
-        stroke-width: 1
+        stroke-width: 2
         stroke-linejoin: round
         transform-box: fill-box
         transform-origin: center

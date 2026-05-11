@@ -8,7 +8,6 @@ type MapSource = {
 
 type MapInstance = {
   addListener?: (eventName: string, callback: () => void) => unknown;
-  getZoom?: () => number | undefined;
   panTo?: (position: { lat: number; lng: number }) => void;
   setZoom?: (zoom: number) => void;
 };
@@ -108,6 +107,10 @@ const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
 
 const showPlaceholder = (element: Element, message?: string) => {
   const mapShell = element instanceof HTMLElement ? getMapShell(element) : element;
+  if (mapShell instanceof HTMLElement) {
+    mapShell.removeAttribute("data-map-loading");
+  }
+
   const placeholder = mapShell.querySelector("[data-map-placeholder]");
   if (!(placeholder instanceof HTMLElement)) return;
 
@@ -207,6 +210,9 @@ const initMap = async (element: Element) => {
     const mapShell = getMapShell(element);
 
     mapShell.querySelector("[data-map-placeholder]")?.setAttribute("hidden", "");
+    if (mapShell instanceof HTMLElement) {
+      mapShell.removeAttribute("data-map-loading");
+    }
 
     const map = new MapConstructor(element, {
       center: kyotoCenter,
@@ -221,18 +227,10 @@ const initMap = async (element: Element) => {
     });
     const findMeButton = mapShell.querySelector("[data-map-find-me]");
     const findMeStatus = mapShell.querySelector("[data-map-find-me-status]");
-    const zoomDebug = mapShell.querySelector("[data-map-zoom-debug]");
     let userWatchId: number | null = null;
     let userMarker: AdvancedMarkerInstance | null = null;
     let userMarkerContent: HTMLElement | null = null;
     let hasCenteredUserLocation = false;
-
-    const syncZoomDebug = () => {
-      if (!(zoomDebug instanceof HTMLElement)) return;
-
-      const zoom = map.getZoom?.();
-      zoomDebug.textContent = Number.isFinite(zoom) ? `zoom ${zoom}` : "";
-    };
 
     const setFindMeStatus = (message = "") => {
       if (findMeStatus instanceof HTMLElement) {
@@ -332,8 +330,6 @@ const initMap = async (element: Element) => {
         startUserTracking();
       });
     }
-    map.addListener?.("zoom_changed", syncZoomDebug);
-    syncZoomDebug();
 
     const getFirstVisibleSourceCard = (sourceSlug: string) => {
       const eventsSection = document.querySelector("[data-events-section]");
