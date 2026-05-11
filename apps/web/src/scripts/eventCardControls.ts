@@ -440,7 +440,7 @@ export const initEventCardControls = () => {
     });
 
     const state = mediaPointerState.get(event.pointerId);
-    if (event.pointerType !== "touch" && canScrollMedia(media) && typeof media.setPointerCapture === "function") {
+    if (canScrollMedia(media) && typeof media.setPointerCapture === "function") {
       media.setPointerCapture(event.pointerId);
       state.capturedPointer = true;
     }
@@ -448,7 +448,7 @@ export const initEventCardControls = () => {
 
   document.addEventListener("pointermove", (event) => {
     const state = mediaPointerState.get(event.pointerId);
-    if (!state || state.pointerType === "touch") return;
+    if (!state) return;
 
     const deltaX = event.clientX - state.x;
     const deltaY = event.clientY - state.y;

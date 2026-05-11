@@ -307,7 +307,7 @@ const calendarLocation = calendarLocationFor(event);
       overflow-y: hidden
       overscroll-behavior-x: contain
       pointer-events: auto
-      touch-action: auto
+      touch-action: pan-y
       -webkit-overflow-scrolling: touch
       scrollbar-width: thin
       padding: 0 var(--page-padding-x)
@@ -322,6 +322,7 @@ const calendarLocation = calendarLocationFor(event);
         max-inline-size: 60%
 
       @media screen and (max-width: $mobile-breakpoint)
+        inline-size: 100%
         max-inline-size: 100%
 
     &__image-frame
@@ -442,5 +443,6 @@ const calendarLocation = calendarLocationFor(event);
 
       &__media
         flex-basis: auto
+        inline-size: 100%
         max-inline-size: 100%
 </style>
