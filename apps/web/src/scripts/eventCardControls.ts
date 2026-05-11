@@ -275,7 +275,7 @@ const animateCardState = (card, isActive) => {
   if (!(content instanceof HTMLElement)) {
     setCardActiveState(card, isActive);
     emitCardActiveChange(card, isActive);
-    return;
+    return Promise.resolve();
   }
 
   const startHeight = card.offsetHeight;
@@ -297,7 +297,7 @@ const animateCardState = (card, isActive) => {
 
     card.style.setProperty(mediaHeightProperty, targetMediaHeight);
 
-    Promise.all([
+    const transition = Promise.all([
       animateHeight(card, startHeight, expandedCardHeight),
       animateHeight(content, 0, targetContentHeight),
     ]).then(() => {
@@ -308,7 +308,7 @@ const animateCardState = (card, isActive) => {
       content.style.height = "auto";
     });
     fadeIn(fadeTargets, { delay: heightTransition.duration });
-    return;
+    return transition;
   }
 
   setCardActiveState(card, false);
@@ -319,7 +319,7 @@ const animateCardState = (card, isActive) => {
   content.style.height = `${content.offsetHeight}px`;
   card.style.setProperty(mediaHeightProperty, targetMediaHeight);
 
-  Promise.all([
+  return Promise.all([
     animateHeight(content, content.offsetHeight, 0),
     animateHeight(card, startHeight, collapsedCardHeight),
   ]).then(() => {
@@ -359,8 +359,12 @@ const activateCard = (card) => {
 
 const deactivateAllCards = () => {
   hideCardDot();
-  document.querySelectorAll(`${cardSelector}[data-active='true']`).forEach((card) => {
-    if (card instanceof HTMLElement) animateCardState(card, false);
+  const transitions = Array.from(document.querySelectorAll(`${cardSelector}[data-active='true']`))
+    .filter((card): card is HTMLElement => card instanceof HTMLElement)
+    .map((card) => animateCardState(card, false));
+
+  Promise.all(transitions).then(() => {
+    document.dispatchEvent(new CustomEvent("event-card:deactivated-all"));
   });
 };
 
@@ -380,11 +384,9 @@ const scrollCardIntoEventsView = (card) => {
   const eventsSectionRect = eventsSection.getBoundingClientRect();
   const cardRect = card.getBoundingClientRect();
   const mainHeader = eventsSection.querySelector("[data-main-header]");
-  const pagePaddingY = Number.parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue("--page-padding-y")
-  );
-  const stickyOffset = mainHeader instanceof HTMLElement ? mainHeader.offsetHeight : 0;
-  const scrollPadding = stickyOffset + (Number.isFinite(pagePaddingY) ? pagePaddingY : 0);
+  const scrollPadding = mainHeader instanceof HTMLElement
+    ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
+    : 0;
   const nextScrollTop = eventsSection.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
 
   eventsSection.scrollTo({

@@ -286,9 +286,9 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
   .map-resizer
     position: relative
     z-index: 20
-    flex: 0 0 0
+    flex: 0 0 var(--stroke-width)
     align-self: stretch
-    width: 0
+    width: var(--stroke-width)
     color: var(--color-green)
     cursor: col-resize
     touch-action: none
@@ -303,7 +303,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       position: absolute
       top: 0
       bottom: 0
-      left: calc(var(--map-resizer-hit-size) / -2)
+      left: calc((var(--map-resizer-hit-size) - var(--stroke-width)) / -2)
       width: var(--map-resizer-hit-size)
       cursor: col-resize
 
@@ -312,15 +312,17 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       position: absolute
       top: 0
       bottom: 0
-      left: calc(var(--stroke-width) / -2)
-      border-left: var(--stroke-width) solid currentColor
+      left: 0
+      width: 100%
+      background: currentColor
       pointer-events: none
 
     &:focus-visible
       outline: none
 
       &::after
-        border-left-width: calc(var(--stroke-width) * 2)
+        left: calc(var(--stroke-width) * -1)
+        width: calc(var(--stroke-width) * 2)
 
   .content-container[data-map-visible] .map-resizer
     opacity: 1
@@ -354,7 +356,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       min-height: 0
 
     .content-container[data-map-resizing]
-      cursor: default
+      cursor: col-resize
 
     .map-section
       flex: 0 0 0
@@ -366,28 +368,30 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       order: -1
       align-self: stretch
       width: 100%
-      height: 0
-      cursor: default
+      height: var(--stroke-width)
+      cursor: col-resize
 
       &::before
         left: 0
         right: 0
-        top: calc(var(--map-resizer-hit-size) / -2)
+        top: calc((var(--map-resizer-hit-size) - var(--stroke-width)) / -2)
         bottom: auto
         width: auto
         height: var(--map-resizer-hit-size)
-        cursor: default
+        cursor: col-resize
 
       &::after
-        top: calc(var(--stroke-width) / -2)
+        top: 0
         bottom: auto
         left: 0
         right: 0
-        border-left: 0
-        border-top: var(--stroke-width) solid currentColor
+        width: auto
+        height: 100%
+        background: currentColor
 
       &:focus-visible::after
-        border-top-width: calc(var(--stroke-width) * 2)
+        top: calc(var(--stroke-width) * -1)
+        height: calc(var(--stroke-width) * 2)
 
     .section-heading
       flex-direction: column

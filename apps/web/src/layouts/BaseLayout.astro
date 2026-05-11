@@ -111,6 +111,10 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
           "a[href]",
           "button:not([disabled])",
         ].join(",");
+        const nativeCursorSelector = [
+          "[data-map-resizer]",
+          "[data-content-container][data-map-resizing]",
+        ].join(",");
         let cursorDot = null;
         let cursorEnabled = false;
 
@@ -124,6 +128,10 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
           return cursorDot;
         };
 
+        const shouldUseNativeCursor = (target) => {
+          return target instanceof Element && Boolean(target.closest(nativeCursorSelector));
+        };
+
         const setCursorScale = (target) => {
           const dot = ensureCursorDot();
           let scale = 1;
@@ -135,19 +143,29 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
           dot.style.setProperty("--cursor-dot-scale", String(scale));
         };
 
+        const syncNativeCursor = (target) => {
+          const useNativeCursor = shouldUseNativeCursor(target);
+          document.body.toggleAttribute("data-site-native-cursor", useNativeCursor);
+          return useNativeCursor;
+        };
+
         const handlePointerMove = (event) => {
           const dot = ensureCursorDot();
+          const useNativeCursor = syncNativeCursor(event.target);
           dot.style.setProperty("--cursor-dot-x", `${event.clientX}px`);
           dot.style.setProperty("--cursor-dot-y", `${event.clientY}px`);
-          dot.style.opacity = "1";
+          dot.style.opacity = useNativeCursor ? "0" : "1";
           setCursorScale(event.target);
         };
 
         const handlePointerLeave = () => {
           if (cursorDot) cursorDot.style.opacity = "0";
+          document.body.removeAttribute("data-site-native-cursor");
         };
 
         const handlePointerOver = (event) => {
+          const useNativeCursor = syncNativeCursor(event.target);
+          if (cursorDot) cursorDot.style.opacity = useNativeCursor ? "0" : "1";
           setCursorScale(event.target);
         };
 
@@ -165,6 +183,7 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 
           cursorDot?.remove();
           cursorDot = null;
+          document.body.removeAttribute("data-site-native-cursor");
           document.removeEventListener("pointermove", handlePointerMove);
           document.removeEventListener("pointerover", handlePointerOver);
           document.removeEventListener("pointerleave", handlePointerLeave);

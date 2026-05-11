@@ -134,6 +134,15 @@ main
   svg *
     cursor: none !important
 
+  body[data-site-native-cursor],
+  body[data-site-native-cursor] *,
+  body[data-site-native-cursor] *::before,
+  body[data-site-native-cursor] *::after,
+  [data-map-resizer],
+  [data-map-resizer]::before,
+  [data-map-resizer]::after
+    cursor: col-resize !important
+
 .site-cursor-dot
   position: fixed
   z-index: 900

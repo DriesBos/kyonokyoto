@@ -13,6 +13,7 @@ type MapInstance = {
 
 type AdvancedMarkerInstance = {
   map: unknown | null;
+  position?: { lat: number; lng: number };
   zIndex?: number | null;
   addEventListener?: (eventName: string, callback: () => void) => void;
   addListener?: (eventName: string, callback: () => void) => unknown;
@@ -43,6 +44,12 @@ const mapElements = Array.from(document.querySelectorAll("[data-google-map]"));
 const kyotoCenter = { lat: 35.0240977, lng: 135.7621436 };
 const mobileMapQuery = window.matchMedia("(max-width: 768px)");
 const getMapZoom = () => (mobileMapQuery.matches ? 13 : 14);
+const userLocationZoom = 16;
+const pxFromCssVar = (name: string) => {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name);
+  const px = Number.parseFloat(value);
+  return Number.isFinite(px) ? px : 0;
+};
 
 const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
   mapWindow.google = mapWindow.google ?? {};
@@ -126,7 +133,17 @@ const createMarkerContent = (source: MapSource) => {
   marker.dataset.sourceSlug = source.slug;
   marker.dataset.categories = source.categories.join("|");
   marker.setAttribute("aria-label", source.name);
-  marker.innerHTML = `<span class="map-marker__dot" aria-hidden="true"></span>`;
+  marker.innerHTML = `
+    <span class="map-marker__dot" aria-hidden="true"></span>
+    <span class="map-marker__label">${source.name}</span>
+  `;
+  return marker;
+};
+
+const createUserMarkerContent = () => {
+  const marker = document.createElement("div");
+  marker.className = "map-user-marker";
+  marker.setAttribute("aria-hidden", "true");
   return marker;
 };
 
@@ -182,6 +199,111 @@ const initMap = async (element: Element) => {
       gestureHandling: "greedy",
       keyboardShortcuts: true,
     });
+    const findMeButton = element.querySelector("[data-map-find-me]");
+    const findMeStatus = element.querySelector("[data-map-find-me-status]");
+    let userWatchId: number | null = null;
+    let userMarker: AdvancedMarkerInstance | null = null;
+    let userMarkerContent: HTMLElement | null = null;
+    let hasCenteredUserLocation = false;
+
+    const setFindMeStatus = (message = "") => {
+      if (findMeStatus instanceof HTMLElement) {
+        findMeStatus.textContent = message;
+      }
+    };
+
+    const setFindMePressed = (isPressed: boolean) => {
+      if (findMeButton instanceof HTMLElement) {
+        findMeButton.setAttribute("aria-pressed", String(isPressed));
+      }
+    };
+
+    const stopUserTracking = () => {
+      if (userWatchId !== null) {
+        navigator.geolocation.clearWatch(userWatchId);
+        userWatchId = null;
+      }
+
+      if (userMarker) {
+        userMarker.map = null;
+      }
+
+      hasCenteredUserLocation = false;
+      setFindMePressed(false);
+      setFindMeStatus("");
+    };
+
+    const updateUserMarker = (position: GeolocationPosition) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const nextPosition = { lat, lng };
+      const heading = Number.isFinite(position.coords.heading) ? position.coords.heading : 0;
+
+      if (!userMarkerContent) {
+        userMarkerContent = createUserMarkerContent();
+      }
+
+      userMarkerContent.style.setProperty("--map-user-heading", `${heading}deg`);
+
+      if (!userMarker) {
+        userMarker = new AdvancedMarkerElement({
+          map,
+          position: nextPosition,
+          title: "Your location",
+          content: userMarkerContent,
+        });
+        userMarker.zIndex = 2000;
+      } else {
+        userMarker.position = nextPosition;
+        userMarker.map = map;
+        userMarker.zIndex = 2000;
+      }
+
+      if (!hasCenteredUserLocation) {
+        map.panTo?.(nextPosition);
+        map.setZoom?.(userLocationZoom);
+        hasCenteredUserLocation = true;
+      }
+
+      setFindMeStatus("");
+    };
+
+    const startUserTracking = () => {
+      if (!("geolocation" in navigator)) {
+        if (findMeButton instanceof HTMLButtonElement) {
+          findMeButton.disabled = true;
+        }
+        setFindMeStatus("location unavailable");
+        return;
+      }
+
+      setFindMeStatus("finding location");
+      setFindMePressed(true);
+      hasCenteredUserLocation = false;
+      userWatchId = navigator.geolocation.watchPosition(
+        updateUserMarker,
+        () => {
+          stopUserTracking();
+          setFindMeStatus("location unavailable");
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 12000,
+        }
+      );
+    };
+
+    if (findMeButton instanceof HTMLButtonElement) {
+      findMeButton.addEventListener("click", () => {
+        if (userWatchId !== null) {
+          stopUserTracking();
+          return;
+        }
+
+        startUserTracking();
+      });
+    }
 
     const getFirstVisibleSourceCard = (sourceSlug: string) => {
       const eventsSection = document.querySelector("[data-events-section]");
@@ -209,11 +331,11 @@ const initMap = async (element: Element) => {
       const eventsSectionRect = eventsSection.getBoundingClientRect();
       const cardRect = targetCard.getBoundingClientRect();
       const mainHeader = eventsSection.querySelector("[data-main-header]");
-      const pagePaddingY = Number.parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue("--page-padding-y")
-      );
-      const stickyOffset = mainHeader instanceof HTMLElement ? mainHeader.offsetHeight : 0;
-      const scrollPadding = stickyOffset + (Number.isFinite(pagePaddingY) ? pagePaddingY : 0);
+      const headerOffset = mainHeader instanceof HTMLElement
+        ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
+        : 0;
+      const strokeOffset = pxFromCssVar("--stroke-width");
+      const scrollPadding = Math.max(0, headerOffset - strokeOffset);
       const nextScrollTop = eventsSection.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
 
       eventsSection.scrollTo({
@@ -222,22 +344,22 @@ const initMap = async (element: Element) => {
       });
     };
 
-    const activateSourceEvent = (sourceSlug: string) => {
-      const targetCard = getFirstVisibleSourceCard(sourceSlug);
-      if (!(targetCard instanceof HTMLElement)) return;
+    const waitForCardDeactivation = () =>
+      new Promise<void>((resolve) => {
+        const activeCards = document.querySelectorAll("[data-event-card][data-active='true']");
 
-      document.dispatchEvent(
-        new CustomEvent("event-card:activate", {
-          detail: {
-            eventId: targetCard.dataset.eventId || "",
-            sourceSlug,
-          },
-        })
-      );
-    };
+        if (activeCards.length === 0) {
+          resolve();
+          return;
+        }
+
+        document.addEventListener("event-card:deactivated-all", () => resolve(), { once: true });
+        document.dispatchEvent(new CustomEvent("event-card:deactivate-all"));
+      });
 
     let lastMarkerActivationSlug = "";
     let lastMarkerActivationTime = 0;
+    let markerNavigationSourceSlug = "";
     const activateMarkerSource = (sourceSlug: string) => {
       const now = performance.now();
 
@@ -245,9 +367,13 @@ const initMap = async (element: Element) => {
 
       lastMarkerActivationSlug = sourceSlug;
       lastMarkerActivationTime = now;
+      markerNavigationSourceSlug = sourceSlug;
       highlightSource(sourceSlug, true);
-      activateSourceEvent(sourceSlug);
-      scrollToSourceEvent(sourceSlug);
+      waitForCardDeactivation().then(() => {
+        scrollToSourceEvent(sourceSlug);
+        highlightSource(sourceSlug, false);
+        markerNavigationSourceSlug = "";
+      });
     };
 
     const markerRecords = sources.map((source) => {
@@ -346,6 +472,7 @@ const initMap = async (element: Element) => {
       const sourceSlug = typeof detail.sourceSlug === "string" ? detail.sourceSlug : "";
 
       if (!detail.active) {
+        if (markerNavigationSourceSlug) return;
         syncActiveCardHighlight();
         return;
       }
