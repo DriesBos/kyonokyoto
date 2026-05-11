@@ -7,6 +7,8 @@ type MapSource = {
 };
 
 type MapInstance = {
+  addListener?: (eventName: string, callback: () => void) => unknown;
+  getZoom?: () => number | undefined;
   panTo?: (position: { lat: number; lng: number }) => void;
   setZoom?: (zoom: number) => void;
 };
@@ -219,10 +221,18 @@ const initMap = async (element: Element) => {
     });
     const findMeButton = mapShell.querySelector("[data-map-find-me]");
     const findMeStatus = mapShell.querySelector("[data-map-find-me-status]");
+    const zoomDebug = mapShell.querySelector("[data-map-zoom-debug]");
     let userWatchId: number | null = null;
     let userMarker: AdvancedMarkerInstance | null = null;
     let userMarkerContent: HTMLElement | null = null;
     let hasCenteredUserLocation = false;
+
+    const syncZoomDebug = () => {
+      if (!(zoomDebug instanceof HTMLElement)) return;
+
+      const zoom = map.getZoom?.();
+      zoomDebug.textContent = Number.isFinite(zoom) ? `zoom ${zoom}` : "";
+    };
 
     const setFindMeStatus = (message = "") => {
       if (findMeStatus instanceof HTMLElement) {
@@ -279,6 +289,7 @@ const initMap = async (element: Element) => {
 
       if (!hasCenteredUserLocation) {
         map.panTo?.(nextPosition);
+        map.setZoom?.(mobileMapQuery.matches ? 14 : 15);
         hasCenteredUserLocation = true;
       }
 
@@ -321,6 +332,8 @@ const initMap = async (element: Element) => {
         startUserTracking();
       });
     }
+    map.addListener?.("zoom_changed", syncZoomDebug);
+    syncZoomDebug();
 
     const getFirstVisibleSourceCard = (sourceSlug: string) => {
       const eventsSection = document.querySelector("[data-events-section]");

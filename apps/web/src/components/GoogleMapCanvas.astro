@@ -29,6 +29,7 @@ const sourcesJson = JSON.stringify(sources);
     data-api-key={mapsApiKey}
     data-map-id={mapsMapId}
   ></div>
+  <p class="map-zoom-debug" data-map-zoom-debug aria-hidden="true"></p>
   <div class="map-controls" data-map-controls>
     <button class="map-find-me" type="button" data-map-find-me aria-pressed="false" aria-describedby="map-find-me-status">
       <span class="map-find-me__label">Find me</span>
@@ -102,6 +103,21 @@ const sourcesJson = JSON.stringify(sources);
     flex-direction: column
     align-items: flex-end
     gap: 0.25rem
+    pointer-events: none
+
+  .map-zoom-debug
+    position: absolute
+    left: 0.5rem
+    bottom: 0.5rem
+    z-index: 1000
+    margin: 0
+    padding: 3px 6px
+    border: 1px solid white
+    border-radius: 4px
+    background: var(--color-pink)
+    color: white
+    font-size: 12px
+    line-height: 1
     pointer-events: none
 
   .map-find-me
