@@ -26,10 +26,6 @@ const supportedTranslationLocales = ['en', 'ja'];
 const localizedEventFields = [
   'title',
   'description',
-  'institution_name',
-  'venue_name',
-  'address_text',
-  'date_text',
 ];
 
 function parseEnvFile(contents) {
@@ -556,6 +552,34 @@ function parseJapaneseSingleDate(dateText) {
     endDate: date,
     calendarStartsAt: `${date}T00:00:00+09:00`,
     calendarEndsAt: `${date}T23:59:00+09:00`,
+  };
+}
+
+function parseKyoceraDateRange(dateText) {
+  const normalized = decodeHtml(dateText)
+    .replace(/\s+/g, '')
+    .replace(/[‐‑‒–—―〜～]/g, '-');
+  const japaneseRange = normalized.match(
+    /(\d{4})年(\d{1,2})月(\d{1,2})日-(\d{4})年(\d{1,2})月(\d{1,2})日/u,
+  );
+  const slashRange = normalized.match(
+    /(\d{4})\/(\d{1,2})\/(\d{1,2})-(\d{4})\/(\d{1,2})\/(\d{1,2})/,
+  );
+  const match = japaneseRange ?? slashRange;
+
+  if (!match) {
+    return parseSlashDateRange(dateText);
+  }
+
+  const [, sy, sm, sd, ey, em, ed] = match;
+  const startDate = `${sy}-${sm.padStart(2, '0')}-${sd.padStart(2, '0')}`;
+  const endDate = `${ey}-${em.padStart(2, '0')}-${ed.padStart(2, '0')}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
   };
 }
 
@@ -2663,7 +2687,7 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
     ...subtitleBlocks.map((value) => value.toLowerCase()),
   ];
   const categories = [...new Set(normalizedCategories.filter(Boolean))];
-  const parsedDates = parseSlashDateRange(dateText);
+  const parsedDates = parseKyoceraDateRange(dateText);
   const addressText =
     extractKyoceraFooterAddress(detailHtml) ??
     source.address_text ??
@@ -4495,11 +4519,6 @@ function buildEventTranslationPayload(eventId, locale, eventData) {
     locale,
     title: eventData.title,
     description: eventData.description ?? null,
-    institution_name: eventData.institution_name,
-    venue_name: eventData.venue_name ?? null,
-    address_text: eventData.address_text ?? null,
-    date_text: eventData.date_text,
-    source_url: eventData.source_url,
   };
 }
 
@@ -4605,9 +4624,7 @@ async function buildMachineTranslatedEvent(env, eventData, sourceLocale, targetL
     ...translatedFields,
     source_url: eventData.source_url,
     title: translatedFields.title ?? eventData.title,
-    institution_name:
-      translatedFields.institution_name ?? eventData.institution_name,
-    date_text: translatedFields.date_text ?? eventData.date_text,
+    description: translatedFields.description ?? eventData.description,
   };
 }
 
@@ -5371,6 +5388,7 @@ export {
   hasExtractedImage,
   normalizeEventImagesForSource,
   parseImageDimensionsFromBytes,
+  parseKyoceraDateRange,
   recordFetchedPage,
   extractRakuMuseumEvent,
   extractSenOkuEvent,

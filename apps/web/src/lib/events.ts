@@ -13,11 +13,6 @@ export type EventTranslationRow = {
   locale: AppLocale;
   title: string;
   description: string | null;
-  institution_name: string;
-  venue_name: string | null;
-  address_text: string | null;
-  date_text: string;
-  source_url: string;
 };
 
 export type EventRow = {
@@ -58,7 +53,7 @@ const eventSelectWithoutCoordinates =
   "id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at";
 
 export const eventTranslationSelect =
-  "event_translations(locale, title, description, institution_name, venue_name, address_text, date_text, source_url)";
+  "event_translations(locale, title, description)";
 
 const fetchEvents = (select: string) =>
   supabase
@@ -103,11 +98,6 @@ export const localizeEvent = (event: EventRow, activeLocale: AppLocale): EventRo
     ...event,
     title: translation.title || event.title,
     description: translation.description ?? event.description,
-    institution_name: translation.institution_name || event.institution_name,
-    venue_name: translation.venue_name ?? event.venue_name,
-    address_text: translation.address_text ?? event.address_text,
-    date_text: translation.date_text || event.date_text,
-    source_url: translation.source_url || event.source_url,
   };
 };
 

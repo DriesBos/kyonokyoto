@@ -31,6 +31,8 @@ Source JSON is authoritative for venue identity:
 
 Crawler extracts event-specific title, dates, description, images, and source URLs. It should not let scraped page venue/brand text replace canonical source fields.
 
+Locale-specific event rows only localize title and description. Dates, venue/source names, addresses, links, categories, coordinates, and media remain shared on the canonical event.
+
 ## `venue_locations`
 
 Optional. Use when one source has events at multiple venues or rooms and the map marker needs event-level coordinates.

@@ -92,11 +92,6 @@ function eventDataFromRow(row) {
   return {
     title: row.title,
     description: row.description ?? null,
-    institution_name: row.institution_name,
-    venue_name: row.venue_name ?? null,
-    address_text: row.address_text ?? null,
-    date_text: row.date_text,
-    source_url: row.source_url,
   };
 }
 
@@ -104,11 +99,6 @@ function eventDataFromTranslation(translation) {
   return {
     title: translation.title,
     description: translation.description ?? null,
-    institution_name: translation.institution_name,
-    venue_name: translation.venue_name ?? null,
-    address_text: translation.address_text ?? null,
-    date_text: translation.date_text,
-    source_url: translation.source_url,
   };
 }
 
@@ -157,7 +147,7 @@ async function main() {
   const rows = await supabaseRequest({
     env,
     path:
-      `events?status=eq.published&select=id,title,description,institution_name,venue_name,address_text,date_text,source_url,sources(slug,language),event_translations(locale,title,description,institution_name,venue_name,address_text,date_text,source_url)&limit=${limit}`,
+      `events?status=eq.published&select=id,title,description,sources(slug,language),event_translations(locale,title,description)&limit=${limit}`,
   });
 
   const missing = [];

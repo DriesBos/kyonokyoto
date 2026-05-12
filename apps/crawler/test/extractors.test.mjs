@@ -22,6 +22,7 @@ import {
   hasExtractedImage,
   normalizeEventImagesForSource,
   parseImageDimensionsFromBytes,
+  parseKyoceraDateRange,
   recordFetchedPage,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
@@ -94,10 +95,6 @@ test("machine translated event keeps source URL and required event fields", asyn
               translations: [
                 { translatedText: "English title" },
                 { translatedText: "English description" },
-                { translatedText: "English institution" },
-                { translatedText: "English venue" },
-                { translatedText: "English address" },
-                { translatedText: "English dates" },
               ],
             },
           ];
@@ -119,10 +116,10 @@ test("machine translated event keeps source URL and required event fields", asyn
 
   assert.equal(translated.title, "English title");
   assert.equal(translated.description, "English description");
-  assert.equal(translated.institution_name, "English institution");
-  assert.equal(translated.venue_name, "English venue");
-  assert.equal(translated.address_text, "English address");
-  assert.equal(translated.date_text, "English dates");
+  assert.equal(translated.institution_name, "日本語施設");
+  assert.equal(translated.venue_name, "日本語会場");
+  assert.equal(translated.address_text, "日本語住所");
+  assert.equal(translated.date_text, "2026年1月1日");
   assert.equal(translated.source_url, "https://example.test/ja/event");
 });
 
@@ -143,11 +140,6 @@ test("event translation payload stores only localized public fields", () => {
       locale: "en",
       title: "Title",
       description: "Description",
-      institution_name: "Institution",
-      venue_name: "Venue",
-      address_text: "Address",
-      date_text: "Dates",
-      source_url: "https://example.test/event",
     },
   );
 });
@@ -230,6 +222,30 @@ test("event coordinates stay null when source has no usable location", () => {
 
   assert.equal(event.lat, null);
   assert.equal(event.lng, null);
+});
+
+test("Kyocera date parser reads Japanese date ranges", () => {
+  assert.deepEqual(
+    parseKyoceraDateRange("2026年9月19日-2026年12月20日"),
+    {
+      startDate: "2026-09-19",
+      endDate: "2026-12-20",
+      calendarStartsAt: "2026-09-19T10:00:00+09:00",
+      calendarEndsAt: "2026-12-20T18:00:00+09:00",
+    },
+  );
+});
+
+test("Kyocera date parser reads slash date ranges", () => {
+  assert.deepEqual(
+    parseKyoceraDateRange("2027/10/2-2027/12/12"),
+    {
+      startDate: "2027-10-02",
+      endDate: "2027-12-12",
+      calendarStartsAt: "2027-10-02T10:00:00+09:00",
+      calendarEndsAt: "2027-12-12T18:00:00+09:00",
+    },
+  );
 });
 
 test("generic detail extraction prefers event and exhibition URLs", async () => {
