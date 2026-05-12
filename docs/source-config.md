@@ -51,6 +51,63 @@ Optional. Use when one source has events at multiple venues or rooms and the map
 
 Crawler matches these strings against event venue, address, directions query, source URL, institution, and title. First matching location wins. If none match, source `lat`/`lng` are used.
 
+## `capabilities`
+
+Optional. Use this for language exceptions and translation behavior.
+
+```json
+"capabilities": {
+  "native_locales": ["ja"],
+  "machine_translate_missing_locales": true
+}
+```
+
+- `native_locales` declares which real language versions the source has. Use `["ja"]`, `["en"]`, or `["ja", "en"]`.
+- If a source has a language toggle instead of separate listing URLs, set both native locales here. The crawler can then discover alternate detail-page links from page header/menu links.
+- `machine_translate_missing_locales` defaults to `true`. Set `false` only when missing translations should stay missing.
+
+## `selectors`
+
+Optional. Use for predictable simple pages before writing custom extractor code.
+
+Supported keys:
+
+- `listing_links`
+- `title`
+- `description`
+- `date`
+- `images`
+
+```json
+"selectors": {
+  "listing_links": "#events a.event-link",
+  "title": "h1.event-title",
+  "description": ".event-body",
+  "date": ".event-date",
+  "images": ".event-body img"
+}
+```
+
+Selector support is intentionally small: IDs, classes, tags, and descendant selectors such as `#events a.event-link`. Complex pseudo-selectors need source-specific extractor code.
+
+## `crawl_hints`
+
+Optional. Use for fetch/crawl behavior exceptions.
+
+```json
+"crawl_hints": {
+  "requires_render": true,
+  "render_mode": "auto",
+  "max_detail_pages": 12,
+  "skip_patterns": ["/archive/", "/news/"]
+}
+```
+
+- `requires_render: true` forces Crawl4AI rendering for that source.
+- `render_mode` can be `auto`, `always`, or `never`; it overrides global crawler render mode for this source.
+- `max_detail_pages` caps detail URLs for this source.
+- `skip_patterns` drops matching URLs before detail fetch.
+
 ## `source_type`
 
 Required single value. Broad identity of source venue/organization.

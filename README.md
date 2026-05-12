@@ -173,6 +173,7 @@ How to tune effectively:
 - If a source is noisy, narrow the generic candidate set first by making `event_page_patterns` more specific.
 - If a source is important and recurring, add a source-specific pair in `apps/crawler/src/run-once.mjs`:
   one detail URL extractor and one event extractor.
+- For simple source quirks, prefer source config first. See `docs/adding-sources.md` and `docs/source-config.md` for `capabilities`, `selectors`, `crawl_hints`, and `venue_locations`.
 - Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
 - When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
 - Lazy-loaded images are handled as a second pass when `CRAWL4AI_RENDER_MODE=auto`: the crawler keeps the normal static fetch first, then asks Crawl4AI to render and scroll detail pages whose extracted event has no image.
@@ -181,10 +182,10 @@ How to tune effectively:
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
 - Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
 - Missing English/Japanese event titles and descriptions are machine-translated during crawl only when `GOOGLE_CLOUD_PROJECT` or `GOOGLE_TRANSLATE_PROJECT_ID` is set and Google credentials are available, for example with `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-service-account.json`.
-- When a source has `locales.en`/`locales.ja`, the crawler uses the configured source locale as the canonical crawl, then looks for native alternate-locale event URLs in `<link rel="alternate" hreflang>` and header/nav/menu anchors such as `English` or `日本語`. Native alternate pages save only title and description into `event_translations` before Google Translate is used as a fallback.
+- When a source has `locales.en`/`locales.ja` or `capabilities.native_locales`, the crawler uses the configured source locale as the canonical crawl, then looks for native alternate-locale event URLs in `<link rel="alternate" hreflang>` and header/nav/menu anchors such as `English` or `日本語`. Native alternate pages save only title and description into `event_translations` before Google Translate is used as a fallback.
 - Locale toggles work best when they expose real `href` URLs. Toggles that only change JavaScript state, cookies, or localStorage need source-specific browser automation.
 - Use `npm run translations:check` in `apps/crawler` to audit published events for missing `en`/`ja` translation rows. Use `npm run translations:backfill -- --dry-run` first, then `npm run translations:backfill` after Google Translation credentials are configured.
-- Each crawl run records structured diagnostics and a source outcome in `crawl_runs.logs`.
+- Each crawl run records structured diagnostics, source outcome, and QA report in `crawl_runs.logs`.
 - Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
 
 Rule of thumb:

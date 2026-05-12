@@ -26,9 +26,13 @@ import {
   recordFetchedPage,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
+  sourceHasNativeLocale,
+  shouldMachineTranslateMissingLocales,
   translateTextFields,
   withSourceLocaleConfig,
 } from "../src/run-once.mjs";
+import { buildCrawlQaReport } from "../src/crawl-qa.mjs";
+import { validateSourceConfig } from "../../../data/sources/source-config.mjs";
 
 const fixturesRoot = resolve(import.meta.dirname, "fixtures");
 
@@ -263,6 +267,27 @@ test("generic detail extraction prefers event and exhibition URLs", async () => 
   ]);
 });
 
+test("generic detail extraction can use configured listing link selectors", () => {
+  const listingHtml = `
+    <main id="events">
+      <a class="event-link" href="/events/selected/">Selected event</a>
+      <a href="/about/">About</a>
+    </main>
+    <a class="event-link" href="/events/outside/">Outside selector</a>
+  `;
+  const source = {
+    allowed_domains: ["example.test"],
+    selectors: {
+      listing_links: "#events a.event-link",
+    },
+  };
+
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, "https://example.test/events/", source, 4),
+    ["https://example.test/events/selected/"],
+  );
+});
+
 test("Kyocera detail extraction finds Japanese default URLs", () => {
   const extractKyoceraDetailUrls =
     detailUrlExtractors["kyoto-city-kyocera-museum-of-art"];
@@ -349,6 +374,123 @@ test("generic event extraction returns title, dates, and images", async () => {
   assert.equal(event.image_urls.includes("https://example.test/media/cdn-thumb.jpg?width=240&height=80"), false);
   assert.equal(event.image_urls.includes("https://example.test/images/program-thumb.jpg"), false);
   assert.equal(hasExtractedImage(event), true);
+});
+
+test("generic event extraction can use configured field selectors", () => {
+  const detailHtml = `
+    <article>
+      <h1 class="event-title">Configured Title</h1>
+      <p class="event-date">2026/04/12 - 2026/05/31</p>
+      <div class="event-description"><p>Configured description with enough detail for the card.</p></div>
+      <figure class="event-media"><img src="/images/configured.jpg" alt=""></figure>
+    </article>
+  `;
+  const source = {
+    name: "Example Gallery",
+    source_type: "gallery",
+    source_categories: ["gallery"],
+    selectors: {
+      title: ".event-title",
+      date: ".event-date",
+      description: ".event-description",
+      images: ".event-media img",
+    },
+  };
+
+  const event = extractGenericEvent(detailHtml, source, "https://example.test/exhibitions/configured/");
+
+  assert.equal(event.title, "Configured Title");
+  assert.equal(event.description, "Configured description with enough detail for the card.");
+  assert.equal(event.start_date, "2026-04-12");
+  assert.equal(event.end_date, "2026-05-31");
+  assert.equal(event.primary_image_url, "https://example.test/images/configured.jpg");
+});
+
+test("source capabilities declare native locales and machine translation behavior", () => {
+  const source = {
+    language: "ja",
+    capabilities: {
+      native_locales: ["ja"],
+      machine_translate_missing_locales: false,
+    },
+  };
+
+  assert.equal(sourceHasNativeLocale(source, "ja"), true);
+  assert.equal(sourceHasNativeLocale(source, "en"), false);
+  assert.equal(shouldMachineTranslateMissingLocales(source), false);
+});
+
+test("source config validator reports missing source truth", () => {
+  assert.deepEqual(
+    validateSourceConfig({
+      slug: "draft-source",
+      name: "Draft Source",
+      capabilities: {
+        native_locales: ["ja"],
+      },
+    }),
+    [
+      "draft-source: missing source_categories",
+      "draft-source: missing lat/lng",
+    ],
+  );
+});
+
+test("crawl QA report summarizes saved events, missing translations, and diagnostics", () => {
+  assert.deepEqual(
+    buildCrawlQaReport({
+      source: { slug: "example-gallery" },
+      sourceOutcome: "source_ok",
+      detailUrls: ["https://example.test/one", "https://example.test/two"],
+      savedEvents: [
+        { translations: ["ja", "en"] },
+        { translations: ["ja"] },
+      ],
+      skippedEvents: [{ reason: "missing image" }],
+      diagnostics: {
+        fetched_static_count: 2,
+        fetched_crawl4ai_count: 1,
+        retry_count: 1,
+        bot_challenge_count: 0,
+        js_shell_count: 1,
+        missing_image_count: 1,
+        skipped_missing_date_count: 0,
+        skipped_past_count: 0,
+        skipped_old_count: 0,
+        skipped_other_count: 0,
+        crawl4ai_render_count: 1,
+        crawl4ai_render_limit: 5,
+        crawl4ai_render_skipped_count: 0,
+      },
+    }),
+    {
+      source: "example-gallery",
+      outcome: "source_ok",
+      detail_urls_found: 2,
+      events_saved: 2,
+      events_skipped: 1,
+      missing_translations: { en: 1, ja: 0 },
+      fetch: {
+        static: 2,
+        rendered: 1,
+        retries: 1,
+        bot_challenges: 0,
+        js_shells: 1,
+      },
+      skips: {
+        missing_image: 1,
+        missing_date: 0,
+        past: 0,
+        old: 0,
+        other: 0,
+      },
+      crawl4ai: {
+        render_count: 1,
+        render_limit: 5,
+        render_skipped: 0,
+      },
+    },
+  );
 });
 
 test("source locale config applies localized source names", async () => {

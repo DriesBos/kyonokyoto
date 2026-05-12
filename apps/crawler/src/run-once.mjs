@@ -7,6 +7,7 @@ import {
   applySourceOverride,
   loadSourcesConfig,
 } from '../../../data/sources/source-config.mjs';
+import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildEventDedupeKey } from '../../../packages/shared/event-dedupe.mjs';
 import {
   buildScheduleFields,
@@ -101,13 +102,65 @@ function getMissingLocale(locale) {
   return locale === 'ja' ? 'en' : 'ja';
 }
 
-function hasLocaleCrawlConfig(source, locale) {
-  const config = source?.locales?.[locale];
-  return Boolean(
-    config &&
-      Array.isArray(config.start_urls) &&
-      config.start_urls.some(Boolean),
-  );
+function getNativeLocales(source) {
+  const configuredNativeLocales =
+    Array.isArray(source?.capabilities?.native_locales)
+      ? source.capabilities.native_locales.map(normalizeLocaleCode).filter(Boolean)
+      : [];
+
+  if (configuredNativeLocales.length) {
+    return [...new Set(configuredNativeLocales)];
+  }
+
+  const localeConfigs = Object.entries(source?.locales ?? {})
+    .filter(([, config]) => Array.isArray(config?.start_urls) && config.start_urls.some(Boolean))
+    .map(([locale]) => normalizeLocaleCode(locale))
+    .filter(Boolean);
+
+  return [...new Set([getSourceLocale(source), ...localeConfigs])];
+}
+
+function sourceHasNativeLocale(source, locale) {
+  const normalizedLocale = normalizeLocaleCode(locale);
+  if (!normalizedLocale) return false;
+
+  return getNativeLocales(source).includes(normalizedLocale);
+}
+
+function shouldMachineTranslateMissingLocales(source) {
+  return source?.capabilities?.machine_translate_missing_locales !== false;
+}
+
+function getSourceRenderMode(source, fallbackRenderMode) {
+  const hintMode = source?.crawl_hints?.render_mode;
+  if (['auto', 'always', 'never'].includes(hintMode)) return hintMode;
+  if (source?.crawl_hints?.requires_render === true) return 'always';
+  return fallbackRenderMode;
+}
+
+function getSourceDetailLimit(source, fallbackLimit) {
+  const limit = Number(source?.crawl_hints?.max_detail_pages);
+  return Number.isInteger(limit) && limit > 0 ? limit : fallbackLimit;
+}
+
+function sourceSkipsUrl(source, url) {
+  const patterns = source?.crawl_hints?.skip_patterns;
+  if (!Array.isArray(patterns) || !patterns.length) return false;
+
+  return patterns.some((pattern) => {
+    if (typeof pattern !== 'string' || !pattern.trim()) return false;
+    const trimmedPattern = pattern.trim();
+
+    try {
+      const parsedUrl = new URL(url);
+      return (
+        parsedUrl.href.includes(trimmedPattern) ||
+        parsedUrl.pathname.includes(trimmedPattern)
+      );
+    } catch {
+      return String(url ?? '').includes(trimmedPattern);
+    }
+  });
 }
 
 function getLocalizedSourceName(source, locale) {
@@ -343,6 +396,124 @@ function extractTagAttribute(tag, attributeName) {
   );
   const match = tag.match(pattern);
   return match?.[2] ?? match?.[3] ?? match?.[4] ?? null;
+}
+
+function selectorsFor(source, key) {
+  const selector = source?.selectors?.[key];
+  if (Array.isArray(selector)) return selector.filter(Boolean);
+  return typeof selector === 'string' && selector.trim() ? [selector.trim()] : [];
+}
+
+function parseSimpleSelector(selector) {
+  const trimmed = String(selector ?? '').trim();
+  const tag = trimmed.match(/^[a-z][a-z0-9-]*/i)?.[0]?.toLowerCase() ?? null;
+  const id = trimmed.match(/#([a-z0-9_-]+)/i)?.[1] ?? null;
+  const classes = [...trimmed.matchAll(/\.([a-z0-9_-]+)/gi)].map((match) => match[1]);
+
+  if (!tag && !id && !classes.length) return null;
+
+  return { tag, id, classes };
+}
+
+function tagMatchesSimpleSelector(tagName, attrs, selector) {
+  const parsed = parseSimpleSelector(selector);
+  if (!parsed) return false;
+  if (parsed.tag && tagName.toLowerCase() !== parsed.tag) return false;
+
+  if (parsed.id) {
+    const id = extractTagAttribute(attrs, 'id');
+    if (id !== parsed.id) return false;
+  }
+
+  if (parsed.classes.length) {
+    const className = extractTagAttribute(attrs, 'class') ?? '';
+    const classes = new Set(className.split(/\s+/).filter(Boolean));
+    if (!parsed.classes.every((item) => classes.has(item))) return false;
+  }
+
+  return true;
+}
+
+function selectSimpleElements(html, selector) {
+  const parsed = parseSimpleSelector(selector);
+  if (!parsed) return [];
+
+  const elements = [];
+  const openTagPattern = /<([a-z][a-z0-9:-]*)\b([^>]*)>/gi;
+
+  for (const match of html.matchAll(openTagPattern)) {
+    const [openTag, tagName, attrs] = match;
+    if (!tagMatchesSimpleSelector(tagName, attrs, selector)) continue;
+
+    const lowerTagName = tagName.toLowerCase();
+    if (['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'].includes(lowerTagName)) {
+      elements.push(openTag);
+      continue;
+    }
+
+    const closePattern = new RegExp(`</${lowerTagName}\\s*>`, 'i');
+    const rest = html.slice(match.index + openTag.length);
+    const closeMatch = rest.match(closePattern);
+    if (!closeMatch || closeMatch.index === undefined) {
+      elements.push(openTag);
+      continue;
+    }
+
+    elements.push(openTag + rest.slice(0, closeMatch.index + closeMatch[0].length));
+  }
+
+  return elements;
+}
+
+function selectElements(html, selector) {
+  const selectorGroups = String(selector ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const results = [];
+
+  for (const selectorGroup of selectorGroups) {
+    const parts = selectorGroup.split(/\s+/).filter(Boolean);
+    let fragments = [html];
+
+    for (const part of parts) {
+      fragments = fragments.flatMap((fragment) => selectSimpleElements(fragment, part));
+      if (!fragments.length) break;
+    }
+
+    results.push(...fragments);
+  }
+
+  return results;
+}
+
+function selectorTextValues(html, selectors) {
+  return selectors
+    .flatMap((selector) => selectElements(html, selector))
+    .map(stripTags)
+    .map((value) => value.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function selectorAttributeValues(html, selectors, attributeNames) {
+  return selectors.flatMap((selector) =>
+    selectElements(html, selector)
+      .flatMap((element) => {
+        const values = attributeNames
+          .map((attributeName) => extractTagAttribute(element, attributeName))
+          .filter(Boolean);
+
+        if (values.length) return values;
+
+        return [...element.matchAll(/<img\b[^>]*>/gi)]
+          .flatMap((match) =>
+            attributeNames
+              .map((attributeName) => extractTagAttribute(match[0], attributeName))
+              .filter(Boolean),
+          );
+      })
+      .filter(Boolean),
+  );
 }
 
 function canonicalizeUrlWithoutHash(url) {
@@ -1718,11 +1889,40 @@ function scoreGenericDetailUrl(source, url) {
   return patternScore + keywordScore + dateScore + depthScore + queryScore;
 }
 
+function extractConfiguredDetailUrls(listingHtml, listingUrl, source) {
+  const listingLinkSelectors = selectorsFor(source, 'listing_links');
+  if (!listingLinkSelectors.length) return [];
+
+  return listingLinkSelectors
+    .flatMap((selector) => selectElements(listingHtml, selector))
+    .flatMap((element) => {
+      const directHref = /^<a\b/i.test(element)
+        ? extractTagAttribute(element, 'href')
+        : null;
+      const nestedHrefs = [...element.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+        .map((match) => match[2]);
+
+      return [directHref, ...nestedHrefs].filter(Boolean);
+    })
+    .map((href) => normalizeUrl(href, listingUrl))
+    .filter(Boolean)
+    .filter((url) => sourceAllowsUrl(source, url))
+    .filter((url) => !sourceSkipsUrl(source, url))
+    .filter((url) => url !== listingUrl);
+}
+
 function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
+  const configuredUrls = extractConfiguredDetailUrls(listingHtml, listingUrl, source);
+
+  if (configuredUrls.length) {
+    return [...new Set(configuredUrls)].slice(0, limit);
+  }
+
   const urls = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
     .map((match) => normalizeUrl(match[2], listingUrl))
     .filter(Boolean)
     .filter((url) => sourceAllowsUrl(source, url))
+    .filter((url) => !sourceSkipsUrl(source, url))
     .filter((url) => url !== listingUrl);
 
   const patterns = (source.event_page_patterns ?? []).filter(
@@ -3084,17 +3284,42 @@ function extractGenericDescription(detailHtml) {
   return paragraphs.slice(0, 2).join('\n\n').slice(0, 1200);
 }
 
+function extractConfiguredImageUrls(detailHtml, detailUrl, source) {
+  const imageSelectors = selectorsFor(source, 'images');
+  if (!imageSelectors.length) return [];
+
+  return [
+    ...new Set(
+      selectorAttributeValues(
+        detailHtml,
+        imageSelectors,
+        ['src', 'data-src', 'data-original', 'data-lazy-src'],
+      )
+        .map((value) => normalizeUrl(value, detailUrl))
+        .filter(Boolean),
+    ),
+  ];
+}
+
 function extractGenericEvent(detailHtml, source, detailUrl) {
-  const title = extractGenericTitle(detailHtml, source);
-  const dateText = extractBestDateText(detailHtml);
+  const configuredTitle = selectorTextValues(detailHtml, selectorsFor(source, 'title'))[0];
+  const configuredDescription = selectorTextValues(detailHtml, selectorsFor(source, 'description'))
+    .slice(0, 2)
+    .join('\n\n');
+  const configuredDateText = selectorTextValues(detailHtml, selectorsFor(source, 'date'))[0];
+  const configuredImageUrls = extractConfiguredImageUrls(detailHtml, detailUrl, source);
+  const title = configuredTitle || extractGenericTitle(detailHtml, source);
+  const dateText = configuredDateText || extractBestDateText(detailHtml);
   const parsedDates = parseGenericDateRange(dateText);
-  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
+  const imageUrls = configuredImageUrls.length
+    ? configuredImageUrls
+    : extractGenericImageUrls(detailHtml, detailUrl);
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
 
   return {
     title,
     categories: [source.source_type, 'needs-review'].filter(Boolean),
-    description: extractGenericDescription(detailHtml),
+    description: configuredDescription || extractGenericDescription(detailHtml),
     institution_name: source.name,
     venue_name: source.name,
     address_text: source.address_text ?? source.name,
@@ -4743,6 +4968,8 @@ async function upsertEventTranslations(
       continue;
     }
 
+    if (!shouldMachineTranslateMissingLocales(source)) continue;
+
     try {
       const translatedEvent = await buildMachineTranslatedEvent(
         env,
@@ -4888,6 +5115,11 @@ async function crawlSource({
   );
   const sourceLocale = getSourceLocale(source);
   const crawlSourceConfig = withSourceLocaleConfig(source, sourceLocale);
+  const sourceRenderMode = getSourceRenderMode(crawlSourceConfig, renderMode);
+  const sourceDetailLimit = getSourceDetailLimit(
+    crawlSourceConfig,
+    genericDetailLimit,
+  );
   const crawlRun = await createCrawlRun(env, source.id);
   const diagnostics = createCrawlDiagnostics(env);
   const crawlContext = { diagnostics };
@@ -4905,7 +5137,7 @@ async function crawlSource({
 
     for (const listingUrl of listingUrls) {
       const listingPage = await fetchHtml(listingUrl, userAgent, env, {
-        renderMode,
+        renderMode: sourceRenderMode,
         context: crawlContext,
       });
       pagesFetched += 1;
@@ -4915,9 +5147,9 @@ async function crawlSource({
     }
 
     const detailUrlExtractor = detailUrlExtractors[source.slug];
-    const detailUrls =
+    let detailUrls =
       source.slug === 'sibasi'
-        ? extractSibasiDetailUrls(listingPages, genericDetailLimit)
+        ? extractSibasiDetailUrls(listingPages, sourceDetailLimit)
         : detailUrlExtractor
           ? detailUrlExtractor(listingPages[0].html, listingPages[0].url)
           : [
@@ -4927,14 +5159,35 @@ async function crawlSource({
                     listingPage.html,
                     listingPage.url,
                     crawlSourceConfig,
-                    genericDetailLimit,
+                    sourceDetailLimit,
                   ),
                 ),
               ),
             ];
 
+    const hasConfiguredDetailLimit = Number.isInteger(
+      Number(crawlSourceConfig?.crawl_hints?.max_detail_pages),
+    );
+    const shouldLimitDetailUrls =
+      !detailUrlExtractor ||
+      source.slug === 'sibasi' ||
+      hasConfiguredDetailLimit;
+
+    detailUrls = [...new Set(detailUrls)]
+      .filter((detailUrl) => !sourceSkipsUrl(crawlSourceConfig, detailUrl));
+
+    if (shouldLimitDetailUrls) {
+      detailUrls = detailUrls.slice(0, sourceDetailLimit);
+    }
+
     if (!detailUrls.length) {
       const sourceOutcome = classifySourceOutcome({ detailUrls, diagnostics });
+      const qaReport = buildCrawlQaReport({
+        source,
+        sourceOutcome,
+        detailUrls,
+        diagnostics,
+      });
       await updateCrawlRun(env, crawlRun.id, {
         status: 'success',
         finished_at: new Date().toISOString(),
@@ -4957,6 +5210,11 @@ async function crawlSource({
             message: 'Crawl diagnostics',
             diagnostics,
           },
+          {
+            level: 'info',
+            message: 'Crawl QA report',
+            qa: qaReport,
+          },
         ],
       });
 
@@ -4966,8 +5224,9 @@ async function crawlSource({
         status: 'success',
         sourceOutcome,
         usedGenericExtractor: !detailUrlExtractor,
-        renderMode,
+        renderMode: sourceRenderMode,
         diagnostics,
+        qa: qaReport,
         detailUrls,
         events: [],
         archivedEvents: 0,
@@ -5000,7 +5259,7 @@ async function crawlSource({
 
     for (const detailUrl of detailUrls) {
       let detailPage = await fetchHtml(detailUrl, userAgent, env, {
-        renderMode,
+        renderMode: sourceRenderMode,
         context: crawlContext,
       });
       pagesFetched += 1;
@@ -5016,7 +5275,7 @@ async function crawlSource({
       );
 
       if (
-        renderMode === 'auto' &&
+        sourceRenderMode === 'auto' &&
         detailPage.metadata?.fetched_via !== 'crawl4ai' &&
         !hasExtractedImage(extractedEvent)
       ) {
@@ -5143,7 +5402,7 @@ async function crawlSource({
       const nativeTranslations = {};
       for (const targetLocale of supportedTranslationLocales) {
         if (targetLocale === sourceLocale) continue;
-        if (!hasLocaleCrawlConfig(source, targetLocale)) continue;
+        if (!sourceHasNativeLocale(source, targetLocale)) continue;
 
         const nativeTranslation = await fetchNativeLocaleEvent({
           env,
@@ -5155,7 +5414,7 @@ async function crawlSource({
           eventExtractor,
           sourceContext,
           userAgent,
-          renderMode,
+          renderMode: sourceRenderMode,
           crawlContext,
           diagnostics,
         });
@@ -5211,6 +5470,14 @@ async function crawlSource({
       diagnostics,
       usedGenericExtractor,
     });
+    const qaReport = buildCrawlQaReport({
+      source,
+      sourceOutcome,
+      detailUrls,
+      savedEvents,
+      skippedEvents,
+      diagnostics,
+    });
 
     await updateCrawlRun(env, crawlRun.id, {
       status: 'success',
@@ -5223,7 +5490,7 @@ async function crawlSource({
       logs: [
         {
           level: 'info',
-          message: `Crawl4AI render mode: ${renderMode}`,
+          message: `Crawl4AI render mode: ${sourceRenderMode}`,
         },
         {
           level: 'info',
@@ -5233,6 +5500,11 @@ async function crawlSource({
           level: 'info',
           message: 'Crawl diagnostics',
           diagnostics,
+        },
+        {
+          level: 'info',
+          message: 'Crawl QA report',
+          qa: qaReport,
         },
         ...(usedGenericExtractor
           ? [
@@ -5268,8 +5540,9 @@ async function crawlSource({
       status: 'success',
       sourceOutcome,
       usedGenericExtractor,
-      renderMode,
+      renderMode: sourceRenderMode,
       diagnostics,
+      qa: qaReport,
       detailUrls,
       events: savedEvents,
       archivedEvents,
@@ -5394,6 +5667,8 @@ export {
   extractSenOkuEvent,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
+  sourceHasNativeLocale,
+  shouldMachineTranslateMissingLocales,
   translateTextFields,
   upsertEventTranslation,
   withSourceLocaleConfig,
