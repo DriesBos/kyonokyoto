@@ -1718,6 +1718,8 @@ function looksLikeSocialOrUiImage(url) {
     /data:image|spacer|sprite|logo|icon|favicon|avatar|loader|loading|blank|pixel|tracking|analytics/i.test(
       url,
     ) ||
+    /\/assets\/img\/(?:common|layout|icon)\//i.test(url) ||
+    /\/wp-content\/themes\//i.test(url) ||
     /(?:^|[\/_.-])(facebook|instagram|twitter|social|sns|share|line|youtube|pinterest|linkedin)(?:[\/_.-]|$)/i.test(
       url,
     ) ||

@@ -406,6 +406,32 @@ test("generic event extraction returns title, dates, and images", async () => {
   assert.equal(hasExtractedImage(event), true);
 });
 
+test("generic event extraction ignores common site chrome images", () => {
+  const source = {
+    name: "Oyamazaki Villa Museum",
+    source_type: "museum",
+    address_text: "5-3 Zenihara, Oyamazaki-cho, Kyoto",
+  };
+  const event = extractGenericEvent(
+    `
+      <main>
+        <h1>Future exhibition without image</h1>
+        <time>September 19 - December 6, 2026</time>
+        <p>Details will be announced later.</p>
+      </main>
+      <img src="/assets/img/common/logo.png" alt="logo">
+      <img src="/assets/img/layout/menu_about-01.png" alt="">
+      <img src="/assets/img/icon/facebook.svg" alt="">
+    `,
+    source,
+    "https://www.asahigroup-oyamazaki.com/english/exhibition/future/",
+  );
+
+  assert.deepEqual(event.image_urls, []);
+  assert.equal(event.primary_image_url, null);
+  assert.equal(hasExtractedImage(event), false);
+});
+
 test("generic event extraction can use configured field selectors", () => {
   const detailHtml = `
     <article>
