@@ -773,6 +773,20 @@ test("diagnostics and source outcome summarize crawl health", () => {
     }),
     "source_needs_review"
   );
+
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: ["https://sibasi.jp/event/a/", "https://sibasi.jp/event/b/"],
+      savedEvents: [],
+      skippedEvents: [
+        { reason: "past event" },
+        { reason: "missing verifiable event date" },
+      ],
+      diagnostics: { skipped_past_count: 1, skipped_missing_date_count: 1 },
+      sourceSlug: "sibasi",
+    }),
+    "source_no_current_events"
+  );
 });
 
 test("source-specific crawler registries only reference configured source slugs", async () => {

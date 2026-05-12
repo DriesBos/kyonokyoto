@@ -28,6 +28,7 @@ const localizedEventFields = [
   'title',
   'description',
 ];
+const missingDateCanMeanNoCurrentEventSources = new Set(['sibasi']);
 
 function parseEnvFile(contents) {
   const env = {};
@@ -4360,6 +4361,7 @@ function classifySourceOutcome({
   skippedEvents = [],
   diagnostics = {},
   usedGenericExtractor = false,
+  sourceSlug = null,
 }) {
   if (!detailUrls.length) return 'source_empty';
   if (savedEvents.length > 0)
@@ -4371,6 +4373,17 @@ function classifySourceOutcome({
     skippedEvents.length &&
     skippedEvents.every((event) =>
       /past event|older than/.test(event.reason ?? ''),
+    )
+  ) {
+    return 'source_no_current_events';
+  }
+  if (
+    missingDateCanMeanNoCurrentEventSources.has(sourceSlug) &&
+    skippedEvents.length &&
+    skippedEvents.every((event) =>
+      /past event|older than|missing verifiable event date/.test(
+        event.reason ?? '',
+      ),
     )
   ) {
     return 'source_no_current_events';
@@ -5199,7 +5212,11 @@ async function crawlSource({
     }
 
     if (!detailUrls.length) {
-      const sourceOutcome = classifySourceOutcome({ detailUrls, diagnostics });
+      const sourceOutcome = classifySourceOutcome({
+        detailUrls,
+        diagnostics,
+        sourceSlug: source.slug,
+      });
       const qaReport = buildCrawlQaReport({
         source,
         sourceOutcome,
@@ -5487,6 +5504,7 @@ async function crawlSource({
       skippedEvents,
       diagnostics,
       usedGenericExtractor,
+      sourceSlug: source.slug,
     });
     const qaReport = buildCrawlQaReport({
       source,
