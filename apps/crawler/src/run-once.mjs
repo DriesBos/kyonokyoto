@@ -2894,11 +2894,14 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
 
   const timeText =
     stripTags(extractDefinitionValue(detailHtml, 'Time') ?? '') || null;
+  const mainContentHtml =
+    detailHtml.match(
+      /<main\b(?=[^>]*\bcontMain\b)(?=[^>]*\bcont_post\b)[^>]*>([\s\S]*?)<\/main>/i,
+    )?.[1] ?? '';
   const allImageUrls = finalizeImageUrls(
     [
-      { url: extractMeta(detailHtml, 'og:image'), source: 'og:image' },
       ...[
-        ...detailHtml.matchAll(
+        ...mainContentHtml.matchAll(
           /<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi,
         ),
       ].map((match) => ({
@@ -2908,8 +2911,7 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
     ],
     detailUrl,
   );
-  const imageUrls =
-    allImageUrls.length > 1 ? allImageUrls.slice(1) : allImageUrls;
+  const imageUrls = allImageUrls;
   const primaryImageUrl = imageUrls[0] ?? null;
 
   const normalizedCategories = [

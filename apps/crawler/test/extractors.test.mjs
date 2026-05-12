@@ -330,6 +330,40 @@ test("Kyocera detail extraction finds English URLs", () => {
   );
 });
 
+test("Kyocera event extraction keeps images inside main post content only", () => {
+  const event = eventExtractors["kyoto-city-kyocera-museum-of-art"](
+    `
+      <h1 class="exhibition_title">Kyocera Focus Exhibition</h1>
+      <p class="exhibition_date">2026年9月19日-2026年12月20日</p>
+      <p class="exhibition_venue">Venue [Main Building]</p>
+      <img src="https://kyotocity-kyocera.museum/wp-content/uploads/flyer.jpg" alt="flyer">
+      <main class="contMain cont_post">
+        <h3 class="cont_heading">Inside main content</h3>
+        <div class="tab_cont_inner cont_col2 post_catch">
+          <div class="cont_desc">Body copy.</div>
+        </div>
+        <img src="https://kyotocity-kyocera.museum/wp-content/uploads/install-view.jpg" alt="">
+      </main>
+      <aside class="related">
+        <img src="https://kyotocity-kyocera.museum/wp-content/uploads/related-event.jpg" alt="">
+      </aside>
+    `,
+    {
+      name: "Kyoto City KYOCERA Museum of Art",
+      address_text: "124 Okazaki Enshoji-cho, Sakyo-ku, Kyoto",
+    },
+    "https://kyotocity-kyocera.museum/exhibition/20260919-20261220",
+  );
+
+  assert.deepEqual(event.image_urls, [
+    "https://kyotocity-kyocera.museum/wp-content/uploads/install-view.jpg",
+  ]);
+  assert.equal(
+    event.primary_image_url,
+    "https://kyotocity-kyocera.museum/wp-content/uploads/install-view.jpg",
+  );
+});
+
 test("Taka Ishii detail extraction keeps only Kyoto location events", () => {
   const listingHtml = `
     <section class="column">
