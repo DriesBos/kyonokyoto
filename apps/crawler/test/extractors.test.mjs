@@ -426,6 +426,31 @@ test("Taka Ishii detail extraction keeps only Kyoto location events", () => {
   );
 });
 
+test("Taka Ishii event extraction uses heading02 detail title", () => {
+  const detailHtml = `
+    <h2 class="site-heading">EXHIBITIONS</h2>
+    <section class="section01">
+      <h2 class="heading02">Martin Margiela</h2>
+      <p>Dates: Apr 17 – May 16, 2026<br>Location: Taka Ishii Gallery Kyoto</p>
+      <p>Taka Ishii Gallery Kyoto is pleased to present this solo exhibition.</p>
+      <img src="/en/wp-content/uploads/BARRIER-sculpture-mural-white_72dpi_1200px-675x900.jpg" alt="">
+    </section>
+  `;
+  const source = {
+    name: "Taka Ishii Gallery",
+    source_type: "gallery",
+    source_categories: ["gallery"],
+  };
+
+  const event = eventExtractors["taka-ishii-gallery"](
+    detailHtml,
+    source,
+    "https://www.takaishiigallery.com/en/archives/42707/",
+  );
+
+  assert.equal(event.title, "Martin Margiela");
+});
+
 test("locale URL extraction finds alternate links in header and metadata", () => {
   const html = `
     <html>

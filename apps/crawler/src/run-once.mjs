@@ -2636,7 +2636,8 @@ function extractZenbiEvent(detailHtml, source, detailUrl) {
 
 function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
   const title = stripTags(
-    detailHtml.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ??
+    selectorTextValues(detailHtml, ['.heading02'])[0] ??
+      detailHtml.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ??
       extractMeta(detailHtml, 'og:title') ??
       '',
   )
