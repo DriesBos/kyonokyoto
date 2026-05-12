@@ -685,6 +685,46 @@ function inferAlternateLocaleUrlFromConfig(
   return null;
 }
 
+function getUrlPathParts(url) {
+  try {
+    return new URL(url).pathname.split('/').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function isUsableNativeLocaleUrl(detailUrl, alternateUrl) {
+  if (
+    !alternateUrl ||
+    alternateUrl === canonicalizeUrlWithoutHash(detailUrl)
+  ) {
+    return false;
+  }
+
+  const detailParts = getUrlPathParts(detailUrl);
+  const alternateParts = getUrlPathParts(alternateUrl);
+
+  if (detailParts.length > 1 && alternateParts.length <= 1) {
+    return false;
+  }
+
+  return true;
+}
+
+function nativeLocaleEventMatchesCanonical(canonicalEvent, nativeEvent) {
+  for (const field of ['start_date', 'end_date']) {
+    if (
+      canonicalEvent?.[field] &&
+      nativeEvent?.[field] &&
+      canonicalEvent[field] !== nativeEvent[field]
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function extractSectionValue(html, dtText) {
   const escaped = dtText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const pattern = new RegExp(
@@ -3502,6 +3542,76 @@ function extractBaikenEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractOyamazakiEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const articleImageUrls = extractConfiguredImageUrls(
+    detailHtml,
+    detailUrl,
+    {
+      ...source,
+      selectors: {
+        ...(source.selectors ?? {}),
+        images: '.p-exhibitionArticle img',
+      },
+    },
+  );
+  const imageUrls = (
+    articleImageUrls.length ? articleImageUrls : (event.image_urls ?? [])
+  ).slice(1);
+  const normalizedDateText = event.date_text.replace(/\bto\b/gi, ' - ');
+  const parsedDates = parseOyamazakiDateRange(normalizedDateText);
+  const hasParsedDates = Boolean(parsedDates.startDate || parsedDates.endDate);
+
+  return {
+    ...event,
+    start_date: hasParsedDates ? parsedDates.startDate : event.start_date,
+    end_date: hasParsedDates ? parsedDates.endDate : event.end_date,
+    ...(hasParsedDates
+      ? buildScheduleFields({
+          startDate: parsedDates.startDate,
+          endDate: parsedDates.endDate,
+        })
+      : {}),
+    calendar_starts_at: hasParsedDates
+      ? parsedDates.calendarStartsAt
+      : event.calendar_starts_at,
+    calendar_ends_at: hasParsedDates
+      ? parsedDates.calendarEndsAt
+      : event.calendar_ends_at,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    extraction_confidence: 0.55,
+  };
+}
+
+function parseOyamazakiDateRange(dateText) {
+  const normalized = decodeHtml(dateText)
+    .replace(/\s+/g, ' ')
+    .replace(/[‐‑‒–—―〜～－]/g, '-')
+    .trim();
+  const japaneseRange = normalized.match(
+    /(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日[^-]{0,30}-\s*(?:(\d{4})年)?\s*(\d{1,2})月\s*(\d{1,2})日/u,
+  );
+
+  if (japaneseRange) {
+    const [, sy, sm, sd, explicitEy, em, ed] = japaneseRange;
+    const inferredEndYear =
+      explicitEy ??
+      (Number(em) < Number(sm) ? String(Number(sy) + 1) : sy);
+    const startDate = toDateOnly(sy, sm, sd);
+    const endDate = toDateOnly(inferredEndYear, em, ed);
+
+    return {
+      startDate,
+      endDate,
+      calendarStartsAt: `${startDate}T10:00:00+09:00`,
+      calendarEndsAt: `${endDate}T17:00:00+09:00`,
+    };
+  }
+
+  return parseGenericDateRange(normalized);
+}
+
 function extractKyotographieFestivalSchedule(planHtml) {
   const pageText = stripTags(planHtml).replace(/\s+/g, ' ').trim();
   const match = pageText.match(
@@ -4090,6 +4200,7 @@ const eventExtractors = {
   'raku-museum': extractRakuMuseumEvent,
   momak: extractMomakEvent,
   mtk: extractMtkEvent,
+  'oyamazaki-villa-museum': extractOyamazakiEvent,
   'sen-oku-hakukokan': extractSenOkuEvent,
   sibasi: extractSibasiEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
@@ -5042,6 +5153,7 @@ async function fetchNativeLocaleEvent({
   source,
   sourceLocale,
   targetLocale,
+  canonicalEvent,
   detailPage,
   detailUrl,
   eventExtractor,
@@ -5061,10 +5173,7 @@ async function fetchNativeLocaleEvent({
       targetLocale,
     );
 
-  if (
-    !alternateUrl ||
-    alternateUrl === canonicalizeUrlWithoutHash(detailUrl)
-  ) {
+  if (!isUsableNativeLocaleUrl(detailUrl, alternateUrl)) {
     return null;
   }
 
@@ -5107,6 +5216,10 @@ async function fetchNativeLocaleEvent({
         nativeSource.name.trim().toLowerCase()
     ) {
       throw new Error(`alternate page title matched source name`);
+    }
+
+    if (!nativeLocaleEventMatchesCanonical(canonicalEvent, nativeEvent)) {
+      throw new Error('alternate page dates did not match canonical event');
     }
 
     return {
@@ -5597,6 +5710,7 @@ async function crawlSource({
           source,
           sourceLocale,
           targetLocale,
+          canonicalEvent: extractedEvent,
           detailPage,
           detailUrl,
           eventExtractor,
@@ -5848,6 +5962,8 @@ export {
   buildMachineTranslatedEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  isUsableNativeLocaleUrl,
+  nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,

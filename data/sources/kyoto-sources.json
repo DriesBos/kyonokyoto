@@ -1158,7 +1158,19 @@
       "notes": "English exhibition listing for the Oyamazaki Villa Museum, just outside Kyoto.",
       "is_active": true,
       "source_categories": ["museum"],
+      "skip_og_image": true,
       "map_visibility": true,
+      "selectors": {
+        "listing_links": ".p-exhibitionCard_btn a",
+        "title": ".p-news_title",
+        "date": ".p-news_date",
+        "description": ".p-exhibitionArticle_text",
+        "images": ".p-exhibitionArticle img"
+      },
+      "crawl_hints": {
+        "skip_patterns": ["#item-list"],
+        "max_detail_pages": 6
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.asahigroup-oyamazaki.com/exhibition/"],

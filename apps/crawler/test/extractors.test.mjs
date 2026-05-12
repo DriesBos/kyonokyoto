@@ -20,6 +20,8 @@ import {
   extractSenOkuEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  isUsableNativeLocaleUrl,
+  nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,
@@ -523,6 +525,40 @@ test("locale URL extraction finds alternate links in header and metadata", () =>
   );
 });
 
+test("native locale URL validation rejects sitewide language roots for detail pages", () => {
+  assert.equal(
+    isUsableNativeLocaleUrl(
+      "https://www.takaishiigallery.com/en/archives/42707/",
+      "https://www.takaishiigallery.com/en",
+    ),
+    false,
+  );
+  assert.equal(
+    isUsableNativeLocaleUrl(
+      "https://example.test/ja/exhibitions/quiet-forms/",
+      "https://example.test/en/exhibitions/quiet-forms/",
+    ),
+    true,
+  );
+});
+
+test("native locale event validation rejects conflicting parsed dates", () => {
+  assert.equal(
+    nativeLocaleEventMatchesCanonical(
+      { start_date: "2026-04-17", end_date: "2026-05-16" },
+      { start_date: "2026-06-06", end_date: "2026-07-04" },
+    ),
+    false,
+  );
+  assert.equal(
+    nativeLocaleEventMatchesCanonical(
+      { start_date: "2026-04-17", end_date: "2026-05-16" },
+      { start_date: "2026-04-17", end_date: "2026-05-16" },
+    ),
+    true,
+  );
+});
+
 test("generic event extraction returns title, dates, and images", async () => {
   const detailHtml = await readFile(resolve(fixturesRoot, "generic-detail.html"), "utf8");
   const source = {
@@ -626,6 +662,70 @@ test("generic event extraction can use configured field selectors", () => {
   assert.equal(event.start_date, "2026-04-12");
   assert.equal(event.end_date, "2026-05-31");
   assert.equal(event.primary_image_url, "https://example.test/images/configured.jpg");
+});
+
+test("Oyamazaki extraction uses article metadata and skips flyer image", () => {
+  const detailHtml = `
+    <div class="p-exhibitionArticle">
+      <div class="p-exhibitionArticle_banner">
+        <img src="/uploads/2026/01/22/flyer.jpg" alt="">
+      </div>
+      <div class="p-exhibitionArticle_meta">
+        <div class="p-news">
+          <h1 class="p-news_title"><span>Resonance: Kanjiro Kawai x Shoji Hamada</span></h1>
+          <div class="p-news_date">Friday, March 20 to Sunday, September 6, 2026 10:00 a.m. to 5:00 p.m.</div>
+        </div>
+      </div>
+      <div class="p-exhibitionArticle_text">
+        <p>Tamesaburo Yamamoto enthusiastically supported the mingei movement.</p>
+      </div>
+    </div>
+    <section class="p-exhibitionArticle p-exhibitionArticle-sub">
+      <div class="p-kurodaCard_pic"><img src="/english/uploads/2026/01/22/work-01.jpg" alt=""></div>
+      <div class="p-kurodaCard_pic"><img src="/english/uploads/2026/01/22/work-02.jpg" alt=""></div>
+    </section>
+  `;
+  const source = {
+    name: "Oyamazaki Villa Museum",
+    source_type: "museum",
+    source_categories: ["museum"],
+    selectors: {
+      title: ".p-news_title",
+      date: ".p-news_date",
+      description: ".p-exhibitionArticle_text",
+      images: ".p-exhibitionArticle img",
+    },
+  };
+
+  const event = eventExtractors["oyamazaki-villa-museum"](
+    detailHtml,
+    source,
+    "https://www.asahigroup-oyamazaki.com/english/exhibition/kawai-hamada/",
+  );
+
+  assert.equal(event.title, "Resonance: Kanjiro Kawai x Shoji Hamada");
+  assert.equal(event.start_date, "2026-03-20");
+  assert.equal(event.end_date, "2026-09-06");
+  assert.deepEqual(event.image_urls, [
+    "https://www.asahigroup-oyamazaki.com/english/uploads/2026/01/22/work-01.jpg",
+    "https://www.asahigroup-oyamazaki.com/english/uploads/2026/01/22/work-02.jpg",
+  ]);
+  assert.equal(
+    event.primary_image_url,
+    "https://www.asahigroup-oyamazaki.com/english/uploads/2026/01/22/work-01.jpg",
+  );
+
+  const japaneseEvent = eventExtractors["oyamazaki-villa-museum"](
+    detailHtml.replace(
+      "Friday, March 20 to Sunday, September 6, 2026 10:00 a.m. to 5:00 p.m.",
+      "2026年3月20日(金・祝)－9月6日(日)",
+    ),
+    source,
+    "https://www.asahigroup-oyamazaki.com/exhibition/kawai-hamada/",
+  );
+
+  assert.equal(japaneseEvent.start_date, "2026-03-20");
+  assert.equal(japaneseEvent.end_date, "2026-09-06");
 });
 
 test("Baiken event extraction cleans Japanese title dates and infers year", () => {
