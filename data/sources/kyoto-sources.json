@@ -241,16 +241,14 @@
       "address_text": "123 Yada-cho, Shimogyo-ku, Kyoto 600-8442 Japan",
       "lat": 35.00254410494693,
       "lng": 135.75605503209155,
-      "base_url": "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
+      "base_url": "https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/",
       "start_urls": [
+        "https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/",
         "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
       ],
       "allowed_domains": ["www.takaishiigallery.com", "takaishiigallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": [
-        "/en/exhibitions/kyoto-yada-cho/",
-        "/en/archives/"
-      ],
+      "event_page_patterns": ["/en/exhibitions/kyoto-yada-cho/"],
       "notes": "Use the Kyoto (Yada-cho) location page directly and extract only the linked Kyoto exhibition archive detail pages.",
       "is_active": true,
       "source_categories": ["gallery"],
@@ -260,16 +258,13 @@
           "start_urls": [
             "https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/"
           ],
-          "event_page_patterns": ["/exhibitions/kyoto-yada-cho/", "/archives/"]
+          "event_page_patterns": ["/exhibitions/kyoto-yada-cho/"]
         },
         "en": {
           "start_urls": [
             "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
           ],
-          "event_page_patterns": [
-            "/en/exhibitions/kyoto-yada-cho/",
-            "/en/archives/"
-          ]
+          "event_page_patterns": ["/en/exhibitions/kyoto-yada-cho/"]
         }
       }
     },
@@ -1080,13 +1075,14 @@
       "slug": "oyamazaki-villa-museum",
       "name": "Oyamazaki Villa Museum",
       "source_type": "museum",
-      "language": "en",
+      "language": "ja",
       "address_text": "5-3 Zenihara, Oyamazaki-cho, Otokuni-gun, Kyoto 618-0071 Japan",
       "lat": 34.8955629,
       "lng": 135.6796672,
-      "base_url": "https://www.asahigroup-oyamazaki.com/english/exhibition/",
+      "base_url": "https://www.asahigroup-oyamazaki.com/exhibition/",
       "start_urls": [
-        "https://www.asahigroup-oyamazaki.com/english/exhibition/"
+        "https://www.asahigroup-oyamazaki.com/english/exhibition/",
+        "https://www.asahigroup-oyamazaki.com/exhibition/"
       ],
       "allowed_domains": [
         "www.asahigroup-oyamazaki.com",
