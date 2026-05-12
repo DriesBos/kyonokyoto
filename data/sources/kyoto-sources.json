@@ -1124,30 +1124,27 @@
       "lat": 34.91511909268897,
       "lng": 136.01620457735893,
       "base_url": "https://www.miho.jp/en/current_exhibition/",
-      "start_urls": [
-        "https://www.miho.jp/en/current_exhibition/",
-        "https://www.miho.jp/en/upcoming_exhibition/"
-      ],
+      "start_urls": ["https://www.miho.jp/en/current_exhibition/"],
       "allowed_domains": ["www.miho.jp", "miho.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
-      "notes": "Use the current and upcoming exhibition landing pages, which link into exhibition detail pages under `/en/exhibition/<slug>/`.",
+      "notes": "Use the current exhibition landing pages, which link into exhibition detail pages under `/en/exhibition/<slug>/`.",
       "is_active": true,
       "source_categories": ["museum"],
       "map_visibility": true,
+      "selectors": {
+        "title": "#exhibitionHeader h2",
+        "description": "div.smallInner p",
+        "date": "#exhibitionInformation dd",
+        "images": "#exhibitionTitle img"
+      },
       "locales": {
         "ja": {
-          "start_urls": [
-            "https://www.miho.jp/current_exhibition/",
-            "https://www.miho.jp/upcoming_exhibition/"
-          ],
+          "start_urls": ["https://www.miho.jp/current_exhibition/"],
           "event_page_patterns": ["/exhibition/"]
         },
         "en": {
-          "start_urls": [
-            "https://www.miho.jp/en/current_exhibition/",
-            "https://www.miho.jp/en/upcoming_exhibition/"
-          ],
+          "start_urls": ["https://www.miho.jp/en/current_exhibition/"],
           "event_page_patterns": ["/en/exhibition/"]
         }
       }
