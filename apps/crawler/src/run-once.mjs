@@ -1804,6 +1804,18 @@ function finalizeImageUrls(candidates, baseUrl) {
   return ranked.length ? ranked : [];
 }
 
+const sourcesWithoutOgImages = new Set([
+  'kyoto-city-kyocera-museum-of-art',
+  'momak',
+  'the-terminal-kyoto',
+  'artro',
+  'oscaar-mouligne',
+]);
+
+function sourceShouldSkipOgImages(source) {
+  return sourcesWithoutOgImages.has(source?.slug);
+}
+
 function sourceAllowsUrl(source, url) {
   const host = new URL(url).hostname;
   return (source.allowed_domains ?? []).some(
@@ -2010,10 +2022,11 @@ function extractBestDateText(detailHtml) {
   return 'See source page';
 }
 
-function extractGenericImageUrls(detailHtml, detailUrl) {
+function extractGenericImageUrls(detailHtml, detailUrl, options = {}) {
+  const includeOgImage = options.includeOgImage !== false;
   const ogImage = extractMeta(detailHtml, 'og:image');
   const imageCandidates = [
-    ...(ogImage ? [{ url: ogImage, source: 'og:image' }] : []),
+    ...(includeOgImage && ogImage ? [{ url: ogImage, source: 'og:image' }] : []),
     ...[...detailHtml.matchAll(/<img\b[^>]*>/gi)].map((match) => {
       const attributes = parseTagAttributes(match[0]);
       const { width, height } = getImageAttributeDimensions(attributes);
@@ -3346,7 +3359,9 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   const parsedDates = parseGenericDateRange(dateText);
   const imageUrls = configuredImageUrls.length
     ? configuredImageUrls
-    : extractGenericImageUrls(detailHtml, detailUrl);
+    : extractGenericImageUrls(detailHtml, detailUrl, {
+        includeOgImage: !sourceShouldSkipOgImages(source),
+      });
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
 
   return {

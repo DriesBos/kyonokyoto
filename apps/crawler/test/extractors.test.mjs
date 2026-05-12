@@ -466,6 +466,32 @@ test("generic event extraction ignores common site chrome images", () => {
   assert.equal(hasExtractedImage(event), false);
 });
 
+test("generic event extraction can ignore source og images", () => {
+  const source = {
+    slug: "artro",
+    name: "Artro",
+    source_type: "gallery",
+  };
+  const event = extractGenericEvent(
+    `
+      <meta property="og:image" content="https://artro.jp/uploads/site-card.jpg">
+      <article>
+        <h1>Gallery-room exhibition</h1>
+        <time>April 12 - May 31, 2026</time>
+        <p>Useful exhibition copy.</p>
+        <img src="/uploads/install-view.jpg" width="900" height="600" alt="">
+      </article>
+    `,
+    source,
+    "https://artro.jp/exhibition/gallery-room/",
+  );
+
+  assert.deepEqual(event.image_urls, [
+    "https://artro.jp/uploads/install-view.jpg",
+  ]);
+  assert.equal(event.primary_image_url, "https://artro.jp/uploads/install-view.jpg");
+});
+
 test("generic event extraction can use configured field selectors", () => {
   const detailHtml = `
     <article>
