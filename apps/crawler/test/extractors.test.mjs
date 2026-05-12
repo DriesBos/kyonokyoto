@@ -684,7 +684,10 @@ test("Sen-Oku extraction removes the trailing ad image", () => {
   const detailHtml = `
     <meta property="og:image" content="https://sen-oku.or.jp/wp-content/uploads/hero.jpg">
     <div class="catchArea wrap">
-      <div class="catch">Special Exhibition</div>
+      <div class="catch">
+        <font>Special Exhibition</font>
+        <span>Collection subtitle that should not become title</span>
+      </div>
       <div class="dataSetList"></div>
     </div>
     <span class="num">2026.04.01</span>
@@ -709,12 +712,39 @@ test("Sen-Oku extraction removes the trailing ad image", () => {
     "https://sen-oku.or.jp/program/202604_special/"
   );
 
+  assert.equal(event.title, "Special Exhibition");
   assert.equal(event.primary_image_url, "https://sen-oku.or.jp/wp-content/uploads/hero.jpg");
   assert.deepEqual(event.image_urls, [
     "https://sen-oku.or.jp/wp-content/uploads/hero.jpg",
     "https://sen-oku.or.jp/wp-content/uploads/detail-1.jpg",
     "https://sen-oku.or.jp/wp-content/uploads/detail-2.jpg",
   ]);
+});
+
+test("Sen-Oku title extraction drops subtitle spans without font wrapper", () => {
+  const event = extractSenOkuEvent(
+    `
+      <meta property="og:image" content="https://sen-oku.or.jp/wp-content/uploads/hero.jpg">
+      <div class="catchArea wrap">
+        <div class="catch">
+          Special Exhibition<br>
+          <span>Subtitle should not become title</span>
+        </div>
+        <div class="dataSetList"></div>
+      </div>
+      <span class="num">2026.04.01</span>
+      <span class="num">2026.05.31</span>
+      <div class="leadArea"><p class="copy">Copy.</p></div>
+    `,
+    {
+      name: "Sen-Oku Hakukokan Museum",
+      source_type: "museum",
+      source_categories: ["art", "museum"],
+    },
+    "https://sen-oku.or.jp/program/202604_special/"
+  );
+
+  assert.equal(event.title, "Special Exhibition");
 });
 
 test("image normalization caps stored images and probes offender source dimensions", async () => {

@@ -3208,10 +3208,15 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
 }
 
 function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
-  const title = stripTags(
+  const catchHtml =
     detailHtml.match(
       /<div class="catchArea wrap">[\s\S]*?<div class="catch">([\s\S]*?)<\/div>\s*<div class="dataSetList">/i,
-    )?.[1] ?? '',
+    )?.[1] ?? '';
+  const titleHtml =
+    catchHtml.match(/<font\b[^>]*>([\s\S]*?)<\/font>/i)?.[1] ??
+    catchHtml.replace(/<span\b[^>]*>[\s\S]*?<\/span>/gi, '');
+  const title = stripTags(
+    titleHtml,
   );
 
   if (!title) {
