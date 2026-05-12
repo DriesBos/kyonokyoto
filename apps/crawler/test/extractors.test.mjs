@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { test } from "node:test";
 import {
+  assignEventCoordinates,
   classifyFetchResult,
   classifySourceOutcome,
   createCrawlDiagnostics,
@@ -149,6 +150,86 @@ test("event translation payload stores only localized public fields", () => {
       source_url: "https://example.test/event",
     },
   );
+});
+
+test("event coordinates prefer configured venue locations", () => {
+  const event = assignEventCoordinates(
+    {
+      title: "Special exhibition",
+      venue_name: "The Triangle",
+      address_text: "Kyoto City KYOCERA Museum of Art",
+    },
+    {
+      name: "Kyoto City KYOCERA Museum of Art",
+      source_categories: ["museum"],
+      address_text: "124 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan",
+      lat: 35,
+      lng: 135,
+      venue_locations: [
+        {
+          name: "The Triangle",
+          match: ["The Triangle"],
+          address_text: "The Triangle, Kyoto City KYOCERA Museum of Art",
+          lat: 35.0123,
+          lng: 135.7834,
+        },
+      ],
+    },
+  );
+
+  assert.equal(event.lat, 35.0123);
+  assert.equal(event.lng, 135.7834);
+  assert.equal(event.institution_name, "Kyoto City KYOCERA Museum of Art");
+  assert.equal(event.venue_name, "The Triangle");
+  assert.equal(event.address_text, "The Triangle, Kyoto City KYOCERA Museum of Art");
+  assert.deepEqual(event.categories, ["museum"]);
+});
+
+test("event coordinates fall back to source coordinates", () => {
+  const event = assignEventCoordinates(
+    {
+      title: "Gallery exhibition",
+      institution_name: "THE HEARTH KYOTO",
+      venue_name: "Main gallery",
+      address_text: "Scraped address",
+    },
+    {
+      name: "The Terminal Kyoto",
+      source_categories: ["gallery"],
+      address_text: "424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan",
+      directions_query: "The Terminal Kyoto, Kyoto",
+      lat: "35.0007",
+      lng: "135.7568",
+      venue_locations: [
+        {
+          match: ["Other venue"],
+          lat: 35.1,
+          lng: 135.1,
+        },
+      ],
+    },
+  );
+
+  assert.equal(event.lat, 35.0007);
+  assert.equal(event.lng, 135.7568);
+  assert.equal(event.institution_name, "The Terminal Kyoto");
+  assert.equal(event.venue_name, "The Terminal Kyoto");
+  assert.equal(event.address_text, "424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan");
+  assert.equal(event.directions_query, "The Terminal Kyoto, Kyoto");
+  assert.deepEqual(event.categories, ["gallery"]);
+});
+
+test("event coordinates stay null when source has no usable location", () => {
+  const event = assignEventCoordinates(
+    {
+      title: "Remote exhibition",
+      venue_name: "Unknown venue",
+    },
+    {}
+  );
+
+  assert.equal(event.lat, null);
+  assert.equal(event.lng, null);
 });
 
 test("generic detail extraction prefers event and exhibition URLs", async () => {

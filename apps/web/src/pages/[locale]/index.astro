@@ -12,6 +12,7 @@ import { displayEventsByLocale as buildDisplayEventsByLocale, fetchPublishedEven
 import {
   categoriesForEvents,
   configuredSourcesFrom,
+  mapLocationIdForEvent,
   mapSourcesForEvents,
   sourceSlugForEvent,
   type SourceConfig,
@@ -48,6 +49,12 @@ const categories = categoriesForEvents(displayEvents);
 const ongoingEvents = displayEvents.filter((event) => event.timing === "ongoing");
 const upcomingEvents = displayEvents.filter((event) => event.timing === "upcoming");
 const sourceSlugByEventId = new Map(displayEvents.map((event) => [event.id, sourceSlugForEvent(event, configuredSources)]));
+const mapLocationIdByEventId = new Map(
+  displayEvents.map((event) => [
+    event.id,
+    mapLocationIdForEvent(event, sourceSlugByEventId.get(event.id) ?? null, configuredSources),
+  ])
+);
 const mapSources = mapSourcesForEvents(displayEvents, sourceSlugByEventId, configuredSources);
 
 const excerpt = (value: string | null) => {
@@ -125,6 +132,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     locale={locale}
                     hideTopBorder={index === 0}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
+                    mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrl(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
                     excerpt={excerpt(event.description)}
@@ -143,6 +151,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     locale={locale}
                     hideTopBorder={ongoingEvents.length === 0 && index === 0}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
+                    mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrl(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
                     excerpt={excerpt(event.description)}

@@ -13,12 +13,21 @@ export type SourceConfig = {
   address_text?: string;
   lat?: number;
   lng?: number;
+  venue_locations?: {
+    name?: string;
+    match: string[];
+    address_text?: string;
+    directions_query?: string;
+    lat: number;
+    lng: number;
+  }[];
   is_active?: boolean;
   map_visibility?: boolean;
 };
 
 export type MapSource = {
-  slug: string;
+  id: string;
+  sourceSlug: string;
   name: string;
   categories: string[];
   lat: number;
@@ -139,6 +148,68 @@ export const sourceSlugForEvent = (event: EventRow, configuredSources: SourceCon
     .filter((match) => match.score > 0)
     .sort((a, b) => b.score - a.score)[0]?.source.slug ?? null;
 
+const sourceBySlug = (configuredSources: SourceConfig[], sourceSlug: string | null) =>
+  configuredSources.find((source) => source.slug === sourceSlug) ?? null;
+
+const toCoordinate = (value: unknown) => {
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : null;
+};
+
+const findVenueLocationForCoordinates = (
+  source: SourceConfig | null,
+  lat: number | null,
+  lng: number | null,
+) => {
+  if (!source || lat === null || lng === null) return null;
+
+  return (source.venue_locations ?? []).find((location) => {
+    const locationLat = toCoordinate(location.lat);
+    const locationLng = toCoordinate(location.lng);
+    return (
+      locationLat !== null &&
+      locationLng !== null &&
+      locationLat.toFixed(6) === lat.toFixed(6) &&
+      locationLng.toFixed(6) === lng.toFixed(6)
+    );
+  }) ?? null;
+};
+
+const locationNameForEvent = (
+  source: SourceConfig | null,
+  lat: number | null,
+  lng: number | null,
+) => {
+  const venueLocation = findVenueLocationForCoordinates(source, lat, lng);
+  return venueLocation?.name || source?.name || "Map location";
+};
+
+const locationCategoriesForSource = (source: SourceConfig) => {
+  const categorySlugs = [
+    source.source_type,
+    ...(source.source_categories ?? []),
+  ]
+    .map(normalizeCategory)
+    .filter(Boolean);
+
+  return [...new Set(categorySlugs)];
+};
+
+export const mapLocationIdForEvent = (
+  event: EventRow,
+  sourceSlug: string | null,
+  configuredSources: SourceConfig[],
+) => {
+  const source = sourceBySlug(configuredSources, sourceSlug);
+  const lat = toCoordinate(event.lat) ?? toCoordinate(source?.lat);
+  const lng = toCoordinate(event.lng) ?? toCoordinate(source?.lng);
+
+  if (lat === null || lng === null || !sourceSlug) return null;
+
+  const venueKey = normalizeCategory(locationNameForEvent(source, lat, lng));
+  return `${sourceSlug}:${lat.toFixed(6)}:${lng.toFixed(6)}:${venueKey}`;
+};
+
 export const categoriesForEvents = (events: EventRow[]): CategoryOption[] => {
   const categoryMap = new Map<string, string>();
 
@@ -168,31 +239,34 @@ export const mapSourcesForEvents = (
   sourceSlugByEventId: Map<string, string | null>,
   configuredSources: SourceConfig[],
 ): MapSource[] => {
-  const eventSourceSlugs = new Set([...sourceSlugByEventId.values()].filter(Boolean));
+  const locations = new Map<string, MapSource>();
 
-  return configuredSources
-    .filter(
-      (source) =>
-        source.map_visibility !== false &&
-        eventSourceSlugs.has(source.slug) &&
-        typeof source.lat === "number" &&
-        typeof source.lng === "number"
-    )
-    .map((source) => {
-      const categorySlugs = [
-        source.source_type,
-        ...(source.source_categories ?? []),
-      ]
-        .map(normalizeCategory)
-        .filter(Boolean);
-      const sourceCategories = [...new Set(categorySlugs)];
+  events.forEach((event) => {
+    const sourceSlug = sourceSlugByEventId.get(event.id) ?? null;
+    const source = sourceBySlug(configuredSources, sourceSlug);
+    if (!source || source.map_visibility === false) return;
 
-      return {
-        slug: source.slug,
-        name: source.name,
-        categories: sourceCategories,
-        lat: source.lat as number,
-        lng: source.lng as number,
-      };
+    const lat = toCoordinate(event.lat) ?? toCoordinate(source.lat);
+    const lng = toCoordinate(event.lng) ?? toCoordinate(source.lng);
+    const id = mapLocationIdForEvent(event, sourceSlug, configuredSources);
+    if (lat === null || lng === null || !id) return;
+
+    const existing = locations.get(id);
+    const categories = locationCategoriesForSource(source);
+    if (existing) {
+      existing.categories = [...new Set([...existing.categories, ...categories])];
+      return;
+    }
+
+    locations.set(id, {
+      id,
+      sourceSlug: source.slug,
+      name: locationNameForEvent(source, lat, lng),
+      categories,
+      lat,
+      lng,
     });
+  });
+
+  return [...locations.values()];
 };

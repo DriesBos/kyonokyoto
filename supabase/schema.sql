@@ -82,6 +82,8 @@ create table if not exists public.events (
   venue_name text,
   address_text text,
   directions_query text,
+  lat double precision,
+  lng double precision,
 
   -- Human-facing date text plus machine-readable dates for sorting/calendar
   date_text text not null,
@@ -129,6 +131,10 @@ create table if not exists public.event_translations (
   updated_at timestamptz not null default now(),
   unique (event_id, locale)
 );
+
+alter table public.events
+  add column if not exists lat double precision,
+  add column if not exists lng double precision;
 
 alter table public.event_translations
   add column if not exists id uuid default gen_random_uuid(),

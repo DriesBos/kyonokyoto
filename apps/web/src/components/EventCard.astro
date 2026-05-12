@@ -26,13 +26,14 @@ type Props = {
   event: EventRow;
   locale?: AppLocale;
   mapSourceSlug?: string | null;
+  mapLocationId?: string | null;
   mapsUrl: string;
   googleCalendarUrl: string | null;
   excerpt: string;
   hideTopBorder?: boolean;
 };
 
-const { event, mapSourceSlug, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false } = Astro.props;
+const { event, mapSourceSlug, mapLocationId, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false } = Astro.props;
 const copy = uiText.en;
 
 const normalizeCategory = (value: string) =>
@@ -64,6 +65,7 @@ const calendarLocation = calendarLocationFor(event);
   data-reveal-state="pending"
   data-event-id={event.id}
   data-map-source-slug={mapSourceSlug ?? undefined}
+  data-map-location-id={mapLocationId ?? undefined}
   data-active="false"
   data-timing={event.timing}
   data-categories={categorySlugs.join("|")}

@@ -213,12 +213,108 @@ function normalizeCategoryList(values) {
   ];
 }
 
-function withConfiguredSourceCategories(eventData, source) {
-  // Public categories are owned by source config, not extractor heuristics.
+function toFiniteNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizeLocationMatchText(value) {
+  return decodeHtml(String(value ?? ''))
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getEventLocationMatchText(eventData) {
+  return [
+    eventData?.venue_name,
+    eventData?.address_text,
+    eventData?.directions_query,
+    eventData?.source_url,
+    eventData?.institution_name,
+    eventData?.title,
+  ]
+    .map(normalizeLocationMatchText)
+    .filter(Boolean)
+    .join(' ');
+}
+
+function findVenueLocation(eventData, source) {
+  const eventText = getEventLocationMatchText(eventData);
+  if (!eventText) return null;
+
+  for (const location of source?.venue_locations ?? []) {
+    if (!location || typeof location !== 'object') continue;
+
+    const lat = toFiniteNumber(location.lat);
+    const lng = toFiniteNumber(location.lng);
+    if (lat === null || lng === null) continue;
+
+    const matchers = Array.isArray(location.match)
+      ? location.match
+      : [location.match ?? location.name];
+    const hasMatch = matchers
+      .map(normalizeLocationMatchText)
+      .filter(Boolean)
+      .some((matcher) => eventText.includes(matcher));
+
+    if (hasMatch) {
+      return {
+        ...location,
+        lat,
+        lng,
+        name:
+          typeof location.name === 'string' && location.name.trim()
+            ? location.name.trim()
+            : null,
+        address_text:
+          typeof location.address_text === 'string' && location.address_text.trim()
+            ? location.address_text.trim()
+            : null,
+        directions_query:
+          typeof location.directions_query === 'string' &&
+          location.directions_query.trim()
+            ? location.directions_query.trim()
+            : null,
+      };
+    }
+  }
+
+  return null;
+}
+
+function normalizeEventSourceTruth(eventData, source) {
+  const venueLocation = findVenueLocation(eventData, source);
+  const sourceLat = toFiniteNumber(source?.lat);
+  const sourceLng = toFiniteNumber(source?.lng);
+  const lat = venueLocation?.lat ?? sourceLat;
+  const lng = venueLocation?.lng ?? sourceLng;
+  const sourceAddress =
+    typeof source?.address_text === 'string' && source.address_text.trim()
+      ? source.address_text.trim()
+      : null;
+  const venueName = venueLocation?.name ?? source?.name;
+  const addressText = venueLocation?.address_text ?? sourceAddress ?? source?.name;
+  const directionsQuery =
+    venueLocation?.directions_query ??
+    source?.directions_query ??
+    addressText ??
+    source?.name;
+
   return {
     ...eventData,
-    categories: normalizeCategoryList(source.source_categories ?? []),
+    institution_name: source?.name ?? eventData.institution_name,
+    venue_name: venueName ?? eventData.venue_name ?? null,
+    address_text: addressText ?? eventData.address_text ?? null,
+    directions_query: directionsQuery ?? eventData.directions_query ?? null,
+    categories: normalizeCategoryList(source?.source_categories ?? []),
+    lat: lat ?? null,
+    lng: lng ?? null,
   };
+}
+
+function assignEventCoordinates(eventData, source) {
+  return normalizeEventSourceTruth(eventData, source);
 }
 
 function stripTags(value) {
@@ -4563,7 +4659,7 @@ async function fetchNativeLocaleEvent({
       throw new Error(`alternate URL redirected to ${finalUrl}`);
     }
 
-    const nativeEvent = withConfiguredSourceCategories(
+    const nativeEvent = normalizeEventSourceTruth(
       eventExtractor(nativePage.html, nativeSource, alternateUrl, sourceContext),
       nativeSource,
     );
@@ -4892,7 +4988,7 @@ async function crawlSource({
       });
       pagesFetched += 1;
       recordFetchedPage(diagnostics, detailPage);
-      let extractedEvent = withConfiguredSourceCategories(
+      let extractedEvent = normalizeEventSourceTruth(
         eventExtractor(
           detailPage.html,
           crawlSourceConfig,
@@ -4916,7 +5012,7 @@ async function crawlSource({
         if (renderedDetailPage) {
           pagesFetched += 1;
           recordFetchedPage(diagnostics, renderedDetailPage);
-          const renderedEvent = withConfiguredSourceCategories(
+          const renderedEvent = normalizeEventSourceTruth(
             eventExtractor(
               renderedDetailPage.html,
               crawlSourceConfig,
@@ -5260,6 +5356,7 @@ async function main() {
 export {
   classifyFetchResult,
   classifySourceOutcome,
+  assignEventCoordinates,
   createCrawlDiagnostics,
   detailUrlExtractors,
   eventExtractors,

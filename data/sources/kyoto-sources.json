@@ -183,8 +183,8 @@
       "source_type": "gallery",
       "language": "en",
       "address_text": "2F Enjudo Minamikan, 95-3 Enoki-cho, Nakagyo-ku, Kyoto 604-0931 Japan",
-      "lat": 35.012672,
-      "lng": 135.767914,
+      "lat": 35.01326561716313,
+      "lng": 135.76788970000652,
       "base_url": "https://gallery-yamahon.com/?page_id=1396",
       "start_urls": ["https://gallery-yamahon.com/?page_id=1396"],
       "allowed_domains": ["gallery-yamahon.com"],
@@ -239,8 +239,8 @@
       "source_type": "gallery",
       "language": "ja",
       "address_text": "123 Yada-cho, Shimogyo-ku, Kyoto 600-8442 Japan",
-      "lat": 35.0021615,
-      "lng": 135.7560215,
+      "lat": 35.00254410494693,
+      "lng": 135.75605503209155,
       "base_url": "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
       "start_urls": [
         "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
@@ -479,7 +479,7 @@
     },
     {
       "slug": "dnp-foundation-for-cultural-promotion-gallery-ddd",
-      "name": "kyoto ddd gallery",
+      "name": "ddd gallery",
       "source_type": "gallery",
       "language": "en",
       "address_text": "3F COCON KARASUMA, 620 Suiginya-cho, Shimogyo-ku, Kyoto 600-8411 Japan",
@@ -560,8 +560,8 @@
       "source_type": "museum",
       "language": "en",
       "address_text": "26-1 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan",
-      "lat": 35.0123995,
-      "lng": 135.7821446,
+      "lat": 35.01260593370022,
+      "lng": 135.78213869052257,
       "base_url": "https://www.momak.go.jp/English/exhibitionArchive/",
       "start_urls": ["https://www.momak.go.jp/English/exhibitionArchive/"],
       "allowed_domains": ["www.momak.go.jp", "momak.go.jp"],
@@ -744,8 +744,8 @@
       "source_type": "gallery",
       "language": "en",
       "address_text": "57-1 Shimono-cho, Shimogyo-ku, Kyoto 600-8601 Japan",
-      "lat": 35.0113537,
-      "lng": 135.7524549,
+      "lat": 34.98732993825069,
+      "lng": 135.76393931545772,
       "base_url": "https://gallery.kcua.ac.jp/exhibitions/",
       "start_urls": ["https://gallery.kcua.ac.jp/exhibitions/"],
       "allowed_domains": ["gallery.kcua.ac.jp"],
@@ -1019,15 +1019,25 @@
       ],
       "allowed_domains": ["www.samac.jp", "samac.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition/"],
+      "event_page_patterns": [
+        "/en/exhibition/",
+        "/en/exhibition/index.php",
+        "/en/exhibition/index.php?m=future",
+        "/exhibition/",
+        "/exhibition/index.php",
+        "/exhibition/index.php?m=future"
+      ],
       "notes": "Crawl both the current (index.php) and upcoming (index.php?m=future) exhibition index pages.",
       "is_active": true,
       "source_categories": ["museum"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [],
-          "event_page_patterns": []
+          "start_urls": [
+            "https://www.samac.jp/exhibition/index.php",
+            "https://www.samac.jp/exhibition/index.php?m=future"
+          ],
+          "event_page_patterns": ["/exhibition/"]
         },
         "en": {
           "start_urls": [
@@ -1104,11 +1114,15 @@
     {
       "slug": "miho-museum",
       "name": "MIHO Museum",
+      "names": {
+        "en": "MIHO Museum",
+        "ja": "MIHO Museum"
+      },
       "source_type": "museum",
       "language": "en",
       "address_text": "300 Momodani, Tashiro, Shigaraki-cho, Koka, Shiga 529-1814 Japan",
-      "lat": 34.8432756,
-      "lng": 135.8847758,
+      "lat": 34.91511909268897,
+      "lng": 136.01620457735893,
       "base_url": "https://www.miho.jp/en/current_exhibition/",
       "start_urls": [
         "https://www.miho.jp/en/current_exhibition/",
@@ -1123,15 +1137,18 @@
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [],
-          "event_page_patterns": []
+          "start_urls": [
+            "https://www.miho.jp/current_exhibition/",
+            "https://www.miho.jp/upcoming_exhibition/"
+          ],
+          "event_page_patterns": ["/exhibition/"]
         },
         "en": {
           "start_urls": [
             "https://www.miho.jp/en/current_exhibition/",
             "https://www.miho.jp/en/upcoming_exhibition/"
           ],
-          "event_page_patterns": ["/en/exhibition/", "/exhibition/"]
+          "event_page_patterns": ["/en/exhibition/"]
         }
       }
     }

@@ -239,6 +239,7 @@ const emitCardActiveChange = (card, isActive) => {
         active: isActive,
         eventId: card.dataset.eventId || "",
         sourceSlug: card.dataset.mapSourceSlug || "",
+        locationId: card.dataset.mapLocationId || "",
       },
     })
   );
@@ -558,11 +559,13 @@ export const initEventCardControls = () => {
     const detail = event.detail ?? {};
     const eventId = typeof detail.eventId === "string" ? detail.eventId : "";
     const sourceSlug = typeof detail.sourceSlug === "string" ? detail.sourceSlug : "";
+    const locationId = typeof detail.locationId === "string" ? detail.locationId : "";
     const cards = Array.from(document.querySelectorAll(cardSelector));
     const targetCard = cards.find((card) => {
       if (!(card instanceof HTMLElement)) return false;
       if (card.hidden || card.closest("[hidden]") || card.getClientRects().length === 0) return false;
       if (eventId) return card.dataset.eventId === eventId;
+      if (locationId) return card.dataset.mapLocationId === locationId;
       return Boolean(sourceSlug && card.dataset.mapSourceSlug === sourceSlug);
     });
 

@@ -30,6 +30,8 @@ export type EventRow = {
   venue_name: string | null;
   address_text: string | null;
   directions_query: string | null;
+  lat: number | null;
+  lng: number | null;
   start_date: string | null;
   end_date: string | null;
   calendar_starts_at: string | null;
@@ -50,6 +52,9 @@ export type ClassifiedEvent = EventRow & {
 };
 
 export const eventSelect =
+  "id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, lat, lng, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at";
+
+const eventSelectWithoutCoordinates =
   "id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at";
 
 export const eventTranslationSelect =
@@ -67,6 +72,12 @@ export const fetchPublishedEvents = async () => {
 
   if (error?.code === "PGRST200" || error?.code === "PGRST205") {
     const fallbackResponse = await fetchEvents(eventSelect);
+    data = fallbackResponse.data;
+    error = fallbackResponse.error;
+  }
+
+  if (error?.code === "PGRST204") {
+    const fallbackResponse = await fetchEvents(`${eventSelectWithoutCoordinates}, ${eventTranslationSelect}`);
     data = fallbackResponse.data;
     error = fallbackResponse.error;
   }

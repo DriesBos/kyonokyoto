@@ -18,6 +18,37 @@ Use this for `data/sources/kyoto-sources.json` and `data/sources/source-override
 
 Crawler uses `names[locale]` for event card institution/venue text when extracting that locale. Map/source labels still use `name`.
 
+## Source-Owned Venue Fields
+
+Source JSON is authoritative for venue identity:
+
+- `name`
+- `source_categories`
+- `address_text`
+- `directions_query`
+- `lat`
+- `lng`
+
+Crawler extracts event-specific title, dates, description, images, and source URLs. It should not let scraped page venue/brand text replace canonical source fields.
+
+## `venue_locations`
+
+Optional. Use when one source has events at multiple venues or rooms and the map marker needs event-level coordinates.
+
+```json
+"venue_locations": [
+  {
+    "name": "The Triangle",
+    "match": ["The Triangle", "Kyoto City KYOCERA Museum of Art"],
+    "address_text": "The Triangle, Kyoto City KYOCERA Museum of Art",
+    "lat": 35.0123,
+    "lng": 135.7834
+  }
+]
+```
+
+Crawler matches these strings against event venue, address, directions query, source URL, institution, and title. First matching location wins. If none match, source `lat`/`lng` are used.
+
 ## `source_type`
 
 Required single value. Broad identity of source venue/organization.

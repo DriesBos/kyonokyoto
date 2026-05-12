@@ -43,11 +43,43 @@ function normalizeLocaleTextMap(value = {}) {
   return textMap;
 }
 
+function normalizeVenueLocations(value = []) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((location) => {
+      if (!location || typeof location !== "object") return null;
+
+      const lat = Number(location.lat);
+      const lng = Number(location.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+      const match = Array.isArray(location.match)
+        ? location.match
+        : [location.match ?? location.name];
+      const normalizedMatch = match
+        .filter((item) => typeof item === "string" && item.trim())
+        .map((item) => item.trim());
+
+      if (!normalizedMatch.length) return null;
+
+      return {
+        ...location,
+        match: normalizedMatch,
+        lat,
+        lng,
+      };
+    })
+    .filter(Boolean);
+}
+
 export function applySourceOverride(source, override = {}) {
   const sourceLocales = normalizeLocaleConfig(source.locales);
   const overrideLocales = normalizeLocaleConfig(override.locales);
   const sourceNames = normalizeLocaleTextMap(source.names);
   const overrideNames = normalizeLocaleTextMap(override.names);
+  const sourceVenueLocations = normalizeVenueLocations(source.venue_locations);
+  const overrideVenueLocations = normalizeVenueLocations(override.venue_locations);
 
   return {
     ...source,
@@ -64,6 +96,9 @@ export function applySourceOverride(source, override = {}) {
       ...sourceNames,
       ...overrideNames,
     },
+    venue_locations: override.venue_locations
+      ? overrideVenueLocations
+      : sourceVenueLocations,
   };
 }
 

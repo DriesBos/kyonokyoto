@@ -1,5 +1,6 @@
 type MapSource = {
-  slug: string;
+  id: string;
+  sourceSlug: string;
   name: string;
   categories: string[];
   lat: number;
@@ -136,7 +137,8 @@ const createMarkerContent = (source: MapSource) => {
   const marker = document.createElement("button");
   marker.className = "map-marker";
   marker.type = "button";
-  marker.dataset.sourceSlug = source.slug;
+  marker.dataset.locationId = source.id;
+  marker.dataset.sourceSlug = source.sourceSlug;
   marker.dataset.categories = source.categories.join("|");
   marker.setAttribute("aria-label", source.name);
   marker.innerHTML = `
@@ -331,15 +333,15 @@ const initMap = async (element: Element) => {
       });
     }
 
-    const getFirstVisibleSourceCard = (sourceSlug: string) => {
+    const getFirstVisibleLocationCard = (locationId: string) => {
       const eventsSection = document.querySelector("[data-events-section]");
       if (!(eventsSection instanceof HTMLElement)) return null;
 
-      const escapedSourceSlug = sourceSlug.replace(/["\\]/g, "\\$&");
-      const sourceCards = Array.from(
-        document.querySelectorAll(`[data-event-card][data-map-source-slug="${escapedSourceSlug}"]`)
+      const escapedLocationId = locationId.replace(/["\\]/g, "\\$&");
+      const locationCards = Array.from(
+        document.querySelectorAll(`[data-event-card][data-map-location-id="${escapedLocationId}"]`)
       );
-      const targetCard = sourceCards.find((card) => {
+      const targetCard = locationCards.find((card) => {
         if (!(card instanceof HTMLElement)) return false;
         return !card.hidden && !card.closest("[hidden]") && card.getClientRects().length > 0;
       });
@@ -347,11 +349,11 @@ const initMap = async (element: Element) => {
       return targetCard instanceof HTMLElement ? targetCard : null;
     };
 
-    const scrollToSourceEvent = (sourceSlug: string) => {
+    const scrollToLocationEvent = (locationId: string) => {
       const eventsSection = document.querySelector("[data-events-section]");
       if (!(eventsSection instanceof HTMLElement)) return;
 
-      const targetCard = getFirstVisibleSourceCard(sourceSlug);
+      const targetCard = getFirstVisibleLocationCard(locationId);
       if (!(targetCard instanceof HTMLElement)) return;
 
       const eventsSectionRect = eventsSection.getBoundingClientRect();
@@ -383,22 +385,22 @@ const initMap = async (element: Element) => {
         document.dispatchEvent(new CustomEvent("event-card:deactivate-all"));
       });
 
-    let lastMarkerActivationSlug = "";
+    let lastMarkerActivationId = "";
     let lastMarkerActivationTime = 0;
-    let markerNavigationSourceSlug = "";
-    const activateMarkerSource = (sourceSlug: string) => {
+    let markerNavigationLocationId = "";
+    const activateMarkerLocation = (locationId: string) => {
       const now = performance.now();
 
-      if (lastMarkerActivationSlug === sourceSlug && now - lastMarkerActivationTime < 80) return;
+      if (lastMarkerActivationId === locationId && now - lastMarkerActivationTime < 80) return;
 
-      lastMarkerActivationSlug = sourceSlug;
+      lastMarkerActivationId = locationId;
       lastMarkerActivationTime = now;
-      markerNavigationSourceSlug = sourceSlug;
-      highlightSource(sourceSlug, true);
+      markerNavigationLocationId = locationId;
+      highlightLocation(locationId, true);
       waitForCardDeactivation().then(() => {
-        scrollToSourceEvent(sourceSlug);
-        highlightSource(sourceSlug, false);
-        markerNavigationSourceSlug = "";
+        scrollToLocationEvent(locationId);
+        highlightLocation(locationId, false);
+        markerNavigationLocationId = "";
       });
     };
 
@@ -416,41 +418,41 @@ const initMap = async (element: Element) => {
       content.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        activateMarkerSource(source.slug);
+        activateMarkerLocation(source.id);
       });
-      marker.addEventListener?.("gmp-click", () => activateMarkerSource(source.slug));
-      marker.addListener?.("click", () => activateMarkerSource(source.slug));
+      marker.addEventListener?.("gmp-click", () => activateMarkerLocation(source.id));
+      marker.addListener?.("click", () => activateMarkerLocation(source.id));
 
       return { marker, source, content };
     });
-    const markerRecordsBySlug = new Map(markerRecords.map((record) => [record.source.slug, record]));
-    let highlightedSourceSlug = "";
+    const markerRecordsById = new Map(markerRecords.map((record) => [record.source.id, record]));
+    let highlightedLocationId = "";
 
     const isMapVisible = () => !element.closest("[hidden]") && element.getClientRects().length > 0;
 
     const syncStarredMarkers = () => {
-      const starredSourceSlugs = new Set(
+      const starredLocationIds = new Set(
         Array.from(document.querySelectorAll("[data-event-card][data-starred='true']"))
-          .map((card) => (card instanceof HTMLElement ? card.dataset.mapSourceSlug ?? "" : ""))
+          .map((card) => (card instanceof HTMLElement ? card.dataset.mapLocationId ?? "" : ""))
           .filter(Boolean)
       );
 
       markerRecords.forEach(({ source, content }) => {
-        content.toggleAttribute("data-starred", starredSourceSlugs.has(source.slug));
+        content.toggleAttribute("data-starred", starredLocationIds.has(source.id));
       });
     };
 
     const clearHighlight = () => {
-      if (!highlightedSourceSlug) return;
+      if (!highlightedLocationId) return;
 
-      const highlightedRecord = markerRecordsBySlug.get(highlightedSourceSlug);
+      const highlightedRecord = markerRecordsById.get(highlightedLocationId);
       highlightedRecord?.content.removeAttribute("data-highlighted");
       if (highlightedRecord?.marker) highlightedRecord.marker.zIndex = 0;
-      highlightedSourceSlug = "";
+      highlightedLocationId = "";
     };
 
-    const highlightSource = (sourceSlug: string, shouldPan: boolean) => {
-      const record = markerRecordsBySlug.get(sourceSlug);
+    const highlightLocation = (locationId: string, shouldPan: boolean) => {
+      const record = markerRecordsById.get(locationId);
 
       if (!record || record.content.hasAttribute("data-hidden")) {
         clearHighlight();
@@ -458,7 +460,7 @@ const initMap = async (element: Element) => {
       }
 
       clearHighlight();
-      highlightedSourceSlug = sourceSlug;
+      highlightedLocationId = locationId;
       record.content.toggleAttribute("data-highlighted", true);
       record.marker.zIndex = 1000;
 
@@ -476,41 +478,41 @@ const initMap = async (element: Element) => {
         return;
       }
 
-      const sourceSlug = activeCard.dataset.mapSourceSlug || "";
-      if (!sourceSlug) {
+      const locationId = activeCard.dataset.mapLocationId || "";
+      if (!locationId) {
         clearHighlight();
         return;
       }
 
-      highlightSource(sourceSlug, true);
+      highlightLocation(locationId, true);
     };
 
-    const getVisibleStarredSourceSlugs = () =>
+    const getVisibleStarredLocationIds = () =>
       new Set(
         Array.from(document.querySelectorAll("[data-event-card][data-starred='true']"))
           .filter((card) => {
             if (!(card instanceof HTMLElement)) return false;
             return !card.hidden && !card.closest("[hidden]");
           })
-          .map((card) => (card instanceof HTMLElement ? card.dataset.mapSourceSlug ?? "" : ""))
+          .map((card) => (card instanceof HTMLElement ? card.dataset.mapLocationId ?? "" : ""))
           .filter(Boolean)
       );
 
     const applyMapFilter = () => {
       const activeCategory = getActiveMapCategory();
       const activeStarred = getActiveMapStarred();
-      const visibleStarredSourceSlugs = activeStarred ? getVisibleStarredSourceSlugs() : null;
+      const visibleStarredLocationIds = activeStarred ? getVisibleStarredLocationIds() : null;
 
       markerRecords.forEach(({ marker, source, content }) => {
         const matchesCategory = !activeCategory || source.categories.includes(activeCategory);
-        const matchesStarred = !visibleStarredSourceSlugs || visibleStarredSourceSlugs.has(source.slug);
+        const matchesStarred = !visibleStarredLocationIds || visibleStarredLocationIds.has(source.id);
         const matches = matchesCategory && matchesStarred;
         marker.map = matches ? map : null;
         content.toggleAttribute("data-hidden", !matches);
       });
 
-      if (highlightedSourceSlug) {
-        const highlightedRecord = markerRecordsBySlug.get(highlightedSourceSlug);
+      if (highlightedLocationId) {
+        const highlightedRecord = markerRecordsById.get(highlightedLocationId);
         if (!highlightedRecord || highlightedRecord.content.hasAttribute("data-hidden")) {
           clearHighlight();
         }
@@ -522,20 +524,20 @@ const initMap = async (element: Element) => {
       if (!(event instanceof CustomEvent)) return;
 
       const detail = event.detail ?? {};
-      const sourceSlug = typeof detail.sourceSlug === "string" ? detail.sourceSlug : "";
+      const locationId = typeof detail.locationId === "string" ? detail.locationId : "";
 
       if (!detail.active) {
-        if (markerNavigationSourceSlug) return;
+        if (markerNavigationLocationId) return;
         syncActiveCardHighlight();
         return;
       }
 
-      if (!sourceSlug) {
+      if (!locationId) {
         clearHighlight();
         return;
       }
 
-      highlightSource(sourceSlug, true);
+      highlightLocation(locationId, true);
     });
     document.addEventListener("event-filter:updated", applyMapFilter);
     document.addEventListener("event-stars:updated", syncStarredMarkers);
