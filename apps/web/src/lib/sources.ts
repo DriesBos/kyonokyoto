@@ -105,10 +105,12 @@ export const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
 
   const hostname = url.hostname.toLowerCase();
   let score = 0;
+  let matchesSourceHost = false;
 
   for (const domain of source.allowed_domains ?? []) {
     const normalizedDomain = domain.toLowerCase();
     if (hostname === normalizedDomain || hostname.endsWith(`.${normalizedDomain}`)) {
+      matchesSourceHost = true;
       score = Math.max(score, 10);
     }
   }
@@ -117,10 +119,17 @@ export const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
     const normalizedCandidate = normalizeUrl(candidateUrl);
     if (!normalizedCandidate) continue;
 
+    if (hostname === normalizedCandidate.hostname.toLowerCase()) {
+      matchesSourceHost = true;
+    }
+
     if (url.toString().startsWith(normalizedCandidate.toString())) {
+      matchesSourceHost = true;
       score = Math.max(score, 100 + normalizedCandidate.pathname.length);
     }
   }
+
+  if (!matchesSourceHost) return 0;
 
   for (const pattern of source.event_page_patterns ?? []) {
     if (pattern && url.pathname.includes(pattern)) {
