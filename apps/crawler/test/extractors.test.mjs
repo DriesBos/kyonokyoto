@@ -730,6 +730,20 @@ test("fetch classification distinguishes bot challenges from renderable JS shell
     "bot_challenge"
   );
 
+  const normalHtmlWithChallengeWords = `
+    <title>Current Exhibitions</title>
+    <main>${"Current exhibition information with dates and image links. ".repeat(50)}</main>
+    <script id="captcha-bootstrap">window.analyticsMessage = "request blocked"; window.formProtection = "hcaptcha g-recaptcha";</script>
+  `;
+
+  assert.equal(
+    classifyFetchResult({
+      response: new Response(normalHtmlWithChallengeWords, { status: 200, headers }),
+      html: normalHtmlWithChallengeWords,
+    }),
+    "ok"
+  );
+
   assert.equal(
     classifyFetchResult({
       response: new Response("<div id=\"root\"></div><script src=\"/app.js\"></script>", { status: 200, headers }),

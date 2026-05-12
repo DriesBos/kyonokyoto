@@ -4201,6 +4201,13 @@ function classifyFetchResult({ response = null, html = '', error = null }) {
     .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style\b[\s\S]*?<\/style>/gi, ' ');
   const visibleText = stripTags(htmlWithoutScripts).replace(/\s+/g, ' ').trim();
+  const visibleTextLower = visibleText.toLowerCase();
+  const titleText = stripTags(
+    html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '',
+  )
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 
   if (status === 429) return 'rate_limited';
   if ([408, 425, 500, 502, 503, 504].includes(status)) return 'transient_error';
@@ -4209,14 +4216,19 @@ function classifyFetchResult({ response = null, html = '', error = null }) {
   if (contentType && !/html|xml|text\/plain/i.test(contentType))
     return 'not_html';
 
-  if (
-    /<title>[^<]*(just a moment|access denied|attention required|captcha|security check|blocked)[^<]*<\/title>/i.test(
-      html,
-    ) ||
-    /cloudflare|cf-browser-verification|g-recaptcha|hcaptcha|captcha|checking your browser|access denied|request blocked/i.test(
-      normalizedHtml,
-    )
-  ) {
+  const hasChallengeTitle =
+    /\b(just a moment|access denied|attention required|captcha|security check|request blocked)\b/i.test(
+      titleText,
+    );
+  const hasChallengeMarkup =
+    /\b(cf-browser-verification|cf-chl-)\b/i.test(normalizedHtml);
+  const hasShortChallengeText =
+    visibleText.length < 2000 &&
+    /\b(checking your browser|enable cookies|access denied|request blocked|captcha|cloudflare)\b/i.test(
+      visibleTextLower,
+    );
+
+  if (hasChallengeTitle || hasChallengeMarkup || hasShortChallengeText) {
     return 'bot_challenge';
   }
 
