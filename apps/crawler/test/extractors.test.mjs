@@ -330,6 +330,34 @@ test("Kyocera detail extraction finds English URLs", () => {
   );
 });
 
+test("Taka Ishii detail extraction keeps only Kyoto location events", () => {
+  const listingHtml = `
+    <section class="column">
+      <a href="https://www.takaishiigallery.com/en/archives/43428/">Michael Anastassiades</a>
+      <p>Dates: Jun 6 - Jul 4, 2026<br>Location: Taka Ishii Gallery Kyoto</p>
+    </section>
+    <section class="column">
+      <a href="https://www.takaishiigallery.com/en/archives/43351/">Takuma Oue</a>
+      <p>Dates: May 23 - Jun 28, 2026<br>Location: Taka Ishii Gallery Maebashi</p>
+    </section>
+    <section class="wrap01">
+      <a href="https://www.takaishiigallery.com/en/archives/42707/">Martin Margiela</a>
+      <p>Dates: Apr 17 - May 16, 2026<br>Location: Taka Ishii Gallery Kyoto</p>
+    </section>
+  `;
+
+  assert.deepEqual(
+    detailUrlExtractors["taka-ishii-gallery"](
+      listingHtml,
+      "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
+    ),
+    [
+      "https://www.takaishiigallery.com/en/archives/43428/",
+      "https://www.takaishiigallery.com/en/archives/42707/",
+    ],
+  );
+});
+
 test("locale URL extraction finds alternate links in header and metadata", () => {
   const html = `
     <html>

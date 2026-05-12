@@ -2167,10 +2167,21 @@ function extractZenbiDetailUrls(listingHtml, listingUrl) {
 }
 
 function extractTakaIshiiDetailUrls(listingHtml, listingUrl) {
-  const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+  const kyotoLocationPattern =
+    /taka\s+ishii\s+gallery\s+kyoto|kyoto\s*\(yada-cho\)|yada-cho|タカ・イシイギャラリー\s*京都|京都(?:矢田町)?/i;
+  const sectionMatches = [
+    ...listingHtml.matchAll(/<section\b[^>]*>([\s\S]*?)<\/section>/gi),
+  ];
+  const matches = sectionMatches
+    .filter((sectionMatch) =>
+      kyotoLocationPattern.test(stripTags(sectionMatch[0])),
+    )
+    .flatMap((sectionMatch) => [
+      ...sectionMatch[0].matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi),
+    ])
     .map((match) => normalizeUrl(match[2], listingUrl))
     .filter(Boolean)
-    .filter((url) => /\/en\/archives\/\d+\/?$/.test(new URL(url).pathname));
+    .filter((url) => /\/(?:en\/)?archives\/\d+\/?$/.test(new URL(url).pathname));
 
   if (!matches.length) {
     throw new Error(
