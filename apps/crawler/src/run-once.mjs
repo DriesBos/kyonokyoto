@@ -381,6 +381,23 @@ function stripTags(value) {
   );
 }
 
+function sanitizePostgresText(value) {
+  return typeof value === 'string' ? value.replace(/\u0000/g, '') : value;
+}
+
+function sanitizePostgresJson(value) {
+  if (typeof value === 'string') return sanitizePostgresText(value);
+  if (Array.isArray(value)) return value.map(sanitizePostgresJson);
+  if (!value || typeof value !== 'object') return value;
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, currentValue]) => [
+      key,
+      sanitizePostgresJson(currentValue),
+    ]),
+  );
+}
+
 function extractMeta(html, property) {
   const pattern = new RegExp(
     `<meta[^>]+(?:property|name)="${property}"[^>]+content="([^"]+)"`,
@@ -4653,7 +4670,8 @@ async function updateCrawlRun(env, crawlRunId, patch) {
 }
 
 async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
-  const contentHash = createHash('sha256').update(fetched.html).digest('hex');
+  const sanitizedHtml = sanitizePostgresText(fetched.html);
+  const contentHash = createHash('sha256').update(sanitizedHtml).digest('hex');
   const rows = await supabaseRequest({
     env,
     path: 'raw_pages?on_conflict=source_id,url,content_hash',
@@ -4662,18 +4680,18 @@ async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
       {
         source_id: sourceId,
         crawl_run_id: crawlRunId,
-        url: fetched.url,
-        canonical_url: fetched.response.url,
+        url: sanitizePostgresText(fetched.url),
+        canonical_url: sanitizePostgresText(fetched.response.url),
         page_kind: pageKind,
         http_status: fetched.response.status,
-        content_type: fetched.contentType,
-        title: fetched.title,
-        raw_html: fetched.html,
-        extracted_text: stripTags(fetched.html).slice(0, 5000),
-        metadata: {
+        content_type: sanitizePostgresText(fetched.contentType),
+        title: sanitizePostgresText(fetched.title),
+        raw_html: sanitizedHtml,
+        extracted_text: sanitizePostgresText(stripTags(sanitizedHtml).slice(0, 5000)),
+        metadata: sanitizePostgresJson({
           ...(fetched.metadata ?? {}),
           final_url: fetched.response.url,
-        },
+        }),
         content_hash: contentHash,
         fetched_at: new Date().toISOString(),
       },
@@ -5663,6 +5681,8 @@ export {
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,
   recordFetchedPage,
+  sanitizePostgresJson,
+  sanitizePostgresText,
   extractRakuMuseumEvent,
   extractSenOkuEvent,
   sourceContextLoaders,

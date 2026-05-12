@@ -28,6 +28,8 @@ import {
   sourceSpecificSkipMatchers,
   sourceHasNativeLocale,
   shouldMachineTranslateMissingLocales,
+  sanitizePostgresJson,
+  sanitizePostgresText,
   translateTextFields,
   withSourceLocaleConfig,
 } from "../src/run-once.mjs";
@@ -489,6 +491,20 @@ test("crawl QA report summarizes saved events, missing translations, and diagnos
         render_limit: 5,
         render_skipped: 0,
       },
+    },
+  );
+});
+
+test("Postgres text sanitizer removes null bytes recursively", () => {
+  assert.equal(sanitizePostgresText("a\u0000b"), "ab");
+  assert.deepEqual(
+    sanitizePostgresJson({
+      title: "A\u0000B",
+      nested: ["C\u0000D"],
+    }),
+    {
+      title: "AB",
+      nested: ["CD"],
     },
   );
 });
