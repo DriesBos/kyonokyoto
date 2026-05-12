@@ -801,14 +801,21 @@
       "source_categories": ["gallery"],
       "skip_og_image": true,
       "map_visibility": true,
+      "selectors": {
+        "listing_links": ".exhCont a",
+        "title": ".exhDTtl",
+        "date": ".detailIntroData",
+        "description": ".exhDIntroDesc",
+        "images": ".progDMainPh img, .detailPhoto img"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://gallery.kcua.ac.jp/exhibitions/"],
-          "event_page_patterns": ["/exhibitions/"]
+          "event_page_patterns": ["/archives/"]
         },
         "en": {
           "start_urls": ["https://gallery.kcua.ac.jp/en/exhibitions-en/"],
-          "event_page_patterns": ["/exhibitions-en/"]
+          "event_page_patterns": ["/en/archives/"]
         }
       }
     },

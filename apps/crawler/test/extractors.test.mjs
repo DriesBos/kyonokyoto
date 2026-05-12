@@ -254,6 +254,52 @@ test("Kyocera date parser reads slash date ranges", () => {
   );
 });
 
+test("generic date parsers read en dash date ranges", () => {
+  const dottedEvent = extractGenericEvent(
+    `
+      <h1 class="event-title">Dotted Range</h1>
+      <p class="event-date">2026.5.16 Sat.–2026.7.12 Sun.</p>
+      <p class="event-description">Useful exhibition copy.</p>
+      <img src="/uploads/range.jpg" alt="">
+    `,
+    {
+      name: "Example Gallery",
+      source_type: "gallery",
+      source_categories: ["gallery"],
+      selectors: {
+        title: ".event-title",
+        date: ".event-date",
+        description: ".event-description",
+      },
+    },
+    "https://example.test/archives/2026/range/",
+  );
+  const japaneseEvent = extractGenericEvent(
+    `
+      <h1 class="event-title">Japanese Range</h1>
+      <p class="event-date">2026年5月16日（土）–2026年7月12日（日）</p>
+      <p class="event-description">Useful exhibition copy.</p>
+      <img src="/uploads/range-ja.jpg" alt="">
+    `,
+    {
+      name: "Example Gallery",
+      source_type: "gallery",
+      source_categories: ["gallery"],
+      selectors: {
+        title: ".event-title",
+        date: ".event-date",
+        description: ".event-description",
+      },
+    },
+    "https://example.test/archives/2026/range-ja/",
+  );
+
+  assert.equal(dottedEvent.start_date, "2026-05-16");
+  assert.equal(dottedEvent.end_date, "2026-07-12");
+  assert.equal(japaneseEvent.start_date, "2026-05-16");
+  assert.equal(japaneseEvent.end_date, "2026-07-12");
+});
+
 test("generic detail extraction prefers event and exhibition URLs", async () => {
   const listingHtml = await readFile(resolve(fixturesRoot, "generic-listing.html"), "utf8");
   const source = {

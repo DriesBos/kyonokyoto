@@ -697,7 +697,7 @@ function extractSectionValue(html, dtText) {
 
 function parseJapaneseDateRange(dateText) {
   const pattern =
-    /(\d{4})年(\d{1,2})月(\d{1,2})日.*?[～〜\-－]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/u;
+    /(\d{4})年(\d{1,2})月(\d{1,2})日.*?[～〜\-－–—]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/u;
   const match = dateText.match(pattern);
 
   if (!match) {
@@ -850,7 +850,7 @@ function parseMomakDateRange(dateText) {
 
 function parseDottedDateRange(dateText) {
   const pattern =
-    /(\d{4})\.(\d{1,2})\.(\d{1,2})(?:.*?[～〜\-－]\s*(?:(\d{4})\.)?(\d{1,2})\.(\d{1,2}))?/u;
+    /(\d{4})\.(\d{1,2})\.(\d{1,2})(?:.*?[～〜\-－–—]\s*(?:(\d{4})\.)?(\d{1,2})\.(\d{1,2}))?/u;
   const match = dateText.match(pattern);
 
   if (!match) {
