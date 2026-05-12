@@ -769,19 +769,23 @@
       "address_text": "424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan",
       "lat": 35.0007069,
       "lng": 135.7568866,
-      "base_url": "https://kyoto.theterminal.jp/event_type/exhibition/",
-      "start_urls": ["https://kyoto.theterminal.jp/event_type/exhibition/"],
+      "base_url": "https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu",
+      "start_urls": [
+        "https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"
+      ],
       "allowed_domains": ["kyoto.theterminal.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/event_type/exhibition/", "/event/"],
+      "event_page_patterns": ["/event_type/exhibition/"],
       "notes": "Japanese-only site. Use the exhibition-type filtered event listing.",
       "is_active": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://kyoto.theterminal.jp/event_type/exhibition/"],
-          "event_page_patterns": ["/event_type/exhibition/", "/event/"]
+          "start_urls": [
+            "https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"
+          ],
+          "event_page_patterns": ["/event_type/exhibition/"]
         },
         "en": {
           "start_urls": [],
