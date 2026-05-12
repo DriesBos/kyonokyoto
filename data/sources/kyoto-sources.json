@@ -799,6 +799,7 @@
       "notes": "The EN/JA language selector is in the site menu; open the menu to switch localized versions.",
       "is_active": true,
       "source_categories": ["gallery"],
+      "skip_og_image": true,
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -806,8 +807,8 @@
           "event_page_patterns": ["/exhibitions/"]
         },
         "en": {
-          "start_urls": ["https://gallery.kcua.ac.jp/exhibitions/"],
-          "event_page_patterns": ["/exhibitions/"]
+          "start_urls": ["https://gallery.kcua.ac.jp/en/exhibitions-en/"],
+          "event_page_patterns": ["/exhibitions-en/"]
         }
       }
     },
