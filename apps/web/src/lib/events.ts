@@ -62,26 +62,37 @@ const fetchEvents = (select: string) =>
     .eq("status", "published")
     .order("start_date", { ascending: true, nullsFirst: false });
 
+const isRelationSelectError = (error: { code?: string } | null | undefined) =>
+  error?.code === "PGRST200" || error?.code === "PGRST205";
+
+const isMissingCoordinateError = (error: { code?: string; message?: string } | null | undefined) =>
+  error?.code === "PGRST204" ||
+  (error?.code === "42703" && /events\.(lat|lng)|column events\.(lat|lng)/i.test(error.message ?? ""));
+
 export const fetchPublishedEvents = async () => {
-  let { data, error } = await fetchEvents(`${eventSelect}, ${eventTranslationSelect}`);
+  const selectAttempts = [
+    `${eventSelect}, ${eventTranslationSelect}`,
+    `${eventSelectWithoutCoordinates}, ${eventTranslationSelect}`,
+    eventSelect,
+    eventSelectWithoutCoordinates,
+  ];
+  let lastError: unknown = null;
 
-  if (error?.code === "PGRST200" || error?.code === "PGRST205") {
-    const fallbackResponse = await fetchEvents(eventSelect);
-    data = fallbackResponse.data;
-    error = fallbackResponse.error;
+  for (const select of selectAttempts) {
+    const { data, error } = await fetchEvents(select);
+
+    if (!error) {
+      return dedupeEvents((data ?? []) as EventRow[]);
+    }
+
+    lastError = error;
+
+    if (!isRelationSelectError(error) && !isMissingCoordinateError(error)) {
+      throw error;
+    }
   }
 
-  if (error?.code === "PGRST204") {
-    const fallbackResponse = await fetchEvents(`${eventSelectWithoutCoordinates}, ${eventTranslationSelect}`);
-    data = fallbackResponse.data;
-    error = fallbackResponse.error;
-  }
-
-  if (error) {
-    throw error;
-  }
-
-  return dedupeEvents((data ?? []) as EventRow[]);
+  throw lastError;
 };
 
 export const localizeEvent = (event: EventRow, activeLocale: AppLocale): EventRow => {

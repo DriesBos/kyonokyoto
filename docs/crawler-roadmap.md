@@ -24,6 +24,38 @@ Exit criteria:
 - Web build succeeds.
 - Spot QA confirms dates, maps, images, and cards.
 
+VPS crawl command, when repo path is known:
+
+```bash
+cd /home/ubuntu/kyo-no-kyoto/apps/crawler && \
+git pull && \
+npm install && \
+npm run crawl:all && \
+npm run translations:check
+```
+
+If repo path is unknown, find `apps/crawler` first:
+
+```bash
+find /home/ubuntu -maxdepth 5 -type d -path "*/apps/crawler"
+```
+
+If nothing shows:
+
+```bash
+find / -type d -path "*/apps/crawler" 2>/dev/null | head -20
+```
+
+Then run the crawl from the returned path:
+
+```bash
+cd /returned/path/apps/crawler && \
+git pull && \
+npm install && \
+npm run crawl:all && \
+npm run translations:check
+```
+
 ## Option C: Split Crawler Internals
 
 Status: started.
