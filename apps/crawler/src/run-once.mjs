@@ -3389,6 +3389,116 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function inferBaikenYear(detailHtml) {
+  const imageYear = detailHtml.match(/\/uploads\/(?:exhibition|post)\/(20\d{2})\//)?.[1];
+  if (imageYear) return Number(imageYear);
+
+  const publishedYear = extractMeta(detailHtml, 'article:published_time')?.match(/^(20\d{2})-/)?.[1];
+  return publishedYear ? Number(publishedYear) : null;
+}
+
+function parseBaikenDateRange(dateText, fallbackYear) {
+  const normalized = decodeHtml(dateText)
+    .replace(/\s+/g, '')
+    .replace(/[‐‑‒–—―〜～]/g, '-');
+  const fullRange = normalized.match(
+    /(\d{4})年(\d{1,2})月(\d{1,2})日(?:\([^)]*\))?-(?:(\d{4})年)?(?:(\d{1,2})月)?(\d{1,2})日/u,
+  );
+  const monthRange = normalized.match(
+    /(\d{1,2})月(\d{1,2})日(?:\([^)]*\))?-(?:(\d{1,2})月)?(\d{1,2})日(?:\([^)]*\))?/u,
+  );
+
+  const match = fullRange ?? monthRange;
+  if (!match) {
+    return {
+      dateText: null,
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const startYear = Number(fullRange ? match[1] : fallbackYear);
+  if (!Number.isFinite(startYear)) {
+    return {
+      dateText: null,
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
+
+  const startMonth = Number(fullRange ? match[2] : match[1]);
+  const startDay = Number(fullRange ? match[3] : match[2]);
+  const endYearRaw = fullRange ? Number(match[4]) : null;
+  const endMonth = Number(fullRange ? (match[5] ?? startMonth) : (match[3] ?? startMonth));
+  const endDay = Number(fullRange ? match[6] : match[4]);
+  const endYear = Number.isFinite(endYearRaw)
+    ? endYearRaw
+    : startYear + (endMonth < startMonth ? 1 : 0);
+  const startDate = toDateOnly(startYear, startMonth, startDay);
+  const endDate = toDateOnly(endYear, endMonth, endDay);
+
+  return {
+    dateText: fullRange
+      ? `${startYear}年${startMonth}月${startDay}日-${endYear}年${endMonth}月${endDay}日`
+      : `${startMonth}月${startDay}日-${endMonth}月${endDay}日`,
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+  };
+}
+
+function cleanBaikenTitle(title) {
+  return decodeHtml(title)
+    .replace(/\s*(?:\d{4}年)?\d{1,2}月\d{1,2}日(?:\([^)]*\))?\s*[〜～\-－]\s*(?:(?:\d{4}年)?\d{1,2}月)?\d{1,2}日(?:\([^)]*\))?/u, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractBaikenEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const rawTitle =
+    selectorTextValues(detailHtml, ['.detail-box .post-title', '.post-title'])[0] ??
+    event.title;
+  const description = selectorTextValues(detailHtml, ['.des-box'])
+    .slice(0, 2)
+    .join('\n\n');
+  const dateCandidates = [
+    selectorTextValues(detailHtml, ['.field-date'])[0],
+    rawTitle,
+    extractMeta(detailHtml, 'og:title'),
+    decodeURIComponent(detailUrl),
+  ].filter(Boolean);
+  const fallbackYear = inferBaikenYear(detailHtml);
+  const parsedDates = dateCandidates
+    .map((candidate) => parseBaikenDateRange(candidate, fallbackYear))
+    .find((candidate) => candidate.startDate) ?? parseBaikenDateRange('', fallbackYear);
+  const title = cleanBaikenTitle(rawTitle) || source.name;
+  const imageUrls = (event.image_urls ?? []).slice(0, 6);
+
+  return {
+    ...event,
+    title,
+    description: description || event.description,
+    date_text: parsedDates.dateText ?? event.date_text,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? event.primary_image_url,
+    image_urls: imageUrls,
+    extraction_confidence: parsedDates.startDate ? 0.45 : event.extraction_confidence,
+  };
+}
+
 function extractKyotographieFestivalSchedule(planHtml) {
   const pageText = stripTags(planHtml).replace(/\s+/g, ' ').trim();
   const match = pageText.match(
@@ -3965,6 +4075,7 @@ const eventExtractors = {
   'chushin-bijutsu': extractChushinEvent,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddEvent,
   'essence-kyoto': extractEssenceEvent,
+  'gallery-baiken': extractBaikenEvent,
   'gallery-yamahon': extractGalleryYamahonEvent,
   'hosoo-gallery': extractHosooEvent,
   'kyoto-art-center': extractKacEvent,

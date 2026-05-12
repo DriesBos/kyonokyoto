@@ -523,6 +523,45 @@ test("generic event extraction can use configured field selectors", () => {
   assert.equal(event.primary_image_url, "https://example.test/images/configured.jpg");
 });
 
+test("Baiken event extraction cleans Japanese title dates and infers year", () => {
+  const source = {
+    name: "Gallery Baiken",
+    source_type: "gallery",
+    source_categories: ["gallery"],
+    address_text: "682 Takenoko-cho, Nakagyo-ku, Kyoto 604-8153 Japan",
+    lat: 35.004873,
+    lng: 135.759387,
+    selectors: {
+      title: ".post-title",
+      date: ".field-date",
+      description: ".des-box",
+      images: ".detail-content img",
+    },
+  };
+  const detailHtml = `
+    <meta property="article:published_time" content="2026-04-16T08:29:50+00:00" />
+    <div class="detail-content">
+      <div class="detail-box">
+        <p class="post-title">♢♢懸想の眸♢♢<br>5月9日(土)～16日(土)</p>
+        <div class="field-date"></div>
+        <div class="des-box"><p>出展作家と掲載作品の案内です。会場で作品をご覧いただけます。</p></div>
+      </div>
+      <img src="https://baiken.jp/manage/wp-content/uploads/exhibition/2026/04/main.jpg" alt="">
+    </div>
+  `;
+
+  const event = eventExtractors["gallery-baiken"](
+    detailHtml,
+    source,
+    "https://baiken.jp/exhibition/%e2%97%a4%e6%87%b8%e6%83%b3%e3%81%ae%e7%9c%b8%e2%97%a2-5%e6%9c%889%e6%97%a5%e5%9c%9f%ef%bd%9e16%e6%97%a5%e5%9c%9f/",
+  );
+
+  assert.equal(event.title, "♢♢懸想の眸♢♢");
+  assert.equal(event.start_date, "2026-05-09");
+  assert.equal(event.end_date, "2026-05-16");
+  assert.equal(event.primary_image_url, "https://baiken.jp/manage/wp-content/uploads/exhibition/2026/04/main.jpg");
+});
+
 test("source capabilities declare native locales and machine translation behavior", () => {
   const source = {
     language: "ja",

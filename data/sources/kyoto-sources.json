@@ -206,6 +206,54 @@
       }
     },
     {
+      "slug": "gallery-baiken",
+      "name": "Gallery Baiken",
+      "names": {
+        "en": "Gallery Baiken",
+        "ja": "梅軒画廊"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "682 Takenoko-cho, Nakagyo-ku, Kyoto 604-8153 Japan",
+      "directions_query": "Gallery Baiken Kyoto, 682 Takenoko-cho, Nakagyo-ku, Kyoto 604-8153 Japan",
+      "lat": 35.004873,
+      "lng": 135.759387,
+      "base_url": "https://baiken.jp/exhibition/",
+      "start_urls": ["https://baiken.jp/exhibition/"],
+      "allowed_domains": ["baiken.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Site is Japanese only. Use the exhibition listing post cards and machine-translate title/description for English.",
+      "is_active": true,
+      "source_categories": ["gallery"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "selectors": {
+        "listing_links": ".post-box a.post-link",
+        "title": ".post-title",
+        "date": ".field-date",
+        "description": ".des-box",
+        "images": ".detail-content img"
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/exhibition/page/"],
+        "max_detail_pages": 6
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://baiken.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
+    },
+    {
       "slug": "kyotophonie",
       "name": "KYOTOPHONIE",
       "source_type": "festival",
