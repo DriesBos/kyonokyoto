@@ -330,6 +330,40 @@ test("Kyocera detail extraction finds English URLs", () => {
   );
 });
 
+test("Kyoto National Museum extraction drops the first flyer image", () => {
+  const detailHtml = `
+    <h1><img src="/images/exhibitions/flyer.jpg" alt=""></h1>
+    <dl>
+      <dt>Exhibition Title</dt><dd><p>Special Exhibition</p></dd>
+      <dt>Period</dt><dd><p>April 12 - May 31, 2026</p></dd>
+      <dt>Venue</dt><dd><p>Kyoto National Museum</p></dd>
+    </dl>
+    <h2 class="titleBg gold large" id="Contents02">Description of Exhibition</h2>
+    <p>Useful exhibition description for the event card.</p>
+    <div class="imgPosition">
+      <img src="/images/exhibitions/install-view.jpg" alt="">
+      <img src="/images/exhibitions/detail.jpg" alt="">
+    </div>
+  `;
+  const source = {
+    name: "Kyoto National Museum",
+    source_type: "museum",
+    source_categories: ["museum"],
+  };
+
+  const event = eventExtractors["kyoto-national-museum"](
+    detailHtml,
+    source,
+    "https://www.kyohaku.go.jp/eng/exhibitions/special/",
+  );
+
+  assert.deepEqual(event.image_urls, [
+    "https://www.kyohaku.go.jp/images/exhibitions/install-view.jpg",
+    "https://www.kyohaku.go.jp/images/exhibitions/detail.jpg",
+  ]);
+  assert.equal(event.primary_image_url, "https://www.kyohaku.go.jp/images/exhibitions/install-view.jpg");
+});
+
 test("Kyocera event extraction keeps images inside main post content only", () => {
   const event = eventExtractors["kyoto-city-kyocera-museum-of-art"](
     `

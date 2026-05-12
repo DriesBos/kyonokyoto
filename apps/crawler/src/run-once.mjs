@@ -2741,21 +2741,23 @@ function extractKyohakuEvent(detailHtml, source, detailUrl) {
         '',
     ) || source.name;
 
-  const imageUrls = finalizeImageUrls(
-    [
-      {
-        url: detailHtml.match(/<h1[^>]*>\s*<img[^>]+src="([^"]+)"/i)?.[1],
-        source: 'img',
-      },
-      ...[
-        ...detailHtml.matchAll(/<img[^>]+src="([^"]*\/exhibitions\/[^"]+)"/gi),
-      ].map((match) => ({
-        url: match[1],
-        source: 'img',
-      })),
-    ],
-    detailUrl,
+  const imageCandidates = [
+    ...detailHtml.matchAll(/<img[^>]+src="([^"]*\/exhibitions\/[^"]+)"/gi),
+  ].map((match) => ({
+      url: match[1],
+      source: 'img',
+    }));
+  const nonFlyerImageCandidates = imageCandidates.slice(1);
+  const acceptedImageUrls = new Set(
+    finalizeImageUrls(nonFlyerImageCandidates, detailUrl),
   );
+  const imageUrls = [
+    ...new Set(
+      nonFlyerImageCandidates
+        .map((candidate) => normalizeUrl(candidate.url, detailUrl))
+        .filter((url) => url && acceptedImageUrls.has(url)),
+    ),
+  ].slice(0, MAX_IMAGES_PER_EVENT);
 
   const parsedDates = parseEnglishMonthDateRange(dateText);
 
