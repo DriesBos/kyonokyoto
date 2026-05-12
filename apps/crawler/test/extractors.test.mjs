@@ -25,6 +25,7 @@ import {
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
   translateTextFields,
+  withSourceLocaleConfig,
 } from "../src/run-once.mjs";
 
 const fixturesRoot = resolve(import.meta.dirname, "fixtures");
@@ -165,6 +166,46 @@ test("generic detail extraction prefers event and exhibition URLs", async () => 
   ]);
 });
 
+test("Kyocera detail extraction finds Japanese default URLs", () => {
+  const extractKyoceraDetailUrls =
+    detailUrlExtractors["kyoto-city-kyocera-museum-of-art"];
+  const listingHtml = `
+    <a href="/exhibition/20260310-20260517">Main exhibition</a>
+    <a href="https://kyotocity-kyocera.museum/exhibition/20260707-20260720">Collection room</a>
+  `;
+
+  assert.deepEqual(
+    extractKyoceraDetailUrls(
+      listingHtml,
+      "https://kyotocity-kyocera.museum/exhibition/",
+    ),
+    [
+      "https://kyotocity-kyocera.museum/exhibition/20260310-20260517",
+      "https://kyotocity-kyocera.museum/exhibition/20260707-20260720",
+    ],
+  );
+});
+
+test("Kyocera detail extraction finds English URLs", () => {
+  const extractKyoceraDetailUrls =
+    detailUrlExtractors["kyoto-city-kyocera-museum-of-art"];
+  const listingHtml = `
+    <a href="/en/exhibition/20260310-20260517">Main exhibition</a>
+    <a href="https://kyotocity-kyocera.museum/en/exhibition/20260320-20260524">Special exhibition</a>
+  `;
+
+  assert.deepEqual(
+    extractKyoceraDetailUrls(
+      listingHtml,
+      "https://kyotocity-kyocera.museum/en/exhibition/",
+    ),
+    [
+      "https://kyotocity-kyocera.museum/en/exhibition/20260310-20260517",
+      "https://kyotocity-kyocera.museum/en/exhibition/20260320-20260524",
+    ],
+  );
+});
+
 test("locale URL extraction finds alternate links in header and metadata", () => {
   const html = `
     <html>
@@ -211,6 +252,26 @@ test("generic event extraction returns title, dates, and images", async () => {
   assert.equal(event.image_urls.includes("https://example.test/media/cdn-thumb.jpg?width=240&height=80"), false);
   assert.equal(event.image_urls.includes("https://example.test/images/program-thumb.jpg"), false);
   assert.equal(hasExtractedImage(event), true);
+});
+
+test("source locale config applies localized source names", async () => {
+  const detailHtml = await readFile(resolve(fixturesRoot, "generic-detail.html"), "utf8");
+  const source = withSourceLocaleConfig(
+    {
+      name: "Kyoto Art Center",
+      names: {
+        ja: "京都芸術センター",
+      },
+      source_type: "art-center",
+      source_categories: ["exhibition"],
+    },
+    "ja"
+  );
+
+  const event = extractGenericEvent(detailHtml, source, "https://example.test/exhibitions/2026/quiet-forms/");
+
+  assert.equal(event.institution_name, "京都芸術センター");
+  assert.equal(event.venue_name, "京都芸術センター");
 });
 
 test("source-specific skip rule drops MOMAK calendar pages", () => {

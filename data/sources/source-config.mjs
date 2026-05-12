@@ -30,9 +30,24 @@ function normalizeLocaleConfig(value = {}) {
   return locales;
 }
 
+function normalizeLocaleTextMap(value = {}) {
+  const textMap = {};
+
+  for (const [rawLocale, rawValue] of Object.entries(value ?? {})) {
+    const locale = normalizeLocale(rawLocale);
+    if (!locale || typeof rawValue !== "string" || !rawValue.trim()) continue;
+
+    textMap[locale] = rawValue.trim();
+  }
+
+  return textMap;
+}
+
 export function applySourceOverride(source, override = {}) {
   const sourceLocales = normalizeLocaleConfig(source.locales);
   const overrideLocales = normalizeLocaleConfig(override.locales);
+  const sourceNames = normalizeLocaleTextMap(source.names);
+  const overrideNames = normalizeLocaleTextMap(override.names);
 
   return {
     ...source,
@@ -44,6 +59,10 @@ export function applySourceOverride(source, override = {}) {
     locales: {
       ...sourceLocales,
       ...overrideLocales,
+    },
+    names: {
+      ...sourceNames,
+      ...overrideNames,
     },
   };
 }

@@ -114,6 +114,21 @@ function hasLocaleCrawlConfig(source, locale) {
   );
 }
 
+function getLocalizedSourceName(source, locale) {
+  const normalizedLocale = normalizeLocaleCode(locale) ?? getSourceLocale(source);
+  const names = source?.names && typeof source.names === 'object'
+    ? source.names
+    : {};
+  const localizedName =
+    names[normalizedLocale] ??
+    source?.[`name_${normalizedLocale}`] ??
+    null;
+
+  return typeof localizedName === 'string' && localizedName.trim()
+    ? localizedName.trim()
+    : source?.name;
+}
+
 function withSourceLocaleConfig(source, locale) {
   const normalizedLocale = normalizeLocaleCode(locale) ?? getSourceLocale(source);
   const localeConfig = source?.locales?.[normalizedLocale] ?? null;
@@ -122,12 +137,14 @@ function withSourceLocaleConfig(source, locale) {
     return {
       ...source,
       language: normalizedLocale,
+      name: getLocalizedSourceName(source, normalizedLocale),
     };
   }
 
   return {
     ...source,
     language: normalizedLocale,
+    name: getLocalizedSourceName(source, normalizedLocale),
     start_urls: localeConfig.start_urls?.some(Boolean)
       ? localeConfig.start_urls
       : source.start_urls,
@@ -2416,7 +2433,7 @@ function extractKyohakuEvent(detailHtml, source, detailUrl) {
 function extractKyoceraDetailUrls(listingHtml, listingUrl) {
   const matches = [
     ...listingHtml.matchAll(
-      /https:\/\/kyotocity-kyocera\.museum\/en\/exhibition\/\d{8}-\d{8}/g,
+      /(?:https:\/\/kyotocity-kyocera\.museum)?\/(?:en\/)?exhibition\/\d{8}-\d{8}/g,
     ),
   ].map((match) => new URL(match[0], listingUrl).toString());
 
@@ -5264,6 +5281,7 @@ export {
   sourceSpecificSkipMatchers,
   translateTextFields,
   upsertEventTranslation,
+  withSourceLocaleConfig,
 };
 
 if (

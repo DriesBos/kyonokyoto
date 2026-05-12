@@ -3,6 +3,7 @@ import type { EventRow } from "./events";
 export type SourceConfig = {
   slug: string;
   name: string;
+  names?: Partial<Record<"en" | "ja", string>>;
   source_type: string;
   base_url: string;
   start_urls?: string[];

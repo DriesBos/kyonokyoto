@@ -5,6 +5,10 @@
     {
       "slug": "kyoto-art-center",
       "name": "Kyoto Art Center",
+      "names": {
+        "en": "Kyoto Art Center",
+        "ja": "京都芸術センター"
+      },
       "source_type": "art-center",
       "language": "ja",
       "address_text": "546-2 Yamabushiyama-cho, Nakagyo-ku, Kyoto 604-8156 Japan",
@@ -315,7 +319,7 @@
       "event_page_patterns": ["/category/live/", "/category/exhibitions/"],
       "notes": "Use the live and exhibitions category pages, then only publish items whose actual event or exhibition dates are ongoing or upcoming.",
       "is_active": true,
-      "source_categories": ["music, exhibition"],
+      "source_categories": ["music", "exhibition"],
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -1064,7 +1068,7 @@
     },
     {
       "slug": "oyamazaki-villa-museum",
-      "name": "Asahi Beer Oyamazaki Villa Museum",
+      "name": "Oyamazaki Villa Museum",
       "source_type": "museum",
       "language": "en",
       "address_text": "5-3 Zenihara, Oyamazaki-cho, Otokuni-gun, Kyoto 618-0071 Japan",
@@ -1086,14 +1090,14 @@
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [],
-          "event_page_patterns": []
+          "start_urls": ["https://www.asahigroup-oyamazaki.com/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
         },
         "en": {
           "start_urls": [
             "https://www.asahigroup-oyamazaki.com/english/exhibition/"
           ],
-          "event_page_patterns": ["/english/exhibition/", "/exhibition/"]
+          "event_page_patterns": ["/english/exhibition/"]
         }
       }
     },
