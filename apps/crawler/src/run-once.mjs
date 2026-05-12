@@ -1804,16 +1804,8 @@ function finalizeImageUrls(candidates, baseUrl) {
   return ranked.length ? ranked : [];
 }
 
-const sourcesWithoutOgImages = new Set([
-  'kyoto-city-kyocera-museum-of-art',
-  'momak',
-  'the-terminal-kyoto',
-  'artro',
-  'oscaar-mouligne',
-]);
-
 function sourceShouldSkipOgImages(source) {
-  return sourcesWithoutOgImages.has(source?.slug);
+  return source?.skip_og_image === true;
 }
 
 function sourceAllowsUrl(source, url) {

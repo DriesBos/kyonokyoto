@@ -471,6 +471,7 @@ test("generic event extraction can ignore source og images", () => {
     slug: "artro",
     name: "Artro",
     source_type: "gallery",
+    skip_og_image: true,
   };
   const event = extractGenericEvent(
     `

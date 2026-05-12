@@ -90,6 +90,16 @@ Supported keys:
 
 Selector support is intentionally small: IDs, classes, tags, and descendant selectors such as `#events a.event-link`. Complex pseudo-selectors need source-specific extractor code.
 
+## `skip_og_image`
+
+Optional. Set `true` when a source's Open Graph image is a flyer, site card, logo, or otherwise not useful as event-card media.
+
+```json
+"skip_og_image": true
+```
+
+When enabled, generic extraction ignores `<meta property="og:image">` and uses real page images or configured `selectors.images` instead. If no usable image remains, the event is skipped by the normal missing-image rule.
+
 ## `crawl_hints`
 
 Optional. Use for fetch/crawl behavior exceptions.

@@ -537,6 +537,7 @@
       "notes": "Strong institutional source with likely structured exhibition pages.",
       "is_active": true,
       "source_categories": ["museum"],
+      "skip_og_image": true,
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -566,6 +567,7 @@
       "is_active": true,
       "source_categories": ["museum"],
       "measure_image_dimensions": true,
+      "skip_og_image": true,
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -779,6 +781,7 @@
       "notes": "Japanese-only site. Use the exhibition-type filtered event listing.",
       "is_active": true,
       "source_categories": ["gallery"],
+      "skip_og_image": true,
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -809,6 +812,7 @@
       "notes": "English-only site. Use the dedicated exhibition listing page.",
       "is_active": true,
       "source_categories": ["gallery"],
+      "skip_og_image": true,
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -963,6 +967,7 @@
       "is_active": true,
       "source_categories": ["gallery"],
       "measure_image_dimensions": true,
+      "skip_og_image": true,
       "map_visibility": true,
       "locales": {
         "ja": {

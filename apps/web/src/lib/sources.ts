@@ -13,6 +13,7 @@ export type SourceConfig = {
   address_text?: string;
   lat?: number;
   lng?: number;
+  skip_og_image?: boolean;
   venue_locations?: {
     name?: string;
     match: string[];
