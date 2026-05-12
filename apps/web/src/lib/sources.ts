@@ -156,6 +156,25 @@ const toCoordinate = (value: unknown) => {
   return Number.isFinite(coordinate) ? coordinate : null;
 };
 
+const coordinatePairFrom = (lat: unknown, lng: unknown) => {
+  const parsedLat = toCoordinate(lat);
+  const parsedLng = toCoordinate(lng);
+
+  if (
+    parsedLat === null ||
+    parsedLng === null ||
+    parsedLat < -90 ||
+    parsedLat > 90 ||
+    parsedLng < -180 ||
+    parsedLng > 180 ||
+    (parsedLat === 0 && parsedLng === 0)
+  ) {
+    return null;
+  }
+
+  return { lat: parsedLat, lng: parsedLng };
+};
+
 const findVenueLocationForCoordinates = (
   source: SourceConfig | null,
   lat: number | null,
@@ -201,13 +220,23 @@ export const mapLocationIdForEvent = (
   configuredSources: SourceConfig[],
 ) => {
   const source = sourceBySlug(configuredSources, sourceSlug);
-  const lat = toCoordinate(event.lat) ?? toCoordinate(source?.lat);
-  const lng = toCoordinate(event.lng) ?? toCoordinate(source?.lng);
+  const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
+  const lat = coordinates?.lat ?? null;
+  const lng = coordinates?.lng ?? null;
 
   if (lat === null || lng === null || !sourceSlug) return null;
 
   const venueKey = normalizeCategory(locationNameForEvent(source, lat, lng));
   return `${sourceSlug}:${lat.toFixed(6)}:${lng.toFixed(6)}:${venueKey}`;
+};
+
+export const mapCoordinatesForEvent = (
+  event: EventRow,
+  sourceSlug: string | null,
+  configuredSources: SourceConfig[],
+) => {
+  const source = sourceBySlug(configuredSources, sourceSlug);
+  return coordinatePairFrom(event.lat, event.lng) ?? coordinatePairFrom(source?.lat, source?.lng);
 };
 
 export const categoriesForEvents = (events: EventRow[]): CategoryOption[] => {
@@ -246,8 +275,9 @@ export const mapSourcesForEvents = (
     const source = sourceBySlug(configuredSources, sourceSlug);
     if (!source || source.map_visibility === false) return;
 
-    const lat = toCoordinate(event.lat) ?? toCoordinate(source.lat);
-    const lng = toCoordinate(event.lng) ?? toCoordinate(source.lng);
+    const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
+    const lat = coordinates?.lat ?? null;
+    const lng = coordinates?.lng ?? null;
     const id = mapLocationIdForEvent(event, sourceSlug, configuredSources);
     if (lat === null || lng === null || !id) return;
 

@@ -12,6 +12,7 @@ import { displayEventsByLocale as buildDisplayEventsByLocale, fetchPublishedEven
 import {
   categoriesForEvents,
   configuredSourcesFrom,
+  mapCoordinatesForEvent,
   mapLocationIdForEvent,
   mapSourcesForEvents,
   sourceSlugForEvent,
@@ -57,6 +58,12 @@ const mapLocationIdByEventId = new Map(
 );
 const mapSources = mapSourcesForEvents(displayEvents, sourceSlugByEventId, configuredSources);
 
+const mapsUrlForEvent = (event: (typeof displayEvents)[number]) => {
+  const sourceSlug = sourceSlugByEventId.get(event.id) ?? sourceSlugForEvent(event, configuredSources);
+  const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
+  return mapsUrl(coordinates ? { ...event, ...coordinates } : event);
+};
+
 const excerpt = (value: string | null) => {
   if (!value) return uiText.en.fallbackExcerpt;
   return cleanDisplayText(value);
@@ -75,7 +82,7 @@ const eventPayloadById = Object.fromEntries(
             dateText: localizedEvent.date_text,
             institutionName: localizedEvent.institution_name,
             excerpt: excerpt(localizedEvent.description),
-            mapsUrl: mapsUrl(localizedEvent),
+            mapsUrl: mapsUrlForEvent(localizedEvent),
             googleCalendarUrl: googleCalendarUrl(localizedEvent),
             sourceUrl: localizedEvent.source_url,
             calendarTitle: localizedEvent.title,
@@ -133,7 +140,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     hideTopBorder={index === 0}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
-                    mapsUrl={mapsUrl(event)}
+                    mapsUrl={mapsUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
                     excerpt={excerpt(event.description)}
                   />
@@ -152,7 +159,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     hideTopBorder={ongoingEvents.length === 0 && index === 0}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
-                    mapsUrl={mapsUrl(event)}
+                    mapsUrl={mapsUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
                     excerpt={excerpt(event.description)}
                   />

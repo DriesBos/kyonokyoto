@@ -7,6 +7,8 @@ export type CalendarEvent = {
   venue_name: string | null;
   address_text: string | null;
   directions_query?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   calendar_starts_at: string | null;
   calendar_ends_at: string | null;
   source_url?: string;
@@ -150,7 +152,29 @@ export const formatEventDateRange = (start: string | null, end: string | null, f
   return `${formattedStart} - ${formattedEnd}`;
 };
 
+const validCoordinatePair = (lat: unknown, lng: unknown) => {
+  const parsedLat = Number(lat);
+  const parsedLng = Number(lng);
+
+  if (
+    !Number.isFinite(parsedLat) ||
+    !Number.isFinite(parsedLng) ||
+    parsedLat < -90 ||
+    parsedLat > 90 ||
+    parsedLng < -180 ||
+    parsedLng > 180 ||
+    (parsedLat === 0 && parsedLng === 0)
+  ) {
+    return null;
+  }
+
+  return `${parsedLat},${parsedLng}`;
+};
+
 export const mapsUrl = (event: CalendarEvent) => {
+  const coordinates = validCoordinatePair(event.lat, event.lng);
+  if (coordinates) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinates)}`;
+
   const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
   if (/^https?:\/\//i.test(query)) return query;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
