@@ -3936,51 +3936,106 @@ function extractKyotophonieEvent(detailHtml, source, detailUrl) {
   };
 }
 
-function parseKankakariTitleDate(title) {
-  // Matches: "M/D-D" (same month) or "M/D-M/D" (cross-month), optional "YYYY/" prefix
-  const pattern = /(?:(\d{4})\/)?(\d{1,2})\/(\d{1,2})-(?:(\d{1,2})\/)?(\d{1,2})/;
-  const match = title.match(pattern);
+function getKankakariPublishedYear(detailHtml) {
+  const publishedYear =
+    extractMeta(detailHtml, 'article:published_time')?.match(/^(20\d{2})-/)?.[1] ??
+    detailHtml.match(/"datePublished"\s*:\s*"(20\d{2})-/)?.[1];
+
+  return publishedYear ? Number(publishedYear) : null;
+}
+
+function cleanKankakariTitle(rawTitle, dateIndex = -1) {
+  const title = decodeHtml(rawTitle)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return (dateIndex > 0 ? title.slice(0, dateIndex) : title)
+    .replace(/\s*[-–—]\s*$/u, '')
+    .trim() || title;
+}
+
+function parseKankakariDateRange(text, fallbackYear = null) {
+  const normalized = decodeHtml(text)
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[−–—〜～－]/g, '-')
+    .trim();
+  const pattern =
+    /(?:(20\d{2})\s*[.\/年]\s*)?(\d{1,2})\s*[.\/月]\s*(\d{1,2})(?:日)?\s*(?:[a-z]{3,}|[日月火水木金土](?:曜)?(?:日)?)?\s*-\s*(?:(?:(20\d{2})\s*[.\/年]\s*)?(\d{1,2})\s*[.\/月]\s*)?(\d{1,2})(?:日)?/iu;
+  const match = normalized.match(pattern);
 
   if (!match) return null;
 
-  const [fullMatch, explicitYear, sm, sd, em, ed] = match;
-  const currentYear = new Date().getFullYear();
-  const startMonth = parseInt(sm, 10);
-  const endMonth = em ? parseInt(em, 10) : startMonth;
-  let year = explicitYear ? parseInt(explicitYear, 10) : currentYear;
-  const endYear = endMonth < startMonth ? year + 1 : year;
+  const [
+    fullMatch,
+    explicitStartYear,
+    sm,
+    sd,
+    explicitEndYear,
+    maybeEndMonth,
+    ed,
+  ] = match;
+  const startMonth = Number(sm);
+  const startDay = Number(sd);
+  const endMonth = maybeEndMonth ? Number(maybeEndMonth) : startMonth;
+  const endDay = Number(ed);
+  const startYear = Number(explicitStartYear ?? fallbackYear);
 
-  const startDate = `${year}-${String(startMonth).padStart(2, '0')}-${sd.padStart(2, '0')}`;
-  const endDate = `${endYear}-${String(endMonth).padStart(2, '0')}-${ed.padStart(2, '0')}`;
-  const cleanTitle = title.slice(0, match.index).trim();
+  if (!Number.isFinite(startYear)) return null;
+
+  const endYear =
+    explicitEndYear
+      ? Number(explicitEndYear)
+      : endMonth < startMonth
+        ? startYear + 1
+        : startYear;
+  const startDate = toDateOnly(startYear, startMonth, startDay);
+  const endDate = toDateOnly(endYear, endMonth, endDay);
 
   return {
-    cleanTitle: cleanTitle || title,
-    dateText: fullMatch,
+    dateText: `${startDate} - ${endDate}`,
     startDate,
     endDate,
-    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarStartsAt: `${startDate}T13:00:00+09:00`,
     calendarEndsAt: `${endDate}T18:00:00+09:00`,
+    matchIndex: match.index ?? -1,
+    matchedText: fullMatch,
   };
 }
 
 function extractKankakariEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const firstImageUrl = event.image_urls?.[0] ?? null;
-  const parsedTitle = parseKankakariTitleDate(event.title ?? '');
+  const rawTitle =
+    decodeHtml(extractMeta(detailHtml, 'og:title') ?? '') ||
+    event.title ||
+    source.name;
+  const publishedYear = getKankakariPublishedYear(detailHtml);
+  const dateCandidates = [
+    event.description,
+    rawTitle,
+    event.title,
+    detailUrl,
+  ].filter(Boolean);
+  const rawTitleDate = parseKankakariDateRange(rawTitle, publishedYear);
+  const parsedDates =
+    dateCandidates
+      .map((candidate) => parseKankakariDateRange(candidate, publishedYear))
+      .find(Boolean) ?? null;
+  const cleanTitle = cleanKankakariTitle(rawTitle, rawTitleDate?.matchIndex);
 
   return {
     ...event,
-    ...(parsedTitle ? {
-      title: parsedTitle.cleanTitle,
-      date_text: parsedTitle.dateText,
-      start_date: parsedTitle.startDate,
-      end_date: parsedTitle.endDate,
-      calendar_starts_at: parsedTitle.calendarStartsAt,
-      calendar_ends_at: parsedTitle.calendarEndsAt,
+    title: cleanTitle,
+    ...(parsedDates ? {
+      date_text: parsedDates.dateText,
+      start_date: parsedDates.startDate,
+      end_date: parsedDates.endDate,
+      calendar_starts_at: parsedDates.calendarStartsAt,
+      calendar_ends_at: parsedDates.calendarEndsAt,
       ...buildScheduleFields({
-        startDate: parsedTitle.startDate,
-        endDate: parsedTitle.endDate,
+        startDate: parsedDates.startDate,
+        endDate: parsedDates.endDate,
       }),
     } : {}),
     primary_image_url: firstImageUrl,
@@ -4208,6 +4263,16 @@ const eventExtractors = {
 };
 
 const sourceSpecificSkipMatchers = {
+  kankakari(eventData) {
+    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past'
+      ? 'past event'
+      : null;
+  },
+  'kyoto-city-kyocera-museum-of-art'(eventData) {
+    return /(\bCollection Room\b|コレクションルーム)/iu.test(eventData?.title ?? '')
+      ? 'title contains Collection Room'
+      : null;
+  },
   momak(eventData) {
     return /\bcalendar\b/i.test(eventData?.title ?? '')
       ? 'title contains calendar'

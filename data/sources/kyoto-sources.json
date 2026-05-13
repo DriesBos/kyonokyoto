@@ -870,6 +870,9 @@
       "source_categories": ["gallery"],
       "skip_og_image": true,
       "map_visibility": true,
+      "selectors": {
+        "images": "main.main img"
+      },
       "locales": {
         "ja": {
           "start_urls": [],

@@ -613,16 +613,24 @@ test("generic event extraction can ignore source og images", () => {
     name: "Artro",
     source_type: "gallery",
     skip_og_image: true,
+    selectors: {
+      images: "main.main img",
+    },
   };
   const event = extractGenericEvent(
     `
       <meta property="og:image" content="https://artro.jp/uploads/site-card.jpg">
       <article>
+        <img src="/uploads/sidebar-card.jpg" width="900" height="600" alt="">
+      </article>
+      <article>
         <h1>Gallery-room exhibition</h1>
         <time>April 12 - May 31, 2026</time>
         <p>Useful exhibition copy.</p>
-        <img src="/uploads/install-view.jpg" width="900" height="600" alt="">
       </article>
+      <main class="main">
+        <img src="/uploads/install-view.jpg" width="900" height="600" alt="">
+      </main>
     `,
     source,
     "https://artro.jp/exhibition/gallery-room/",
@@ -903,6 +911,107 @@ test("source-specific skip rule drops MOMAK calendar pages", () => {
       { title: "Antonio Fontanesi: Transcending Landscape" }
     ),
     null
+  );
+});
+
+test("source-specific skip rule drops Kyocera Collection Room pages", () => {
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: "kyoto-city-kyocera-museum-of-art" },
+      { title: "Collection Room: Spring Collection" }
+    ),
+    "title contains Collection Room"
+  );
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: "kyoto-city-kyocera-museum-of-art" },
+      { title: "［2026春期］コレクションルーム　特集「没後20年　井田照一」" }
+    ),
+    "title contains Collection Room"
+  );
+
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: "kyoto-city-kyocera-museum-of-art" },
+      { title: "Special Exhibition" }
+    ),
+    null
+  );
+});
+
+test("Kankakari extraction parses exhibition periods and cleans title dates", () => {
+  const source = {
+    name: "Kankakari",
+    source_type: "gallery",
+    source_categories: ["gallery", "craft"],
+    address_text: "15 Murasakino Shimotsukiyama-cho, Kita-ku, Kyoto Japan",
+  };
+  const gakuEvent = eventExtractors.kankakari(
+    `
+      <meta property="og:title" content="Gaku Nakazawa exhibition 4/4-19">
+      <meta property="og:description" content="『中沢学 個展』 2026. 4. 4 sat - 19 sun 13:00-18:00 水曜休">
+      <meta property="article:published_time" content="2026-03-24T01:30:14.114Z">
+      <meta property="og:image" content="https://static.wixstatic.com/media/gaku.jpg">
+    `,
+    source,
+    "https://www.kankakari.com/single-post/gaku-nakazawa-exhibition-4-4-19",
+  );
+  const naotoEvent = eventExtractors.kankakari(
+    `
+      <meta property="og:title" content="Naoto Ishii exhibition 3/1-16">
+      <meta property="og:description" content="石井直人 新作展2026. 3. 1 sun - 16 mon 時間 13:00-18:00">
+      <meta property="article:published_time" content="2026-02-12T01:30:14.114Z">
+      <meta property="og:image" content="https://static.wixstatic.com/media/naoto.jpg">
+    `,
+    source,
+    "https://www.kankakari.com/single-post/naoto-ishii-exhibition-3-1-16",
+  );
+  const titleOnlyEvent = eventExtractors.kankakari(
+    `
+      <meta property="og:title" content="Title Date exhibition 6/1-15">
+      <meta property="og:description" content="No explicit date in body.">
+      <meta property="article:published_time" content="2026-05-29T06:55:56.481Z">
+      <meta property="og:image" content="https://static.wixstatic.com/media/title-only.jpg">
+    `,
+    source,
+    "https://www.kankakari.com/single-post/title-date-exhibition-6-1-15",
+  );
+
+  assert.equal(gakuEvent.title, "Gaku Nakazawa exhibition");
+  assert.equal(gakuEvent.date_text, "2026-04-04 - 2026-04-19");
+  assert.equal(gakuEvent.start_date, "2026-04-04");
+  assert.equal(gakuEvent.end_date, "2026-04-19");
+  assert.equal(naotoEvent.title, "Naoto Ishii exhibition");
+  assert.equal(naotoEvent.start_date, "2026-03-01");
+  assert.equal(naotoEvent.end_date, "2026-03-16");
+  assert.equal(titleOnlyEvent.title, "Title Date exhibition");
+  assert.equal(titleOnlyEvent.start_date, "2026-06-01");
+  assert.equal(titleOnlyEvent.end_date, "2026-06-15");
+});
+
+test("source-specific skip rule drops past Kankakari events", () => {
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: "kankakari" },
+      {
+        title: "Past exhibition",
+        start_date: "2020-03-01",
+        end_date: "2020-03-16",
+      },
+    ),
+    "past event",
+  );
+
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: "kankakari" },
+      {
+        title: "Future exhibition",
+        start_date: "2099-03-01",
+        end_date: "2099-03-16",
+      },
+    ),
+    null,
   );
 });
 
