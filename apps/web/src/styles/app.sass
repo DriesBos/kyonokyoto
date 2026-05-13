@@ -142,6 +142,8 @@ main
   [data-map-resizer]::before,
   [data-map-resizer]::after
     cursor: col-resize !important
+    @media screen and (max-width: $mobile-breakpoint)
+      cursor: row-resize !important
 
 .site-cursor-dot
   position: fixed

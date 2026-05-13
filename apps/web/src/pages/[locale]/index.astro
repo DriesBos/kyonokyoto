@@ -293,6 +293,8 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
   .content-container[data-map-resizing]
     cursor: col-resize
     user-select: none
+    @media screen and (max-width: $mobile-breakpoint)
+      cursor: row-resize
 
     .events-section,
     .map-section
@@ -309,6 +311,8 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
     touch-action: none
     opacity: 0
     visibility: hidden
+    @media screen and (max-width: $mobile-breakpoint)
+      cursor: row-resize
 
     &[hidden]
       display: none
@@ -321,6 +325,8 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       left: calc((var(--map-resizer-hit-size) - var(--stroke-width)) / -2)
       width: var(--map-resizer-hit-size)
       cursor: col-resize
+      @media screen and (max-width: $mobile-breakpoint)
+        cursor: row-resize
 
     &::after
       content: ""
@@ -371,7 +377,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       min-height: 0
 
     .content-container[data-map-resizing]
-      cursor: col-resize
+      cursor: row-resize
 
     .map-section
       flex: 0 0 0
@@ -384,7 +390,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
       align-self: stretch
       width: 100%
       height: var(--stroke-width)
-      cursor: col-resize
+      cursor: row-resize
 
       &::before
         left: 0
@@ -393,7 +399,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
         bottom: auto
         width: auto
         height: var(--map-resizer-hit-size)
-        cursor: col-resize
+        cursor: row-resize
 
       &::after
         top: 0
