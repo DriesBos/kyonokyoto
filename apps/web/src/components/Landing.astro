@@ -1,0 +1,162 @@
+---
+import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
+
+type Props = {
+  ongoingCount: number;
+  upcomingCount: number;
+};
+
+const { ongoingCount, upcomingCount } = Astro.props;
+const countUpFrom = (value: number) => Math.max(value - 1, 0);
+---
+
+<section class="landing" data-landing aria-label="Kyō-no-Kyōto cultural calendar">
+  <button class="landing__button" type="button" data-landing-trigger aria-label="Enter cultural calendar">
+    <span class="landing__logo" aria-hidden="true">
+      <Logo />
+    </span>
+    <span class="landing__bottom landing__bottom--label">cultural calendar</span>
+    <span class="landing__bottom landing__bottom--arrow" aria-hidden="true">
+      <Icon name="arrow-long" rotation="bottom" />
+    </span>
+    <span class="landing__counts" aria-hidden="true">
+      <span class="landing__count" data-landing-count>
+        <span class="landing__count-number">
+          <span class="landing__count-value landing__count-value--previous" data-landing-count-previous>{countUpFrom(ongoingCount)}</span>
+          <span class="landing__count-value landing__count-value--current" data-landing-count-current>{ongoingCount}</span>
+        </span>
+        <span class="landing__count-label">ongoing</span>
+      </span>
+      <span class="landing__count" data-landing-count>
+        <span class="landing__count-number">
+          <span class="landing__count-value landing__count-value--previous" data-landing-count-previous>{countUpFrom(upcomingCount)}</span>
+          <span class="landing__count-value landing__count-value--current" data-landing-count-current>{upcomingCount}</span>
+        </span>
+        <span class="landing__count-label">upcoming</span>
+      </span>
+    </span>
+  </button>
+</section>
+
+<script>
+  import { initLandingCountUp } from "../scripts/landingCountUp";
+  import { initLandingScroll } from "../scripts/landingScroll";
+
+  initLandingCountUp();
+  initLandingScroll();
+</script>
+
+<style lang="sass">
+  $mobile-breakpoint: 768px
+
+  .landing
+    flex: 0 0 100svh
+    height: 100svh
+    min-height: 100svh
+    width: 100%
+    overflow: hidden
+
+  .landing__button
+    position: relative
+    display: block
+    width: 100%
+    height: 100%
+    padding: 0
+    border: 0
+    background: transparent
+    color: inherit
+    appearance: none
+    -webkit-tap-highlight-color: transparent
+
+  .landing__logo
+    position: absolute
+    top: 50%
+    left: 50%
+    width: 251px
+    height: 48px
+    transform: translate(-50%, -50%)
+
+    :global(svg)
+      display: block
+      width: 251px
+      height: 48px
+
+  .landing__bottom
+    position: absolute
+    bottom: 2rem
+    display: flex
+    align-items: center
+    justify-content: center
+    color: inherit
+
+  .landing__bottom--label
+    left: 2rem
+    font-size: 1rem
+    line-height: 1
+    letter-spacing: -0.16px
+    white-space: nowrap
+
+  .landing__bottom--arrow
+    left: 50%
+    width: 25px
+    height: 50px
+    transform: translateX(-50%)
+
+    :global(.icon)
+      --icon-width: 25px
+      --icon-height: 50px
+
+  .landing__counts
+    position: absolute
+    right: 2rem
+    bottom: 2rem
+    display: flex
+    align-items: center
+    gap: 2rem
+    font-size: 1rem
+    line-height: 1
+    letter-spacing: -0.14px
+    white-space: nowrap
+
+  .landing__count
+    display: inline-flex
+    align-items: baseline
+
+  .landing__count-label
+    margin-left: 0.25em
+
+  .landing__count-number
+    position: relative
+    display: inline-grid
+    overflow: hidden
+    line-height: 1
+
+  .landing__count-value
+    grid-area: 1 / 1
+    display: inline-block
+    min-width: 100%
+    text-align: right
+    will-change: transform
+
+  .landing__count-value--previous
+    transform: translateY(0)
+
+  .landing__count-value--current
+    transform: translateY(-100%)
+
+  @media (max-width: $mobile-breakpoint)
+    .landing__logo
+      left: calc(50% + 1px)
+
+    .landing__bottom--label
+      left: 50%
+      bottom: 196px
+      transform: translateX(-50%)
+
+    .landing__bottom--arrow
+      left: calc(50% + 1px)
+
+    .landing__counts
+      display: none
+</style>
