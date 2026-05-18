@@ -10,12 +10,12 @@ type Props = {
 const { ongoingCount, upcomingCount } = Astro.props;
 ---
 
-<section class="landing" data-landing aria-label="Kyō-no-Kyōto cultural calendar">
-  <button class="landing__button" type="button" data-landing-trigger aria-label="Enter cultural calendar">
+<section class="landing" data-landing aria-label="Kyō-no-Kyōto: what’s on in Kyoto">
+  <button class="landing__button" type="button" data-landing-trigger aria-label="Enter what’s on in Kyoto">
     <span class="landing__logo" aria-hidden="true">
       <Logo />
     </span>
-    <span class="landing__bottom landing__bottom--label">cultural calendar</span>
+    <span class="landing__bottom landing__bottom--label">what’s on in Kyoto</span>
     <span class="landing__bottom landing__bottom--arrow" aria-hidden="true">
       <Icon name="arrow-long" rotation="bottom" />
     </span>
@@ -36,6 +36,9 @@ const { ongoingCount, upcomingCount } = Astro.props;
   $mobile-breakpoint: 768px
 
   .landing
+    --landing-logo-height: 48px
+    --landing-arrow-bottom: 2rem
+    --landing-arrow-height: 50px
     flex: 0 0 100svh
     height: 100svh
     min-height: 100svh
@@ -59,38 +62,44 @@ const { ongoingCount, upcomingCount } = Astro.props;
     top: 50%
     left: 50%
     width: 251px
-    height: 48px
+    height: var(--landing-logo-height)
     transform: translate(-50%, -50%)
+    user-select: none
 
     :global(svg)
       display: block
       width: 251px
-      height: 48px
+      height: var(--landing-logo-height)
 
   .landing__bottom
     position: absolute
-    bottom: 2rem
+    bottom: var(--landing-arrow-bottom)
     display: flex
     align-items: center
     justify-content: center
     color: inherit
+    user-select: none
 
   .landing__bottom--label
     left: 2rem
-    font-size: 1rem
+    font-size: 1.125rem
     line-height: 1
     letter-spacing: -0.16px
     white-space: nowrap
+    user-select: none
+    @media (max-width: $mobile-breakpoint)
+      font-size: 1.5rem
 
   .landing__bottom--arrow
     left: 50%
     width: 25px
-    height: 50px
+    height: var(--landing-arrow-height)
     transform: translateX(-50%)
+    user-select: none
 
     :global(.icon)
       --icon-width: 25px
-      --icon-height: 50px
+      --icon-height: var(--landing-arrow-height)
 
   .landing__counts
     position: absolute
@@ -99,22 +108,26 @@ const { ongoingCount, upcomingCount } = Astro.props;
     display: flex
     align-items: center
     gap: 2rem
-    font-size: 1rem
+    font-size: 1.125rem
     line-height: 1
     letter-spacing: -0.14px
     white-space: nowrap
+    user-select: none
+    @media (max-width: $mobile-breakpoint)
+      font-size: 1.5rem
 
   @media (max-width: $mobile-breakpoint)
     .landing__logo
-      left: calc(50% + 1px)
+      left: 50%
 
     .landing__bottom--label
       left: 50%
-      bottom: 196px
-      transform: translateX(-50%)
+      bottom: auto
+      top: calc((50svh + (var(--landing-logo-height) / 2) + (100svh - var(--landing-arrow-bottom) - var(--landing-arrow-height))) / 2)
+      transform: translate(-50%, -50%)
 
     .landing__bottom--arrow
-      left: calc(50% + 1px)
+      left: 50%
 
     .landing__counts
       display: none
