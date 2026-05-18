@@ -8,7 +8,6 @@ type Props = {
 };
 
 const { ongoingCount, upcomingCount } = Astro.props;
-const countUpFrom = (value: number) => Math.max(value - 1, 0);
 ---
 
 <section class="landing" data-landing aria-label="Kyō-no-Kyōto cultural calendar">
@@ -21,29 +20,15 @@ const countUpFrom = (value: number) => Math.max(value - 1, 0);
       <Icon name="arrow-long" rotation="bottom" />
     </span>
     <span class="landing__counts" aria-hidden="true">
-      <span class="landing__count" data-landing-count>
-        <span class="landing__count-number">
-          <span class="landing__count-value landing__count-value--previous" data-landing-count-previous>{countUpFrom(ongoingCount)}</span>
-          <span class="landing__count-value landing__count-value--current" data-landing-count-current>{ongoingCount}</span>
-        </span>
-        <span class="landing__count-label">ongoing</span>
-      </span>
-      <span class="landing__count" data-landing-count>
-        <span class="landing__count-number">
-          <span class="landing__count-value landing__count-value--previous" data-landing-count-previous>{countUpFrom(upcomingCount)}</span>
-          <span class="landing__count-value landing__count-value--current" data-landing-count-current>{upcomingCount}</span>
-        </span>
-        <span class="landing__count-label">upcoming</span>
-      </span>
+      <span>{ongoingCount} ongoing</span>
+      <span>{upcomingCount} upcoming</span>
     </span>
   </button>
 </section>
 
 <script>
-  import { initLandingCountUp } from "../scripts/landingCountUp";
   import { initLandingScroll } from "../scripts/landingScroll";
 
-  initLandingCountUp();
   initLandingScroll();
 </script>
 
@@ -118,32 +103,6 @@ const countUpFrom = (value: number) => Math.max(value - 1, 0);
     line-height: 1
     letter-spacing: -0.14px
     white-space: nowrap
-
-  .landing__count
-    display: inline-flex
-    align-items: baseline
-
-  .landing__count-label
-    margin-left: 0.25em
-
-  .landing__count-number
-    position: relative
-    display: inline-grid
-    overflow: hidden
-    line-height: 1
-
-  .landing__count-value
-    grid-area: 1 / 1
-    display: inline-block
-    min-width: 100%
-    text-align: right
-    will-change: transform
-
-  .landing__count-value--previous
-    transform: translateY(0)
-
-  .landing__count-value--current
-    transform: translateY(-100%)
 
   @media (max-width: $mobile-breakpoint)
     .landing__logo
