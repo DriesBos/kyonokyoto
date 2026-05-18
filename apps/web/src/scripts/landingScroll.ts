@@ -1,59 +1,60 @@
+import { gsap } from 'gsap';
+
 type LandingScrollWindow = Window &
   typeof globalThis & {
     __landingScrollBound?: boolean;
-    __landingScrollAnimation?: number;
+    __landingScrollAnimation?: gsap.core.Tween;
   };
 
-const landingSelector = "[data-landing]";
-const landingTriggerSelector = "[data-landing-trigger]";
-const mainContentSelector = "[data-main-content]";
-const launchedAttribute = "data-landing-launched";
+const landingSelector = '[data-landing]';
+const landingTriggerSelector = '[data-landing-trigger]';
+const mainContentSelector = '[data-main-content]';
+const launchedAttribute = 'data-landing-launched';
 const wheelThreshold = 80;
 const touchThreshold = 48;
-const animationDurationMs = 820;
+const animationDurationSeconds = 0.66;
+const animationDurationMs = animationDurationSeconds * 1000;
 
 const landingWindow = window as LandingScrollWindow;
-
-const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
 
 const getElements = () => {
   const landing = document.querySelector(landingSelector);
   const mainContent = document.querySelector(mainContentSelector);
 
-  if (!(landing instanceof HTMLElement) || !(mainContent instanceof HTMLElement)) return null;
+  if (
+    !(landing instanceof HTMLElement) ||
+    !(mainContent instanceof HTMLElement)
+  )
+    return null;
   return { landing, mainContent };
 };
 
 const cancelCurrentAnimation = () => {
   if (!landingWindow.__landingScrollAnimation) return;
-  window.cancelAnimationFrame(landingWindow.__landingScrollAnimation);
-  landingWindow.__landingScrollAnimation = 0;
+  landingWindow.__landingScrollAnimation.kill();
+  landingWindow.__landingScrollAnimation = undefined;
 };
 
 const scrollToMainContent = (mainContent: HTMLElement) => {
   const startY = window.scrollY;
   const targetY = mainContent.getBoundingClientRect().top + window.scrollY;
-  const distance = targetY - startY;
-  const startTime = performance.now();
+  const scrollState = { y: startY };
 
   cancelCurrentAnimation();
-  document.documentElement.setAttribute(launchedAttribute, "");
+  document.documentElement.setAttribute(launchedAttribute, '');
 
-  const step = (time: number) => {
-    const elapsed = time - startTime;
-    const progress = Math.min(elapsed / animationDurationMs, 1);
-    window.scrollTo(0, startY + distance * easeOutCubic(progress));
-
-    if (progress < 1) {
-      landingWindow.__landingScrollAnimation = window.requestAnimationFrame(step);
-      return;
-    }
-
-    landingWindow.__landingScrollAnimation = 0;
-    window.scrollTo(0, targetY);
-  };
-
-  landingWindow.__landingScrollAnimation = window.requestAnimationFrame(step);
+  landingWindow.__landingScrollAnimation = gsap.to(scrollState, {
+    y: targetY,
+    duration: animationDurationSeconds,
+    ease: 'power3.inOut',
+    onUpdate: () => {
+      window.scrollTo(0, scrollState.y);
+    },
+    onComplete: () => {
+      landingWindow.__landingScrollAnimation = undefined;
+      window.scrollTo(0, targetY);
+    },
+  });
 };
 
 const resetScrollPosition = () => {
@@ -88,12 +89,15 @@ export const initLandingScroll = () => {
 
   const isLandingActive = () => {
     const landingBottom = elements.landing.getBoundingClientRect().bottom;
-    return landingBottom > 1 && window.scrollY < elements.mainContent.offsetTop - 1;
+    return (
+      landingBottom > 1 && window.scrollY < elements.mainContent.offsetTop - 1
+    );
   };
 
   const handleClick = (event: MouseEvent) => {
     const target = event.target;
-    if (!(target instanceof Element) || !target.closest(landingTriggerSelector)) return;
+    if (!(target instanceof Element) || !target.closest(landingTriggerSelector))
+      return;
     event.preventDefault();
     launch();
   };
@@ -113,15 +117,17 @@ export const initLandingScroll = () => {
 
   const handleTouchStart = (event: TouchEvent) => {
     const target = event.target;
-    touchStartedOnLanding = target instanceof Element && Boolean(target.closest(landingSelector));
+    touchStartedOnLanding =
+      target instanceof Element && Boolean(target.closest(landingSelector));
     touchStartY = event.touches[0]?.clientY ?? null;
   };
 
   const handleTouchMove = (event: TouchEvent) => {
-    if (!touchStartedOnLanding || !isLandingActive() || touchStartY === null) return;
+    if (!touchStartedOnLanding || !isLandingActive() || touchStartY === null)
+      return;
 
     const currentY = event.touches[0]?.clientY;
-    if (typeof currentY !== "number") return;
+    if (typeof currentY !== 'number') return;
 
     const delta = touchStartY - currentY;
     if (delta <= 0) return;
@@ -132,12 +138,12 @@ export const initLandingScroll = () => {
 
   resetScrollPosition();
 
-  document.addEventListener("click", handleClick);
-  window.addEventListener("wheel", handleWheel, { passive: false });
-  window.addEventListener("touchstart", handleTouchStart, { passive: true });
-  window.addEventListener("touchmove", handleTouchMove, { passive: false });
-  window.addEventListener("pageshow", resetScrollPosition);
-  document.addEventListener("astro:page-load", resetScrollPosition);
+  document.addEventListener('click', handleClick);
+  window.addEventListener('wheel', handleWheel, { passive: false });
+  window.addEventListener('touchstart', handleTouchStart, { passive: true });
+  window.addEventListener('touchmove', handleTouchMove, { passive: false });
+  window.addEventListener('pageshow', resetScrollPosition);
+  document.addEventListener('astro:page-load', resetScrollPosition);
 
   landingWindow.__landingScrollBound = true;
 };
