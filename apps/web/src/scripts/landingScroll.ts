@@ -10,7 +10,9 @@ const landingSelector = '[data-landing]';
 const landingTriggerSelector = '[data-landing-trigger]';
 const mainContentSelector = '[data-main-content]';
 const launchedAttribute = 'data-landing-launched';
-const hiddenAttribute = 'data-landing-hidden';
+const activeAttribute = 'data-landing-active';
+const greenTheme = '#138e00';
+const beigeTheme = '#EFEFEF';
 const wheelThreshold = 80;
 const touchThreshold = 48;
 const animationDurationSeconds = 0.66;
@@ -36,6 +38,13 @@ const cancelCurrentAnimation = () => {
   landingWindow.__landingScrollAnimation = undefined;
 };
 
+const setThemeColor = (color: string) => {
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor instanceof HTMLMetaElement) {
+    themeColor.content = color;
+  }
+};
+
 const scrollToMainContent = (mainContent: HTMLElement) => {
   const startY = window.scrollY;
   const targetY = mainContent.getBoundingClientRect().top + window.scrollY;
@@ -54,7 +63,8 @@ const scrollToMainContent = (mainContent: HTMLElement) => {
     onComplete: () => {
       landingWindow.__landingScrollAnimation = undefined;
       window.scrollTo(0, targetY);
-      document.documentElement.setAttribute(hiddenAttribute, '');
+      document.documentElement.removeAttribute(activeAttribute);
+      setThemeColor(beigeTheme);
     },
   });
 };
@@ -62,8 +72,9 @@ const scrollToMainContent = (mainContent: HTMLElement) => {
 const resetScrollPosition = () => {
   if (window.location.hash) return;
   cancelCurrentAnimation();
+  document.documentElement.setAttribute(activeAttribute, '');
   document.documentElement.removeAttribute(launchedAttribute);
-  document.documentElement.removeAttribute(hiddenAttribute);
+  setThemeColor(greenTheme);
   window.scrollTo(0, 0);
 };
 

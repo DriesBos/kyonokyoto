@@ -114,7 +114,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
 
 ---
 
-<BaseLayout locale={locale} title={metaCopy.title} description={metaCopy.description}>
+<BaseLayout locale={locale} title={metaCopy.title} description={metaCopy.description} landingActive={true}>
   <main class="page-shell">
     <Landing categories={categories} ongoingCount={ongoingEvents.length} upcomingCount={upcomingEvents.length} />
     <div class="content-container" data-content-container data-main-content>

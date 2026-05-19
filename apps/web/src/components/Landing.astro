@@ -57,24 +57,16 @@ const { categories, ongoingCount, upcomingCount } = Astro.props;
     overflow: hidden
 
   .landing__button
-    position: fixed
-    z-index: 500
-    inset: 0
+    position: relative
     display: block
     width: 100%
-    height: 100lvh
-    min-height: 100svh
+    height: 100%
     padding: 0
     border: 0
-    background: var(--color-green)
+    background: transparent
     color: inherit
     appearance: none
     -webkit-tap-highlight-color: transparent
-    overflow: hidden
-
-  :global(html[data-landing-hidden]) .landing__button
-    visibility: hidden
-    pointer-events: none
 
   .landing__content
     position: relative

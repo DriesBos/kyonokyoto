@@ -8,12 +8,14 @@ type Props = {
   title?: string;
   description?: string;
   locale?: AppLocale;
+  landingActive?: boolean;
 };
 
 const {
   locale = "en",
   title = uiText.en.title,
   description = uiText.en.description,
+  landingActive = false,
 } = Astro.props;
 
 const appName = "KyōNoKyōto";
@@ -23,7 +25,7 @@ const shouldRegisterServiceWorker = import.meta.env.PROD;
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 ---
 
-<html lang={uiText[locale].lang}>
+<html lang={uiText[locale].lang} data-landing-active={landingActive ? "" : undefined}>
   <head>
     <meta charset="utf-8" />
     <link
@@ -44,7 +46,7 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#EFEFEF" />
+    <meta name="theme-color" content={landingActive ? "#138e00" : "#EFEFEF"} />
     <meta name="application-name" content={appName} />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
