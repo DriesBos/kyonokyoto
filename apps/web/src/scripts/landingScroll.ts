@@ -15,7 +15,7 @@ const greenTheme = '#138e00';
 const beigeTheme = '#EFEFEF';
 const wheelThreshold = 80;
 const touchThreshold = 48;
-const animationDurationSeconds = 0.66;
+const animationDurationSeconds = 0.5;
 const animationDurationMs = animationDurationSeconds * 1000;
 
 const landingWindow = window as LandingScrollWindow;
