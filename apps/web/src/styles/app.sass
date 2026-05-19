@@ -82,8 +82,6 @@ $type-scale-ratio: 1.618
   user-select: none
 
 html
-  position: relative
-  height: 100%
   width: 100%
   max-width: 100%
   font-size: clamp(#{$fluid-type-min-size}, calc(#{$fluid-type-intercept} + #{$fluid-type-slope}vw), #{$fluid-type-max-size})
@@ -94,8 +92,6 @@ html
   overscroll-behavior-x: none
 
 body
-  position: relative
-  height: 100%
   width: 100%
   max-width: 100%
   margin: 0
@@ -117,12 +113,14 @@ html[data-landing-active] body
   background: var(--color-green)
 
 main
-  position: relative
   z-index: 1
-  min-height: 100%
   display: flex
   flex-direction: column
   gap: 0
+  
+html, body, main
+  position: relative
+  height: 100%
 
 @media (hover: hover) and (pointer: fine)
   :root
