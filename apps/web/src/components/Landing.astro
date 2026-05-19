@@ -3,25 +3,34 @@ import Icon from "./Icon.astro";
 import Logo from "./Logo.astro";
 
 type Props = {
+  categories: {
+    label: string;
+    slug: string;
+  }[];
   ongoingCount: number;
   upcomingCount: number;
 };
 
-const { ongoingCount, upcomingCount } = Astro.props;
+const { categories, ongoingCount, upcomingCount } = Astro.props;
 ---
 
 <section class="landing" data-landing aria-label="Kyō-no-Kyōto: what’s on in Kyoto">
   <button class="landing__button" type="button" data-landing-trigger aria-label="Enter what’s on in Kyoto">
-    <span class="landing__logo" aria-hidden="true">
-      <Logo />
-    </span>
-    <span class="landing__bottom landing__bottom--label">What’s on in Kyoto</span>
-    <span class="landing__bottom landing__bottom--arrow" aria-hidden="true">
-      <Icon name="arrow-long" rotation="bottom" />
-    </span>
-    <span class="landing__counts" aria-hidden="true">
-      <span>{ongoingCount} ongoing</span>
-      <span>{upcomingCount} upcoming</span>
+    <span class="landing__content">
+      <span class="landing__logo" aria-hidden="true">
+        <Logo />
+      </span>
+      <span class="landing__bottom landing__bottom--label">What’s on in Kyoto</span>
+      <span class="landing__bottom landing__bottom--arrow" aria-hidden="true">
+        <Icon name="arrow-long" rotation="bottom" />
+      </span>
+      <span class="landing__categories" aria-hidden="true">
+        {categories.map((category) => <span>#{category.label}</span>)}
+      </span>
+      <span class="landing__counts" aria-hidden="true">
+        <span>{ongoingCount} ongoing</span>
+        <span>{upcomingCount} upcoming</span>
+      </span>
     </span>
   </button>
 </section>
@@ -43,19 +52,36 @@ const { ongoingCount, upcomingCount } = Astro.props;
     height: 100lvh
     min-height: 100lvh
     width: 100%
+    background: var(--color-green)
+    color: var(--color-beige)
     overflow: hidden
 
   .landing__button
-    position: relative
+    position: fixed
+    z-index: 500
+    inset: 0
     display: block
     width: 100%
-    height: 100%
+    height: 100lvh
+    min-height: 100svh
     padding: 0
     border: 0
-    background: transparent
+    background: var(--color-green)
     color: inherit
     appearance: none
     -webkit-tap-highlight-color: transparent
+    overflow: hidden
+
+  :global(html[data-landing-hidden]) .landing__button
+    visibility: hidden
+    pointer-events: none
+
+  .landing__content
+    position: relative
+    display: block
+    width: 100%
+    height: 100svh
+    min-height: 100svh
 
   .landing__logo
     position: absolute
@@ -81,7 +107,10 @@ const { ongoingCount, upcomingCount } = Astro.props;
     user-select: none
 
   .landing__bottom--label
-    left: 2rem
+    left: 50%
+    bottom: auto
+    top: calc((50svh + (var(--landing-logo-height) / 2) + (100svh - var(--landing-arrow-bottom) - var(--landing-arrow-height))) / 2)
+    transform: translate(-50%, -50%)
     font-size: 1.125rem
     line-height: 1
     white-space: nowrap
@@ -100,6 +129,20 @@ const { ongoingCount, upcomingCount } = Astro.props;
       --icon-width: 25px
       --icon-height: var(--landing-arrow-height)
 
+  .landing__categories
+    position: absolute
+    left: 2rem
+    bottom: 2rem
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 0.5rem 1rem
+    max-width: 33%
+    font-size: 1.125rem
+    line-height: 1
+    text-align: left
+    user-select: none
+
   .landing__counts
     position: absolute
     right: 2rem
@@ -115,18 +158,7 @@ const { ongoingCount, upcomingCount } = Astro.props;
       font-size: 1.25rem
 
   @media (max-width: $mobile-breakpoint)
-    .landing__logo
-      left: 50%
-
-    .landing__bottom--label
-      left: 50%
-      bottom: auto
-      top: calc((50svh + (var(--landing-logo-height) / 2) + (100svh - var(--landing-arrow-bottom) - var(--landing-arrow-height))) / 2)
-      transform: translate(-50%, -50%)
-
-    .landing__bottom--arrow
-      left: 50%
-
+    .landing__categories,
     .landing__counts
       display: none
 </style>

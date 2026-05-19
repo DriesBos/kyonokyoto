@@ -10,6 +10,7 @@ const landingSelector = '[data-landing]';
 const landingTriggerSelector = '[data-landing-trigger]';
 const mainContentSelector = '[data-main-content]';
 const launchedAttribute = 'data-landing-launched';
+const hiddenAttribute = 'data-landing-hidden';
 const wheelThreshold = 80;
 const touchThreshold = 48;
 const animationDurationSeconds = 0.66;
@@ -53,6 +54,7 @@ const scrollToMainContent = (mainContent: HTMLElement) => {
     onComplete: () => {
       landingWindow.__landingScrollAnimation = undefined;
       window.scrollTo(0, targetY);
+      document.documentElement.setAttribute(hiddenAttribute, '');
     },
   });
 };
@@ -61,6 +63,7 @@ const resetScrollPosition = () => {
   if (window.location.hash) return;
   cancelCurrentAnimation();
   document.documentElement.removeAttribute(launchedAttribute);
+  document.documentElement.removeAttribute(hiddenAttribute);
   window.scrollTo(0, 0);
 };
 
