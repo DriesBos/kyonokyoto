@@ -37,9 +37,10 @@ type Props = {
   googleCalendarUrl: string | null;
   excerpt: string;
   hideTopBorder?: boolean;
+  beta?: boolean;
 };
 
-const { event, mapSourceSlug, mapLocationId, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false } = Astro.props;
+const { event, mapSourceSlug, mapLocationId, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false, beta = false } = Astro.props;
 const copy = uiText.en;
 
 const normalizeCategory = (value: string) =>
@@ -79,7 +80,7 @@ const showInstitutionMeta = event.timing !== "permanent";
   data-timing={event.timing}
   data-categories={categorySlugs.join("|")}
   data-hide-top-border={hideTopBorder ? "" : undefined}
-  style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem; --event-card-media-row-height-active-desktop: ${desktopImageHeightActiveRem}rem; --event-card-media-row-height-active-mobile: ${mobileImageHeightActiveRem}rem;`}
+  style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem; --event-card-media-row-height-active-desktop: ${desktopImageHeightActiveRem}rem; --event-card-media-row-height-active-mobile: ${mobileImageHeightActiveRem}rem;${beta ? " opacity: 0.5;" : ""}`}
   role="button"
   tabindex="0"
   aria-pressed="false"

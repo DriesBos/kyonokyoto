@@ -65,6 +65,9 @@ const upcomingEvents = displayEvents.filter((event) => event.timing === "upcomin
 const sourceSlugForDisplayEvent = (event: (typeof visibleCards)[number]) =>
   event.timing === "permanent" ? event.source_id : sourceSlugForEvent(event, configuredSources);
 const sourceSlugByEventId = new Map(visibleCards.map((event) => [event.id, sourceSlugForDisplayEvent(event)]));
+const betaSourceSlugs = new Set(configuredSources.filter((s) => s.beta).map((s) => s.slug));
+const isEventBeta = (event: (typeof visibleCards)[number]) =>
+  betaSourceSlugs.has(sourceSlugByEventId.get(event.id) ?? "");
 const mapLocationIdByEventId = new Map(
   visibleCards.map((event) => [
     event.id,
@@ -162,6 +165,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     mapsUrl={mapsUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
                     excerpt={excerpt(event.description)}
+                    beta={isEventBeta(event)}
                   />
                 ))}
               </section>
@@ -187,6 +191,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     mapsUrl={mapsUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
                     excerpt={excerpt(event.description)}
+                    beta={isEventBeta(event)}
                   />
                 ))}
               </section>
@@ -212,6 +217,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     mapsUrl={mapsUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event)}
                     excerpt={excerpt(event.description)}
+                    beta={isEventBeta(event)}
                   />
                 ))}
               </section>
