@@ -6,10 +6,15 @@ import Header from "../../components/Header.astro";
 import Landing from "../../components/Landing.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import TimeDivider from "../../components/TimeDivider.astro";
+import permanentHighlightsPayload from "../../../../../data/permanent-exhibitions.json";
 import sourcesPayload from "../../../../../data/sources/kyoto-sources.json";
 import { normalizeLocale, supportedLocales, uiText } from "../../lib/i18n";
 import { calendarDetailsFor, calendarLocationFor, cleanDisplayText, googleCalendarUrl, mapsUrl } from "../../lib/calendar";
 import { displayEventsByLocale as buildDisplayEventsByLocale, fetchPublishedEvents } from "../../lib/events";
+import {
+  permanentEventsByLocale as buildPermanentEventsByLocale,
+  type PermanentExhibitionHighlight,
+} from "../../lib/permanentExhibitions";
 import {
   categoriesForEvents,
   configuredSourcesFrom,
@@ -46,18 +51,27 @@ const displayEventsByLocale = buildDisplayEventsByLocale({
   configuredSources,
   supportedLocales,
 });
+const permanentEventsByLocale = buildPermanentEventsByLocale({
+  highlights: permanentHighlightsPayload.items as PermanentExhibitionHighlight[],
+  configuredSources,
+  supportedLocales,
+});
 const displayEvents = displayEventsByLocale[locale];
-const categories = categoriesForEvents(displayEvents);
+const permanentEvents = permanentEventsByLocale[locale];
+const visibleCards = [...displayEvents, ...permanentEvents];
+const categories = categoriesForEvents(visibleCards);
 const ongoingEvents = displayEvents.filter((event) => event.timing === "ongoing");
 const upcomingEvents = displayEvents.filter((event) => event.timing === "upcoming");
-const sourceSlugByEventId = new Map(displayEvents.map((event) => [event.id, sourceSlugForEvent(event, configuredSources)]));
+const sourceSlugForDisplayEvent = (event: (typeof visibleCards)[number]) =>
+  event.timing === "permanent" ? event.source_id : sourceSlugForEvent(event, configuredSources);
+const sourceSlugByEventId = new Map(visibleCards.map((event) => [event.id, sourceSlugForDisplayEvent(event)]));
 const mapLocationIdByEventId = new Map(
-  displayEvents.map((event) => [
+  visibleCards.map((event) => [
     event.id,
     mapLocationIdForEvent(event, sourceSlugByEventId.get(event.id) ?? null, configuredSources),
   ])
 );
-const mapSources = mapSourcesForEvents(displayEvents, sourceSlugByEventId, configuredSources);
+const mapSources = mapSourcesForEvents(visibleCards, sourceSlugByEventId, configuredSources);
 
 const mapsUrlForEvent = (event: (typeof displayEvents)[number]) => {
   const sourceSlug = sourceSlugByEventId.get(event.id) ?? sourceSlugForEvent(event, configuredSources);
@@ -71,10 +85,13 @@ const excerpt = (value: string | null) => {
 };
 
 const eventPayloadById = Object.fromEntries(
-  displayEvents.map((event) => {
+  visibleCards.map((event) => {
     const localePayload = Object.fromEntries(
       supportedLocales.map((supportedLocale) => {
-        const localizedEvent = displayEventsByLocale[supportedLocale].find((candidate) => candidate.id === event.id) ?? event;
+        const localizedEvent =
+          displayEventsByLocale[supportedLocale].find((candidate) => candidate.id === event.id) ??
+          permanentEventsByLocale[supportedLocale].find((candidate) => candidate.id === event.id) ??
+          event;
 
         return [
           supportedLocale,
@@ -127,7 +144,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
         </div>
 
         {
-          displayEvents.length === 0 ? (
+          visibleCards.length === 0 ? (
             <div class="empty-state">
               <h3>{copy.emptyTitle}</h3>
               <p>{copy.emptyDescription}</p>
@@ -149,7 +166,13 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                 ))}
               </section>
 
-              <div class="events-divider" data-event-divider hidden={ongoingEvents.length === 0 || upcomingEvents.length === 0}>
+              <div
+                class="events-divider"
+                data-event-divider
+                data-before-group="ongoing"
+                data-after-group="upcoming"
+                hidden={ongoingEvents.length === 0 || upcomingEvents.length === 0}
+              >
                 <TimeDivider label={copy.upcoming} readyLabel={copy.getReady} ariaLabel={copy.upcomingEventsAria} />
               </div>
 
@@ -159,6 +182,31 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                     event={event}
                     locale={locale}
                     hideTopBorder={ongoingEvents.length === 0 && index === 0}
+                    mapSourceSlug={sourceSlugByEventId.get(event.id)}
+                    mapLocationId={mapLocationIdByEventId.get(event.id)}
+                    mapsUrl={mapsUrlForEvent(event)}
+                    googleCalendarUrl={googleCalendarUrl(event)}
+                    excerpt={excerpt(event.description)}
+                  />
+                ))}
+              </section>
+
+              <div
+                class="events-divider"
+                data-event-divider
+                data-before-group="upcoming"
+                data-after-group="permanent"
+                hidden={upcomingEvents.length === 0 || permanentEvents.length === 0}
+              >
+                <TimeDivider label="permanent" readyLabel="permanent" ariaLabel="permanent venues" />
+              </div>
+
+              <section class="event-group" data-event-group data-event-group-name="permanent" hidden={permanentEvents.length === 0}>
+                {permanentEvents.map((event, index) => (
+                  <EventCard
+                    event={event}
+                    locale={locale}
+                    hideTopBorder={ongoingEvents.length === 0 && upcomingEvents.length === 0 && index === 0}
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}

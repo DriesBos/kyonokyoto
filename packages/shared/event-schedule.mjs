@@ -20,6 +20,39 @@ export function normalizeOccurrenceDates(values) {
   return [...new Set(source.map(normalizeDateOnly).filter(Boolean))].sort();
 }
 
+export function addMonthsDateOnly(dateOnly, months) {
+  const normalized = normalizeDateOnly(dateOnly);
+  if (!normalized || !Number.isInteger(months)) return null;
+
+  const [year, month, day] = normalized.split("-").map(Number);
+  const targetMonthIndex = month - 1 + months;
+  const targetYear = year + Math.floor(targetMonthIndex / 12);
+  const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
+  const daysInTargetMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const targetDay = Math.min(day, daysInTargetMonth);
+
+  return [
+    String(targetYear).padStart(4, "0"),
+    String(targetMonth + 1).padStart(2, "0"),
+    String(targetDay).padStart(2, "0"),
+  ].join("-");
+}
+
+export function eventStartDateOnly(event) {
+  const start = normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at);
+  if (start) return start;
+
+  return normalizeOccurrenceDates(event?.occurrence_dates)[0] ?? null;
+}
+
+export function isEventWithinDisplayWindow(event, todayDateOnly, { monthsAhead = 6 } = {}) {
+  const start = eventStartDateOnly(event);
+  const cutoff = addMonthsDateOnly(todayDateOnly, monthsAhead);
+
+  if (!start || !cutoff) return true;
+  return start <= cutoff;
+}
+
 export function inferScheduleType(event) {
   const explicitType =
     typeof event?.schedule_type === "string" && VALID_SCHEDULE_TYPES.has(event.schedule_type)

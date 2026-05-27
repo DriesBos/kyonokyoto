@@ -737,7 +737,7 @@ function extractSectionValue(html, dtText) {
 
 function parseJapaneseDateRange(dateText) {
   const pattern =
-    /(\d{4})年(\d{1,2})月(\d{1,2})日.*?[～〜\-－–—]\s*(\d{4})年(\d{1,2})月(\d{1,2})日/u;
+    /(\d{4})年(\d{1,2})月(\d{1,2})日.*?[～〜\-－–—]\s*(?:(\d{4})年)?\s*(\d{1,2})月(\d{1,2})日/u;
   const match = dateText.match(pattern);
 
   if (!match) {
@@ -749,7 +749,8 @@ function parseJapaneseDateRange(dateText) {
     };
   }
 
-  const [, sy, sm, sd, ey, em, ed] = match;
+  const [, sy, sm, sd, maybeEndYear, em, ed] = match;
+  const ey = maybeEndYear ?? sy;
   const startDate = `${sy}-${sm.padStart(2, '0')}-${sd.padStart(2, '0')}`;
   const endDate = `${ey}-${em.padStart(2, '0')}-${ed.padStart(2, '0')}`;
 
@@ -1170,12 +1171,16 @@ function parseEnglishDayMonthYearRange(dateText) {
 
   const cleaned = dateText
     .replace(/\([^)]*\)/g, '')
+    .replace(
+      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi,
+      '',
+    )
     .replace(/&#8211;|–|—/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
 
   const match = cleaned.match(
-    /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\s*-\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/,
+    /(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?\s*-\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/,
   );
 
   if (!match) {
@@ -1187,10 +1192,11 @@ function parseEnglishDayMonthYearRange(dateText) {
     };
   }
 
-  const [, startDay, startMonthName, startYear, endDay, endMonthName, endYear] =
+  const [, startDay, startMonthName, maybeStartYear, endDay, endMonthName, endYear] =
     match;
   const startMonth = months[startMonthName.toLowerCase()];
   const endMonth = months[endMonthName.toLowerCase()];
+  const startYear = maybeStartYear ?? endYear;
 
   if (!startMonth || !endMonth) {
     return {
@@ -2115,6 +2121,23 @@ function extractKacDetailUrls(listingHtml, listingUrl) {
   return [...new Set(matches)];
 }
 
+function extractFukudaDetailUrls(listingHtml, listingUrl) {
+  const sectionHtml =
+    listingHtml.match(/<section\b[^>]*id="exArv"[^>]*>([\s\S]*?)<\/section>/i)?.[1] ??
+    '';
+  if (!sectionHtml) return [];
+
+  return [
+    ...new Set(
+      [...sectionHtml.matchAll(/<article\b[^>]*class="[^"]*\bpostbox\b[^"]*"[^>]*>([\s\S]*?)<\/article>/gi)]
+        .map((match) => match[1].match(/<a\b[^>]+href=(["'])(.*?)\1/i)?.[2])
+        .map((href) => (href ? normalizeUrl(href, listingUrl) : null))
+        .filter(Boolean)
+        .filter((url) => /\/(?:en\/)?exhibition\/\d+/.test(new URL(url).pathname)),
+    ),
+  ];
+}
+
 function extractSibasiDetailUrls(listingPages, genericDetailLimit = 8) {
   const detailUrls = listingPages.flatMap(({ html, url }) => {
     const matches = [
@@ -2146,6 +2169,10 @@ function extractEssenceDetailUrls(_listingHtml, listingUrl) {
 }
 
 function extractArtCollaborationKyotoDetailUrls(_listingHtml, listingUrl) {
+  return [listingUrl];
+}
+
+function extractKoenKyotoDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
 
@@ -4043,7 +4070,286 @@ function extractKankakariEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractFukudaTableValue(detailHtml, labels) {
+  for (const rowMatch of detailHtml.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const rowHtml = rowMatch[1];
+    const header = stripTags(rowHtml.match(/<th\b[^>]*>([\s\S]*?)<\/th>/i)?.[1] ?? '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!labels.some((label) => header.toLowerCase().includes(label.toLowerCase()))) {
+      continue;
+    }
+
+    const valueHtml = rowHtml.match(/<td\b[^>]*>([\s\S]*?)<\/td>/i)?.[1] ?? '';
+    const value = stripTags(valueHtml)
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .find(Boolean);
+    if (value) return value;
+  }
+
+  return null;
+}
+
+function parseFukudaEnglishDateRange(dateText) {
+  const months = {
+    january: '01',
+    february: '02',
+    march: '03',
+    april: '04',
+    may: '05',
+    june: '06',
+    july: '07',
+    august: '08',
+    september: '09',
+    october: '10',
+    november: '11',
+    december: '12',
+  };
+  const cleaned = decodeHtml(dateText)
+    .replace(/\([^)]*\)/g, '')
+    .replace(/[–—～〜]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const match = cleaned.match(
+    /([A-Za-z]+)\s+(\d{1,2})(?:,\s*)?\s*(\d{4})?\s*-\s*([A-Za-z]+)\s+(\d{1,2})(?:,\s*)?\s*(\d{4})/i,
+  );
+  if (!match) return null;
+
+  const [, startMonthName, startDay, maybeStartYear, endMonthName, endDay, endYear] =
+    match;
+  const startMonth = months[startMonthName.toLowerCase()];
+  const endMonth = months[endMonthName.toLowerCase()];
+  const startYear = maybeStartYear ?? endYear;
+  if (!startMonth || !endMonth) return null;
+
+  const startDate = `${startYear}-${startMonth}-${String(startDay).padStart(2, '0')}`;
+  const endDate = `${endYear}-${endMonth}-${String(endDay).padStart(2, '0')}`;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${endDate}T17:00:00+09:00`,
+  };
+}
+
+function parseFukudaDateRange(dateText) {
+  const normalized = decodeHtml(dateText)
+    .replace(/(\d{4})年\s+/g, '$1年')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const japaneseDates = parseJapaneseDateRange(normalized);
+  if (japaneseDates.startDate) return japaneseDates;
+
+  const englishDates = parseFukudaEnglishDateRange(normalized);
+  if (englishDates?.startDate) return englishDates;
+
+  return parseGenericDateRange(normalized);
+}
+
+function extractFukudaHeroImage(detailHtml, detailUrl) {
+  const styleImage = detailHtml.match(/id="eyeVisual"[^>]+style=(["'])[^"']*url\((["']?)(.*?)\2\)[^"']*\1/i)?.[3];
+  const imageUrls = [
+    styleImage ? normalizeUrl(styleImage, detailUrl) : null,
+    extractMeta(detailHtml, 'og:image')
+      ? normalizeUrl(extractMeta(detailHtml, 'og:image'), detailUrl)
+      : null,
+    ...extractGenericImageUrls(detailHtml, detailUrl, { includeOgImage: false }),
+  ].filter(Boolean);
+
+  return imageUrls[0] ?? null;
+}
+
+function extractFukudaEvent(detailHtml, source, detailUrl) {
+  const title =
+    extractFukudaTableValue(detailHtml, ['タイトル', 'Title']) ??
+    stripTags(detailHtml.match(/<h1\b[^>]*class="[^"]*\btitle\b[^"]*"[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '') ??
+    source.name;
+  const dateText =
+    extractFukudaTableValue(detailHtml, ['会期', 'Dates']) ??
+    extractBestDateText(detailHtml);
+  const parsedDates = parseFukudaDateRange(dateText);
+  const description = [...detailHtml.matchAll(/<div\b[^>]*class="[^"]*\bpostBody\b[^"]*"[^>]*>([\s\S]*?)<\/div>/gi)]
+    .flatMap((match) => [...match[1].matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)])
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .filter((value) => value.length > 40)
+    .slice(0, 2)
+    .join('\n\n');
+  const imageUrl = extractFukudaHeroImage(detailHtml, detailUrl);
+  const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
+
+  return {
+    title,
+    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(Boolean),
+    description: description || extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: directionsQuery,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: 'Asia/Tokyo',
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrl,
+    image_urls: imageUrl ? [imageUrl] : [],
+    source_url: detailUrl,
+    extraction_confidence: parsedDates.startDate ? 0.86 : 0.45,
+  };
+}
+
+function stripHtmlComments(html) {
+  return String(html ?? '').replace(/<!--[\s\S]*?-->/g, '');
+}
+
+function extractRakuMuseumDetailUrls(listingHtml, listingUrl) {
+  const html = stripHtmlComments(listingHtml);
+  const isEnglishExhibitionIndex = /\/e\/museum\/exhibition\//.test(
+    new URL(listingUrl).pathname,
+  );
+
+  if (isEnglishExhibitionIndex) {
+    const tabHtml = html.match(/<ul\b[^>]*id="ex-tab"[^>]*>([\s\S]*?)<\/ul>/i)?.[1] ?? '';
+    const tabUrls = [...tabHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
+      .filter((match) => !/past/i.test(stripTags(match[3])))
+      .map((match) => match[2])
+      .filter((href) => href && href !== '#')
+      .map((href) => normalizeUrl(href, listingUrl))
+      .filter(Boolean);
+
+    return [...new Set([listingUrl, ...tabUrls])];
+  }
+
+  const infoHtml = html.match(/<div\b[^>]*class="[^"]*\binfo\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? html;
+  const eventUrls = [...infoHtml.matchAll(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)]
+    .map((match) => match[1])
+    .filter((ddHtml) => /会\s*期/.test(stripTags(ddHtml)))
+    .flatMap((ddHtml) => [...ddHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)].map((match) => match[2]))
+    .map((href) => normalizeUrl(href, listingUrl))
+    .filter(Boolean)
+    .filter((url) => /\/museum\/exhibition\//.test(new URL(url).pathname));
+
+  return [...new Set(eventUrls)];
+}
+
+function buildRakuMuseumEvent(source, detailUrl, fields) {
+  const parsedDates = parseGenericDateRange(fields.dateText);
+  const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
+
+  return {
+    title: fields.title || source.name,
+    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(Boolean),
+    description: fields.description || null,
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: directionsQuery,
+    date_text: fields.dateText || 'See source page',
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: 'Asia/Tokyo',
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: fields.imageUrl ?? null,
+    image_urls: fields.imageUrl ? [fields.imageUrl] : [],
+    source_url: detailUrl,
+    extraction_confidence: 0.82,
+  };
+}
+
+function extractRakuMuseumDateText(text) {
+  const compact = text.replace(/\s+/g, ' ').trim();
+  const JapaneseDate = compact.match(/会\s*期[:：]\s*\d{4}年\d{1,2}月\d{1,2}日[^。]+?\d{1,2}月\d{1,2}日[^。\n]*/u);
+  if (JapaneseDate) return JapaneseDate[0].trim();
+
+  const parsed = parseGenericDateRange(compact);
+  return parsed.startDate ? compact : null;
+}
+
+function extractRakuMuseumTabEvent(detailHtml, source, detailUrl) {
+  const html = stripHtmlComments(detailHtml);
+  const h4Html = html.match(/<h4\b[^>]*>([\s\S]*?)<\/h4>/i)?.[1] ?? '';
+  if (!h4Html) return null;
+
+  const spanTexts = [...h4Html.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const dateText = spanTexts.map(extractRakuMuseumDateText).find(Boolean);
+  if (!dateText) return null;
+
+  const title = spanTexts
+    .filter((text) => text !== dateText)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const description = [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .filter((value) => value.length > 40)
+    .slice(0, 2)
+    .join('\n\n');
+  const firstImageUrl = extractGenericImageUrls(html, detailUrl, {
+    includeOgImage: false,
+  })[0] ?? null;
+
+  return buildRakuMuseumEvent(source, detailUrl, {
+    title,
+    dateText,
+    description,
+    imageUrl: firstImageUrl,
+  });
+}
+
+function extractRakuMuseumHomeInfoEvent(detailHtml, source, detailUrl) {
+  const html = stripHtmlComments(detailHtml);
+  const infoHtml = html.match(/<div\b[^>]*class="[^"]*\binfo\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? '';
+  if (!infoHtml) return null;
+
+  for (const match of infoHtml.matchAll(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
+    const ddHtml = match[1];
+    const text = stripTags(ddHtml);
+    const dateText = extractRakuMuseumDateText(text);
+    if (!dateText) continue;
+
+    const linkHtml = ddHtml.match(/<a\b[^>]*>([\s\S]*?)<\/a>/i)?.[1] ?? '';
+    const title = stripTags(linkHtml)
+      .replace(/^「|」$/g, '')
+      .trim();
+    if (!title) continue;
+
+    return buildRakuMuseumEvent(source, detailUrl, {
+      title,
+      dateText,
+      description: text.replace(dateText, '').replace(title, '').trim(),
+      imageUrl: null,
+    });
+  }
+
+  return null;
+}
+
 function extractRakuMuseumEvent(detailHtml, source, detailUrl) {
+  const siteEvent =
+    getSourceLocale(source) === 'ja'
+      ? extractRakuMuseumHomeInfoEvent(detailHtml, source, detailUrl)
+      : extractRakuMuseumTabEvent(detailHtml, source, detailUrl);
+  if (siteEvent) return siteEvent;
+
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const firstImageUrl = event.image_urls?.[0] ?? null;
 
@@ -4051,6 +4357,113 @@ function extractRakuMuseumEvent(detailHtml, source, detailUrl) {
     ...event,
     primary_image_url: firstImageUrl,
     image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
+function extractKoenMainHtml(detailHtml) {
+  return detailHtml.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? detailHtml;
+}
+
+function parseKoenDateRange(dateText) {
+  const cleaned = decodeHtml(dateText)
+    .replace(/[～〜–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const match = cleaned.match(
+    /(20\d{2})[./](\d{1,2})[./](\d{1,2})(?:\([^)]*\))?\s*-\s*(?:(20\d{2})[./])?(?:(\d{1,2})[./])?(\d{1,2})(?:\([^)]*\))?/u,
+  );
+
+  if (!match) return parseDottedDateRange(cleaned);
+
+  const [, sy, sm, sd, explicitEy, explicitEm, ed] = match;
+  const ey = explicitEy ?? sy;
+  const em = explicitEm ?? sm;
+  const startDate = toDateOnly(sy, sm, sd);
+  const endDate = toDateOnly(ey, em, ed);
+  const timeMatch = cleaned.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+  const startTime = timeMatch?.[1] ?? '11:00';
+  const endTime = timeMatch?.[2] ?? '18:00';
+
+  return {
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    calendarStartsAt: `${startDate}T${startTime}:00+09:00`,
+    calendarEndsAt: `${endDate}T${endTime}:00+09:00`,
+  };
+}
+
+function extractKoenImageUrls(mainHtml, detailUrl) {
+  return [
+    ...new Set(
+      [...mainHtml.matchAll(/<img\b[^>]*>/gi)]
+        .map((match) => {
+          const attributes = parseTagAttributes(match[0]);
+          const rawUrl =
+            attributes.src ??
+            attributes['data-src'] ??
+            attributes['data-original'] ??
+            attributes['data-lazy-src'] ??
+            null;
+          return rawUrl ? normalizeUrl(decodeHtml(rawUrl), detailUrl) : null;
+        })
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function extractKoenEvent(detailHtml, source, detailUrl) {
+  const mainHtml = extractKoenMainHtml(detailHtml);
+  const lines = stripTags(mainHtml)
+    .split('\n')
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const title =
+    lines.find(
+      (line) =>
+        !/^event information$/i.test(line) &&
+        !/^開催日時\s*[:：]/u.test(line) &&
+        !/^開催場所\s*[:：]/u.test(line) &&
+        !/^〒?\d{3}-\d{4}/.test(line),
+    ) ?? source.name;
+  const dateText =
+    lines.find((line) => /^開催日時\s*[:：]/u.test(line)) ??
+    lines.find((line) => parseKoenDateRange(line).startDate) ??
+    extractBestDateText(mainHtml);
+  const parsedDates = parseKoenDateRange(dateText);
+  const description = lines
+    .filter((line) => !/^event information$/i.test(line))
+    .filter((line) => line !== title)
+    .join('\n');
+  const imageUrls = extractKoenImageUrls(mainHtml, detailUrl);
+  const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
+
+  return {
+    title,
+    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(Boolean),
+    description: description || extractGenericDescription(mainHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: directionsQuery,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: parsedDates.startTime ?? null,
+    end_time_text: parsedDates.endTime ?? null,
+    is_all_day: !parsedDates.startTime,
+    timezone: 'Asia/Tokyo',
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+    extraction_confidence: parsedDates.startDate ? 0.82 : 0.4,
   };
 }
 
@@ -4225,13 +4638,15 @@ const detailUrlExtractors = {
   'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
   'chushin-bijutsu': extractChushinDetailUrls,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddDetailUrls,
-  'essence-kyoto': extractEssenceDetailUrls,
+  'fukuda-art-museum': extractFukudaDetailUrls,
   'gallery-yamahon': extractGalleryYamahonDetailUrls,
   'hosoo-gallery': extractHosooDetailUrls,
+  'koen-kyoto': extractKoenKyotoDetailUrls,
   'kyoto-art-center': extractKacDetailUrls,
   'kyoto-national-museum': extractKyohakuDetailUrls,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraDetailUrls,
   momak: extractMomakDetailUrls,
+  'raku-museum': extractRakuMuseumDetailUrls,
   'sen-oku-hakukokan': extractSenOkuDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
   zenbi: extractZenbiDetailUrls,
@@ -4242,10 +4657,11 @@ const eventExtractors = {
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
   'chushin-bijutsu': extractChushinEvent,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddEvent,
-  'essence-kyoto': extractEssenceEvent,
+  'fukuda-art-museum': extractFukudaEvent,
   'gallery-baiken': extractBaikenEvent,
   'gallery-yamahon': extractGalleryYamahonEvent,
   'hosoo-gallery': extractHosooEvent,
+  'koen-kyoto': extractKoenEvent,
   'kyoto-art-center': extractKacEvent,
   'kyoto-national-museum': extractKyohakuEvent,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraEvent,
@@ -4264,6 +4680,11 @@ const eventExtractors = {
 
 const sourceSpecificSkipMatchers = {
   kankakari(eventData) {
+    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past'
+      ? 'past event'
+      : null;
+  },
+  'koen-kyoto'(eventData) {
     return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past'
       ? 'past event'
       : null;

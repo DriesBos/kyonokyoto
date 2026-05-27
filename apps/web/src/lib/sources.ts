@@ -208,9 +208,10 @@ const locationNameForEvent = (
   source: SourceConfig | null,
   lat: number | null,
   lng: number | null,
+  fallbackName = "Map location",
 ) => {
   const venueLocation = findVenueLocationForCoordinates(source, lat, lng);
-  return venueLocation?.name || source?.name || "Map location";
+  return venueLocation?.name || source?.name || fallbackName;
 };
 
 const locationCategoriesForSource = (source: SourceConfig) => {
@@ -236,7 +237,7 @@ export const mapLocationIdForEvent = (
 
   if (lat === null || lng === null || !sourceSlug) return null;
 
-  const venueKey = normalizeCategory(locationNameForEvent(source, lat, lng));
+  const venueKey = normalizeCategory(locationNameForEvent(source, lat, lng, event.institution_name));
   return `${sourceSlug}:${lat.toFixed(6)}:${lng.toFixed(6)}:${venueKey}`;
 };
 
@@ -283,7 +284,7 @@ export const mapSourcesForEvents = (
   events.forEach((event) => {
     const sourceSlug = sourceSlugByEventId.get(event.id) ?? null;
     const source = sourceBySlug(configuredSources, sourceSlug);
-    if (!source || source.map_visibility === false) return;
+    if (!sourceSlug || source?.map_visibility === false) return;
 
     const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
     const lat = coordinates?.lat ?? null;
@@ -292,7 +293,7 @@ export const mapSourcesForEvents = (
     if (lat === null || lng === null || !id) return;
 
     const existing = locations.get(id);
-    const categories = locationCategoriesForSource(source);
+    const categories = source ? locationCategoriesForSource(source) : normalizeCategoryList(event.categories ?? []);
     if (existing) {
       existing.categories = [...new Set([...existing.categories, ...categories])];
       return;
@@ -300,8 +301,8 @@ export const mapSourcesForEvents = (
 
     locations.set(id, {
       id,
-      sourceSlug: source.slug,
-      name: locationNameForEvent(source, lat, lng),
+      sourceSlug,
+      name: locationNameForEvent(source, lat, lng, event.institution_name),
       categories,
       lat,
       lng,

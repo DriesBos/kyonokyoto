@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "description": "Editorial venue highlights. Venue metadata can be resolved from data/sources/kyoto-sources.json by slug or stored directly here for non-crawler venues. Use cadence to label permanent or occasional venues.",
+  "items": [
+    {
+      "slug": "kyoto-art-center",
+      "is_active": true,
+      "primary_image_url": "https://www.kac.or.jp/wp-content/themes/kac/assets/images/info-guide_mv.webp?v=20240708115147",
+      "image_urls": [
+        "https://www.kac.or.jp/wp-content/themes/kac/assets/images/info-guide_mv.webp?v=20240708115147"
+      ],
+      "description": {
+        "en": "An arts and culture facility in the former Meirin Elementary School near Shijo-Karasuma, with exhibitions, performances, workshops, studios, a cafe and library open to visitors.",
+        "ja": "四条烏丸近くの元明倫小学校を活用した芸術文化施設。展覧会や舞台公演、ワークショップを行い、制作室やカフェ、図書室も備えています。"
+      },
+      "urls": {
+        "en": "https://www.kac.or.jp/en/",
+        "ja": "https://www.kac.or.jp/"
+      }
+    },
+    {
+      "slug": "sayuu",
+      "name": "SAYUU",
+      "names": {
+        "en": "SAYUU",
+        "ja": "若王子倶楽部 左右"
+      },
+      "base_url": "https://sayuu.jp/",
+      "address_text": "15-1 Nyakuoji-cho, Sakyo-ku, Kyoto 606-8444 Japan",
+      "directions_query": "京都市左京区若王子町15-1",
+      "lat": 35.0155614,
+      "lng": 135.7955184,
+      "source_categories": ["craft", "gallery"],
+      "is_active": true,
+      "media_embeds": [
+        {
+          "type": "youtube",
+          "url": "https://www.youtube.com/watch?v=kK0xC3yRJ3I"
+        }
+      ],
+      "description": {
+        "en": "A kogei gallery and salon near the Philosopher's Path, presenting Japanese hand-crafted wares and works for a contemporary lifestyle in a historic building once connected to painter Chokunyu Tanomura.",
+        "ja": "哲学の道近くの工芸ギャラリー＆サロン。日本の良きものや手仕事を今の暮らしに合う形で紹介し、田能村直入ゆかりの建物で日本文化を感じられます。"
+      },
+      "urls": {
+        "en": "https://kyoto-sayu.com/",
+        "ja": "https://sayuu.jp/"
+      }
+    },
+    {
+      "slug": "essence-kyoto",
+      "name": "Essence Kyoto",
+      "names": {
+        "en": "Essence Kyoto",
+        "ja": "Essence Kyoto"
+      },
+      "base_url": "https://essencekyoto.com/",
+      "address_text": "2F, 36-1 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan",
+      "directions_query": "京都市左京区岡崎円勝寺町36-1",
+      "lat": 35.011101,
+      "lng": 135.780533,
+      "source_categories": ["design", "craft", "gallery"],
+      "is_active": true,
+      "primary_image_url": "https://essencekyoto.com/cdn/shop/files/IMG_7993_4472x.JPG?v=1615927295",
+      "image_urls": [
+        "https://essencekyoto.com/cdn/shop/files/IMG_7993_4472x.JPG?v=1615927295"
+      ],
+      "description": {
+        "en": "A Kyoto gallery and shop focused on handmade tableware, tea and works by artists, potters, woodworkers and lacquer artists, with retail prices set by the makers.",
+        "ja": "うつわやお茶を中心に紹介する岡崎のギャラリーショップ。作家・陶芸家・木工作家・漆作家による手仕事の作品を扱っています。"
+      },
+      "urls": {
+        "en": "https://essencekyoto.com/",
+        "ja": "https://essencekyoto.com/"
+      }
+    },
+    {
+      "slug": "insho-domoto",
+      "name": "Insho-Domoto Museum of Fine Arts",
+      "names": {
+        "en": "Insho-Domoto Museum of Fine Arts",
+        "ja": "京都府立堂本印象美術館"
+      },
+      "base_url": "https://insho-domoto.com/",
+      "address_text": "26-3 Hirano Kamiyanagi-cho, Kita-ku, Kyoto 603-8355 Japan",
+      "directions_query": "京都市北区平野上柳町26-3",
+      "lat": 35.0351347,
+      "lng": 135.7260355,
+      "source_categories": ["art", "museum"],
+      "is_active": true,
+      "description": {
+        "en": "Founded by painter Insho Domoto in 1966, the museum presents works shaped by his belief in breaking with tradition to create new art; he also designed the building inside and out.",
+        "ja": "1966年に日本画家・堂本印象が設立した美術館。伝統を破って新しい芸術を創造するという理念に基づく作品と、印象自身が内外装を手がけた建物を紹介しています。"
+      },
+      "primary_image_url": "https://insho-domoto.com/assets/images/top/museum-img.jpg",
+      "image_urls": [
+        "https://insho-domoto.com/assets/images/top/museum-img.jpg"
+      ],
+      "urls": {
+        "en": "https://insho-domoto.com/en/#collection",
+        "ja": "https://insho-domoto.com/collection/"
+      }
+    },
+    {
+      "slug": "iwakura-aa",
+      "cadence": "occasional",
+      "name": "Hakimono Sekizuka",
+      "names": {
+        "en": "Hakimono Sekizuka",
+        "ja": "履物関づか"
+      },
+      "base_url": "https://www.instagram.com/iwakura_aa/",
+      "address_text": "642-19 Iwakura Hanazono-cho, Sakyo-ku, Kyoto 606-0024 Japan",
+      "directions_query": "京都市左京区岩倉花園町642-19",
+      "lat": 35.07210905519659,
+      "lng": 135.7982482797623,
+      "source_categories": ["craft", "design", "gallery"],
+      "is_active": true,
+      "description": {
+        "en": "A converted wood warehouse in quiet Iwakura that combines a handmade Japanese footwear atelier with a gallery introducing selected objects, clothing, craft and cultural events.",
+        "ja": "岩倉の静かな土地にある木材倉庫を改装した履物店とギャラリー。手仕事の履物と、国内外の物や事を独自に紹介する空間です。"
+      },
+      "primary_image_url": "https://hakimonosekizuka.com/cdn/shop/files/HP_6e122ae3-5f08-4345-96b7-1d5d3127415c.jpg?v=1593055863",
+      "image_urls": [
+        "https://hakimonosekizuka.com/cdn/shop/files/HP_6e122ae3-5f08-4345-96b7-1d5d3127415c.jpg?v=1593055863"
+      ],
+      "urls": {
+        "en": "https://www.instagram.com/iwakura_aa/",
+        "ja": "https://www.instagram.com/iwakura_aa/"
+      }
+    },
+    {
+      "slug": "nunuka-life",
+      "cadence": "occasional",
+      "name": "Nunuka Life",
+      "names": {
+        "en": "Nunuka Life",
+        "ja": "Nunuka Life"
+      },
+      "base_url": "https://www.instagram.com/nunuka_life/",
+      "address_text": "10 Jodoji Minamidacho, Sakyo-ku, Kyoto 606-8403 Japan",
+      "directions_query": "京都市左京区浄土寺南田町10",
+      "lat": 35.0261106,
+      "lng": 135.7962923,
+      "source_categories": ["craft", "gallery"],
+      "is_active": true,
+      "description": {
+        "en": "A gallery shop near Ginkakuji and the Philosopher's Path, presenting ceramics, kintsugi and contemporary craft in an old house setting, with opening days announced on Instagram.",
+        "ja": "哲学の道近くの築年数を重ねた民家を生かしたギャラリーショップ。器や工芸品を丁寧に紹介し、営業日はInstagramで告知されています。"
+      },
+      "primary_image_url": "https://res.cloudinary.com/apollo-prj/image/upload/c_fill,w_1200,h_615,q_50/v1663345695/tol-prod/01GD3H8350HT9BJAZVFS6XEJQ1_2022-09-17T01:28:12%2B09:00.jpg",
+      "image_urls": [
+        "https://res.cloudinary.com/apollo-prj/image/upload/c_fill,w_1200,h_615,q_50/v1663345695/tol-prod/01GD3H8350HT9BJAZVFS6XEJQ1_2022-09-17T01:28:12%2B09:00.jpg"
+      ],
+      "urls": {
+        "en": "https://www.instagram.com/nunuka_life/",
+        "ja": "https://www.instagram.com/nunuka_life/"
+      }
+    },
+    {
+      "slug": "acg-villa-kyoto",
+      "cadence": "occasional",
+      "name": "ACG Villa Kyoto",
+      "names": {
+        "en": "ACG Villa Kyoto",
+        "ja": "ACG Villa Kyoto"
+      },
+      "base_url": "https://www.instagram.com/acgvillakyoto/",
+      "address_text": "50-10 Kitashirakawa Oguracho, Sakyo-ku, Kyoto 606-8264 Japan",
+      "directions_query": "京都市左京区北白川小倉町50-10",
+      "lat": 35.0314869,
+      "lng": 135.7888114,
+      "source_categories": ["architecture", "gallery"],
+      "is_active": true,
+      "description": {
+        "en": "ARTCOURT Gallery's appointment-only Kyoto viewing room, opened in 2018 in a Kitashirakawa residence designed around nature, art and time spent in a living space.",
+        "ja": "ARTCOURT Galleryの予約制ビューイングルーム。自然と共にある北白川の住空間にアートを設え、1934年頃の住宅建築と庭も味わえます。"
+      },
+      "primary_image_url": "https://www.artcourtgallery.com/kyoto/wp-content/uploads/2026/01/ZKF74917497.jpg",
+      "image_urls": [
+        "https://www.artcourtgallery.com/kyoto/wp-content/uploads/2026/01/ZKF74917497.jpg",
+        "https://www.artcourtgallery.com/kyoto/wp-content/uploads/2026/01/KLZ3086_s.jpg"
+      ],
+      "urls": {
+        "en": "https://www.instagram.com/acgvillakyoto/",
+        "ja": "https://www.instagram.com/acgvillakyoto/"
+      }
+    },
+    {
+      "slug": "ocue-kyoto",
+      "cadence": "occasional",
+      "name": "( ocue . kyoto",
+      "names": {
+        "en": "( ocue . kyoto",
+        "ja": "( ocue . kyoto（オクキョウト）"
+      },
+      "base_url": "https://www.instagram.com/ocuekyoto/",
+      "address_text": "558 Honeyano-cho, Nakagyo-ku, Kyoto 604-8064 Japan",
+      "directions_query": "京都府京都市中京区骨屋之町558",
+      "lat": 35.006762,
+      "lng": 135.765058,
+      "source_categories": ["art", "gallery"],
+      "is_active": true,
+      "description": {
+        "en": "A gallery and pop-up space in the innermost kura of a century-old Kyoto machiya in the Tominokoji area, conceived as a room for placing things and a cue to step into their deeper contexts.",
+        "ja": "富小路エリアの築100年以上の京町家の最奥にある蔵を活用したギャラリー／ポップアップスペース。「おく」とcueを起点に、ものごとの奥へ踏み込むきっかけとなる場として構想されています。"
+      },
+      "urls": {
+        "en": "https://www.instagram.com/ocuekyoto/",
+        "ja": "https://www.instagram.com/ocuekyoto/"
+      }
+    }
+  ]
+}

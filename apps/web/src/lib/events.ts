@@ -1,5 +1,5 @@
 import { dedupeEvents } from "../../../../packages/shared/event-dedupe.mjs";
-import { classifyEventTiming } from "../../../../packages/shared/event-schedule.mjs";
+import { classifyEventTiming, isEventWithinDisplayWindow } from "../../../../packages/shared/event-schedule.mjs";
 import { supabase } from "./supabase";
 import type { AppLocale } from "./i18n";
 import {
@@ -43,7 +43,7 @@ export type EventRow = {
 
 export type ClassifiedEvent = EventRow & {
   date_text: string;
-  timing: "ongoing" | "upcoming" | "past";
+  timing: "ongoing" | "upcoming" | "past" | "permanent";
 };
 
 export const eventSelect =
@@ -171,6 +171,6 @@ export const displayEventsByLocale = ({
         activeLocale: supportedLocale,
         configuredSources,
         today,
-      }).filter((event) => event.timing !== "past"),
+      }).filter((event) => event.timing !== "past" && isEventWithinDisplayWindow(event, today)),
     ])
   ) as Record<AppLocale, ClassifiedEvent[]>;

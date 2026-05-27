@@ -378,6 +378,115 @@ test("Kyocera detail extraction finds English URLs", () => {
   );
 });
 
+test("Fukuda detail extraction reads only exhibition cards inside exArv", () => {
+  const listingHtml = `
+    <a href="https://fukuda-art-museum.jp/news">News</a>
+    <section id="exArv">
+      <article class="postbox">
+        <a href="https://fukuda-art-museum.jp/exhibition/202512264487">
+          <h2 class="title">若冲にトリハダ！　野菜もウリ！</h2>
+        </a>
+      </article>
+      <article class="postbox">
+        <a href="https://fukuda-art-museum.jp/exhibition/202604134657">
+          <h2 class="title">幸せになりたい！　ー祈りの絵画ー</h2>
+        </a>
+      </article>
+    </section>
+    <a href="https://fukuda-art-museum.jp/exhibition-cat/past">Past</a>
+  `;
+
+  assert.deepEqual(
+    detailUrlExtractors["fukuda-art-museum"](
+      listingHtml,
+      "https://fukuda-art-museum.jp/exhibition",
+    ),
+    [
+      "https://fukuda-art-museum.jp/exhibition/202512264487",
+      "https://fukuda-art-museum.jp/exhibition/202604134657",
+    ],
+  );
+});
+
+test("Fukuda event extraction uses exhibition overview dates", () => {
+  const detailHtml = `
+    <article class="post ex">
+      <figure class="img">
+        <div id="eyeVisual" style="background-image: url('https://fukuda-art-museum.jp/wp/wp-content/uploads/2025/12/fukubi_jyakuchu_torihada_banner_1226-03.jpg')"></div>
+      </figure>
+      <div class="postHead">
+        <p class="date">2025年12月26日（金）</p>
+        <h1 class="title">若冲にトリハダ！　野菜もウリ！</h1>
+      </div>
+      <div class="postBody">
+        <p>京都・嵐山の福田美術館では企画展を開催します。</p>
+        <h3>展覧会概要</h3>
+        <table>
+          <tr><th>タイトル</th><td>若冲にトリハダ！　野菜もウリ！</td></tr>
+          <tr><th>会期</th><td><p>2026年4月25日（土）～　2026年 7月5日（日）<br>前期　2026年4月25日（土）～ 2026年6月1日（月）</p></td></tr>
+        </table>
+      </div>
+    </article>
+  `;
+  const source = {
+    name: "Fukuda Art Museum",
+    source_type: "museum",
+    source_categories: ["museum"],
+    language: "ja",
+  };
+
+  const event = eventExtractors["fukuda-art-museum"](
+    detailHtml,
+    source,
+    "https://fukuda-art-museum.jp/exhibition/202512264487",
+  );
+
+  assert.equal(event.title, "若冲にトリハダ！ 野菜もウリ！");
+  assert.equal(event.date_text, "2026年4月25日（土）～ 2026年 7月5日（日）");
+  assert.equal(event.start_date, "2026-04-25");
+  assert.equal(event.end_date, "2026-07-05");
+  assert.equal(
+    event.primary_image_url,
+    "https://fukuda-art-museum.jp/wp/wp-content/uploads/2025/12/fukubi_jyakuchu_torihada_banner_1226-03.jpg",
+  );
+});
+
+test("Fukuda English event extraction parses overview date order", () => {
+  const detailHtml = `
+    <article class="post ex">
+      <div class="postHead">
+        <p class="date">December 11, 2025</p>
+        <h1 class="title">Jakuchu: Prancing Feathers and Swelling Gourds</h1>
+      </div>
+      <div class="postBody">
+        <p>Fukuda Art Museum holds the special exhibition.</p>
+        <h3>Exhibition Overview</h3>
+        <table>
+          <tr><th>Title</th><td><p>Jakuchu: Prancing Feathers and Swelling Gourds</p></td></tr>
+          <tr><th>Dates</th><td><p>April 25 (Sat.) 2026 &#8211; July 5 (Sun.) 2026<br>1st period: April 25 (Sat.) &#8211; June 1 (Mon.)</p></td></tr>
+        </table>
+      </div>
+    </article>
+  `;
+  const source = {
+    name: "Fukuda Art Museum",
+    source_type: "museum",
+    source_categories: ["museum"],
+    language: "en",
+  };
+
+  const event = eventExtractors["fukuda-art-museum"](
+    detailHtml,
+    source,
+    "https://fukuda-art-museum.jp/en/exhibition/202512111838",
+  );
+
+  assert.equal(event.title, "Jakuchu: Prancing Feathers and Swelling Gourds");
+  assert.equal(event.date_text, "April 25 (Sat.) 2026 – July 5 (Sun.) 2026");
+  assert.equal(event.start_date, "2026-04-25");
+  assert.equal(event.end_date, "2026-07-05");
+});
+
 test("Kyoto National Museum extraction drops the first flyer image", () => {
   const detailHtml = `
     <h1><img src="/images/exhibitions/flyer.jpg" alt=""></h1>
@@ -1031,6 +1140,168 @@ test("Raku Museum extraction keeps only the first image", async () => {
 
   assert.equal(event.primary_image_url, "https://www.raku-yaki.or.jp/images/install-view.jpg");
   assert.deepEqual(event.image_urls, ["https://www.raku-yaki.or.jp/images/install-view.jpg"]);
+});
+
+test("Raku Museum detail URLs include current and forthcoming English tabs", () => {
+  const listingHtml = `
+    <div id="contents">
+      <ul id="ex-tab">
+        <li class="n01 stay01"><a href="#">current exhibition</a></li>
+        <li class="n02"><a href="forthcoming_exhibitions.html">Forthcoming exhibitions</a></li>
+        <li class="n03"><a href="past_exhibitions.html">Past major exhibitions</a></li>
+      </ul>
+      <div class="tabContent"><div id="tab1">Current exhibition</div></div>
+    </div>
+  `;
+
+  const urls = detailUrlExtractors["raku-museum"](
+    listingHtml,
+    "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html",
+  );
+
+  assert.deepEqual(urls, [
+    "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html",
+    "https://www.raku-yaki.or.jp/e/museum/exhibition/forthcoming_exhibitions.html",
+  ]);
+});
+
+test("Raku Museum English exhibition extraction reads tab content date", () => {
+  const detailHtml = `
+    <div id="contents">
+      <div class="tabContent">
+        <div id="tab1">
+          <h4>
+            <div class="lh14"><span class="f11em">Special Exhibition: Raku Successive Generations</span><br />
+              <span class="f09em">- Raku Tea Bowls Crossing Time</span><br />
+              <span class="f09em">Saturday 25 April - Wednesday 26 August 2026</span></div>
+          </h4>
+          <div class="p_box">
+            <img src="../../../common/img/exhibition/flyer63.jpg" width="140" class="img-border" />
+            <p>The tradition of Raku tea bowls has been transmitted within the Raku family for over 450 years.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  const source = {
+    name: "Raku Museum",
+    source_type: "museum",
+    source_categories: ["ceramics", "museum", "craft"],
+    language: "en",
+  };
+
+  const event = extractRakuMuseumEvent(
+    detailHtml,
+    source,
+    "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html",
+  );
+
+  assert.equal(
+    event.title,
+    "Special Exhibition: Raku Successive Generations - Raku Tea Bowls Crossing Time",
+  );
+  assert.equal(event.date_text, "Saturday 25 April - Wednesday 26 August 2026");
+  assert.equal(event.start_date, "2026-04-25");
+  assert.equal(event.end_date, "2026-08-26");
+  assert.equal(event.primary_image_url, "https://www.raku-yaki.or.jp/common/img/exhibition/flyer63.jpg");
+});
+
+test("Raku Museum Japanese homepage extraction reads info row", () => {
+  const detailHtml = `
+    <div class="info">
+      <dl>
+        <dt><span class="t_88 gray">2026/04/25</span></dt>
+        <dd><span class="f12em">【開催中】 <a href="https://www.raku-yaki.or.jp/museum/exhibition/index.html">「特別展　樂歴代 −時代を超える茶碗たち−」</a></span><br />
+          会　期：2026年4月25日（土）〜 8月26日（水）</dd>
+        <dt><span class="t_88 gray"></span></dt>
+        <dd>オンラインイベント<a href="museum/special_program.html">「おうちでみる ギャラリートーク in RAKM」</a>を開催します。</dd>
+      </dl>
+    </div>
+  `;
+  const source = {
+    name: "Raku Museum",
+    source_type: "museum",
+    source_categories: ["ceramics", "museum", "craft"],
+    language: "ja",
+  };
+
+  const event = extractRakuMuseumEvent(
+    detailHtml,
+    source,
+    "https://www.raku-yaki.or.jp/index.html",
+  );
+
+  assert.equal(event.title, "特別展　樂歴代 −時代を超える茶碗たち−");
+  assert.equal(event.date_text, "会 期：2026年4月25日（土）〜 8月26日（水）");
+  assert.equal(event.start_date, "2026-04-25");
+  assert.equal(event.end_date, "2026-08-26");
+  assert.equal(event.source_url, "https://www.raku-yaki.or.jp/index.html");
+});
+
+test("koen detail extraction crawls the main event page itself", () => {
+  const urls = detailUrlExtractors["koen-kyoto"](
+    `<main><h1>event information</h1></main>`,
+    "https://koenkyoto.theshop.jp/p/00006",
+  );
+
+  assert.deepEqual(urls, ["https://koenkyoto.theshop.jp/p/00006"]);
+});
+
+test("koen event extraction reads the main container listing", () => {
+  const detailHtml = `
+    <main class="layout-main" data-route="edit_design_page">
+      <div class="layout-cotContainer" data-container="true" data-container-name="main">
+        <div data-parts="title"><div class="title_title"><p>event information</p></div></div>
+        <div data-parts="title"><div class="title_title"><p>“koen zine fair” 作品の募集</p></div></div>
+        <div data-parts="text">
+          <p>11月に開催を予定しておりますzineの展示販売会“koen zine fair”で、<br>
+          ご紹介させていただく作品を下記の日程で募集いたします。<br><br>
+          開催日時 : 2025.11.1(土)-9(日) 11:00-22:00 ※月・火・水定休<br>
+          開催場所 : koen 2F gallery<br>
+          〒606-8176 京都府京都市左京区一乗寺塚本町15-2</p>
+        </div>
+        <div data-parts="column-image-and-text">
+          <img class="js-image" src="https:&#x2F;&#x2F;baseec-img-mng.akamaized.net&#x2F;images&#x2F;shop_front&#x2F;koenkyoto-theshop-jp&#x2F;79aef0731e7e60975e7cd0e589a13ef6.png">
+        </div>
+      </div>
+    </main>
+  `;
+  const source = {
+    name: "koen",
+    source_type: "gallery",
+    source_categories: ["gallery"],
+    language: "ja",
+    address_text: "15-2 Ichijoji Tsukamotocho, Sakyo-ku, Kyoto 606-8176 Japan",
+  };
+
+  const event = eventExtractors["koen-kyoto"](
+    detailHtml,
+    source,
+    "https://koenkyoto.theshop.jp/p/00006",
+  );
+
+  assert.equal(event.title, "“koen zine fair” 作品の募集");
+  assert.equal(event.date_text, "開催日時 : 2025.11.1(土)-9(日) 11:00-22:00 ※月・火・水定休");
+  assert.equal(event.start_date, "2025-11-01");
+  assert.equal(event.end_date, "2025-11-09");
+  assert.equal(event.description.includes("zineの展示販売会"), true);
+  assert.equal(
+    event.primary_image_url,
+    "https://baseec-img-mng.akamaized.net/images/shop_front/koenkyoto-theshop-jp/79aef0731e7e60975e7cd0e589a13ef6.png",
+  );
+});
+
+test("source-specific skip rule drops past koen events", () => {
+  const reason = getSourceSpecificSkipReason(
+    { slug: "koen-kyoto" },
+    {
+      title: "past koen event",
+      start_date: "2025-11-01",
+      end_date: "2025-11-09",
+    },
+  );
+
+  assert.equal(reason, "past event");
 });
 
 test("Sen-Oku extraction removes the trailing ad image", () => {

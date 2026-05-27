@@ -210,7 +210,7 @@
       "name": "Gallery Baiken",
       "names": {
         "en": "Gallery Baiken",
-        "ja": "梅軒画廊"
+        "ja": "Gallery Baiken"
       },
       "source_type": "gallery",
       "language": "ja",
@@ -317,34 +317,6 @@
       }
     },
     {
-      "slug": "essence-kyoto",
-      "name": "Essence Kyoto",
-      "source_type": "gallery",
-      "language": "ja",
-      "address_text": "2F, 36-1 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan",
-      "lat": 35.011101,
-      "lng": 135.780533,
-      "base_url": "https://essencekyoto.com/",
-      "start_urls": ["https://essencekyoto.com/"],
-      "allowed_domains": ["essencekyoto.com"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/"],
-      "notes": "Japanese-only source. The exhibition is surfaced directly on the homepage beneath the hero. Extract only the top homepage exhibition rows and ignore the storefront content below.",
-      "is_active": true,
-      "source_categories": ["design", "craft", "gallery"],
-      "map_visibility": true,
-      "locales": {
-        "ja": {
-          "start_urls": ["https://essencekyoto.com/"],
-          "event_page_patterns": ["/"]
-        },
-        "en": {
-          "start_urls": [],
-          "event_page_patterns": []
-        }
-      }
-    },
-    {
       "slug": "sibasi",
       "name": "Sibasi",
       "source_type": "venue",
@@ -399,6 +371,34 @@
         "ja": {
           "start_urls": ["https://kojin-kyoto.com/event/"],
           "event_page_patterns": ["/event/"]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
+    },
+    {
+      "slug": "koen-kyoto",
+      "name": "koen",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "15-2 Ichijoji Tsukamotocho, Sakyo-ku, Kyoto-shi, Kyoto 606-8176 Japan",
+      "lat": 35.03862,
+      "lng": 135.78973,
+      "base_url": "https://koenkyoto.theshop.jp/p/00006",
+      "start_urls": ["https://koenkyoto.theshop.jp/p/00006"],
+      "allowed_domains": ["koenkyoto.theshop.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/p/00006"],
+      "notes": "Japanese-only BASE page. Events are listed directly inside the main tag container on the event information page.",
+      "is_active": true,
+      "source_categories": ["gallery"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://koenkyoto.theshop.jp/p/00006"],
+          "event_page_patterns": ["/p/00006"]
         },
         "en": {
           "start_urls": [],
@@ -899,20 +899,15 @@
       "allowed_domains": ["www.raku-yaki.or.jp", "raku-yaki.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
-      "notes": "English version of the Raku Museum exhibition index; dedicated to Raku ware ceramics. The header offers an English/Japanese language toggle.",
+      "notes": "English exhibition index uses the current and forthcoming tabs inside #contents .tabContent. Japanese homepage uses the .info topic list; each exhibition row links its title to the event page. The header offers an English/Japanese language toggle.",
       "is_active": true,
       "source_categories": ["ceramics", "museum", "craft"],
       "measure_image_dimensions": true,
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [
-            "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"
-          ],
-          "event_page_patterns": [
-            "/e/museum/exhibition/",
-            "/museum/exhibition/"
-          ]
+          "start_urls": ["https://www.raku-yaki.or.jp/index.html"],
+          "event_page_patterns": ["/museum/exhibition/"]
         },
         "en": {
           "start_urls": [
@@ -946,34 +941,6 @@
         "ja": {
           "start_urls": ["https://www.kusakabeg.com/"],
           "event_page_patterns": ["/exhibition", "/news", "/"]
-        },
-        "en": {
-          "start_urls": [],
-          "event_page_patterns": []
-        }
-      }
-    },
-    {
-      "slug": "insho-domoto",
-      "name": "Insho-Domoto Museum of Fine Arts",
-      "source_type": "museum",
-      "language": "ja",
-      "address_text": "26-3 Hirano Kamiyanagi-cho, Kita-ku, Kyoto 603-8355 Japan",
-      "lat": 35.0351347,
-      "lng": 135.7260355,
-      "base_url": "https://insho-domoto.com/exhibitions/",
-      "start_urls": ["https://insho-domoto.com/exhibitions/"],
-      "allowed_domains": ["insho-domoto.com"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions/"],
-      "notes": "Use the exhibitions listing as the entry point for exhibition detail pages under `/exhibitions/<id>/`.",
-      "is_active": true,
-      "source_categories": ["museum"],
-      "map_visibility": true,
-      "locales": {
-        "ja": {
-          "start_urls": ["https://insho-domoto.com/exhibitions/"],
-          "event_page_patterns": ["/exhibitions/"]
         },
         "en": {
           "start_urls": [],
@@ -1115,27 +1082,36 @@
       "slug": "fukuda-art-museum",
       "name": "Fukuda Art Museum",
       "source_type": "museum",
-      "language": "en",
+      "language": "jp",
       "address_text": "3-16 Sagatenryuji Susukinobaba-cho, Ukyo-ku, Kyoto 616-8385 Japan",
       "lat": 35.0137922,
       "lng": 135.6762262,
-      "base_url": "https://fukuda-art-museum.jp/en/exhibition",
-      "start_urls": ["https://fukuda-art-museum.jp/en/exhibition"],
+      "base_url": "https://fukuda-art-museum.jp/exhibition",
+      "start_urls": [
+        "https://fukuda-art-museum.jp/exhibition",
+        "https://fukuda-art-museum.jp/exhibition-cat/after"
+      ],
       "allowed_domains": ["fukuda-art-museum.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition", "/exhibition"],
-      "notes": "English exhibition listing.",
+      "event_page_patterns": ["/exhibition"],
+      "notes": "Japanese default source. Current exhibitions are listed on /exhibition and upcoming exhibitions on /exhibition-cat/after. English uses /en/exhibition and /en/exhibition-cat/after. Listing cards live inside section#exArv.",
       "is_active": true,
       "source_categories": ["museum"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [],
-          "event_page_patterns": []
+          "start_urls": [
+            "https://fukuda-art-museum.jp/exhibition",
+            "https://fukuda-art-museum.jp/exhibition-cat/after"
+          ],
+          "event_page_patterns": ["/exhibition"]
         },
         "en": {
-          "start_urls": ["https://fukuda-art-museum.jp/en/exhibition"],
-          "event_page_patterns": ["/en/exhibition", "/exhibition"]
+          "start_urls": [
+            "https://fukuda-art-museum.jp/en/exhibition",
+            "https://fukuda-art-museum.jp/en/exhibition-cat/after"
+          ],
+          "event_page_patterns": ["/en/exhibition"]
         }
       }
     },

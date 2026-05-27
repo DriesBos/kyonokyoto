@@ -22,7 +22,7 @@ export const initHeaderControls = () => {
   const filterPanel = root.querySelector("[data-filter-options]");
   const cards = Array.from(document.querySelectorAll("[data-event-card]"));
   const groups = Array.from(document.querySelectorAll("[data-event-group]"));
-  const divider = document.querySelector("[data-event-divider]");
+  const dividers = Array.from(document.querySelectorAll("[data-event-divider]"));
   const filteredEmptyState = document.querySelector("[data-filter-empty]");
   const mapToggle = root.querySelector("[data-map-toggle]");
   const contentContainer = document.querySelector("[data-content-container]");
@@ -189,9 +189,20 @@ export const initHeaderControls = () => {
       if (visibleCards > 0) visibleGroups += 1;
     });
 
-    if (divider) {
-      divider.toggleAttribute("hidden", visibleGroups < 2);
-    }
+    dividers.forEach((divider) => {
+      if (!(divider instanceof HTMLElement)) return;
+
+      const beforeGroup = groups.find(
+        (group) => group instanceof HTMLElement && group.dataset.eventGroupName === divider.dataset.beforeGroup
+      );
+      const afterGroup = groups.find(
+        (group) => group instanceof HTMLElement && group.dataset.eventGroupName === divider.dataset.afterGroup
+      );
+      const hasVisibleBefore = beforeGroup instanceof HTMLElement && !beforeGroup.hasAttribute("hidden");
+      const hasVisibleAfter = afterGroup instanceof HTMLElement && !afterGroup.hasAttribute("hidden");
+
+      divider.toggleAttribute("hidden", visibleGroups < 2 || !hasVisibleBefore || !hasVisibleAfter);
+    });
 
     if (filteredEmptyState) {
       filteredEmptyState.toggleAttribute("hidden", visibleCount > 0 || !isFilteringActive());
