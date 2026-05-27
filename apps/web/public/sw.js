@@ -55,13 +55,22 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const response = await fetch(request);
-          if (response.ok && !response.redirected && url.pathname !== "/" && url.pathname !== "/map") {
+          if (
+            response.ok &&
+            !response.redirected &&
+            url.pathname !== "/" &&
+            url.pathname !== "/map"
+          ) {
             const cache = await caches.open(CACHE_NAME);
             cache.put(request, response.clone());
           }
           return response;
         } catch {
-          return (await caches.match(request)) ?? (await caches.match("/en/")) ?? Response.error();
+          return (
+            (await caches.match(request)) ??
+            (await caches.match("/en/")) ??
+            Response.error()
+          );
         }
       })(),
     );

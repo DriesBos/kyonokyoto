@@ -23,7 +23,13 @@ function parseEnvFile(contents) {
   return env;
 }
 
-async function restRequest({ env, path, method = "GET", body = null, prefer = "return=representation" }) {
+async function restRequest({
+  env,
+  path,
+  method = "GET",
+  body = null,
+  prefer = "return=representation",
+}) {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
     method,
     headers: {
@@ -37,7 +43,9 @@ async function restRequest({ env, path, method = "GET", body = null, prefer = "r
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Supabase request failed (${response.status}) for ${path}: ${errorText}`);
+    throw new Error(
+      `Supabase request failed (${response.status}) for ${path}: ${errorText}`,
+    );
   }
 
   if (response.status === 204) return null;
@@ -48,7 +56,9 @@ const envContents = await readFile(crawlerEnvPath, "utf8");
 const env = parseEnvFile(envContents);
 
 if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
+  throw new Error(
+    "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env",
+  );
 }
 
 const sourceConfig = await loadSourcesConfig();
@@ -82,7 +92,9 @@ const existingSources = await restRequest({
   path: "sources?select=id,slug",
 });
 
-const removedSources = existingSources.filter((source) => !configuredSlugs.has(source.slug));
+const removedSources = existingSources.filter(
+  (source) => !configuredSlugs.has(source.slug),
+);
 
 let deletedSourceCount = 0;
 let deletedEventCount = 0;
@@ -117,6 +129,6 @@ console.log(
       removed_source_slugs: removedSources.map((source) => source.slug),
     },
     null,
-    2
-  )
+    2,
+  ),
 );

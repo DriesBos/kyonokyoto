@@ -1,11 +1,11 @@
 import { dedupeEvents } from "../../../../packages/shared/event-dedupe.mjs";
-import { classifyEventTiming, isEventWithinDisplayWindow } from "../../../../packages/shared/event-schedule.mjs";
+import {
+  classifyEventTiming,
+  isEventWithinDisplayWindow,
+} from "../../../../packages/shared/event-schedule.mjs";
 import { supabase } from "./supabase";
 import type { AppLocale } from "./i18n";
-import {
-  formatEventDateRange,
-  parseEnglishMonthDateRange,
-} from "./calendar";
+import { formatEventDateRange, parseEnglishMonthDateRange } from "./calendar";
 import type { SourceConfig } from "./sources";
 import { sourceCategoriesForEvent } from "./sources";
 
@@ -44,6 +44,7 @@ export type EventRow = {
 export type ClassifiedEvent = EventRow & {
   date_text: string;
   timing: "ongoing" | "upcoming" | "past" | "permanent";
+  media_embeds?: { type: "youtube"; url: string; video_id: string }[];
 };
 
 export const eventSelect =
@@ -65,9 +66,12 @@ const fetchEvents = (select: string) =>
 const isRelationSelectError = (error: { code?: string } | null | undefined) =>
   error?.code === "PGRST200" || error?.code === "PGRST205";
 
-const isMissingCoordinateError = (error: { code?: string; message?: string } | null | undefined) =>
+const isMissingCoordinateError = (
+  error: { code?: string; message?: string } | null | undefined,
+) =>
   error?.code === "PGRST204" ||
-  (error?.code === "42703" && /events\.(lat|lng)|column events\.(lat|lng)/i.test(error.message ?? ""));
+  (error?.code === "42703" &&
+    /events\.(lat|lng)|column events\.(lat|lng)/i.test(error.message ?? ""));
 
 export const fetchPublishedEvents = async () => {
   const selectAttempts = [
@@ -95,12 +99,19 @@ export const fetchPublishedEvents = async () => {
   throw lastError;
 };
 
-export const localizeEvent = (event: EventRow, activeLocale: AppLocale): EventRow => {
+export const localizeEvent = (
+  event: EventRow,
+  activeLocale: AppLocale,
+): EventRow => {
   const translations = event.event_translations ?? [];
-  const preferred = translations.find((translation) => translation.locale === activeLocale) ?? null;
-  const english = translations.find((translation) => translation.locale === "en") ?? null;
-  const japanese = translations.find((translation) => translation.locale === "ja") ?? null;
-  const fallback = activeLocale === "ja" ? english : english ?? japanese;
+  const preferred =
+    translations.find((translation) => translation.locale === activeLocale) ??
+    null;
+  const english =
+    translations.find((translation) => translation.locale === "en") ?? null;
+  const japanese =
+    translations.find((translation) => translation.locale === "ja") ?? null;
+  const fallback = activeLocale === "ja" ? english : (english ?? japanese);
   const translation = preferred ?? fallback;
 
   if (!translation) return event;
@@ -131,13 +142,20 @@ export const formatEventsForLocale = ({
   events.map((rawEvent) => {
     const event = localizeEvent(rawEvent, activeLocale);
     const sourceCategories = sourceCategoriesForEvent(event, configuredSources);
-    const fallbackCalendarYear = event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
+    const fallbackCalendarYear =
+      event.source_url.match(/20\d{2}/)?.[0] ??
+      event.updated_at?.match(/20\d{2}/)?.[0] ??
+      today;
     const parsedCalendarDates =
       event.calendar_starts_at && event.calendar_ends_at
         ? null
         : parseEnglishMonthDateRange(event.date_text, fallbackCalendarYear);
-    const calendarStartsAt = event.calendar_starts_at ?? parsedCalendarDates?.calendar_starts_at ?? null;
-    const calendarEndsAt = event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
+    const calendarStartsAt =
+      event.calendar_starts_at ??
+      parsedCalendarDates?.calendar_starts_at ??
+      null;
+    const calendarEndsAt =
+      event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
     const eventWithCalendarDates = {
       ...event,
       calendar_starts_at: calendarStartsAt,
@@ -147,7 +165,11 @@ export const formatEventsForLocale = ({
     return {
       ...eventWithCalendarDates,
       categories: sourceCategories,
-      date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
+      date_text: formatEventDateRange(
+        calendarStartsAt,
+        calendarEndsAt,
+        event.date_text,
+      ),
       timing: classifyEventTiming(eventWithCalendarDates, today),
     };
   });
@@ -171,6 +193,9 @@ export const displayEventsByLocale = ({
         activeLocale: supportedLocale,
         configuredSources,
         today,
-      }).filter((event) => event.timing !== "past" && isEventWithinDisplayWindow(event, today)),
-    ])
+      }).filter(
+        (event) =>
+          event.timing !== "past" && isEventWithinDisplayWindow(event, today),
+      ),
+    ]),
   ) as Record<AppLocale, ClassifiedEvent[]>;

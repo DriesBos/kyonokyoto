@@ -28,7 +28,9 @@ export function addMonthsDateOnly(dateOnly, months) {
   const targetMonthIndex = month - 1 + months;
   const targetYear = year + Math.floor(targetMonthIndex / 12);
   const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
-  const daysInTargetMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const daysInTargetMonth = new Date(
+    Date.UTC(targetYear, targetMonth + 1, 0),
+  ).getUTCDate();
   const targetDay = Math.min(day, daysInTargetMonth);
 
   return [
@@ -39,13 +41,19 @@ export function addMonthsDateOnly(dateOnly, months) {
 }
 
 export function eventStartDateOnly(event) {
-  const start = normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at);
+  const start = normalizeDateOnly(
+    event?.start_date ?? event?.calendar_starts_at,
+  );
   if (start) return start;
 
   return normalizeOccurrenceDates(event?.occurrence_dates)[0] ?? null;
 }
 
-export function isEventWithinDisplayWindow(event, todayDateOnly, { monthsAhead = 6 } = {}) {
+export function isEventWithinDisplayWindow(
+  event,
+  todayDateOnly,
+  { monthsAhead = 6 } = {},
+) {
   const start = eventStartDateOnly(event);
   const cutoff = addMonthsDateOnly(todayDateOnly, monthsAhead);
 
@@ -55,7 +63,8 @@ export function isEventWithinDisplayWindow(event, todayDateOnly, { monthsAhead =
 
 export function inferScheduleType(event) {
   const explicitType =
-    typeof event?.schedule_type === "string" && VALID_SCHEDULE_TYPES.has(event.schedule_type)
+    typeof event?.schedule_type === "string" &&
+    VALID_SCHEDULE_TYPES.has(event.schedule_type)
       ? event.schedule_type
       : null;
 
@@ -64,7 +73,9 @@ export function inferScheduleType(event) {
   const occurrenceDates = normalizeOccurrenceDates(event?.occurrence_dates);
   if (occurrenceDates.length > 0) return "occurrence_set";
 
-  const start = normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at);
+  const start = normalizeDateOnly(
+    event?.start_date ?? event?.calendar_starts_at,
+  );
   const end = normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at);
 
   if (start && end && start !== end) return "range";
@@ -75,8 +86,11 @@ export function inferScheduleType(event) {
 
 export function classifyEventTiming(event, todayDateOnly) {
   const today = normalizeDateOnly(todayDateOnly);
-  const start = normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at);
-  const end = normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at) ?? start;
+  const start = normalizeDateOnly(
+    event?.start_date ?? event?.calendar_starts_at,
+  );
+  const end =
+    normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at) ?? start;
   const occurrenceDates = normalizeOccurrenceDates(event?.occurrence_dates);
   const scheduleType = inferScheduleType(event);
 
@@ -89,9 +103,10 @@ export function classifyEventTiming(event, todayDateOnly) {
   }
 
   if (scheduleType === "occurrence_set") {
-    const dates = occurrenceDates.length > 0
-      ? occurrenceDates
-      : [start ?? end].filter(Boolean);
+    const dates =
+      occurrenceDates.length > 0
+        ? occurrenceDates
+        : [start ?? end].filter(Boolean);
 
     if (dates.length === 0) return "ongoing";
     if (dates.some((date) => date === today)) return "ongoing";
@@ -111,7 +126,11 @@ export function classifyEventTiming(event, todayDateOnly) {
   return "ongoing";
 }
 
-export function buildScheduleFields({ startDate = null, endDate = null, occurrenceDates = [] } = {}) {
+export function buildScheduleFields({
+  startDate = null,
+  endDate = null,
+  occurrenceDates = [],
+} = {}) {
   const normalizedStartDate = normalizeDateOnly(startDate);
   const normalizedEndDate = normalizeDateOnly(endDate) ?? normalizedStartDate;
   const normalizedOccurrenceDates = normalizeOccurrenceDates(occurrenceDates);

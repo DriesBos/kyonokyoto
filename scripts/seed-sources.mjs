@@ -30,7 +30,9 @@ const supabaseUrl = env.SUPABASE_URL;
 const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env");
+  throw new Error(
+    "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env",
+  );
 }
 
 const sourceConfig = await loadSourcesConfig();
@@ -50,16 +52,19 @@ const sources = sourceConfig.map((source) => ({
   is_active: source.is_active ?? true,
 }));
 
-const response = await fetch(`${supabaseUrl}/rest/v1/sources?on_conflict=slug`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    apikey: serviceRoleKey,
-    Authorization: `Bearer ${serviceRoleKey}`,
-    Prefer: "resolution=merge-duplicates,return=representation",
+const response = await fetch(
+  `${supabaseUrl}/rest/v1/sources?on_conflict=slug`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      Prefer: "resolution=merge-duplicates,return=representation",
+    },
+    body: JSON.stringify(sources),
   },
-  body: JSON.stringify(sources),
-});
+);
 
 if (!response.ok) {
   const errorText = await response.text();

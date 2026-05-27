@@ -67,8 +67,9 @@ export const normalizeCategory = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-export const normalizeCategoryList = (values: string[]) =>
-  [...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean))];
+export const normalizeCategoryList = (values: string[]) => [
+  ...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean)),
+];
 
 export const titleCaseCategory = (value: string) =>
   value
@@ -112,7 +113,10 @@ export const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
 
   for (const domain of source.allowed_domains ?? []) {
     const normalizedDomain = domain.toLowerCase();
-    if (hostname === normalizedDomain || hostname.endsWith(`.${normalizedDomain}`)) {
+    if (
+      hostname === normalizedDomain ||
+      hostname.endsWith(`.${normalizedDomain}`)
+    ) {
       matchesSourceHost = true;
       score = Math.max(score, 10);
     }
@@ -143,10 +147,19 @@ export const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
   return score;
 };
 
-export const sourceCategoriesForEvent = (event: EventRow, configuredSources: SourceConfig[]) => {
+export const sourceCategoriesForEvent = (
+  event: EventRow,
+  configuredSources: SourceConfig[],
+) => {
   const bestSource = configuredSources
-    .map((source) => ({ source, score: sourceMatchScore(event.source_url, source) }))
-    .filter((match) => match.score > 0 && (match.source.source_categories?.length ?? 0) > 0)
+    .map((source) => ({
+      source,
+      score: sourceMatchScore(event.source_url, source),
+    }))
+    .filter(
+      (match) =>
+        match.score > 0 && (match.source.source_categories?.length ?? 0) > 0,
+    )
     .sort((a, b) => b.score - a.score)[0]?.source;
 
   return bestSource?.source_categories?.length
@@ -154,14 +167,22 @@ export const sourceCategoriesForEvent = (event: EventRow, configuredSources: Sou
     : normalizeCategoryList(event.categories ?? []);
 };
 
-export const sourceSlugForEvent = (event: EventRow, configuredSources: SourceConfig[]) =>
+export const sourceSlugForEvent = (
+  event: EventRow,
+  configuredSources: SourceConfig[],
+) =>
   configuredSources
-    .map((source) => ({ source, score: sourceMatchScore(event.source_url, source) }))
+    .map((source) => ({
+      source,
+      score: sourceMatchScore(event.source_url, source),
+    }))
     .filter((match) => match.score > 0)
     .sort((a, b) => b.score - a.score)[0]?.source.slug ?? null;
 
-const sourceBySlug = (configuredSources: SourceConfig[], sourceSlug: string | null) =>
-  configuredSources.find((source) => source.slug === sourceSlug) ?? null;
+const sourceBySlug = (
+  configuredSources: SourceConfig[],
+  sourceSlug: string | null,
+) => configuredSources.find((source) => source.slug === sourceSlug) ?? null;
 
 const toCoordinate = (value: unknown) => {
   const coordinate = Number(value);
@@ -194,16 +215,18 @@ const findVenueLocationForCoordinates = (
 ) => {
   if (!source || lat === null || lng === null) return null;
 
-  return (source.venue_locations ?? []).find((location) => {
-    const locationLat = toCoordinate(location.lat);
-    const locationLng = toCoordinate(location.lng);
-    return (
-      locationLat !== null &&
-      locationLng !== null &&
-      locationLat.toFixed(6) === lat.toFixed(6) &&
-      locationLng.toFixed(6) === lng.toFixed(6)
-    );
-  }) ?? null;
+  return (
+    (source.venue_locations ?? []).find((location) => {
+      const locationLat = toCoordinate(location.lat);
+      const locationLng = toCoordinate(location.lng);
+      return (
+        locationLat !== null &&
+        locationLng !== null &&
+        locationLat.toFixed(6) === lat.toFixed(6) &&
+        locationLng.toFixed(6) === lng.toFixed(6)
+      );
+    }) ?? null
+  );
 };
 
 const locationNameForEvent = (
@@ -233,13 +256,19 @@ export const mapLocationIdForEvent = (
   configuredSources: SourceConfig[],
 ) => {
   const source = sourceBySlug(configuredSources, sourceSlug);
-  const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
+  const coordinates = mapCoordinatesForEvent(
+    event,
+    sourceSlug,
+    configuredSources,
+  );
   const lat = coordinates?.lat ?? null;
   const lng = coordinates?.lng ?? null;
 
   if (lat === null || lng === null || !sourceSlug) return null;
 
-  const venueKey = normalizeCategory(locationNameForEvent(source, lat, lng, event.institution_name));
+  const venueKey = normalizeCategory(
+    locationNameForEvent(source, lat, lng, event.institution_name),
+  );
   return `${sourceSlug}:${lat.toFixed(6)}:${lng.toFixed(6)}:${venueKey}`;
 };
 
@@ -249,7 +278,10 @@ export const mapCoordinatesForEvent = (
   configuredSources: SourceConfig[],
 ) => {
   const source = sourceBySlug(configuredSources, sourceSlug);
-  return coordinatePairFrom(event.lat, event.lng) ?? coordinatePairFrom(source?.lat, source?.lng);
+  return (
+    coordinatePairFrom(event.lat, event.lng) ??
+    coordinatePairFrom(source?.lat, source?.lng)
+  );
 };
 
 export const categoriesForEvents = (events: EventRow[]): CategoryOption[] => {
@@ -288,16 +320,24 @@ export const mapSourcesForEvents = (
     const source = sourceBySlug(configuredSources, sourceSlug);
     if (!sourceSlug || source?.map_visibility === false) return;
 
-    const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
+    const coordinates = mapCoordinatesForEvent(
+      event,
+      sourceSlug,
+      configuredSources,
+    );
     const lat = coordinates?.lat ?? null;
     const lng = coordinates?.lng ?? null;
     const id = mapLocationIdForEvent(event, sourceSlug, configuredSources);
     if (lat === null || lng === null || !id) return;
 
     const existing = locations.get(id);
-    const categories = source ? locationCategoriesForSource(source) : normalizeCategoryList(event.categories ?? []);
+    const categories = source
+      ? locationCategoriesForSource(source)
+      : normalizeCategoryList(event.categories ?? []);
     if (existing) {
-      existing.categories = [...new Set([...existing.categories, ...categories])];
+      existing.categories = [
+        ...new Set([...existing.categories, ...categories]),
+      ];
       return;
     }
 

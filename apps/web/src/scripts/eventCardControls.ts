@@ -52,7 +52,7 @@ const animateHeight = async (element, from, to) => {
   element.style.height = `${to}px`;
   const animation = element.animate(
     [{ height: `${from}px` }, { height: `${to}px` }],
-    heightTransition
+    heightTransition,
   );
 
   try {
@@ -66,16 +66,14 @@ const fadeIn = (targets, options = {}) => {
   elements.forEach((target) => {
     if (!(target instanceof HTMLElement)) return;
     target.style.visibility = "visible";
-    target.animate(
-      [{ opacity: 0 }, { opacity: 1 }],
-      {
+    target
+      .animate([{ opacity: 0 }, { opacity: 1 }], {
         duration: options.duration ?? fadeTransition.duration,
         delay: options.delay ?? 0,
         easing: fadeTransition.easing,
         fill: "forwards",
-      }
-    ).finished
-      .then(() => {
+      })
+      .finished.then(() => {
         target.style.opacity = "1";
       })
       .catch(() => {});
@@ -87,16 +85,14 @@ const fadeOut = (targets, options = {}) => {
 
   elements.forEach((target) => {
     if (!(target instanceof HTMLElement)) return;
-    target.animate(
-      [{ opacity: 1 }, { opacity: 0 }],
-      {
+    target
+      .animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: options.duration ?? fadeTransition.duration,
         delay: options.delay ?? 0,
         easing: fadeTransition.easing,
         fill: "forwards",
-      }
-    ).finished
-      .then(() => {
+      })
+      .finished.then(() => {
         target.style.opacity = "0";
         target.style.visibility = "visible";
       })
@@ -133,18 +129,32 @@ const randomBetween = (min, max) => min + Math.random() * (max - min);
 const setOrganicDotShape = (dot) => {
   const variant = Math.floor(Math.random() * 3) + 1;
   dot.style.setProperty("--dot-mask", `var(--dot-mask-${variant})`);
-  dot.style.setProperty("--dot-rotation", `${randomBetween(-18, 18).toFixed(2)}deg`);
+  dot.style.setProperty(
+    "--dot-rotation",
+    `${randomBetween(-18, 18).toFixed(2)}deg`,
+  );
   dot.style.setProperty("--dot-scale-x", randomBetween(0.94, 1.06).toFixed(3));
   dot.style.setProperty("--dot-scale-y", randomBetween(0.96, 1.08).toFixed(3));
 };
 
 const hasActiveCardBefore = (card) =>
-  Array.from(document.querySelectorAll(`${cardSelector}[data-active='true']`)).some((activeCard) => {
-    if (!(activeCard instanceof HTMLElement) || activeCard === card) return false;
-    return Boolean(activeCard.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING);
+  Array.from(
+    document.querySelectorAll(`${cardSelector}[data-active='true']`),
+  ).some((activeCard) => {
+    if (!(activeCard instanceof HTMLElement) || activeCard === card)
+      return false;
+    return Boolean(
+      activeCard.compareDocumentPosition(card) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
-const setCardDotPosition = (card, clientX, clientY, anchorFromBottom = false) => {
+const setCardDotPosition = (
+  card,
+  clientX,
+  clientY,
+  anchorFromBottom = false,
+) => {
   const rect = card.getBoundingClientRect();
   const dot = getCardDot(card);
   dot.style.left = `${clientX - rect.left - card.clientLeft}px`;
@@ -152,7 +162,8 @@ const setCardDotPosition = (card, clientX, clientY, anchorFromBottom = false) =>
   dot.style.removeProperty("bottom");
 
   if (anchorFromBottom) {
-    const bottomBorderWidth = card.offsetHeight - card.clientHeight - card.clientTop;
+    const bottomBorderWidth =
+      card.offsetHeight - card.clientHeight - card.clientTop;
     dot.style.bottom = `${rect.bottom - clientY - bottomBorderWidth}px`;
     dot.style.setProperty("--event-card-dot-translate-y", "50%");
   } else {
@@ -172,7 +183,11 @@ const hideCardDot = () => {
 const getMediaHeight = (card, isActive) => {
   const styles = window.getComputedStyle(card);
   return styles
-    .getPropertyValue(isActive ? "--event-card-media-row-height-active" : "--event-card-media-row-height")
+    .getPropertyValue(
+      isActive
+        ? "--event-card-media-row-height-active"
+        : "--event-card-media-row-height",
+    )
     .trim();
 };
 
@@ -198,7 +213,9 @@ const measureCardHeight = (card, content, contentHeight, mediaHeight) => {
 };
 
 const syncActionInteractivity = (card, isActive) => {
-  const actionContainers = Array.from(card.querySelectorAll(actionContainerSelector));
+  const actionContainers = Array.from(
+    card.querySelectorAll(actionContainerSelector),
+  );
   if (!actionContainers.length) return;
 
   actionContainers.forEach((actions) => {
@@ -224,7 +241,8 @@ const syncActionInteractivity = (card, isActive) => {
       }
 
       if (control.dataset.eventCardInactiveTabindex === undefined) {
-        control.dataset.eventCardInactiveTabindex = control.getAttribute("tabindex") ?? "__none__";
+        control.dataset.eventCardInactiveTabindex =
+          control.getAttribute("tabindex") ?? "__none__";
       }
 
       control.setAttribute("tabindex", "-1");
@@ -241,7 +259,7 @@ const emitCardActiveChange = (card, isActive) => {
         sourceSlug: card.dataset.mapSourceSlug || "",
         locationId: card.dataset.mapLocationId || "",
       },
-    })
+    }),
   );
 };
 
@@ -292,7 +310,12 @@ const animateCardState = (card, isActive) => {
     setCardActiveState(card, true);
     emitCardActiveChange(card, true);
     const targetContentHeight = content.scrollHeight;
-    const expandedCardHeight = measureCardHeight(card, content, "auto", targetMediaHeight);
+    const expandedCardHeight = measureCardHeight(
+      card,
+      content,
+      "auto",
+      targetMediaHeight,
+    );
     content.style.height = "0px";
     card.style.height = `${startHeight}px`;
     setFadeHidden(fadeTargets);
@@ -316,7 +339,12 @@ const animateCardState = (card, isActive) => {
   setCardActiveState(card, false);
   emitCardActiveChange(card, false);
   fadeOut(fadeTargets);
-  const collapsedCardHeight = measureCardHeight(card, content, "0px", targetMediaHeight);
+  const collapsedCardHeight = measureCardHeight(
+    card,
+    content,
+    "0px",
+    targetMediaHeight,
+  );
   card.style.height = `${startHeight}px`;
   content.style.height = `${content.offsetHeight}px`;
   card.style.setProperty(mediaHeightProperty, targetMediaHeight);
@@ -353,7 +381,8 @@ const activateCard = (card) => {
   document.querySelectorAll(cardSelector).forEach((otherCard) => {
     if (!(otherCard instanceof HTMLElement)) return;
     const shouldActivate = otherCard === card;
-    if (otherCard.getAttribute("data-active") === String(shouldActivate)) return;
+    if (otherCard.getAttribute("data-active") === String(shouldActivate))
+      return;
 
     animateCardState(otherCard, shouldActivate);
   });
@@ -361,7 +390,9 @@ const activateCard = (card) => {
 
 const deactivateAllCards = () => {
   hideCardDot();
-  const transitions = Array.from(document.querySelectorAll(`${cardSelector}[data-active='true']`))
+  const transitions = Array.from(
+    document.querySelectorAll(`${cardSelector}[data-active='true']`),
+  )
     .filter((card): card is HTMLElement => card instanceof HTMLElement)
     .map((card) => animateCardState(card, false));
 
@@ -373,7 +404,11 @@ const deactivateAllCards = () => {
 const getVisibleCards = () =>
   Array.from(document.querySelectorAll(cardSelector)).filter((card) => {
     if (!(card instanceof HTMLElement)) return false;
-    return !card.hidden && !card.closest("[hidden]") && card.getClientRects().length > 0;
+    return (
+      !card.hidden &&
+      !card.closest("[hidden]") &&
+      card.getClientRects().length > 0
+    );
   });
 
 const scrollCardIntoEventsView = (card) => {
@@ -386,10 +421,15 @@ const scrollCardIntoEventsView = (card) => {
   const eventsSectionRect = eventsSection.getBoundingClientRect();
   const cardRect = card.getBoundingClientRect();
   const mainHeader = eventsSection.querySelector("[data-main-header]");
-  const scrollPadding = mainHeader instanceof HTMLElement
-    ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
-    : 0;
-  const nextScrollTop = eventsSection.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
+  const scrollPadding =
+    mainHeader instanceof HTMLElement
+      ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
+      : 0;
+  const nextScrollTop =
+    eventsSection.scrollTop +
+    cardRect.top -
+    eventsSectionRect.top -
+    scrollPadding;
 
   eventsSection.scrollTo({
     top: Math.max(0, nextScrollTop),
@@ -400,7 +440,9 @@ const scrollCardIntoEventsView = (card) => {
 const activateAdjacentCard = (direction) => {
   const visibleCards = getVisibleCards();
   const activeIndex = visibleCards.findIndex(
-    (card) => card instanceof HTMLElement && card.getAttribute("data-active") === "true"
+    (card) =>
+      card instanceof HTMLElement &&
+      card.getAttribute("data-active") === "true",
   );
   if (activeIndex === -1) return;
 
@@ -441,7 +483,10 @@ export const initEventCardControls = () => {
     });
 
     const state = mediaPointerState.get(event.pointerId);
-    if (canScrollMedia(media) && typeof media.setPointerCapture === "function") {
+    if (
+      canScrollMedia(media) &&
+      typeof media.setPointerCapture === "function"
+    ) {
       media.setPointerCapture(event.pointerId);
       state.capturedPointer = true;
     }
@@ -457,7 +502,12 @@ export const initEventCardControls = () => {
     const absY = Math.abs(deltaY);
 
     if (!state.dragging) {
-      if (absX <= mediaScrollThreshold || absX <= absY || !canScrollMedia(state.media)) return;
+      if (
+        absX <= mediaScrollThreshold ||
+        absX <= absY ||
+        !canScrollMedia(state.media)
+      )
+        return;
       state.dragging = true;
     }
 
@@ -475,7 +525,10 @@ export const initEventCardControls = () => {
     const deltaX = Math.abs(event.clientX - state.x);
     const deltaY = Math.abs(event.clientY - state.y);
     const scrollDelta = Math.abs(state.media.scrollLeft - state.scrollLeft);
-    const wasHorizontalScroll = state.dragging || scrollDelta > 0 || (deltaX > mediaScrollThreshold && deltaX > deltaY);
+    const wasHorizontalScroll =
+      state.dragging ||
+      scrollDelta > 0 ||
+      (deltaX > mediaScrollThreshold && deltaX > deltaY);
 
     if (wasHorizontalScroll) {
       mediaScrollClickSuppressions.add(state.media);
@@ -493,7 +546,10 @@ export const initEventCardControls = () => {
     if (!(target instanceof Element)) return;
 
     const media = target.closest(mediaSelector);
-    if (media instanceof HTMLElement && mediaScrollClickSuppressions.has(media)) {
+    if (
+      media instanceof HTMLElement &&
+      mediaScrollClickSuppressions.has(media)
+    ) {
       mediaScrollClickSuppressions.delete(media);
       event.preventDefault();
       return;
@@ -507,7 +563,12 @@ export const initEventCardControls = () => {
     if (card.getAttribute("data-active") === "true") {
       hideCardDot();
     } else {
-      setCardDotPosition(card, event.clientX, event.clientY, hasActiveCardBefore(card));
+      setCardDotPosition(
+        card,
+        event.clientX,
+        event.clientY,
+        hasActiveCardBefore(card),
+      );
     }
     toggleCard(card);
   });
@@ -527,7 +588,7 @@ export const initEventCardControls = () => {
         target,
         rect.left + rect.width / 2,
         rect.top + rect.height / 2,
-        hasActiveCardBefore(target)
+        hasActiveCardBefore(target),
       );
     }
     toggleCard(target);
@@ -535,18 +596,26 @@ export const initEventCardControls = () => {
 
   document.addEventListener("keydown", (event) => {
     if (event.defaultPrevented) return;
-    if (!["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(event.key)) return;
+    if (
+      !["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(event.key)
+    )
+      return;
 
     const target = event.target;
     if (
       target instanceof HTMLElement &&
-      target.closest("input, textarea, select, button, a, [contenteditable='true']")
+      target.closest(
+        "input, textarea, select, button, a, [contenteditable='true']",
+      )
     ) {
       return;
     }
 
-    const direction = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
-    const beforeActive = document.querySelector(`${cardSelector}[data-active='true']`);
+    const direction =
+      event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
+    const beforeActive = document.querySelector(
+      `${cardSelector}[data-active='true']`,
+    );
     if (!(beforeActive instanceof HTMLElement)) return;
 
     event.preventDefault();
@@ -558,12 +627,19 @@ export const initEventCardControls = () => {
 
     const detail = event.detail ?? {};
     const eventId = typeof detail.eventId === "string" ? detail.eventId : "";
-    const sourceSlug = typeof detail.sourceSlug === "string" ? detail.sourceSlug : "";
-    const locationId = typeof detail.locationId === "string" ? detail.locationId : "";
+    const sourceSlug =
+      typeof detail.sourceSlug === "string" ? detail.sourceSlug : "";
+    const locationId =
+      typeof detail.locationId === "string" ? detail.locationId : "";
     const cards = Array.from(document.querySelectorAll(cardSelector));
     const targetCard = cards.find((card) => {
       if (!(card instanceof HTMLElement)) return false;
-      if (card.hidden || card.closest("[hidden]") || card.getClientRects().length === 0) return false;
+      if (
+        card.hidden ||
+        card.closest("[hidden]") ||
+        card.getClientRects().length === 0
+      )
+        return false;
       if (eventId) return card.dataset.eventId === eventId;
       if (locationId) return card.dataset.mapLocationId === locationId;
       return Boolean(sourceSlug && card.dataset.mapSourceSlug === sourceSlug);

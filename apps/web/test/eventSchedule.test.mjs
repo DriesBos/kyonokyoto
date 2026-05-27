@@ -9,16 +9,16 @@ test("event display window includes starts up to six calendar months from today"
   assert.equal(
     schedule.isEventWithinDisplayWindow(
       { start_date: "2026-11-27", end_date: "2026-12-10" },
-      "2026-05-27"
+      "2026-05-27",
     ),
-    true
+    true,
   );
   assert.equal(
     schedule.isEventWithinDisplayWindow(
       { start_date: "2026-11-28", end_date: "2026-12-10" },
-      "2026-05-27"
+      "2026-05-27",
     ),
-    false
+    false,
   );
 });
 
@@ -28,15 +28,15 @@ test("event display window keeps ongoing and unknown-start events visible", () =
   assert.equal(
     schedule.isEventWithinDisplayWindow(
       { start_date: "2026-05-01", end_date: "2026-12-10" },
-      "2026-05-27"
+      "2026-05-27",
     ),
-    true
+    true,
   );
   assert.equal(
     schedule.isEventWithinDisplayWindow(
       { start_date: null, end_date: "2026-12-10" },
-      "2026-05-27"
+      "2026-05-27",
     ),
-    true
+    true,
   );
 });

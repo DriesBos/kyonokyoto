@@ -1,4 +1,4 @@
-import { gsap } from 'gsap';
+import { gsap } from "gsap";
 
 type LandingScrollWindow = Window &
   typeof globalThis & {
@@ -6,13 +6,13 @@ type LandingScrollWindow = Window &
     __landingScrollAnimation?: gsap.core.Tween;
   };
 
-const landingSelector = '[data-landing]';
-const landingTriggerSelector = '[data-landing-trigger]';
-const mainContentSelector = '[data-main-content]';
-const launchedAttribute = 'data-landing-launched';
-const activeAttribute = 'data-landing-active';
-const greenTheme = '#138e00';
-const beigeTheme = '#EFEFEF';
+const landingSelector = "[data-landing]";
+const landingTriggerSelector = "[data-landing-trigger]";
+const mainContentSelector = "[data-main-content]";
+const launchedAttribute = "data-landing-launched";
+const activeAttribute = "data-landing-active";
+const greenTheme = "#138e00";
+const beigeTheme = "#EFEFEF";
 const wheelThreshold = 80;
 const touchThreshold = 48;
 const animationDurationSeconds = 0.5;
@@ -51,12 +51,12 @@ const scrollToMainContent = (mainContent: HTMLElement) => {
   const scrollState = { y: startY };
 
   cancelCurrentAnimation();
-  document.documentElement.setAttribute(launchedAttribute, '');
+  document.documentElement.setAttribute(launchedAttribute, "");
 
   landingWindow.__landingScrollAnimation = gsap.to(scrollState, {
     y: targetY,
     duration: animationDurationSeconds,
-    ease: 'power3.inOut',
+    ease: "power3.inOut",
     onUpdate: () => {
       window.scrollTo(0, scrollState.y);
     },
@@ -72,7 +72,7 @@ const scrollToMainContent = (mainContent: HTMLElement) => {
 const resetScrollPosition = () => {
   if (window.location.hash) return;
   cancelCurrentAnimation();
-  document.documentElement.setAttribute(activeAttribute, '');
+  document.documentElement.setAttribute(activeAttribute, "");
   document.documentElement.removeAttribute(launchedAttribute);
   setThemeColor(greenTheme);
   window.scrollTo(0, 0);
@@ -141,7 +141,7 @@ export const initLandingScroll = () => {
       return;
 
     const currentY = event.touches[0]?.clientY;
-    if (typeof currentY !== 'number') return;
+    if (typeof currentY !== "number") return;
 
     const delta = touchStartY - currentY;
     if (delta <= 0) return;
@@ -152,12 +152,12 @@ export const initLandingScroll = () => {
 
   resetScrollPosition();
 
-  document.addEventListener('click', handleClick);
-  window.addEventListener('wheel', handleWheel, { passive: false });
-  window.addEventListener('touchstart', handleTouchStart, { passive: true });
-  window.addEventListener('touchmove', handleTouchMove, { passive: false });
-  window.addEventListener('pageshow', resetScrollPosition);
-  document.addEventListener('astro:page-load', resetScrollPosition);
+  document.addEventListener("click", handleClick);
+  window.addEventListener("wheel", handleWheel, { passive: false });
+  window.addEventListener("touchstart", handleTouchStart, { passive: true });
+  window.addEventListener("touchmove", handleTouchMove, { passive: false });
+  window.addEventListener("pageshow", resetScrollPosition);
+  document.addEventListener("astro:page-load", resetScrollPosition);
 
   landingWindow.__landingScrollBound = true;
 };

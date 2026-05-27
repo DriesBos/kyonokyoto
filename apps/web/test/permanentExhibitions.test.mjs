@@ -46,7 +46,10 @@ test("permanent highlights resolve source venue data for locale cards", () => {
   assert.equal(event.date_text, "恒久");
   assert.equal(event.timing, "permanent");
   assert.deepEqual(event.categories, ["exhibition", "museum"]);
-  assert.equal(event.address_text, "546-2 Yamabushiyama-cho, Nakagyo-ku, Kyoto 604-8156 Japan");
+  assert.equal(
+    event.address_text,
+    "546-2 Yamabushiyama-cho, Nakagyo-ku, Kyoto 604-8156 Japan",
+  );
   assert.equal(event.lat, 35.005436);
   assert.equal(event.lng, 135.758345);
   assert.equal(event.source_url, "https://www.kac.or.jp/");
@@ -83,7 +86,10 @@ test("permanent highlights use embedded venue metadata when no source row exists
   assert.equal(event.title, "若王子倶楽部 左右");
   assert.equal(event.institution_name, "若王子倶楽部 左右");
   assert.deepEqual(event.categories, ["craft", "gallery"]);
-  assert.equal(event.address_text, "15-1 Nyakuoji-cho, Sakyo-ku, Kyoto 606-8444 Japan");
+  assert.equal(
+    event.address_text,
+    "15-1 Nyakuoji-cho, Sakyo-ku, Kyoto 606-8444 Japan",
+  );
   assert.equal(event.lat, 35.0155614);
   assert.equal(event.lng, 135.7955184);
   assert.equal(event.source_url, "https://sayuu.jp/");
@@ -126,9 +132,7 @@ test("occasional highlights use localized cadence text", () => {
 });
 
 test("permanent highlights skip inactive rows", () => {
-  const highlights = [
-    { slug: "kyoto-art-center", is_active: false },
-  ];
+  const highlights = [{ slug: "kyoto-art-center", is_active: false }];
 
   const events = permanentEventsForLocale({
     highlights,

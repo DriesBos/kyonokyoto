@@ -49,7 +49,8 @@ const localizedDescription = (
 export const youtubeVideoIdFromUrl = (value: string) => {
   try {
     const url = new URL(value);
-    if (url.hostname === "youtu.be") return url.pathname.split("/").filter(Boolean)[0] ?? null;
+    if (url.hostname === "youtu.be")
+      return url.pathname.split("/").filter(Boolean)[0] ?? null;
     if (url.hostname.endsWith("youtube.com")) return url.searchParams.get("v");
   } catch {
     return null;
@@ -72,17 +73,13 @@ const normalizeMediaEmbeds = (mediaEmbeds: MediaEmbed[] | undefined) =>
         video_id: videoId,
       };
     })
-    .filter((embed): embed is MediaEmbed & { video_id: string } => embed !== null);
+    .filter(
+      (embed): embed is MediaEmbed & { video_id: string } => embed !== null,
+    );
 
-const cadenceDateText: Record<HighlightCadence, Record<AppLocale, string>> = {
-  permanent: {
-    en: "permanent",
-    ja: "恒久",
-  },
-  occasional: {
-    en: "occasional",
-    ja: "不定期",
-  },
+const cadenceDateText: Record<AppLocale, string> = {
+  en: "also visit",
+  ja: "あわせて",
 };
 
 export const permanentEventsForLocale = ({
@@ -94,7 +91,9 @@ export const permanentEventsForLocale = ({
   configuredSources: SourceConfig[];
   activeLocale: AppLocale;
 }): ClassifiedEvent[] => {
-  const sourceBySlug = new Map(configuredSources.map((source) => [source.slug, source]));
+  const sourceBySlug = new Map(
+    configuredSources.map((source) => [source.slug, source]),
+  );
 
   return highlights
     .filter((highlight) => highlight.is_active !== false)
@@ -105,7 +104,11 @@ export const permanentEventsForLocale = ({
       const baseUrl = source?.base_url ?? highlight.base_url;
       if (!name || !baseUrl) return null;
 
-      const institutionName = localizedValue(source?.names ?? highlight.names, activeLocale, name);
+      const institutionName = localizedValue(
+        source?.names ?? highlight.names,
+        activeLocale,
+        name,
+      );
       const sourceUrl = localizedValue(highlight.urls, activeLocale, baseUrl);
       const cadence = highlight.cadence ?? "permanent";
 
@@ -113,8 +116,9 @@ export const permanentEventsForLocale = ({
         id: `${cadence}:${highlight.slug}`,
         source_id: highlight.slug,
         title: institutionName,
-        categories: source?.source_categories ?? highlight.source_categories ?? [],
-        date_text: cadenceDateText[cadence][activeLocale],
+        categories:
+          source?.source_categories ?? highlight.source_categories ?? [],
+        date_text: cadenceDateText[activeLocale],
         institution_name: institutionName,
         venue_name: null,
         address_text: source?.address_text ?? highlight.address_text ?? null,
@@ -135,7 +139,7 @@ export const permanentEventsForLocale = ({
         timing: "permanent",
       } satisfies ClassifiedEvent;
     })
-    .filter((event): event is ClassifiedEvent => event !== null);
+    .filter((event) => event !== null) as ClassifiedEvent[];
 };
 
 export const permanentEventsByLocale = ({
@@ -155,5 +159,5 @@ export const permanentEventsByLocale = ({
         configuredSources,
         activeLocale: supportedLocale,
       }),
-    ])
+    ]),
   ) as Record<AppLocale, ClassifiedEvent[]>;

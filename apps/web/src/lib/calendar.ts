@@ -16,25 +16,28 @@ export type CalendarEvent = {
 
 export const decodeHtml = (value: string) =>
   value
-    .replace(/&(nbsp|amp|quot|apos|lt|gt|ndash|mdash|lsquo|rsquo|ldquo|rdquo|hellip);?/gi, (match, entity) => {
-      const entities: Record<string, string> = {
-        nbsp: " ",
-        amp: "&",
-        quot: "\"",
-        apos: "'",
-        lt: "<",
-        gt: ">",
-        ndash: "–",
-        mdash: "—",
-        lsquo: "'",
-        rsquo: "'",
-        ldquo: "\"",
-        rdquo: "\"",
-        hellip: "…",
-      };
+    .replace(
+      /&(nbsp|amp|quot|apos|lt|gt|ndash|mdash|lsquo|rsquo|ldquo|rdquo|hellip);?/gi,
+      (match, entity) => {
+        const entities: Record<string, string> = {
+          nbsp: " ",
+          amp: "&",
+          quot: '"',
+          apos: "'",
+          lt: "<",
+          gt: ">",
+          ndash: "–",
+          mdash: "—",
+          lsquo: "'",
+          rsquo: "'",
+          ldquo: '"',
+          rdquo: '"',
+          hellip: "…",
+        };
 
-      return entities[entity.toLowerCase()] ?? match;
-    })
+        return entities[entity.toLowerCase()] ?? match;
+      },
+    )
     .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
       const codePoint = Number.parseInt(hex, 16);
       return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
@@ -55,11 +58,14 @@ export const cleanDisplayText = (value: string) => {
       .replace(/\s+\n/g, "\n")
       .replace(/\n{3,}/g, "\n\n")
       .replace(/[ \t]{2,}/g, " ")
-      .trim()
+      .trim(),
   );
 };
 
-export const parseEnglishMonthDateRange = (dateText: string, fallbackYear?: string | null) => {
+export const parseEnglishMonthDateRange = (
+  dateText: string,
+  fallbackYear?: string | null,
+) => {
   const months: Record<string, string> = {
     january: "01",
     jan: "01",
@@ -89,13 +95,18 @@ export const parseEnglishMonthDateRange = (dateText: string, fallbackYear?: stri
 
   const cleaned = decodeHtml(dateText)
     .replace(/\([^)]*\)/g, "")
-    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, "")
+    .replace(
+      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi,
+      "",
+    )
     .replace(/\s+/g, " ")
     .trim();
   const datedMatch = cleaned.match(
-    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/
+    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/,
   );
-  const undatedMatch = cleaned.match(/([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/);
+  const undatedMatch = cleaned.match(
+    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/,
+  );
   const match = datedMatch ?? undatedMatch;
   const normalizedFallbackYear = fallbackYear?.match(/20\d{2}/)?.[0] ?? null;
 
@@ -106,7 +117,8 @@ export const parseEnglishMonthDateRange = (dateText: string, fallbackYear?: stri
   const startMonth = months[startMonthName.toLowerCase()];
   const endMonth = months[endMonthName.toLowerCase()];
 
-  if (!year || !startMonth || !endMonth) return { calendar_starts_at: null, calendar_ends_at: null };
+  if (!year || !startMonth || !endMonth)
+    return { calendar_starts_at: null, calendar_ends_at: null };
 
   const startDate = `${year}-${startMonth}-${String(startDay).padStart(2, "0")}`;
   const endDate = `${year}-${endMonth}-${String(endDay).padStart(2, "0")}`;
@@ -133,7 +145,9 @@ export const formatEventDate = (value: string | null) => {
     return `${year}.${month}.${day}`;
   }
 
-  const japaneseMatch = decodedValue.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/);
+  const japaneseMatch = decodedValue.match(
+    /(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/,
+  );
   if (japaneseMatch) {
     const [, year, month, day] = japaneseMatch;
     return `${year}.${month.padStart(2, "0")}.${day.padStart(2, "0")}`;
@@ -142,7 +156,11 @@ export const formatEventDate = (value: string | null) => {
   return decodedValue;
 };
 
-export const formatEventDateRange = (start: string | null, end: string | null, fallback: string) => {
+export const formatEventDateRange = (
+  start: string | null,
+  end: string | null,
+  fallback: string,
+) => {
   const formattedStart = formatEventDate(start ?? fallback);
   const formattedEnd = formatEventDate(end);
 
@@ -173,9 +191,14 @@ const validCoordinatePair = (lat: unknown, lng: unknown) => {
 
 export const mapsUrl = (event: CalendarEvent) => {
   const coordinates = validCoordinatePair(event.lat, event.lng);
-  if (coordinates) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinates)}`;
+  if (coordinates)
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinates)}`;
 
-  const query = event.directions_query ?? event.address_text ?? event.venue_name ?? event.institution_name;
+  const query =
+    event.directions_query ??
+    event.address_text ??
+    event.venue_name ??
+    event.institution_name;
   if (/^https?:\/\//i.test(query)) return query;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 };
@@ -186,7 +209,8 @@ export const addDays = (value: string, days: number) => {
   return date.toISOString().slice(0, 10);
 };
 
-export const toGoogleCalendarStamp = (value: string) => value.replaceAll("-", "");
+export const toGoogleCalendarStamp = (value: string) =>
+  value.replaceAll("-", "");
 
 export const calendarDetailsFor = (event: CalendarEvent) =>
   event.description

@@ -23,7 +23,8 @@ const markQueued = (card: Element) => {
   card.dataset.revealState = "queued";
 };
 
-const revealOpacity = (card: HTMLElement) => card.hasAttribute("data-beta") ? "0.5" : "1";
+const revealOpacity = (card: HTMLElement) =>
+  card.hasAttribute("data-beta") ? "0.5" : "1";
 
 const revealCard = (card: Element, animate: boolean) => {
   if (!(card instanceof HTMLElement)) return;
@@ -34,9 +35,9 @@ const revealCard = (card: Element, animate: boolean) => {
 
   if (animate) {
     card.style.visibility = "visible";
-    card.animate([{ opacity: 0 }, { opacity: targetOpacity }], revealTransition)
-      .finished
-      .then(() => {
+    card
+      .animate([{ opacity: 0 }, { opacity: targetOpacity }], revealTransition)
+      .finished.then(() => {
         card.style.opacity = targetOpacity;
       })
       .catch(() => {});
@@ -46,15 +47,17 @@ const revealCard = (card: Element, animate: boolean) => {
   }
 };
 
-const isRendered = (card: HTMLElement) => !card.hidden && card.getClientRects().length > 0;
+const isRendered = (card: HTMLElement) =>
+  !card.hidden && card.getClientRects().length > 0;
 
 const getEventsSection = () => document.querySelector(eventsSectionSelector);
 
 const isInScrollRoot = (card: HTMLElement, scrollRoot: Element | null) => {
   const rect = card.getBoundingClientRect();
-  const rootRect = scrollRoot instanceof HTMLElement
-    ? scrollRoot.getBoundingClientRect()
-    : { top: 0, bottom: window.innerHeight };
+  const rootRect =
+    scrollRoot instanceof HTMLElement
+      ? scrollRoot.getBoundingClientRect()
+      : { top: 0, bottom: window.innerHeight };
 
   return rect.top < rootRect.bottom && rect.bottom > rootRect.top;
 };
@@ -80,7 +83,11 @@ const buildAnimations = () => {
   cards.forEach((card) => {
     if (!(card instanceof HTMLElement)) return;
 
-    if (!isRendered(card) || isInScrollRoot(card, eventsSection) || card.dataset.revealState === "visible") {
+    if (
+      !isRendered(card) ||
+      isInScrollRoot(card, eventsSection) ||
+      card.dataset.revealState === "visible"
+    ) {
       revealCard(card, false);
       return;
     }

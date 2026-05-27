@@ -53,7 +53,9 @@ async function runStep(label, cmd, args, options = {}) {
         return;
       }
 
-      rejectPromise(new Error(`${label} failed with exit code ${code ?? "unknown"}`));
+      rejectPromise(
+        new Error(`${label} failed with exit code ${code ?? "unknown"}`),
+      );
     });
 
     child.on("error", rejectPromise);
@@ -67,7 +69,8 @@ const skipSync = hasFlag("--skip-sync");
 const skipCrawl = hasFlag("--skip-crawl");
 const skipDeploy = hasFlag("--skip-deploy");
 const genericLimit = getArg("generic-limit", "6");
-const buildHookUrl = env.NETLIFY_BUILD_HOOK_URL ?? env.WEB_REDEPLOY_HOOK_URL ?? null;
+const buildHookUrl =
+  env.NETLIFY_BUILD_HOOK_URL ?? env.WEB_REDEPLOY_HOOK_URL ?? null;
 
 await runStep("Pull latest code", "git", ["pull", "--ff-only"]);
 
@@ -86,7 +89,7 @@ if (!skipCrawl) {
 if (!skipDeploy) {
   if (!buildHookUrl) {
     throw new Error(
-      "Missing NETLIFY_BUILD_HOOK_URL (or WEB_REDEPLOY_HOOK_URL) in apps/crawler/.env"
+      "Missing NETLIFY_BUILD_HOOK_URL (or WEB_REDEPLOY_HOOK_URL) in apps/crawler/.env",
     );
   }
 
@@ -104,7 +107,9 @@ if (!skipDeploy) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Netlify build hook failed (${response.status}): ${errorText}`);
+    throw new Error(
+      `Netlify build hook failed (${response.status}): ${errorText}`,
+    );
   }
 
   console.log(`Triggered rebuild: ${response.status}`);

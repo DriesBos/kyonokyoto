@@ -8,7 +8,11 @@ const readStarredEventIds = () => {
   try {
     const value = window.localStorage.getItem(storageKey);
     const parsed = value ? JSON.parse(value) : [];
-    return new Set(Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : []);
+    return new Set(
+      Array.isArray(parsed)
+        ? parsed.filter((item) => typeof item === "string")
+        : [],
+    );
   } catch {
     return new Set<string>();
   }
@@ -16,7 +20,10 @@ const readStarredEventIds = () => {
 
 const writeStarredEventIds = (eventIds: Set<string>) => {
   try {
-    window.localStorage.setItem(storageKey, JSON.stringify(Array.from(eventIds)));
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify(Array.from(eventIds)),
+    );
   } catch {}
 };
 
@@ -26,7 +33,7 @@ const emitStarredUpdate = (eventIds: Set<string>) => {
       detail: {
         starredEventIds: Array.from(eventIds),
       },
-    })
+    }),
   );
 };
 
@@ -42,7 +49,10 @@ const syncStarredCards = (eventIds: Set<string>) => {
     if (!(button instanceof HTMLElement)) return;
 
     button.setAttribute("aria-pressed", String(isStarred));
-    button.setAttribute("aria-label", isStarred ? "Unstar event" : "Star event");
+    button.setAttribute(
+      "aria-label",
+      isStarred ? "Unstar event" : "Star event",
+    );
   });
 };
 

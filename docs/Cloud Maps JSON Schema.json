@@ -122,10 +122,7 @@
   "properties": {
     "variant": {
       "type": "string",
-      "enum": [
-        "light",
-        "dark"
-      ]
+      "enum": ["light", "dark"]
     },
     "backgroundColor": {
       "type": "string",
@@ -144,9 +141,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure"
@@ -204,9 +199,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.building"
@@ -261,9 +254,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.building.commercial"
@@ -297,9 +288,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.building.indoor"
@@ -354,9 +343,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.businessCorridor"
@@ -381,9 +368,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.railwayTrack"
@@ -417,9 +402,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.railwayTrack.commercial"
@@ -453,9 +436,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.railwayTrack.commuter"
@@ -489,9 +470,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork"
@@ -546,9 +525,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.noTraffic"
@@ -603,9 +580,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.noTraffic.pedestrianMall"
@@ -651,9 +626,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.noTraffic.trail"
@@ -708,9 +681,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.noTraffic.trail.paved"
@@ -765,9 +736,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.noTraffic.trail.unpaved"
@@ -822,9 +791,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.parkingAisle"
@@ -858,9 +825,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.ramp"
@@ -915,9 +880,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.road"
@@ -972,9 +935,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.road.arterial"
@@ -1029,9 +990,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.road.highway"
@@ -1086,9 +1045,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.road.local"
@@ -1143,9 +1100,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.road.noOutlet"
@@ -1200,9 +1155,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadDetail"
@@ -1245,9 +1198,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadDetail.directionArrow"
@@ -1269,9 +1220,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadDetail.intersection"
@@ -1290,9 +1239,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadDetail.marking"
@@ -1317,9 +1264,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadDetail.marking.crosswalk"
@@ -1344,9 +1289,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadDetail.sidewalk"
@@ -1371,9 +1314,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadDetail.surface"
@@ -1413,9 +1354,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadShield"
@@ -1434,9 +1373,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.roadNetwork.roadSign"
@@ -1464,9 +1401,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation"
@@ -1500,9 +1435,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.bicycleShare"
@@ -1536,9 +1469,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.busStation"
@@ -1572,9 +1503,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.ferryTerminal"
@@ -1608,9 +1537,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.funicularStation"
@@ -1644,9 +1571,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.gondolaStation"
@@ -1680,9 +1605,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.monorail"
@@ -1716,9 +1639,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.railStation"
@@ -1752,9 +1673,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.railStation.subwayStation"
@@ -1776,9 +1695,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.transitStation.railStation.tramStation"
@@ -1812,9 +1729,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "infrastructure.urbanArea"
@@ -1839,9 +1754,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural"
@@ -1887,9 +1800,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.archipelago"
@@ -1920,9 +1831,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.base"
@@ -1947,9 +1856,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.continent"
@@ -1980,9 +1887,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.island"
@@ -2013,9 +1918,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land"
@@ -2040,9 +1943,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover"
@@ -2067,9 +1968,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover.crops"
@@ -2094,9 +1993,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover.dryCrops"
@@ -2121,9 +2018,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover.forest"
@@ -2148,9 +2043,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover.ice"
@@ -2175,9 +2068,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover.sand"
@@ -2202,9 +2093,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover.shrub"
@@ -2229,9 +2118,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.land.landCover.tundra"
@@ -2256,9 +2143,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.water"
@@ -2304,9 +2189,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.water.lake"
@@ -2337,9 +2220,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.water.ocean"
@@ -2370,9 +2251,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.water.other"
@@ -2403,9 +2282,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "natural.water.river"
@@ -2436,9 +2313,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest"
@@ -2493,9 +2368,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.emergency"
@@ -2550,9 +2423,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.emergency.fire"
@@ -2592,9 +2463,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.emergency.hospital"
@@ -2649,9 +2518,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.emergency.pharmacy"
@@ -2691,9 +2558,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.emergency.police"
@@ -2733,9 +2598,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment"
@@ -2775,9 +2638,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment.arts"
@@ -2817,9 +2678,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment.casino"
@@ -2859,9 +2718,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment.cinema"
@@ -2901,9 +2758,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment.historic"
@@ -2943,9 +2798,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment.museum"
@@ -2985,9 +2838,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment.themePark"
@@ -3027,9 +2878,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.entertainment.touristAttraction"
@@ -3069,9 +2918,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.foodAndDrink"
@@ -3111,9 +2958,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.foodAndDrink.bar"
@@ -3153,9 +2998,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.foodAndDrink.cafe"
@@ -3195,9 +3038,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.foodAndDrink.restaurant"
@@ -3237,9 +3078,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.foodAndDrink.winery"
@@ -3279,9 +3118,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.landmark"
@@ -3321,9 +3158,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.lodging"
@@ -3363,9 +3198,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other"
@@ -3420,9 +3253,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.bridge"
@@ -3462,9 +3293,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.cemetery"
@@ -3519,9 +3348,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.government"
@@ -3561,9 +3388,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.library"
@@ -3603,9 +3428,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.military"
@@ -3660,9 +3483,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship"
@@ -3702,9 +3523,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.buddhist"
@@ -3744,9 +3563,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.christian"
@@ -3786,9 +3603,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.hindu"
@@ -3828,9 +3643,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.islamic"
@@ -3870,9 +3683,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.jain"
@@ -3912,9 +3723,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.jewish"
@@ -3954,9 +3763,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.shinto"
@@ -3996,9 +3803,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.placeOfWorship.sikh"
@@ -4038,9 +3843,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.school"
@@ -4080,9 +3883,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.other.townSquare"
@@ -4113,9 +3914,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation"
@@ -4170,9 +3969,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.beach"
@@ -4227,9 +4024,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.boating"
@@ -4269,9 +4064,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.fishing"
@@ -4311,9 +4104,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.golfCourse"
@@ -4368,9 +4159,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.hotSpring"
@@ -4410,9 +4199,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.natureReserve"
@@ -4458,9 +4245,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.park"
@@ -4515,9 +4300,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.peak"
@@ -4557,9 +4340,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.sportsComplex"
@@ -4614,9 +4395,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.sportsField"
@@ -4671,9 +4450,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.trailhead"
@@ -4713,9 +4490,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.recreation.zoo"
@@ -4770,9 +4545,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.retail"
@@ -4812,9 +4585,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.retail.grocery"
@@ -4854,9 +4625,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.retail.shopping"
@@ -4896,9 +4665,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service"
@@ -4953,9 +4720,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.atm"
@@ -4995,9 +4760,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.bank"
@@ -5037,9 +4800,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.carRental"
@@ -5079,9 +4840,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.evCharging"
@@ -5121,9 +4880,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.gasStation"
@@ -5163,9 +4920,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.parkingLot"
@@ -5220,9 +4975,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.postOffice"
@@ -5262,9 +5015,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.restroom"
@@ -5304,9 +5055,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.service.restStop"
@@ -5346,9 +5095,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.transit"
@@ -5403,9 +5150,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "pointOfInterest.transit.airport"
@@ -5460,9 +5205,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political"
@@ -5508,9 +5251,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.border"
@@ -5553,9 +5294,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.city"
@@ -5589,9 +5328,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.countryOrRegion"
@@ -5622,9 +5359,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.landParcel"
@@ -5652,9 +5387,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.neighborhood"
@@ -5685,9 +5418,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.reservation"
@@ -5742,9 +5473,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.stateOrProvince"
@@ -5790,9 +5519,7 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "const": "political.sublocality"

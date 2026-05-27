@@ -21,10 +21,12 @@ The goal is to crawl museums, galleries, festival pages, and venue sites in Kyot
 ## Environment
 
 Root:
+
 - `.env` for shared local infra values
 - `.env.example` as the template
 
 App-specific:
+
 - `apps/web/.env`
 - `apps/crawler/.env`
 
@@ -46,6 +48,7 @@ npm run dev
 ```
 
 Motion note:
+
 - Motion behavior is managed manually in app code and styles.
 - There are no built-in `prefers-reduced-motion` checks wired into the web app right now.
 
@@ -79,6 +82,7 @@ GOOGLE_TRANSLATE_LOCATION=global
 ```
 
 Current automation recommendation:
+
 - sync sources to Supabase
 - crawl all active sources
 - archive previously published events that were not seen in a successful source crawl
@@ -91,18 +95,21 @@ For the current production plan, use a daily cron job on the VPS.
 This project uses one root repository for both apps.
 
 Recommended future deployment split:
+
 - one workflow for `apps/web`
 - one workflow for `apps/crawler`
 
 ## Current Status
 
 Done:
+
 - Supabase project initialized
 - Astro app scaffolded
 - web Supabase client dependency installed
 - root git repo initialized
 
 Next:
+
 - define source batch
 - define event schema
 - scaffold crawler code
@@ -189,6 +196,7 @@ How to tune effectively:
 - Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
 
 Rule of thumb:
+
 - Fix source config first.
 - Add custom extraction second.
 - Touch schema only when many sources need the same new field.
@@ -214,6 +222,7 @@ crontab -l
 The example job runs daily at `03:15` server time.
 
 Important:
+
 - Supabase does not trigger a rebuild by itself here.
 - The rebuild happens because `scripts/run-crawl-cycle.mjs` calls the Netlify build hook after a successful crawl.
 - If you want Japan-local timing on a Europe-based VPS, either set the VPS timezone to JST or shift the cron time accordingly.

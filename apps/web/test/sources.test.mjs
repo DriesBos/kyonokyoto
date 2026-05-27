@@ -27,7 +27,11 @@ test("map sources include permanent events without source config rows", () => {
     timing: "permanent",
   };
 
-  const mapSources = mapSourcesForEvents([event], new Map([[event.id, "sayuu"]]), []);
+  const mapSources = mapSourcesForEvents(
+    [event],
+    new Map([[event.id, "sayuu"]]),
+    [],
+  );
 
   assert.deepEqual(mapSources, [
     {

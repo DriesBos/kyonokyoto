@@ -1115,7 +1115,6 @@
       "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
       "notes": "English exhibition index uses the current and forthcoming tabs inside #contents .tabContent. Japanese homepage uses the .info topic list; each exhibition row links its title to the event page. The header offers an English/Japanese language toggle.",
       "is_active": true,
-      "beta": true,
       "source_categories": ["ceramics", "museum", "craft"],
       "measure_image_dimensions": true,
       "map_visibility": true,

@@ -1,10 +1,10 @@
-import { gsap } from 'gsap';
+import { gsap } from "gsap";
 
 type HeightTimeline = ReturnType<typeof gsap.timeline>;
-type HeightPosition = Parameters<HeightTimeline['to']>[2];
+type HeightPosition = Parameters<HeightTimeline["to"]>[2];
 
 export const heightTransition = {
-  ease: 'power3.out',
+  ease: "power3.out",
   expandDuration: 0.25,
   collapseDuration: 0.25,
 } as const;
@@ -23,7 +23,7 @@ export const createHeightTransitionTimeline = (
     defaults: {
       autoRound: false,
       ease: heightTransition.ease,
-      overwrite: 'auto',
+      overwrite: "auto",
       ...options.defaults,
     },
   });
@@ -45,7 +45,7 @@ export const toHeight = (
       height,
       autoRound: false,
       duration: getHeightTransitionDuration(isExpanding),
-      overwrite: 'auto',
+      overwrite: "auto",
     },
     position,
   );

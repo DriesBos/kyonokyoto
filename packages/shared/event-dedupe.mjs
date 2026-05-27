@@ -24,10 +24,12 @@ export function canonicalizeEventUrl(value) {
 
   try {
     const url = new URL(trimmedValue);
-    const sortedSearchParams = [...url.searchParams.entries()].sort(([leftKey, leftValue], [rightKey, rightValue]) => {
-      if (leftKey === rightKey) return leftValue.localeCompare(rightValue);
-      return leftKey.localeCompare(rightKey);
-    });
+    const sortedSearchParams = [...url.searchParams.entries()].sort(
+      ([leftKey, leftValue], [rightKey, rightValue]) => {
+        if (leftKey === rightKey) return leftValue.localeCompare(rightValue);
+        return leftKey.localeCompare(rightKey);
+      },
+    );
 
     url.hash = "";
     url.protocol = url.protocol.toLowerCase();
@@ -68,14 +70,21 @@ export function buildEventSemanticIdentityKey(event) {
   if (!title) return null;
 
   const host = getEventHost(event) || "unknown-host";
-  const startDate = normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at) ?? "unknown-start";
-  const endDate = normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at) ?? startDate;
+  const startDate =
+    normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at) ??
+    "unknown-start";
+  const endDate =
+    normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at) ?? startDate;
 
   return `semantic:${host}|${title}|${startDate}|${endDate}`;
 }
 
 export function buildEventDedupeKey(event) {
-  return buildEventUrlIdentityKey(event) ?? buildEventSemanticIdentityKey(event) ?? `title:${normalizeIdentityPart(event?.title) || "unknown-title"}`;
+  return (
+    buildEventUrlIdentityKey(event) ??
+    buildEventSemanticIdentityKey(event) ??
+    `title:${normalizeIdentityPart(event?.title) || "unknown-title"}`
+  );
 }
 
 function getEventTimestamp(event) {
@@ -106,15 +115,20 @@ export function scoreEventRecord(event) {
   score += getTextLength(event?.venue_name) > 0 ? 6 : 0;
   score += getTextLength(event?.address_text) > 0 ? 6 : 0;
   score += getTextLength(event?.date_text) > 0 ? 6 : 0;
-  score += normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at) ? 12 : 0;
-  score += normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at) ? 12 : 0;
+  score += normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at)
+    ? 12
+    : 0;
+  score += normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at)
+    ? 12
+    : 0;
   score += Math.min(getTextLength(event?.institution_name), 48) / 4;
 
   return score;
 }
 
 export function compareEventRecords(leftEvent, rightEvent) {
-  const scoreDifference = scoreEventRecord(leftEvent) - scoreEventRecord(rightEvent);
+  const scoreDifference =
+    scoreEventRecord(leftEvent) - scoreEventRecord(rightEvent);
   if (scoreDifference !== 0) return scoreDifference;
 
   return getEventTimestamp(leftEvent) - getEventTimestamp(rightEvent);
@@ -125,8 +139,13 @@ export function dedupeEvents(events) {
   const groups = [];
 
   for (const event of Array.isArray(events) ? events : []) {
-    const identityKeys = [buildEventUrlIdentityKey(event), buildEventSemanticIdentityKey(event)].filter(Boolean);
-    const matchedGroup = identityKeys.map((key) => identityToGroup.get(key)).find(Boolean);
+    const identityKeys = [
+      buildEventUrlIdentityKey(event),
+      buildEventSemanticIdentityKey(event),
+    ].filter(Boolean);
+    const matchedGroup = identityKeys
+      .map((key) => identityToGroup.get(key))
+      .find(Boolean);
 
     if (matchedGroup) {
       if (compareEventRecords(event, matchedGroup.preferredEvent) > 0) {

@@ -11,7 +11,8 @@ export function buildCrawlQaReport({
   const missingTranslations = Object.fromEntries(
     supportedLocales.map((locale) => [
       locale,
-      savedEvents.filter((event) => !event.translations?.includes(locale)).length,
+      savedEvents.filter((event) => !event.translations?.includes(locale))
+        .length,
     ]),
   );
 

@@ -1,10 +1,10 @@
-import { gsap } from 'gsap';
+import { gsap } from "gsap";
 
 export const fadeTransition = {
   duration: 0.66,
   delay: 0.66,
   stagger: 0.033,
-  ease: 'ease',
+  ease: "ease",
 } as const;
 
 type FadeOptions = {
@@ -18,17 +18,17 @@ export const killFadeTransitionTweens = (targets: gsap.TweenTarget) => {
 };
 
 export const setFadeHidden = (targets: gsap.TweenTarget) => {
-  gsap.set(targets, { opacity: 0, visibility: 'visible' });
+  gsap.set(targets, { opacity: 0, visibility: "visible" });
 };
 
 export const setFadeVisible = (targets: gsap.TweenTarget) => {
-  gsap.set(targets, { opacity: 1, visibility: 'visible' });
+  gsap.set(targets, { opacity: 1, visibility: "visible" });
 };
 
 export const fadeIn = (targets: gsap.TweenTarget, options: FadeOptions = {}) =>
   gsap.to(targets, {
     opacity: 1,
-    visibility: 'visible',
+    visibility: "visible",
     duration: options.duration ?? fadeTransition.duration,
     delay: options.delay ?? 0,
     ease: fadeTransition.ease,
@@ -39,7 +39,7 @@ export const fadeIn = (targets: gsap.TweenTarget, options: FadeOptions = {}) =>
 export const fadeOut = (targets: gsap.TweenTarget, options: FadeOptions = {}) =>
   gsap.to(targets, {
     opacity: 0,
-    visibility: 'visible',
+    visibility: "visible",
     duration: options.duration ?? fadeTransition.duration,
     delay: options.delay ?? 0,
     ease: fadeTransition.ease,

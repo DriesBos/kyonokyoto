@@ -6,12 +6,12 @@ Source: [juliusbrussee/caveman](https://github.com/juliusbrussee/caveman)
 
 ## Levels
 
-| Level | Behavior |
-|-------|----------|
-| **lite** | No filler/hedging. Keep articles + full sentences. |
-| **full** | Drop articles, fragments OK, short synonyms. (default) |
-| **ultra** | Abbreviate (DB/auth/req/res/fn), arrows for causality (X → Y). |
-| **wenyan-lite/full/ultra** | Classical Chinese compression variants. |
+| Level                      | Behavior                                                       |
+| -------------------------- | -------------------------------------------------------------- |
+| **lite**                   | No filler/hedging. Keep articles + full sentences.             |
+| **full**                   | Drop articles, fragments OK, short synonyms. (default)         |
+| **ultra**                  | Abbreviate (DB/auth/req/res/fn), arrows for causality (X → Y). |
+| **wenyan-lite/full/ultra** | Classical Chinese compression variants.                        |
 
 ## Controls
 

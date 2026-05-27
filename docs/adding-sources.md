@@ -19,8 +19,8 @@ Add these first:
   "event_page_patterns": ["/exhibitions/"],
   "address_text": "Example address, Kyoto",
   "directions_query": "Example Gallery, Kyoto",
-  "lat": 35.000000,
-  "lng": 135.000000,
+  "lat": 35.0,
+  "lng": 135.0,
   "is_active": true
 }
 ```

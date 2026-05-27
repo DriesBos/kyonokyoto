@@ -1,5 +1,15 @@
-import { fadeIn, fadeOut, killFadeTransitionTweens, setFadeHidden, setFadeVisible } from "../lib/fadeTransition";
-import { createHeightTransitionTimeline, killHeightTransitionTweens, toHeight } from "../lib/heightTransition";
+import {
+  fadeIn,
+  fadeOut,
+  killFadeTransitionTweens,
+  setFadeHidden,
+  setFadeVisible,
+} from "../lib/fadeTransition";
+import {
+  createHeightTransitionTimeline,
+  killHeightTransitionTweens,
+  toHeight,
+} from "../lib/heightTransition";
 
 const normalizeCategory = (value: string) =>
   value
@@ -13,16 +23,28 @@ export const initHeaderControls = () => {
   const root = document.querySelector("[data-category-filter]");
   if (!root) return;
 
-  const headerCategoryButtons = Array.from(root.querySelectorAll("[data-category-button]"));
-  const categoryButtons = Array.from(document.querySelectorAll("[data-category-button]"));
-  const timingButtons = Array.from(root.querySelectorAll("[data-timing-button]"));
+  const headerCategoryButtons = Array.from(
+    root.querySelectorAll("[data-category-button]"),
+  );
+  const categoryButtons = Array.from(
+    document.querySelectorAll("[data-category-button]"),
+  );
+  const timingButtons = Array.from(
+    root.querySelectorAll("[data-timing-button]"),
+  );
   const starredButton = root.querySelector("[data-starred-button]");
-  const buttons = [...timingButtons, ...headerCategoryButtons, starredButton].filter(Boolean);
+  const buttons = [
+    ...timingButtons,
+    ...headerCategoryButtons,
+    starredButton,
+  ].filter(Boolean);
   const disclosure = root.querySelector("[data-filter-disclosure]");
   const filterPanel = root.querySelector("[data-filter-options]");
   const cards = Array.from(document.querySelectorAll("[data-event-card]"));
   const groups = Array.from(document.querySelectorAll("[data-event-group]"));
-  const dividers = Array.from(document.querySelectorAll("[data-event-divider]"));
+  const dividers = Array.from(
+    document.querySelectorAll("[data-event-divider]"),
+  );
   const filteredEmptyState = document.querySelector("[data-filter-empty]");
   const mapToggle = root.querySelector("[data-map-toggle]");
   const contentContainer = document.querySelector("[data-content-container]");
@@ -31,31 +53,45 @@ export const initHeaderControls = () => {
   const eventsSection = document.querySelector("[data-events-section]");
   const mainHeader = root.querySelector("[data-main-header]");
 
-  let activeCategory = root instanceof HTMLElement ? root.dataset.activeCategory || "" : "";
-  let activeTiming = root instanceof HTMLElement ? root.dataset.activeTiming || "" : "";
+  let activeCategory =
+    root instanceof HTMLElement ? root.dataset.activeCategory || "" : "";
+  let activeTiming =
+    root instanceof HTMLElement ? root.dataset.activeTiming || "" : "";
   let activeStarred = false;
   let filterExpandedScrollOrigin: number | null = null;
-  const filterButtons = buttons.filter((button): button is HTMLElement => button instanceof HTMLElement);
-  const getScrollRoot = () => (eventsSection instanceof HTMLElement ? eventsSection : window);
+  const filterButtons = buttons.filter(
+    (button): button is HTMLElement => button instanceof HTMLElement,
+  );
+  const getScrollRoot = () =>
+    eventsSection instanceof HTMLElement ? eventsSection : window;
   const getScrollTop = () => {
     const scrollRoot = getScrollRoot();
-    return scrollRoot instanceof HTMLElement ? scrollRoot.scrollTop : window.scrollY;
+    return scrollRoot instanceof HTMLElement
+      ? scrollRoot.scrollTop
+      : window.scrollY;
   };
   const getScrollHeight = () => {
     const scrollRoot = getScrollRoot();
-    return scrollRoot instanceof HTMLElement ? scrollRoot.clientHeight : window.innerHeight;
+    return scrollRoot instanceof HTMLElement
+      ? scrollRoot.clientHeight
+      : window.innerHeight;
   };
 
   const isFilterExpanded = () =>
-    disclosure instanceof HTMLElement && disclosure.getAttribute("aria-expanded") === "true";
-  const isFilteringActive = () => Boolean(activeCategory || activeTiming || activeStarred);
+    disclosure instanceof HTMLElement &&
+    disclosure.getAttribute("aria-expanded") === "true";
+  const isFilteringActive = () =>
+    Boolean(activeCategory || activeTiming || activeStarred);
 
   const syncFilterDisclosureButtonState = () => {
     if (!(disclosure instanceof HTMLElement)) return;
 
     const isExpanded = isFilterExpanded();
     const filteringActive = isFilteringActive();
-    disclosure.setAttribute("aria-pressed", String(isExpanded || filteringActive));
+    disclosure.setAttribute(
+      "aria-pressed",
+      String(isExpanded || filteringActive),
+    );
     disclosure.dataset.filteringActive = String(filteringActive);
   };
 
@@ -126,7 +162,11 @@ export const initHeaderControls = () => {
   };
 
   const syncFilterPanelState = () => {
-    if (!(filterPanel instanceof HTMLElement) || !(disclosure instanceof HTMLElement)) return;
+    if (
+      !(filterPanel instanceof HTMLElement) ||
+      !(disclosure instanceof HTMLElement)
+    )
+      return;
 
     killHeightTransitionTweens(filterPanel);
 
@@ -143,7 +183,9 @@ export const initHeaderControls = () => {
   };
 
   const hasStarredCards = () =>
-    cards.some((card) => card instanceof HTMLElement && card.dataset.starred === "true");
+    cards.some(
+      (card) => card instanceof HTMLElement && card.dataset.starred === "true",
+    );
 
   const syncStarredButtonState = () => {
     if (!(starredButton instanceof HTMLElement)) return;
@@ -168,11 +210,16 @@ export const initHeaderControls = () => {
         .map(normalizeCategory);
       const timing =
         card.getAttribute("data-timing") ||
-        card.closest("[data-event-group]")?.getAttribute("data-event-group-name") ||
+        card
+          .closest("[data-event-group]")
+          ?.getAttribute("data-event-group-name") ||
         "";
-      const matchesCategory = !activeCategory || categories.includes(activeCategory);
+      const matchesCategory =
+        !activeCategory || categories.includes(activeCategory);
       const matchesTiming = !activeTiming || timing === activeTiming;
-      const matchesStarred = !activeStarred || (card instanceof HTMLElement && card.dataset.starred === "true");
+      const matchesStarred =
+        !activeStarred ||
+        (card instanceof HTMLElement && card.dataset.starred === "true");
       const matches = matchesCategory && matchesTiming && matchesStarred;
 
       card.toggleAttribute("hidden", !matches);
@@ -183,7 +230,9 @@ export const initHeaderControls = () => {
     let visibleGroups = 0;
 
     groups.forEach((group) => {
-      const visibleCards = group.querySelectorAll("[data-event-card]:not([hidden])").length;
+      const visibleCards = group.querySelectorAll(
+        "[data-event-card]:not([hidden])",
+      ).length;
       group.toggleAttribute("hidden", visibleCards === 0);
 
       if (visibleCards > 0) visibleGroups += 1;
@@ -193,19 +242,32 @@ export const initHeaderControls = () => {
       if (!(divider instanceof HTMLElement)) return;
 
       const beforeGroup = groups.find(
-        (group) => group instanceof HTMLElement && group.dataset.eventGroupName === divider.dataset.beforeGroup
+        (group) =>
+          group instanceof HTMLElement &&
+          group.dataset.eventGroupName === divider.dataset.beforeGroup,
       );
       const afterGroup = groups.find(
-        (group) => group instanceof HTMLElement && group.dataset.eventGroupName === divider.dataset.afterGroup
+        (group) =>
+          group instanceof HTMLElement &&
+          group.dataset.eventGroupName === divider.dataset.afterGroup,
       );
-      const hasVisibleBefore = beforeGroup instanceof HTMLElement && !beforeGroup.hasAttribute("hidden");
-      const hasVisibleAfter = afterGroup instanceof HTMLElement && !afterGroup.hasAttribute("hidden");
+      const hasVisibleBefore =
+        beforeGroup instanceof HTMLElement &&
+        !beforeGroup.hasAttribute("hidden");
+      const hasVisibleAfter =
+        afterGroup instanceof HTMLElement && !afterGroup.hasAttribute("hidden");
 
-      divider.toggleAttribute("hidden", visibleGroups < 2 || !hasVisibleBefore || !hasVisibleAfter);
+      divider.toggleAttribute(
+        "hidden",
+        visibleGroups < 2 || !hasVisibleBefore || !hasVisibleAfter,
+      );
     });
 
     if (filteredEmptyState) {
-      filteredEmptyState.toggleAttribute("hidden", visibleCount > 0 || !isFilteringActive());
+      filteredEmptyState.toggleAttribute(
+        "hidden",
+        visibleCount > 0 || !isFilteringActive(),
+      );
     }
 
     syncFilterDisclosureButtonState();
@@ -262,10 +324,12 @@ export const initHeaderControls = () => {
         activeCategory = "";
         activeTiming = "";
         categoryButtons.forEach((item) => {
-          if (item instanceof HTMLElement) item.setAttribute("aria-pressed", "false");
+          if (item instanceof HTMLElement)
+            item.setAttribute("aria-pressed", "false");
         });
         timingButtons.forEach((item) => {
-          if (item instanceof HTMLElement) item.setAttribute("aria-pressed", "false");
+          if (item instanceof HTMLElement)
+            item.setAttribute("aria-pressed", "false");
         });
       }
       applyFilter();
@@ -287,7 +351,11 @@ export const initHeaderControls = () => {
   syncFilterDisclosureButtonState();
 
   const setMapVisible = (nextVisible: boolean) => {
-    if (!(contentContainer instanceof HTMLElement) || !(mapSection instanceof HTMLElement)) return;
+    if (
+      !(contentContainer instanceof HTMLElement) ||
+      !(mapSection instanceof HTMLElement)
+    )
+      return;
 
     const isVisible = contentContainer.hasAttribute("data-map-visible");
     if (isVisible === nextVisible) return;
@@ -357,7 +425,10 @@ export const initHeaderControls = () => {
   if (mapToggle instanceof HTMLElement) {
     mapSection?.toggleAttribute("inert", true);
     mapToggle.addEventListener("click", () => {
-      const nextVisible = !(contentContainer instanceof HTMLElement && contentContainer.hasAttribute("data-map-visible"));
+      const nextVisible = !(
+        contentContainer instanceof HTMLElement &&
+        contentContainer.hasAttribute("data-map-visible")
+      );
       closeFilterDisclosure();
       setMapVisible(nextVisible);
     });
@@ -365,15 +436,22 @@ export const initHeaderControls = () => {
 
   const stickyOffset = () => {
     const pagePaddingY = Number.parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--page-padding-y")
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--page-padding-y",
+      ),
     );
     return Number.isFinite(pagePaddingY) ? pagePaddingY : 0;
   };
 
   const syncStickyState = () => {
     if (!(mainHeader instanceof HTMLElement)) return;
-    const scrollRootTop = eventsSection instanceof HTMLElement ? eventsSection.getBoundingClientRect().top : 0;
-    const isStuck = mainHeader.getBoundingClientRect().top <= scrollRootTop + stickyOffset() + 0.5;
+    const scrollRootTop =
+      eventsSection instanceof HTMLElement
+        ? eventsSection.getBoundingClientRect().top
+        : 0;
+    const isStuck =
+      mainHeader.getBoundingClientRect().top <=
+      scrollRootTop + stickyOffset() + 0.5;
     mainHeader.toggleAttribute("data-stuck", isStuck);
   };
 
@@ -401,7 +479,11 @@ export const initHeaderControls = () => {
     setMapVisible(false);
     document.dispatchEvent(new CustomEvent("event-card:deactivate-all"));
   });
-  getScrollRoot().addEventListener("scroll", syncStickyState, { passive: true });
-  getScrollRoot().addEventListener("scroll", maybeCloseFilterOnScroll, { passive: true });
+  getScrollRoot().addEventListener("scroll", syncStickyState, {
+    passive: true,
+  });
+  getScrollRoot().addEventListener("scroll", maybeCloseFilterOnScroll, {
+    passive: true,
+  });
   window.addEventListener("resize", syncStickyState);
 };

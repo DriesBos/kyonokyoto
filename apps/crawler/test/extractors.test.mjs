@@ -85,7 +85,12 @@ test("translation helper returns null when Google project is not configured", as
   console.warn = () => {};
 
   try {
-    const fields = await translateTextFields({}, { title: "日本語タイトル" }, "ja", "en");
+    const fields = await translateTextFields(
+      {},
+      { title: "日本語タイトル" },
+      "ja",
+      "en",
+    );
     assert.equal(fields, null);
   } finally {
     console.warn = originalWarn;
@@ -181,7 +186,10 @@ test("event coordinates prefer configured venue locations", () => {
   assert.equal(event.lng, 135.7834);
   assert.equal(event.institution_name, "Kyoto City KYOCERA Museum of Art");
   assert.equal(event.venue_name, "The Triangle");
-  assert.equal(event.address_text, "The Triangle, Kyoto City KYOCERA Museum of Art");
+  assert.equal(
+    event.address_text,
+    "The Triangle, Kyoto City KYOCERA Museum of Art",
+  );
   assert.deepEqual(event.categories, ["museum"]);
 });
 
@@ -214,7 +222,10 @@ test("event coordinates fall back to source coordinates", () => {
   assert.equal(event.lng, 135.7568);
   assert.equal(event.institution_name, "The Terminal Kyoto");
   assert.equal(event.venue_name, "The Terminal Kyoto");
-  assert.equal(event.address_text, "424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan");
+  assert.equal(
+    event.address_text,
+    "424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan",
+  );
   assert.equal(event.directions_query, "The Terminal Kyoto, Kyoto");
   assert.deepEqual(event.categories, ["gallery"]);
 });
@@ -225,7 +236,7 @@ test("event coordinates stay null when source has no usable location", () => {
       title: "Remote exhibition",
       venue_name: "Unknown venue",
     },
-    {}
+    {},
   );
 
   assert.equal(event.lat, null);
@@ -233,27 +244,21 @@ test("event coordinates stay null when source has no usable location", () => {
 });
 
 test("Kyocera date parser reads Japanese date ranges", () => {
-  assert.deepEqual(
-    parseKyoceraDateRange("2026年9月19日-2026年12月20日"),
-    {
-      startDate: "2026-09-19",
-      endDate: "2026-12-20",
-      calendarStartsAt: "2026-09-19T10:00:00+09:00",
-      calendarEndsAt: "2026-12-20T18:00:00+09:00",
-    },
-  );
+  assert.deepEqual(parseKyoceraDateRange("2026年9月19日-2026年12月20日"), {
+    startDate: "2026-09-19",
+    endDate: "2026-12-20",
+    calendarStartsAt: "2026-09-19T10:00:00+09:00",
+    calendarEndsAt: "2026-12-20T18:00:00+09:00",
+  });
 });
 
 test("Kyocera date parser reads slash date ranges", () => {
-  assert.deepEqual(
-    parseKyoceraDateRange("2027/10/2-2027/12/12"),
-    {
-      startDate: "2027-10-02",
-      endDate: "2027-12-12",
-      calendarStartsAt: "2027-10-02T10:00:00+09:00",
-      calendarEndsAt: "2027-12-12T18:00:00+09:00",
-    },
-  );
+  assert.deepEqual(parseKyoceraDateRange("2027/10/2-2027/12/12"), {
+    startDate: "2027-10-02",
+    endDate: "2027-12-12",
+    calendarStartsAt: "2027-10-02T10:00:00+09:00",
+    calendarEndsAt: "2027-12-12T18:00:00+09:00",
+  });
 });
 
 test("generic date parsers read en dash date ranges", () => {
@@ -303,13 +308,21 @@ test("generic date parsers read en dash date ranges", () => {
 });
 
 test("generic detail extraction prefers event and exhibition URLs", async () => {
-  const listingHtml = await readFile(resolve(fixturesRoot, "generic-listing.html"), "utf8");
+  const listingHtml = await readFile(
+    resolve(fixturesRoot, "generic-listing.html"),
+    "utf8",
+  );
   const source = {
     allowed_domains: ["example.test"],
     event_page_patterns: ["/events/", "/exhibitions/"],
   };
 
-  const urls = extractGenericDetailUrls(listingHtml, "https://example.test/events/", source, 4);
+  const urls = extractGenericDetailUrls(
+    listingHtml,
+    "https://example.test/events/",
+    source,
+    4,
+  );
 
   assert.deepEqual(urls, [
     "https://example.test/events/spring-show-2026/",
@@ -333,7 +346,12 @@ test("generic detail extraction can use configured listing link selectors", () =
   };
 
   assert.deepEqual(
-    extractGenericDetailUrls(listingHtml, "https://example.test/events/", source, 4),
+    extractGenericDetailUrls(
+      listingHtml,
+      "https://example.test/events/",
+      source,
+      4,
+    ),
     ["https://example.test/events/selected/"],
   );
 });
@@ -354,12 +372,18 @@ test("generic listing selectors support common attribute filters", () => {
   const source = {
     allowed_domains: ["example.test"],
     selectors: {
-      listing_links: '[class*="archive"] a[href*="/exhibitions/"][href$="/overview/"]',
+      listing_links:
+        '[class*="archive"] a[href*="/exhibitions/"][href$="/overview/"]',
     },
   };
 
   assert.deepEqual(
-    extractGenericDetailUrls(listingHtml, "https://example.test/exhibitions/", source, 4),
+    extractGenericDetailUrls(
+      listingHtml,
+      "https://example.test/exhibitions/",
+      source,
+      4,
+    ),
     [
       "https://example.test/exhibitions/kyoto-show/overview/",
       "https://example.test/exhibitions/osaka-show/overview/",
@@ -547,7 +571,10 @@ test("Kyoto National Museum extraction drops the first flyer image", () => {
     "https://www.kyohaku.go.jp/images/exhibitions/install-view.jpg",
     "https://www.kyohaku.go.jp/images/exhibitions/detail.jpg",
   ]);
-  assert.equal(event.primary_image_url, "https://www.kyohaku.go.jp/images/exhibitions/install-view.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://www.kyohaku.go.jp/images/exhibitions/install-view.jpg",
+  );
 });
 
 test("Kyocera event extraction keeps images inside main post content only", () => {
@@ -655,11 +682,11 @@ test("locale URL extraction finds alternate links in header and metadata", () =>
   assert.deepEqual(
     extractLocaleUrlsFromHtml(
       html,
-      "https://example.test/en/exhibitions/quiet-forms/"
+      "https://example.test/en/exhibitions/quiet-forms/",
     ),
     {
       ja: "https://example.test/ja/exhibitions/quiet-forms/",
-    }
+    },
   );
 });
 
@@ -698,24 +725,53 @@ test("native locale event validation rejects conflicting parsed dates", () => {
 });
 
 test("generic event extraction returns title, dates, and images", async () => {
-  const detailHtml = await readFile(resolve(fixturesRoot, "generic-detail.html"), "utf8");
+  const detailHtml = await readFile(
+    resolve(fixturesRoot, "generic-detail.html"),
+    "utf8",
+  );
   const source = {
     name: "Example Gallery",
     source_type: "gallery",
     source_categories: ["art"],
   };
 
-  const event = extractGenericEvent(detailHtml, source, "https://example.test/exhibitions/2026/quiet-forms/");
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    "https://example.test/exhibitions/2026/quiet-forms/",
+  );
 
   assert.equal(event.title, "Quiet Forms");
   assert.equal(event.start_date, "2026-04-12");
   assert.equal(event.end_date, "2026-05-31");
-  assert.equal(event.primary_image_url, "https://example.test/images/install-view.jpg");
-  assert.equal(event.image_urls.includes("https://example.test/media/quiet-forms.jpg"), true);
-  assert.equal(event.image_urls.includes("https://example.test/images/venue-mark.jpg"), false);
-  assert.equal(event.image_urls.includes("https://example.test/media/event-strip-300x80.jpg"), false);
-  assert.equal(event.image_urls.includes("https://example.test/media/cdn-thumb.jpg?width=240&height=80"), false);
-  assert.equal(event.image_urls.includes("https://example.test/images/program-thumb.jpg"), false);
+  assert.equal(
+    event.primary_image_url,
+    "https://example.test/images/install-view.jpg",
+  );
+  assert.equal(
+    event.image_urls.includes("https://example.test/media/quiet-forms.jpg"),
+    true,
+  );
+  assert.equal(
+    event.image_urls.includes("https://example.test/images/venue-mark.jpg"),
+    false,
+  );
+  assert.equal(
+    event.image_urls.includes(
+      "https://example.test/media/event-strip-300x80.jpg",
+    ),
+    false,
+  );
+  assert.equal(
+    event.image_urls.includes(
+      "https://example.test/media/cdn-thumb.jpg?width=240&height=80",
+    ),
+    false,
+  );
+  assert.equal(
+    event.image_urls.includes("https://example.test/images/program-thumb.jpg"),
+    false,
+  );
   assert.equal(hasExtractedImage(event), true);
 });
 
@@ -777,7 +833,10 @@ test("generic event extraction can ignore source og images", () => {
   assert.deepEqual(event.image_urls, [
     "https://artro.jp/uploads/install-view.jpg",
   ]);
-  assert.equal(event.primary_image_url, "https://artro.jp/uploads/install-view.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://artro.jp/uploads/install-view.jpg",
+  );
 });
 
 test("Artro listing extraction follows exhibition card links", () => {
@@ -802,7 +861,12 @@ test("Artro listing extraction follows exhibition card links", () => {
   `;
 
   assert.deepEqual(
-    extractGenericDetailUrls(listingHtml, "https://artro.jp/exhibition/?state=before", source, 8),
+    extractGenericDetailUrls(
+      listingHtml,
+      "https://artro.jp/exhibition/?state=before",
+      source,
+      8,
+    ),
     ["https://artro.jp/exhibition/ai-makita/"],
   );
   assert.deepEqual(
@@ -832,12 +896,22 @@ test("Artro event extraction reads main visual event fields", () => {
       <p>ARTRO is pleased to present Ai Makita's solo exhibition with enough detail to become useful card copy for the crawler output.</p>
     </main>
   `;
-  const event = eventExtractors.artro(detailHtml, { name: "Artro", address_text: "Kyoto" }, "https://artro.jp/exhibition/ai-makita/");
+  const event = eventExtractors.artro(
+    detailHtml,
+    { name: "Artro", address_text: "Kyoto" },
+    "https://artro.jp/exhibition/ai-makita/",
+  );
 
-  assert.equal(event.title, "First Shadows, Then Reflections, Then the Things Themselves");
+  assert.equal(
+    event.title,
+    "First Shadows, Then Reflections, Then the Things Themselves",
+  );
   assert.equal(event.start_date, "2026-06-06");
   assert.equal(event.end_date, "2026-07-05");
-  assert.equal(event.primary_image_url, "https://artro.jp/cms_wp/wp-content/uploads/2026/04/P1155587-scaled.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://artro.jp/cms_wp/wp-content/uploads/2026/04/P1155587-scaled.jpg",
+  );
   assert.equal(event.metadata.artist, "AI MAKITA 牧田愛");
 });
 
@@ -892,13 +966,23 @@ test("generic event extraction can use configured field selectors", () => {
     },
   };
 
-  const event = extractGenericEvent(detailHtml, source, "https://example.test/exhibitions/configured/");
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    "https://example.test/exhibitions/configured/",
+  );
 
   assert.equal(event.title, "Configured Title");
-  assert.equal(event.description, "Configured description with enough detail for the card.");
+  assert.equal(
+    event.description,
+    "Configured description with enough detail for the card.",
+  );
   assert.equal(event.start_date, "2026-04-12");
   assert.equal(event.end_date, "2026-05-31");
-  assert.equal(event.primary_image_url, "https://example.test/images/configured.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://example.test/images/configured.jpg",
+  );
 });
 
 test("Oyamazaki extraction uses article metadata and skips flyer image", () => {
@@ -1001,7 +1085,10 @@ test("Baiken event extraction cleans Japanese title dates and infers year", () =
   assert.equal(event.title, "♢♢懸想の眸♢♢");
   assert.equal(event.start_date, "2026-05-09");
   assert.equal(event.end_date, "2026-05-16");
-  assert.equal(event.primary_image_url, "https://baiken.jp/manage/wp-content/uploads/exhibition/2026/04/main.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://baiken.jp/manage/wp-content/uploads/exhibition/2026/04/main.jpg",
+  );
 });
 
 test("source capabilities declare native locales and machine translation behavior", () => {
@@ -1036,7 +1123,10 @@ test("source config validator reports missing source truth", () => {
 
 test("source config includes Imura Art exhibition tabs", async () => {
   const payload = JSON.parse(
-    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+    await readFile(
+      resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"),
+      "utf8",
+    ),
   );
   const source = payload.sources.find((item) => item.slug === "imura-art");
 
@@ -1053,22 +1143,39 @@ test("source config includes Imura Art exhibition tabs", async () => {
 
 test("source config includes Purple Purple with Japanese default", async () => {
   const payload = JSON.parse(
-    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+    await readFile(
+      resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"),
+      "utf8",
+    ),
   );
   const source = payload.sources.find((item) => item.slug === "purple-purple");
 
   assert.equal(source?.name, "Purple Purple");
   assert.equal(source?.language, "ja");
-  assert.deepEqual(source?.start_urls, ["https://purple-purple.com/exhibition/"]);
+  assert.deepEqual(source?.start_urls, [
+    "https://purple-purple.com/exhibition/",
+  ]);
   assert.equal(source?.selectors?.listing_links, "#exhibition .ind_in a");
-  assert.equal(source?.locales?.ja?.start_urls?.[0], "https://purple-purple.com/exhibition/");
-  assert.equal(source?.locales?.en?.start_urls?.[0], "https://purple-purple.com/en/exhibition/");
-  assert.match(source?.notes ?? "", /English top link is https:\/\/purple-purple\.com\/en\//);
+  assert.equal(
+    source?.locales?.ja?.start_urls?.[0],
+    "https://purple-purple.com/exhibition/",
+  );
+  assert.equal(
+    source?.locales?.en?.start_urls?.[0],
+    "https://purple-purple.com/en/exhibition/",
+  );
+  assert.match(
+    source?.notes ?? "",
+    /English top link is https:\/\/purple-purple\.com\/en\//,
+  );
 });
 
 test("source config includes KyotoBa gallery events with Japanese default", async () => {
   const payload = JSON.parse(
-    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+    await readFile(
+      resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"),
+      "utf8",
+    ),
   );
   const source = payload.sources.find((item) => item.slug === "kyotoba");
 
@@ -1077,24 +1184,35 @@ test("source config includes KyotoBa gallery events with Japanese default", asyn
   assert.deepEqual(source?.start_urls, ["https://kyoto-ba.jp/gallery/"]);
   assert.equal(source?.selectors?.listing_links, ".mec-event-title a");
   assert.equal(source?.selectors?.title, ".mec-single-title");
-  assert.equal(source?.locales?.ja?.start_urls?.[0], "https://kyoto-ba.jp/gallery/");
+  assert.equal(
+    source?.locales?.ja?.start_urls?.[0],
+    "https://kyoto-ba.jp/gallery/",
+  );
   assert.match(source?.notes ?? "", /Gallery events are listed on \/gallery\//);
 });
 
 test("source config includes Sokyo Kyoto location exhibitions", async () => {
   const payload = JSON.parse(
-    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+    await readFile(
+      resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"),
+      "utf8",
+    ),
   );
   const source = payload.sources.find((item) => item.slug === "sokyo-kyoto");
 
   assert.equal(source?.name, "Sokyo Kyoto");
   assert.equal(source?.language, "ja");
-  assert.deepEqual(source?.start_urls, ["https://sokyogallery.com/exhibitions/location/6/"]);
+  assert.deepEqual(source?.start_urls, [
+    "https://sokyogallery.com/exhibitions/location/6/",
+  ]);
   assert.equal(
     source?.selectors?.listing_links,
     '.records_list a[href*="/exhibitions/"][href$="/overview/"]',
   );
-  assert.equal(source?.locales?.ja?.start_urls?.[0], "https://sokyogallery.com/exhibitions/location/6/");
+  assert.equal(
+    source?.locales?.ja?.start_urls?.[0],
+    "https://sokyogallery.com/exhibitions/location/6/",
+  );
   assert.equal(
     source?.locales?.en?.start_urls?.[0],
     "https://sokyogallery.com/en/exhibitions/location/6/",
@@ -1104,7 +1222,10 @@ test("source config includes Sokyo Kyoto location exhibitions", async () => {
 
 test("source config follows Kuramonzen detail pages for per-event fields", async () => {
   const payload = JSON.parse(
-    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+    await readFile(
+      resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"),
+      "utf8",
+    ),
   );
   const source = payload.sources.find((item) => item.slug === "kuramonzen");
   const listingHtml = `
@@ -1139,10 +1260,19 @@ test("source config follows Kuramonzen detail pages for per-event fields", async
   `;
 
   assert.equal(source?.language, "en");
-  assert.deepEqual(source?.locales?.ja?.start_urls, ["https://kuramonzen.com/ja/blogs/exhibitions"]);
-  assert.deepEqual(source?.locales?.en?.start_urls, ["https://kuramonzen.com/blogs/exhibitions"]);
+  assert.deepEqual(source?.locales?.ja?.start_urls, [
+    "https://kuramonzen.com/ja/blogs/exhibitions",
+  ]);
+  assert.deepEqual(source?.locales?.en?.start_urls, [
+    "https://kuramonzen.com/blogs/exhibitions",
+  ]);
   assert.deepEqual(
-    extractGenericDetailUrls(listingHtml, "https://kuramonzen.com/blogs/exhibitions", source, 4),
+    extractGenericDetailUrls(
+      listingHtml,
+      "https://kuramonzen.com/blogs/exhibitions",
+      source,
+      4,
+    ),
     [
       "https://kuramonzen.com/blogs/exhibitions/2026-solo-exhibition",
       "https://kuramonzen.com/blogs/exhibitions/nomura-ko",
@@ -1155,7 +1285,10 @@ test("source config follows Kuramonzen detail pages for per-event fields", async
     "https://kuramonzen.com/blogs/exhibitions/nomura-ko",
   );
 
-  assert.equal(event.title, "野村 耕 -Nomura Ko || SCREAMING LOTS OF DIFFERENT SONGS");
+  assert.equal(
+    event.title,
+    "野村 耕 -Nomura Ko || SCREAMING LOTS OF DIFFERENT SONGS",
+  );
   assert.equal(event.date_text, "2026.02.28 - 06.01");
   assert.equal(event.start_date, "2026-02-28");
   assert.equal(event.end_date, "2026-06-01");
@@ -1172,7 +1305,10 @@ test("source config follows Kuramonzen detail pages for per-event fields", async
 
 test("source config keeps MTK exhibition links in listing order", async () => {
   const payload = JSON.parse(
-    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+    await readFile(
+      resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"),
+      "utf8",
+    ),
   );
   const source = payload.sources.find((item) => item.slug === "mtk");
   const listingHtml = `
@@ -1185,7 +1321,12 @@ test("source config keeps MTK exhibition links in listing order", async () => {
 
   assert.equal(source?.selectors?.listing_links, ".ex__list a");
   assert.deepEqual(
-    extractGenericDetailUrls(listingHtml, "https://mtkcontemporaryart.com/exhibition/", source, 8),
+    extractGenericDetailUrls(
+      listingHtml,
+      "https://mtkcontemporaryart.com/exhibition/",
+      source,
+      8,
+    ),
     [
       "https://mtkcontemporaryart.com/exhibition/paths/",
       "https://mtkcontemporaryart.com/exhibition/it_takes_two/",
@@ -1199,10 +1340,7 @@ test("crawl QA report summarizes saved events, missing translations, and diagnos
       source: { slug: "example-gallery" },
       sourceOutcome: "source_ok",
       detailUrls: ["https://example.test/one", "https://example.test/two"],
-      savedEvents: [
-        { translations: ["ja", "en"] },
-        { translations: ["ja"] },
-      ],
+      savedEvents: [{ translations: ["ja", "en"] }, { translations: ["ja"] }],
       skippedEvents: [{ reason: "missing image" }],
       diagnostics: {
         fetched_static_count: 2,
@@ -1265,7 +1403,10 @@ test("Postgres text sanitizer removes null bytes recursively", () => {
 });
 
 test("source locale config applies localized source names", async () => {
-  const detailHtml = await readFile(resolve(fixturesRoot, "generic-detail.html"), "utf8");
+  const detailHtml = await readFile(
+    resolve(fixturesRoot, "generic-detail.html"),
+    "utf8",
+  );
   const source = withSourceLocaleConfig(
     {
       name: "Kyoto Art Center",
@@ -1275,10 +1416,14 @@ test("source locale config applies localized source names", async () => {
       source_type: "art-center",
       source_categories: ["exhibition"],
     },
-    "ja"
+    "ja",
   );
 
-  const event = extractGenericEvent(detailHtml, source, "https://example.test/exhibitions/2026/quiet-forms/");
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    "https://example.test/exhibitions/2026/quiet-forms/",
+  );
 
   assert.equal(event.institution_name, "京都芸術センター");
   assert.equal(event.venue_name, "京都芸術センター");
@@ -1288,17 +1433,17 @@ test("source-specific skip rule drops MOMAK calendar pages", () => {
   assert.equal(
     getSourceSpecificSkipReason(
       { slug: "momak" },
-      { title: "Calendar of Events" }
+      { title: "Calendar of Events" },
     ),
-    "title contains calendar"
+    "title contains calendar",
   );
 
   assert.equal(
     getSourceSpecificSkipReason(
       { slug: "momak" },
-      { title: "Antonio Fontanesi: Transcending Landscape" }
+      { title: "Antonio Fontanesi: Transcending Landscape" },
     ),
-    null
+    null,
   );
 });
 
@@ -1306,24 +1451,24 @@ test("source-specific skip rule drops Kyocera Collection Room pages", () => {
   assert.equal(
     getSourceSpecificSkipReason(
       { slug: "kyoto-city-kyocera-museum-of-art" },
-      { title: "Collection Room: Spring Collection" }
+      { title: "Collection Room: Spring Collection" },
     ),
-    "title contains Collection Room"
+    "title contains Collection Room",
   );
   assert.equal(
     getSourceSpecificSkipReason(
       { slug: "kyoto-city-kyocera-museum-of-art" },
-      { title: "［2026春期］コレクションルーム　特集「没後20年　井田照一」" }
+      { title: "［2026春期］コレクションルーム　特集「没後20年　井田照一」" },
     ),
-    "title contains Collection Room"
+    "title contains Collection Room",
   );
 
   assert.equal(
     getSourceSpecificSkipReason(
       { slug: "kyoto-city-kyocera-museum-of-art" },
-      { title: "Special Exhibition" }
+      { title: "Special Exhibition" },
     ),
-    null
+    null,
   );
 });
 
@@ -1404,7 +1549,10 @@ test("source-specific skip rule drops past Kankakari events", () => {
 });
 
 test("Raku Museum extraction keeps only the first image", async () => {
-  const detailHtml = await readFile(resolve(fixturesRoot, "generic-detail.html"), "utf8");
+  const detailHtml = await readFile(
+    resolve(fixturesRoot, "generic-detail.html"),
+    "utf8",
+  );
   const source = {
     name: "Raku Museum",
     source_type: "museum",
@@ -1414,11 +1562,16 @@ test("Raku Museum extraction keeps only the first image", async () => {
   const event = extractRakuMuseumEvent(
     detailHtml,
     source,
-    "https://www.raku-yaki.or.jp/e/museum/exhibition/forthcoming_exhibitions.html"
+    "https://www.raku-yaki.or.jp/e/museum/exhibition/forthcoming_exhibitions.html",
   );
 
-  assert.equal(event.primary_image_url, "https://www.raku-yaki.or.jp/images/install-view.jpg");
-  assert.deepEqual(event.image_urls, ["https://www.raku-yaki.or.jp/images/install-view.jpg"]);
+  assert.equal(
+    event.primary_image_url,
+    "https://www.raku-yaki.or.jp/images/install-view.jpg",
+  );
+  assert.deepEqual(event.image_urls, [
+    "https://www.raku-yaki.or.jp/images/install-view.jpg",
+  ]);
 });
 
 test("Raku Museum detail URLs include current and forthcoming English tabs", () => {
@@ -1482,7 +1635,10 @@ test("Raku Museum English exhibition extraction reads tab content date", () => {
   assert.equal(event.date_text, "Saturday 25 April - Wednesday 26 August 2026");
   assert.equal(event.start_date, "2026-04-25");
   assert.equal(event.end_date, "2026-08-26");
-  assert.equal(event.primary_image_url, "https://www.raku-yaki.or.jp/common/img/exhibition/flyer63.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://www.raku-yaki.or.jp/common/img/exhibition/flyer63.jpg",
+  );
 });
 
 test("Raku Museum Japanese homepage extraction reads info row", () => {
@@ -1560,7 +1716,10 @@ test("koen event extraction reads the main container listing", () => {
   );
 
   assert.equal(event.title, "“koen zine fair” 作品の募集");
-  assert.equal(event.date_text, "開催日時 : 2025.11.1(土)-9(日) 11:00-22:00 ※月・火・水定休");
+  assert.equal(
+    event.date_text,
+    "開催日時 : 2025.11.1(土)-9(日) 11:00-22:00 ※月・火・水定休",
+  );
   assert.equal(event.start_date, "2025-11-01");
   assert.equal(event.end_date, "2025-11-09");
   assert.equal(event.description.includes("zineの展示販売会"), true);
@@ -1612,11 +1771,14 @@ test("Sen-Oku extraction removes the trailing ad image", () => {
   const event = extractSenOkuEvent(
     detailHtml,
     source,
-    "https://sen-oku.or.jp/program/202604_special/"
+    "https://sen-oku.or.jp/program/202604_special/",
   );
 
   assert.equal(event.title, "Special Exhibition");
-  assert.equal(event.primary_image_url, "https://sen-oku.or.jp/wp-content/uploads/hero.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://sen-oku.or.jp/wp-content/uploads/hero.jpg",
+  );
   assert.deepEqual(event.image_urls, [
     "https://sen-oku.or.jp/wp-content/uploads/hero.jpg",
     "https://sen-oku.or.jp/wp-content/uploads/detail-1.jpg",
@@ -1644,7 +1806,7 @@ test("Sen-Oku title extraction drops subtitle spans without font wrapper", () =>
       source_type: "museum",
       source_categories: ["art", "museum"],
     },
-    "https://sen-oku.or.jp/program/202604_special/"
+    "https://sen-oku.or.jp/program/202604_special/",
   );
 
   assert.equal(event.title, "Special Exhibition");
@@ -1686,16 +1848,19 @@ test("image normalization caps stored images and probes offender source dimensio
 });
 
 test("image normalization caps non-offender event images at five", async () => {
-  const normalized = await normalizeEventImagesForSource({
-    primary_image_url: "https://example.test/hero.jpg",
-    image_urls: [
-      "https://example.test/hero.jpg",
-      "https://example.test/gallery-1.jpg",
-      "https://example.test/gallery-2.jpg",
-      "https://example.test/gallery-3.jpg",
-      "https://example.test/gallery-4.jpg",
-    ],
-  }, {});
+  const normalized = await normalizeEventImagesForSource(
+    {
+      primary_image_url: "https://example.test/hero.jpg",
+      image_urls: [
+        "https://example.test/hero.jpg",
+        "https://example.test/gallery-1.jpg",
+        "https://example.test/gallery-2.jpg",
+        "https://example.test/gallery-3.jpg",
+        "https://example.test/gallery-4.jpg",
+      ],
+    },
+    {},
+  );
 
   assert.deepEqual(normalized.image_urls, [
     "https://example.test/hero.jpg",
@@ -1709,7 +1874,7 @@ test("image normalization caps non-offender event images at five", async () => {
 test("image byte parser reads common remote image dimensions", () => {
   const png = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAASwAAABQCAIAAAD2HxkiAAAAAklEQVR4nGNgGAWjYBSMglEwCkbBKBgFo2AUrIIBAAAMAAGQvR6bAAAAAElFTkSuQmCC",
-    "base64"
+    "base64",
   );
 
   assert.deepEqual(parseImageDimensionsFromBytes(png, "image/png"), {
@@ -1747,7 +1912,7 @@ test("Chushin extraction treats exh sections as individual events", () => {
 
   const urls = extractChushinDetailUrls(
     listingHtml,
-    "https://www.chushin.co.jp/bijyutu/exhibition/index.html"
+    "https://www.chushin.co.jp/bijyutu/exhibition/index.html",
   );
 
   assert.deepEqual(urls, [
@@ -1760,7 +1925,10 @@ test("Chushin extraction treats exh sections as individual events", () => {
   assert.equal(event.title, "山本容子版画展 物語をつつむ");
   assert.equal(event.start_date, "2026-05-12");
   assert.equal(event.end_date, "2026-06-26");
-  assert.equal(event.primary_image_url, "https://www.chushin.co.jp/bijyutu/exhibition/images/img_bijyutu_exhibition_73.jpg");
+  assert.equal(
+    event.primary_image_url,
+    "https://www.chushin.co.jp/bijyutu/exhibition/images/img_bijyutu_exhibition_73.jpg",
+  );
   assert.equal(event.source_url, urls[0]);
 
   const rubyEvent = extractChushinEvent(listingHtml, source, urls[1]);
@@ -1772,10 +1940,13 @@ test("fetch classification distinguishes bot challenges from renderable JS shell
 
   assert.equal(
     classifyFetchResult({
-      response: new Response("<title>Just a moment...</title><p>Checking your browser</p>", { status: 200, headers }),
+      response: new Response(
+        "<title>Just a moment...</title><p>Checking your browser</p>",
+        { status: 200, headers },
+      ),
       html: "<title>Just a moment...</title><p>Checking your browser</p>",
     }),
-    "bot_challenge"
+    "bot_challenge",
   );
 
   const normalHtmlWithChallengeWords = `
@@ -1786,18 +1957,24 @@ test("fetch classification distinguishes bot challenges from renderable JS shell
 
   assert.equal(
     classifyFetchResult({
-      response: new Response(normalHtmlWithChallengeWords, { status: 200, headers }),
+      response: new Response(normalHtmlWithChallengeWords, {
+        status: 200,
+        headers,
+      }),
       html: normalHtmlWithChallengeWords,
     }),
-    "ok"
+    "ok",
   );
 
   assert.equal(
     classifyFetchResult({
-      response: new Response("<div id=\"root\"></div><script src=\"/app.js\"></script>", { status: 200, headers }),
-      html: "<div id=\"root\"></div><script src=\"/app.js\"></script>",
+      response: new Response(
+        '<div id="root"></div><script src="/app.js"></script>',
+        { status: 200, headers },
+      ),
+      html: '<div id="root"></div><script src="/app.js"></script>',
     }),
-    "js_shell"
+    "js_shell",
   );
 });
 
@@ -1833,7 +2010,7 @@ test("diagnostics and source outcome summarize crawl health", () => {
       diagnostics: { ...diagnostics, missing_image_count: 1 },
       usedGenericExtractor: true,
     }),
-    "source_needs_review"
+    "source_needs_review",
   );
 
   assert.equal(
@@ -1847,13 +2024,16 @@ test("diagnostics and source outcome summarize crawl health", () => {
       diagnostics: { skipped_past_count: 1, skipped_missing_date_count: 1 },
       sourceSlug: "sibasi",
     }),
-    "source_no_current_events"
+    "source_no_current_events",
   );
 });
 
 test("source-specific crawler registries only reference configured source slugs", async () => {
   const payload = JSON.parse(
-    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+    await readFile(
+      resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"),
+      "utf8",
+    ),
   );
   const configuredSlugs = new Set(payload.sources.map((source) => source.slug));
   const registryEntries = [
@@ -1868,7 +2048,7 @@ test("source-specific crawler registries only reference configured source slugs"
     assert.deepEqual(
       unknownSlugs,
       [],
-      `${label} contains unknown source slugs: ${unknownSlugs.join(", ")}`
+      `${label} contains unknown source slugs: ${unknownSlugs.join(", ")}`,
     );
   }
 });

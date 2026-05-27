@@ -1,4 +1,9 @@
-import { LOCALE_COOKIE, LOCALE_STORAGE_KEY, supportedLocales, uiText } from "../lib/i18n";
+import {
+  LOCALE_COOKIE,
+  LOCALE_STORAGE_KEY,
+  supportedLocales,
+  uiText,
+} from "../lib/i18n";
 
 const localeCookie = LOCALE_COOKIE;
 const localeStorageKey = LOCALE_STORAGE_KEY;
@@ -18,14 +23,16 @@ const normalizeLocale = (value: unknown) => {
 };
 
 const localeFromPath = () => {
-  const pathLocale = window.location.pathname.split("/").filter(Boolean)[0] ?? "";
+  const pathLocale =
+    window.location.pathname.split("/").filter(Boolean)[0] ?? "";
   return localeCodes.has(pathLocale as never) ? pathLocale : null;
 };
 
 const getBrowserLocale = () => {
-  const languages = Array.isArray(navigator.languages) && navigator.languages.length > 0
-    ? navigator.languages
-    : [navigator.language];
+  const languages =
+    Array.isArray(navigator.languages) && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language];
 
   for (const language of languages) {
     const locale = normalizeLocale(language);
@@ -41,12 +48,17 @@ const getCookieLocale = () => {
     .map((part) => part.trim())
     .find((part) => part.startsWith(`${localeCookie}=`));
 
-  return normalizeLocale(match ? decodeURIComponent(match.slice(localeCookie.length + 1)) : "");
+  return normalizeLocale(
+    match ? decodeURIComponent(match.slice(localeCookie.length + 1)) : "",
+  );
 };
 
 const getStoredLocale = () => {
   try {
-    return normalizeLocale(window.localStorage?.getItem(localeStorageKey)) ?? getCookieLocale();
+    return (
+      normalizeLocale(window.localStorage?.getItem(localeStorageKey)) ??
+      getCookieLocale()
+    );
   } catch {
     return getCookieLocale();
   }
@@ -62,7 +74,9 @@ const setLocale = (locale: string) => {
 };
 
 const getActiveLocale = (renderedLocale: string) =>
-  normalizeLocale(document.documentElement.dataset.locale) ?? normalizeLocale(document.documentElement.lang) ?? renderedLocale;
+  normalizeLocale(document.documentElement.dataset.locale) ??
+  normalizeLocale(document.documentElement.lang) ??
+  renderedLocale;
 
 const getLocalePayload = () => {
   const payloadScript = document.querySelector("[data-locale-payload]");
@@ -106,7 +120,10 @@ const replacePathLocale = (locale: string) => {
   return url;
 };
 
-const applyLocale = (locale: string, options: { updateHistory?: boolean; persist?: boolean } = {}) => {
+const applyLocale = (
+  locale: string,
+  options: { updateHistory?: boolean; persist?: boolean } = {},
+) => {
   if (!localeCodes.has(locale as never)) return;
 
   const { updateHistory = true, persist = true } = options;
@@ -122,9 +139,15 @@ const applyLocale = (locale: string, options: { updateHistory?: boolean; persist
   document.documentElement.lang = copy.lang;
   document.documentElement.dataset.locale = locale;
   document.title = meta?.title ?? copy.title;
-  setMetaContent("meta[name='description']", meta?.description ?? copy.description);
+  setMetaContent(
+    "meta[name='description']",
+    meta?.description ?? copy.description,
+  );
   setMetaContent("meta[property='og:title']", meta?.title ?? copy.title);
-  setMetaContent("meta[property='og:description']", meta?.description ?? copy.description);
+  setMetaContent(
+    "meta[property='og:description']",
+    meta?.description ?? copy.description,
+  );
 
   const logo = document.querySelector(".mainHeader__logo");
   if (logo instanceof HTMLAnchorElement) {
@@ -136,14 +159,21 @@ const applyLocale = (locale: string, options: { updateHistory?: boolean; persist
   if (localeButton instanceof HTMLElement) {
     localeButton.dataset.localeOption = nextLocale;
     localeButton.dataset.localeHref = `/${nextLocale}/`;
-    localeButton.setAttribute("aria-label", `${uiText.en.languageAria}: ${languageLabels[locale as keyof typeof languageLabels]}`);
-    setLabel(localeButton, languageLabels[locale as keyof typeof languageLabels]);
+    localeButton.setAttribute(
+      "aria-label",
+      `${uiText.en.languageAria}: ${languageLabels[locale as keyof typeof languageLabels]}`,
+    );
+    setLabel(
+      localeButton,
+      languageLabels[locale as keyof typeof languageLabels],
+    );
   }
 
   const eventPayload = payload?.events ?? {};
   document.querySelectorAll("[data-event-card]").forEach((card) => {
     if (!(card instanceof HTMLElement)) return;
-    const eventLocalePayload = eventPayload[card.dataset.eventId ?? ""]?.[locale];
+    const eventLocalePayload =
+      eventPayload[card.dataset.eventId ?? ""]?.[locale];
     if (!eventLocalePayload) return;
 
     card.querySelectorAll("[data-event-field]").forEach((element) => {
@@ -165,8 +195,10 @@ const applyLocale = (locale: string, options: { updateHistory?: boolean; persist
     card.querySelectorAll("[data-apple-calendar-button]").forEach((element) => {
       if (!(element instanceof HTMLElement)) return;
       element.dataset.calendarTitle = eventLocalePayload.calendarTitle ?? "";
-      element.dataset.calendarDetails = eventLocalePayload.calendarDetails ?? "";
-      element.dataset.calendarLocation = eventLocalePayload.calendarLocation ?? "";
+      element.dataset.calendarDetails =
+        eventLocalePayload.calendarDetails ?? "";
+      element.dataset.calendarLocation =
+        eventLocalePayload.calendarLocation ?? "";
     });
 
     card.querySelectorAll("[data-event-image-alt]").forEach((element) => {
@@ -182,14 +214,18 @@ const applyLocale = (locale: string, options: { updateHistory?: boolean; persist
   }
 
   document.dispatchEvent(new CustomEvent("event-filter:updated"));
-  document.dispatchEvent(new CustomEvent("kyo-locale:updated", { detail: { locale } }));
+  document.dispatchEvent(
+    new CustomEvent("kyo-locale:updated", { detail: { locale } }),
+  );
 };
 
 export const initLocaleToggle = () => {
   if (window.__localeToggleBound) return;
 
-  const renderedLocale = localeFromPath() ?? normalizeLocale(document.documentElement.lang) ?? "en";
-  const initialPreferredLocale = getStoredLocale() ?? getBrowserLocale() ?? renderedLocale;
+  const renderedLocale =
+    localeFromPath() ?? normalizeLocale(document.documentElement.lang) ?? "en";
+  const initialPreferredLocale =
+    getStoredLocale() ?? getBrowserLocale() ?? renderedLocale;
 
   if (initialPreferredLocale !== renderedLocale && getLocalePayload()) {
     applyLocale(initialPreferredLocale, { updateHistory: true, persist: true });

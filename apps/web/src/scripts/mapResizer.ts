@@ -18,13 +18,16 @@ type ResizeState = {
 };
 
 const pxFromRem = (value: number) => {
-  const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const rootSize = Number.parseFloat(
+    getComputedStyle(document.documentElement).fontSize,
+  );
   return value * (Number.isFinite(rootSize) ? rootSize : 16);
 };
 
 const svhToPx = (value: number) => window.innerHeight * (value / 100);
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
 const getElements = () => {
   const content = document.querySelector(contentSelector);
@@ -61,7 +64,10 @@ const setOrientation = () => {
   const elements = getElements();
   if (!elements) return;
 
-  elements.resizer.setAttribute("aria-orientation", isMobileLayout() ? "horizontal" : "vertical");
+  elements.resizer.setAttribute(
+    "aria-orientation",
+    isMobileLayout() ? "horizontal" : "vertical",
+  );
 };
 
 const getDesktopBounds = (content: HTMLElement) => {
@@ -77,15 +83,24 @@ const getMobileBounds = () => ({
 
 const setDesktopEventsSize = (content: HTMLElement, nextSize: number) => {
   const { minSize, maxSize } = getDesktopBounds(content);
-  content.style.setProperty("--events-panel-size", `${clamp(nextSize, minSize, maxSize)}px`);
+  content.style.setProperty(
+    "--events-panel-size",
+    `${clamp(nextSize, minSize, maxSize)}px`,
+  );
 };
 
 const setMobileMapSize = (content: HTMLElement, nextSize: number) => {
   const { minSize, maxSize } = getMobileBounds();
-  content.style.setProperty("--map-panel-size", `${clamp(nextSize, minSize, maxSize)}px`);
+  content.style.setProperty(
+    "--map-panel-size",
+    `${clamp(nextSize, minSize, maxSize)}px`,
+  );
 };
 
-const startDrag = (event: PointerEvent, elements: NonNullable<ReturnType<typeof getElements>>) => {
+const startDrag = (
+  event: PointerEvent,
+  elements: NonNullable<ReturnType<typeof getElements>>,
+) => {
   if (!elements.content.hasAttribute("data-map-visible")) return null;
 
   event.preventDefault();
@@ -102,7 +117,10 @@ const startDrag = (event: PointerEvent, elements: NonNullable<ReturnType<typeof 
   };
 };
 
-const stopDrag = (state: ResizeState | null, elements: NonNullable<ReturnType<typeof getElements>>) => {
+const stopDrag = (
+  state: ResizeState | null,
+  elements: NonNullable<ReturnType<typeof getElements>>,
+) => {
   if (!state) return;
 
   if (elements.resizer.hasPointerCapture(state.pointerId)) {
@@ -114,7 +132,11 @@ const stopDrag = (state: ResizeState | null, elements: NonNullable<ReturnType<ty
   emitLayoutUpdated();
 };
 
-const applyDrag = (event: PointerEvent, state: ResizeState, elements: NonNullable<ReturnType<typeof getElements>>) => {
+const applyDrag = (
+  event: PointerEvent,
+  state: ResizeState,
+  elements: NonNullable<ReturnType<typeof getElements>>,
+) => {
   if (isMobileLayout()) {
     const delta = event.clientY - state.startClientY;
     setMobileMapSize(elements.content, state.startMapSize + delta);
@@ -126,11 +148,16 @@ const applyDrag = (event: PointerEvent, state: ResizeState, elements: NonNullabl
   emitLayoutUpdated();
 };
 
-const applyKeyboardResize = (event: KeyboardEvent, elements: NonNullable<ReturnType<typeof getElements>>) => {
+const applyKeyboardResize = (
+  event: KeyboardEvent,
+  elements: NonNullable<ReturnType<typeof getElements>>,
+) => {
   if (!elements.content.hasAttribute("data-map-visible")) return;
 
   const isMobile = isMobileLayout();
-  const keys = isMobile ? ["ArrowUp", "ArrowDown"] : ["ArrowLeft", "ArrowRight"];
+  const keys = isMobile
+    ? ["ArrowUp", "ArrowDown"]
+    : ["ArrowLeft", "ArrowRight"];
   if (!keys.includes(event.key)) return;
 
   event.preventDefault();
@@ -138,10 +165,16 @@ const applyKeyboardResize = (event: KeyboardEvent, elements: NonNullable<ReturnT
 
   if (isMobile) {
     const currentSize = elements.map.getBoundingClientRect().height;
-    setMobileMapSize(elements.content, currentSize + (event.key === "ArrowDown" ? step : -step));
+    setMobileMapSize(
+      elements.content,
+      currentSize + (event.key === "ArrowDown" ? step : -step),
+    );
   } else {
     const currentSize = elements.events.getBoundingClientRect().width;
-    setDesktopEventsSize(elements.content, currentSize + (event.key === "ArrowRight" ? step : -step));
+    setDesktopEventsSize(
+      elements.content,
+      currentSize + (event.key === "ArrowRight" ? step : -step),
+    );
   }
 
   emitLayoutUpdated();

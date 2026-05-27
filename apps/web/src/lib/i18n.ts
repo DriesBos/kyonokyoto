@@ -24,7 +24,8 @@ export const uiText = {
     noEvents: "No events!",
     unsetFilters: "Please unset some filters.",
     emptyTitle: "No ongoing or upcoming events yet",
-    emptyDescription: "The crawler is connected. Once ongoing or upcoming events are available, they will appear here automatically.",
+    emptyDescription:
+      "The crawler is connected. Once ongoing or upcoming events are available, they will appear here automatically.",
     apple: "Apple",
     google: "Google",
     directions: "Directions",
@@ -52,7 +53,8 @@ export const uiText = {
     noEvents: "イベントなし",
     unsetFilters: "絞り込みを外してください。",
     emptyTitle: "開催中・開催予定のイベントはまだありません",
-    emptyDescription: "クローラーは接続済みです。開催中・開催予定のイベントが見つかると自動で表示されます。",
+    emptyDescription:
+      "クローラーは接続済みです。開催中・開催予定のイベントが見つかると自動で表示されます。",
     apple: "Apple",
     google: "Google",
     directions: "行き方",
@@ -73,7 +75,9 @@ export function normalizeLocale(value: unknown): AppLocale | null {
   return null;
 }
 
-export function localeFromAcceptLanguage(value: string | null | undefined): AppLocale | null {
+export function localeFromAcceptLanguage(
+  value: string | null | undefined,
+): AppLocale | null {
   if (!value) return null;
 
   const preferred = value
@@ -94,5 +98,9 @@ export function resolveLocale({
   acceptLanguage?: string | null;
   fallback?: AppLocale;
 }): AppLocale {
-  return normalizeLocale(cookieLocale) ?? localeFromAcceptLanguage(acceptLanguage) ?? fallback;
+  return (
+    normalizeLocale(cookieLocale) ??
+    localeFromAcceptLanguage(acceptLanguage) ??
+    fallback
+  );
 }

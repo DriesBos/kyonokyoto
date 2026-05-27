@@ -34,7 +34,10 @@ export const initAppleCalendar = () => {
     const details = escapeIcsText(button.dataset.calendarDetails);
     const location = escapeIcsText(button.dataset.calendarLocation);
     const uid = `${crypto.randomUUID()}@kyonokyoto`;
-    const dtStamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const dtStamp = new Date()
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\.\d{3}Z$/, "Z");
 
     const ics = [
       "BEGIN:VCALENDAR",
