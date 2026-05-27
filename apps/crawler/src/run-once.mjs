@@ -2055,6 +2055,7 @@ function extractFirstDateText(text) {
   const patterns = [
     /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2}(?:,\s*\d{4})?\s*[-–—～〜]\s*(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
     /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\s*[-–—～〜]\s*\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
+    /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s*[-–—～〜]\s*\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
     /\d{4}年\d{1,2}月\d{1,2}日[\s\S]{0,40}?[～〜\-－][\s\S]{0,40}?\d{4}年\d{1,2}月\d{1,2}日/u,
     /\d{4}[./-]\d{1,2}[./-]\d{1,2}[\s\S]{0,30}?[-–—～〜][\s\S]{0,30}?(?:\d{4}[./-])?\d{1,2}[./-]\d{1,2}/u,
     /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
@@ -4466,16 +4467,7 @@ function extractRakuMuseumEvent(detailHtml, source, detailUrl) {
     getSourceLocale(source) === 'ja'
       ? extractRakuMuseumHomeInfoEvent(detailHtml, source, detailUrl)
       : extractRakuMuseumTabEvent(detailHtml, source, detailUrl);
-  if (siteEvent) return siteEvent;
-
-  const event = extractGenericEvent(detailHtml, source, detailUrl);
-  const firstImageUrl = event.image_urls?.[0] ?? null;
-
-  return {
-    ...event,
-    primary_image_url: firstImageUrl,
-    image_urls: firstImageUrl ? [firstImageUrl] : [],
-  };
+  return siteEvent ?? null;
 }
 
 function extractKoenMainHtml(detailHtml) {
