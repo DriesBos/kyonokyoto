@@ -1187,6 +1187,7 @@
       },
       "notes": "The header offers an English/Japanese language toggle. The listing mixes current, upcoming, and past exhibitions, so crawl article links and parse dates on each detail page. Detail pages include a related section titled \"Others exhibitions\" after the article content.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
       "locales": {
