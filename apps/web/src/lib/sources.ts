@@ -23,6 +23,7 @@ export type SourceConfig = {
     lng: number;
   }[];
   is_active?: boolean;
+  beta?: boolean;
   map_visibility?: boolean;
 };
 
@@ -81,6 +82,7 @@ export const titleCaseCategory = (value: string) =>
 export const configuredSourcesFrom = (sources: SourceConfig[]) =>
   sources
     .filter((source) => source.is_active !== false)
+    .filter((source) => !source.beta || import.meta.env.DEV)
     .map((source) => ({
       ...source,
       source_categories: normalizeCategoryList(source.source_categories ?? []),
