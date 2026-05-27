@@ -16,6 +16,7 @@ import {
   type PermanentExhibitionHighlight,
 } from "../../lib/permanentExhibitions";
 import {
+  allActiveSourcesFrom,
   categoriesForEvents,
   configuredSourcesFrom,
   mapCoordinatesForEvent,
@@ -45,7 +46,15 @@ const copy = uiText.en;
 const metaCopy = uiText[locale];
 
 const configuredSources = configuredSourcesFrom(sourcesPayload.sources as SourceConfig[]);
-const events = await fetchPublishedEvents();
+const allActiveSources = allActiveSourcesFrom(sourcesPayload.sources as SourceConfig[]);
+const betaSourceSlugsAll = new Set(allActiveSources.filter((s) => s.beta).map((s) => s.slug));
+const rawEvents = await fetchPublishedEvents();
+const events = import.meta.env.DEV
+  ? rawEvents
+  : rawEvents.filter((event) => {
+      const slug = sourceSlugForEvent(event, allActiveSources);
+      return !slug || !betaSourceSlugsAll.has(slug);
+    });
 const displayEventsByLocale = buildDisplayEventsByLocale({
   events,
   configuredSources,
@@ -65,7 +74,7 @@ const upcomingEvents = displayEvents.filter((event) => event.timing === "upcomin
 const sourceSlugForDisplayEvent = (event: (typeof visibleCards)[number]) =>
   event.timing === "permanent" ? event.source_id : sourceSlugForEvent(event, configuredSources);
 const sourceSlugByEventId = new Map(visibleCards.map((event) => [event.id, sourceSlugForDisplayEvent(event)]));
-const betaSourceSlugs = new Set(configuredSources.filter((s) => s.beta).map((s) => s.slug));
+const betaSourceSlugs = betaSourceSlugsAll;
 const betaPermanentSlugs = new Set(
   (permanentHighlightsPayload.items as PermanentExhibitionHighlight[])
     .filter((h) => h.beta)

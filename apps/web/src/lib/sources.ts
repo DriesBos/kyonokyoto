@@ -80,6 +80,14 @@ export const titleCaseCategory = (value: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
+export const allActiveSourcesFrom = (sources: SourceConfig[]) =>
+  sources
+    .filter((source) => source.is_active !== false)
+    .map((source) => ({
+      ...source,
+      source_categories: normalizeCategoryList(source.source_categories ?? []),
+    }));
+
 export const configuredSourcesFrom = (sources: SourceConfig[]) =>
   sources
     .filter((source) => source.is_active !== false)
