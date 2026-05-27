@@ -66,8 +66,14 @@ const sourceSlugForDisplayEvent = (event: (typeof visibleCards)[number]) =>
   event.timing === "permanent" ? event.source_id : sourceSlugForEvent(event, configuredSources);
 const sourceSlugByEventId = new Map(visibleCards.map((event) => [event.id, sourceSlugForDisplayEvent(event)]));
 const betaSourceSlugs = new Set(configuredSources.filter((s) => s.beta).map((s) => s.slug));
+const betaPermanentSlugs = new Set(
+  (permanentHighlightsPayload.items as PermanentExhibitionHighlight[])
+    .filter((h) => h.beta)
+    .map((h) => h.slug)
+);
 const isEventBeta = (event: (typeof visibleCards)[number]) =>
-  betaSourceSlugs.has(sourceSlugByEventId.get(event.id) ?? "");
+  betaSourceSlugs.has(sourceSlugByEventId.get(event.id) ?? "") ||
+  (event.timing === "permanent" && betaPermanentSlugs.has(event.source_id));
 const mapLocationIdByEventId = new Map(
   visibleCards.map((event) => [
     event.id,

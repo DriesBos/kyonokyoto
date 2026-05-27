@@ -22,6 +22,7 @@ export type PermanentExhibitionHighlight = {
   lat?: number;
   lng?: number;
   is_active?: boolean;
+  beta?: boolean;
   urls?: Partial<Record<AppLocale, string>>;
   description?: Partial<Record<AppLocale, string>> | string | null;
   image_urls?: string[];
@@ -97,6 +98,7 @@ export const permanentEventsForLocale = ({
 
   return highlights
     .filter((highlight) => highlight.is_active !== false)
+    .filter((highlight) => !highlight.beta || import.meta.env.DEV)
     .map((highlight) => {
       const source = sourceBySlug.get(highlight.slug);
       const name = source?.name ?? highlight.name;

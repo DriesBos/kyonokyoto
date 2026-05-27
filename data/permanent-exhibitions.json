@@ -201,6 +201,7 @@
       "lng": 135.765058,
       "source_categories": ["art", "gallery"],
       "is_active": true,
+      "beta": true,
       "description": {
         "en": "A gallery and pop-up space in the innermost kura of a century-old Kyoto machiya in the Tominokoji area, conceived as a room for placing things and a cue to step into their deeper contexts.",
         "ja": "富小路エリアの築100年以上の京町家の最奥にある蔵を活用したギャラリー／ポップアップスペース。「おく」とcueを起点に、ものごとの奥へ踏み込むきっかけとなる場として構想されています。"
