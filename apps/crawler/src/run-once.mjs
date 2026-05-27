@@ -1760,12 +1760,15 @@ function parseImageDimensionsFromBytes(bytes, contentType = '') {
 }
 
 function looksLikeSocialOrUiImage(url) {
+  const isWpThemeExhibitionImage =
+    /\/wp-content\/themes\/[^/]+\/img\/exhibitions\//i.test(url);
+
   return (
     /data:image|spacer|sprite|logo|icon|favicon|avatar|loader|loading|blank|pixel|tracking|analytics/i.test(
       url,
     ) ||
     /\/assets\/img\/(?:common|layout|icon)\//i.test(url) ||
-    /\/wp-content\/themes\//i.test(url) ||
+    (!isWpThemeExhibitionImage && /\/wp-content\/themes\//i.test(url)) ||
     /(?:^|[\/_.-])(facebook|instagram|twitter|social|sns|share|line|youtube|pinterest|linkedin)(?:[\/_.-]|$)/i.test(
       url,
     ) ||
@@ -1983,8 +1986,9 @@ function extractConfiguredDetailUrls(listingHtml, listingUrl, source) {
 
 function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
   const configuredUrls = extractConfiguredDetailUrls(listingHtml, listingUrl, source);
+  const hasConfiguredListingSelectors = selectorsFor(source, 'listing_links').length > 0;
 
-  if (configuredUrls.length) {
+  if (hasConfiguredListingSelectors) {
     return [...new Set(configuredUrls)].slice(0, limit);
   }
 
@@ -2579,12 +2583,15 @@ function extractHosooEvent(detailHtml, source, detailUrl) {
       { url: extractMeta(detailHtml, 'og:image'), source: 'og:image' },
       ...[
         ...detailHtml.matchAll(
-          /<img[^>]+src="([^"]*\/img\/exhibitions\/[^"]+)"/gi,
+          /<img\b[^>]+(?:src|data-src)="([^"]*\/img\/exhibitions\/[^"]+)"/gi,
         ),
-      ].map((match) => ({
-        url: match[1],
-        source: 'img',
-      })),
+      ]
+        .map((match) => match[1])
+        .filter((url) => !/\/profile[_-]/i.test(url))
+        .map((url) => ({
+          url,
+          source: 'img',
+        })),
     ],
     detailUrl,
   );
@@ -2617,6 +2624,94 @@ function extractHosooEvent(detailHtml, source, detailUrl) {
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     source_url: detailUrl,
+  };
+}
+
+function extractArtroEvent(detailHtml, source, detailUrl) {
+  const titleHtml =
+    detailHtml.match(
+      /<h2\b[^>]*class="[^"]*\bmainVisual__infoTitle\b[^"]*"[^>]*>([\s\S]*?)<\/h2>/i,
+    )?.[1] ?? '';
+  const titleParts = [...titleHtml.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const title =
+    titleParts[1] ??
+    titleParts[0] ??
+    stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '')
+      .replace(/\s*-\s*ARTRO$/i, '')
+      .trim();
+
+  if (!title) {
+    throw new Error('Could not extract event title from ARTRO detail page');
+  }
+
+  const artist = titleParts[0] && titleParts[0] !== title ? titleParts[0] : null;
+  const dateText =
+    stripTags(
+      detailHtml.match(
+        /<p\b[^>]*class="[^"]*\bmainVisual__infoDate\b[^"]*"[^>]*>[\s\S]*?<time[^>]*>([\s\S]*?)<\/time>/i,
+      )?.[1] ??
+        detailHtml.match(
+          /<p\b[^>]*class="[^"]*\bsection__colExInfoDate\b[^"]*"[^>]*>[\s\S]*?<time[^>]*>([\s\S]*?)<\/time>/i,
+        )?.[1] ??
+        '',
+    ) || 'See source page';
+  const parsedDates = parseGenericDateRange(dateText);
+  const mainHtml = detailHtml.slice(Math.max(0, detailHtml.indexOf('<main')));
+  const description = [...mainHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .filter((value) => value.length > 80)
+    .slice(0, 2)
+    .join('\n\n');
+  const mainVisualImageStart = detailHtml.search(
+    /<div\b[^>]*class="[^"]*\bmainVisual__image\b/i,
+  );
+  const mainVisualImageEnd = detailHtml.indexOf(
+    '<!-- ////////////////////////////// mainVisual END -->',
+    mainVisualImageStart,
+  );
+  const imageHtml =
+    mainVisualImageStart >= 0 && mainVisualImageEnd > mainVisualImageStart
+      ? detailHtml.slice(mainVisualImageStart, mainVisualImageEnd)
+      : detailHtml;
+  const imageUrls = finalizeImageUrls(
+    [
+      ...imageHtml.matchAll(
+        /<img\b[^>]+(?:src|data-src)="([^"]*(?:\/cms_wp\/wp-content\/uploads\/|\/wp-content\/uploads\/)[^"]+)"/gi,
+      ),
+    ].map((match) => ({
+      url: match[1],
+      source: 'img',
+    })),
+    detailUrl,
+  );
+
+  return {
+    title,
+    categories: ['exhibition', 'gallery'],
+    description: description || extractGenericDescription(detailHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: 'Asia/Tokyo',
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+    metadata: artist ? { artist } : undefined,
   };
 }
 
@@ -4654,6 +4749,7 @@ const detailUrlExtractors = {
 };
 
 const eventExtractors = {
+  artro: extractArtroEvent,
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
   'chushin-bijutsu': extractChushinEvent,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddEvent,

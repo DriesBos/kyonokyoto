@@ -751,6 +751,97 @@ test("generic event extraction can ignore source og images", () => {
   assert.equal(event.primary_image_url, "https://artro.jp/uploads/install-view.jpg");
 });
 
+test("Artro listing extraction follows exhibition card links", () => {
+  const source = {
+    slug: "artro",
+    allowed_domains: ["artro.jp"],
+    event_page_patterns: ["/exhibition/"],
+    selectors: {
+      listing_links: ".section__colImageSingle a",
+    },
+  };
+  const listingHtml = `
+    <ul class="stateNavi">
+      <li><a href="/exhibition/?state=before">Upcoming</a></li>
+      <li><a href="/exhibition/?state=end">Past</a></li>
+    </ul>
+    <div class="section__colImageSingle">
+      <a href="https://artro.jp/exhibition/ai-makita/">
+        <img data-src="https://artro.jp/cms_wp/wp-content/uploads/2026/04/P1155587-scaled.jpg">
+      </a>
+    </div>
+  `;
+
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, "https://artro.jp/exhibition/?state=before", source, 8),
+    ["https://artro.jp/exhibition/ai-makita/"],
+  );
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      '<a href="/exhibition/?state=before">Upcoming</a><a href="/news/">News</a>',
+      "https://artro.jp/exhibition/",
+      source,
+      8,
+    ),
+    [],
+  );
+});
+
+test("Artro event extraction reads main visual event fields", () => {
+  const detailHtml = `
+    <div class="mainVisual__info">
+      <h2 class="mainVisual__infoTitle">
+        <span>AI MAKITA 牧田愛</span>
+        <span>First Shadows, Then Reflections, Then the Things Themselves</span>
+      </h2>
+      <p class="mainVisual__infoDate"><time>6 JUNE - 5 JULY 2026</time></p>
+    </div>
+    <div class="mainVisual__image">
+      <img src="https://artro.jp/cms_wp/wp-content/uploads/2026/04/P1155587-scaled.jpg" alt="">
+    </div>
+    <main id="main">
+      <p>ARTRO is pleased to present Ai Makita's solo exhibition with enough detail to become useful card copy for the crawler output.</p>
+    </main>
+  `;
+  const event = eventExtractors.artro(detailHtml, { name: "Artro", address_text: "Kyoto" }, "https://artro.jp/exhibition/ai-makita/");
+
+  assert.equal(event.title, "First Shadows, Then Reflections, Then the Things Themselves");
+  assert.equal(event.start_date, "2026-06-06");
+  assert.equal(event.end_date, "2026-07-05");
+  assert.equal(event.primary_image_url, "https://artro.jp/cms_wp/wp-content/uploads/2026/04/P1155587-scaled.jpg");
+  assert.equal(event.metadata.artist, "AI MAKITA 牧田愛");
+});
+
+test("HOSOO event extraction keeps theme exhibition slides", () => {
+  const detailHtml = `
+    <div class="c-title"><h3 class="title">Theaster Gates: Glorious Robe | HOSOO GALLERY</h3></div>
+    <dl>
+      <dt class="term">Dates</dt><dd class="desc">11 April - 30 August 2026</dd>
+      <dt class="term">Hours</dt><dd class="desc">10:30 - 18:00</dd>
+      <dt class="term">Venue</dt><dd class="desc">HOSOO GALLERY</dd>
+    </dl>
+    <p class="cmt">Useful exhibition copy for HOSOO current exhibition.</p>
+    <img src="https://www.hosoogallery.jp/wp/wp-content/themes/hosoogallery/img/exhibitions/glorious-robe/slide_01.jpg" width="1000" height="577">
+    <img src="https://www.hosoogallery.jp/wp/wp-content/themes/hosoogallery/img/exhibitions/glorious-robe/profile_theastergates.jpg" width="145" height="203">
+  `;
+  const event = eventExtractors["hosoo-gallery"](
+    detailHtml,
+    { name: "HOSOO GALLERY", address_text: "Kyoto" },
+    "https://www.hosoogallery.jp/en/exhibitions/glorious-robe/",
+  );
+
+  assert.equal(event.title, "Theaster Gates: Glorious Robe");
+  assert.equal(event.start_date, "2026-04-11");
+  assert.equal(event.end_date, "2026-08-30");
+  assert.equal(
+    event.primary_image_url,
+    "https://www.hosoogallery.jp/wp/wp-content/themes/hosoogallery/img/exhibitions/glorious-robe/slide_01.jpg",
+  );
+  assert.deepEqual(event.image_urls, [
+    "https://www.hosoogallery.jp/wp/wp-content/themes/hosoogallery/img/exhibitions/glorious-robe/slide_01.jpg",
+  ]);
+});
+
 test("generic event extraction can use configured field selectors", () => {
   const detailHtml = `
     <article>
@@ -910,6 +1001,97 @@ test("source config validator reports missing source truth", () => {
     [
       "draft-source: missing source_categories",
       "draft-source: missing lat/lng",
+    ],
+  );
+});
+
+test("source config includes Imura Art exhibition tabs", async () => {
+  const payload = JSON.parse(
+    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+  );
+  const source = payload.sources.find((item) => item.slug === "imura-art");
+
+  assert.equal(source?.name, "Imura Art");
+  assert.equal(source?.language, "en");
+  assert.deepEqual(source?.start_urls, [
+    "https://www.imuraart.com/exhibition/current.html",
+    "https://www.imuraart.com/exhibition/future.html",
+  ]);
+  assert.equal(source?.selectors?.listing_links, ".content a.c-card");
+  assert.equal(source?.crawl_hints?.requires_render, true);
+  assert.deepEqual(source?.locales?.en?.start_urls, source?.start_urls);
+});
+
+test("source config includes Purple Purple with Japanese default", async () => {
+  const payload = JSON.parse(
+    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+  );
+  const source = payload.sources.find((item) => item.slug === "purple-purple");
+
+  assert.equal(source?.name, "Purple Purple");
+  assert.equal(source?.language, "ja");
+  assert.deepEqual(source?.start_urls, ["https://purple-purple.com/exhibition/"]);
+  assert.equal(source?.selectors?.listing_links, "#exhibition .ind_in a");
+  assert.equal(source?.locales?.ja?.start_urls?.[0], "https://purple-purple.com/exhibition/");
+  assert.equal(source?.locales?.en?.start_urls?.[0], "https://purple-purple.com/en/exhibition/");
+  assert.match(source?.notes ?? "", /English top link is https:\/\/purple-purple\.com\/en\//);
+});
+
+test("source config includes KyotoBa gallery events with Japanese default", async () => {
+  const payload = JSON.parse(
+    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+  );
+  const source = payload.sources.find((item) => item.slug === "kyotoba");
+
+  assert.equal(source?.name, "KyotoBa");
+  assert.equal(source?.language, "ja");
+  assert.deepEqual(source?.start_urls, ["https://kyoto-ba.jp/gallery/"]);
+  assert.equal(source?.selectors?.listing_links, ".mec-event-title a");
+  assert.equal(source?.selectors?.title, ".mec-single-title");
+  assert.equal(source?.locales?.ja?.start_urls?.[0], "https://kyoto-ba.jp/gallery/");
+  assert.match(source?.notes ?? "", /Gallery events are listed on \/gallery\//);
+});
+
+test("source config includes Sokyo Kyoto location exhibitions", async () => {
+  const payload = JSON.parse(
+    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+  );
+  const source = payload.sources.find((item) => item.slug === "sokyo-kyoto");
+
+  assert.equal(source?.name, "Sokyo Kyoto");
+  assert.equal(source?.language, "ja");
+  assert.deepEqual(source?.start_urls, ["https://sokyogallery.com/exhibitions/location/6/"]);
+  assert.equal(
+    source?.selectors?.listing_links,
+    '.records_list a[href*="/exhibitions/"][href$="/overview/"]',
+  );
+  assert.equal(source?.locales?.ja?.start_urls?.[0], "https://sokyogallery.com/exhibitions/location/6/");
+  assert.equal(
+    source?.locales?.en?.start_urls?.[0],
+    "https://sokyogallery.com/en/exhibitions/location/6/",
+  );
+  assert.match(source?.notes ?? "", /Only the Kyoto SOKYO location/);
+});
+
+test("source config keeps MTK exhibition links in listing order", async () => {
+  const payload = JSON.parse(
+    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+  );
+  const source = payload.sources.find((item) => item.slug === "mtk");
+  const listingHtml = `
+    <ul class="ex__list">
+      <li><a href="https://mtkcontemporaryart.com/exhibition/paths/">Paths</a></li>
+      <li><a href="https://mtkcontemporaryart.com/exhibition/it_takes_two/">It Takes Two</a></li>
+    </ul>
+    <div class="pagination"><a href="https://mtkcontemporaryart.com/exhibition/page/2/">2</a></div>
+  `;
+
+  assert.equal(source?.selectors?.listing_links, ".ex__list a");
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, "https://mtkcontemporaryart.com/exhibition/", source, 8),
+    [
+      "https://mtkcontemporaryart.com/exhibition/paths/",
+      "https://mtkcontemporaryart.com/exhibition/it_takes_two/",
     ],
   );
 });

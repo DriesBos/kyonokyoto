@@ -509,6 +509,9 @@
       "is_active": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
+      "selectors": {
+        "listing_links": ".ex__list a"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://mtkcontemporaryart.com/exhibition/"],
@@ -861,7 +864,7 @@
       "lat": 35.0059464,
       "lng": 135.7625443,
       "base_url": "https://artro.jp/exhibition/",
-      "start_urls": ["https://artro.jp/exhibition/"],
+      "start_urls": ["https://artro.jp/exhibition/", "https://artro.jp/exhibition/?state=before"],
       "allowed_domains": ["artro.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
@@ -871,6 +874,7 @@
       "skip_og_image": true,
       "map_visibility": true,
       "selectors": {
+        "listing_links": ".section__colImageSingle a",
         "images": "main.main img"
       },
       "locales": {
@@ -879,8 +883,208 @@
           "event_page_patterns": []
         },
         "en": {
-          "start_urls": ["https://artro.jp/exhibition/"],
+          "start_urls": ["https://artro.jp/exhibition/", "https://artro.jp/exhibition/?state=before"],
           "event_page_patterns": ["/exhibition/"]
+        }
+      }
+    },
+    {
+      "slug": "imura-art",
+      "name": "Imura Art",
+      "names": {
+        "en": "Imura Art",
+        "ja": "イムラアートギャラリー"
+      },
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "31 Kawabata-higashi Marutamachi, Sakyo-ku, Kyoto 606-8395 Japan",
+      "directions_query": "Imura Art Gallery Kyoto, 31 Kawabata-higashi Marutamachi, Sakyo-ku, Kyoto 606-8395 Japan",
+      "lat": 35.0187,
+      "lng": 135.773082,
+      "base_url": "https://www.imuraart.com/exhibition/current.html",
+      "start_urls": [
+        "https://www.imuraart.com/exhibition/current.html",
+        "https://www.imuraart.com/exhibition/future.html"
+      ],
+      "allowed_domains": ["www.imuraart.com", "imuraart.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Default exhibition language is English. Current exhibitions render inside the .content container after /exhibition/data.json loads; future exhibitions are exposed through the Future tab/page. Detail pages use an EN/JP language tab on the same URL.",
+      "is_active": true,
+      "source_categories": ["gallery"],
+      "skip_og_image": true,
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".content a.c-card",
+        "title": ".p-article__post-creater .u-font-h2",
+        "date": ".p-article__post-creater .u-mb-15",
+        "images": ".p-article__carousel-main img"
+      },
+      "crawl_hints": {
+        "requires_render": true,
+        "skip_patterns": ["/exhibition/past.html", ".pdf"],
+        "max_detail_pages": 8
+      },
+      "capabilities": {
+        "native_locales": ["en", "ja"],
+        "machine_translate_missing_locales": false
+      },
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.imuraart.com/exhibition/current.html",
+            "https://www.imuraart.com/exhibition/future.html"
+          ],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.imuraart.com/exhibition/current.html",
+            "https://www.imuraart.com/exhibition/future.html"
+          ],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      }
+    },
+    {
+      "slug": "purple-purple",
+      "name": "Purple Purple",
+      "names": {
+        "en": "Purple Purple",
+        "ja": "PURPLE"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "Shikiamicho Bldg 3F, 122-1 Shikiamicho, Nakagyo-ku, Kyoto 604-8261 Japan",
+      "directions_query": "PURPLE, Shikiamicho Bldg 3F, 122-1 Shikiamicho, Nakagyo-ku, Kyoto 604-8261 Japan",
+      "lat": 35.0100481,
+      "lng": 135.7515566,
+      "base_url": "https://purple-purple.com/exhibition/",
+      "start_urls": ["https://purple-purple.com/exhibition/"],
+      "allowed_domains": ["purple-purple.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/", "/en/exhibition/"],
+      "notes": "Default language is Japanese. English top link is https://purple-purple.com/en/; the English navigation exposes the exhibition archive at /en/exhibition/, which only includes entries available as translated English posts.",
+      "is_active": true,
+      "source_categories": ["photography", "gallery"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": "#exhibition .ind_in a",
+        "title": ".con_ttl",
+        "date": ".con_txt p",
+        "description": ".con_txt"
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/exhibition/page/"],
+        "max_detail_pages": 8
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"],
+        "machine_translate_missing_locales": false
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://purple-purple.com/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://purple-purple.com/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      }
+    },
+    {
+      "slug": "kyotoba",
+      "name": "KyotoBa",
+      "names": {
+        "en": "KyotoBa",
+        "ja": "京都場"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "6-5 Nishinokyo Nanseicho, Nakagyo-ku, Kyoto 604-8412 Japan",
+      "directions_query": "京都場 KYOTO-ba, 6-5 Nishinokyo Nanseicho, Nakagyo-ku, Kyoto 604-8412 Japan",
+      "lat": 35.0094923,
+      "lng": 135.7440133,
+      "base_url": "https://kyoto-ba.jp/gallery/",
+      "start_urls": ["https://kyoto-ba.jp/gallery/"],
+      "allowed_domains": ["kyoto-ba.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/events/"],
+      "notes": "Default language is Japanese. Gallery events are listed on /gallery/ in the Modern Events Calendar schedule; follow the event title links under /events/.",
+      "is_active": true,
+      "source_categories": ["gallery"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".mec-event-title a",
+        "title": ".mec-single-title",
+        "date": ".mec-single-event-date dd",
+        "description": ".mec-single-event-description",
+        "images": ".mec-events-content img, .mec-events-event-image img"
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      },
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://kyoto-ba.jp/gallery/"],
+          "event_page_patterns": ["/events/"]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
+    },
+    {
+      "slug": "sokyo-kyoto",
+      "name": "Sokyo Kyoto",
+      "names": {
+        "en": "Sokyo Kyoto",
+        "ja": "艸居"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "381-2 Motomachi, Higashiyama-ku, Kyoto 605-0089 Japan",
+      "directions_query": "Sokyo Gallery, 381-2 Motomachi, Higashiyama-ku, Kyoto 605-0089 Japan",
+      "lat": 35.00704823855442,
+      "lng": 135.77321274049285,
+      "base_url": "https://sokyogallery.com/exhibitions/location/6/",
+      "start_urls": ["https://sokyogallery.com/exhibitions/location/6/"],
+      "allowed_domains": ["sokyogallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Default language is Japanese. Only the Kyoto SOKYO location is in scope; use the /exhibitions/location/6/ listing. Exhibition cards are listed inside .records_list containers. English site root is https://sokyogallery.com/en/ and the translated Kyoto location listing is /en/exhibitions/location/6/.",
+      "is_active": true,
+      "source_categories": ["gallery", "ceramics", "craft"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".records_list a[href*=\"/exhibitions/\"][href$=\"/overview/\"]",
+        "title": "#hero_heading .title, .exhibition-header .h1_heading",
+        "date": "#hero_heading .subtitle_date, .date",
+        "description": ".content_module .description",
+        "images": ".restricted-image-container img, .subsection-exhibition-detail-page img"
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/exhibitions/archive/", "/exhibitions/location/3/", "/exhibitions/location/4/"],
+        "max_detail_pages": 8
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"],
+        "machine_translate_missing_locales": false
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://sokyogallery.com/exhibitions/location/6/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://sokyogallery.com/en/exhibitions/location/6/"],
+          "event_page_patterns": ["/en/exhibitions/"]
         }
       }
     },
