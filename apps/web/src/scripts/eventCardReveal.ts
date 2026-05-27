@@ -23,21 +23,25 @@ const markQueued = (card: Element) => {
   card.dataset.revealState = "queued";
 };
 
+const revealOpacity = (card: HTMLElement) => card.hasAttribute("data-beta") ? "0.5" : "1";
+
 const revealCard = (card: Element, animate: boolean) => {
   if (!(card instanceof HTMLElement)) return;
   revealWindow.__eventCardRevealObserver?.unobserve(card);
   markVisible(card);
 
+  const targetOpacity = revealOpacity(card);
+
   if (animate) {
     card.style.visibility = "visible";
-    card.animate([{ opacity: 0 }, { opacity: 1 }], revealTransition)
+    card.animate([{ opacity: 0 }, { opacity: targetOpacity }], revealTransition)
       .finished
       .then(() => {
-        card.style.opacity = "1";
+        card.style.opacity = targetOpacity;
       })
       .catch(() => {});
   } else {
-    card.style.opacity = "1";
+    card.style.opacity = targetOpacity;
     card.style.visibility = "visible";
   }
 };
