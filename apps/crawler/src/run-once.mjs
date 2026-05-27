@@ -424,13 +424,26 @@ function selectorsFor(source, key) {
 
 function parseSimpleSelector(selector) {
   const trimmed = String(selector ?? '').trim();
-  const tag = trimmed.match(/^[a-z][a-z0-9-]*/i)?.[0]?.toLowerCase() ?? null;
-  const id = trimmed.match(/#([a-z0-9_-]+)/i)?.[1] ?? null;
-  const classes = [...trimmed.matchAll(/\.([a-z0-9_-]+)/gi)].map((match) => match[1]);
+  const attributePattern =
+    /\[\s*([a-z0-9_:-]+)\s*(?:(\*|\^|\$)?=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]+)))?\s*\]/gi;
+  const attributes = [...trimmed.matchAll(attributePattern)].map((match) => {
+    const hasValue =
+      match[3] !== undefined || match[4] !== undefined || match[5] !== undefined;
 
-  if (!tag && !id && !classes.length) return null;
+    return {
+      name: match[1],
+      operator: match[2] ? `${match[2]}=` : hasValue ? '=' : null,
+      value: match[3] ?? match[4] ?? match[5] ?? null,
+    };
+  });
+  const selectorWithoutAttributes = trimmed.replace(attributePattern, '');
+  const tag = selectorWithoutAttributes.match(/^[a-z][a-z0-9-]*/i)?.[0]?.toLowerCase() ?? null;
+  const id = selectorWithoutAttributes.match(/#([a-z0-9_-]+)/i)?.[1] ?? null;
+  const classes = [...selectorWithoutAttributes.matchAll(/\.([a-z0-9_-]+)/gi)].map((match) => match[1]);
 
-  return { tag, id, classes };
+  if (!tag && !id && !classes.length && !attributes.length) return null;
+
+  return { tag, id, classes, attributes };
 }
 
 function tagMatchesSimpleSelector(tagName, attrs, selector) {
@@ -447,6 +460,16 @@ function tagMatchesSimpleSelector(tagName, attrs, selector) {
     const className = extractTagAttribute(attrs, 'class') ?? '';
     const classes = new Set(className.split(/\s+/).filter(Boolean));
     if (!parsed.classes.every((item) => classes.has(item))) return false;
+  }
+
+  for (const attribute of parsed.attributes) {
+    const value = extractTagAttribute(attrs, attribute.name);
+    if (value === null) return false;
+    if (!attribute.operator) continue;
+    if (attribute.operator === '=' && value !== attribute.value) return false;
+    if (attribute.operator === '*=' && !value.includes(attribute.value)) return false;
+    if (attribute.operator === '^=' && !value.startsWith(attribute.value)) return false;
+    if (attribute.operator === '$=' && !value.endsWith(attribute.value)) return false;
   }
 
   return true;
@@ -4729,6 +4752,82 @@ function extractChushinEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractKuramonzenEvent(detailHtml, source, detailUrl) {
+  // Truncate at "Others exhibitions" carousel to prevent related articles from polluting extraction
+  const othersIdx = detailHtml.search(/<h2[^>]*>\s*Others\s+exhibitions/i);
+  const mainHtml = othersIdx >= 0 ? detailHtml.slice(0, othersIdx) : detailHtml;
+
+  const title =
+    stripTags(mainHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '')
+      .replace(/\s+/g, ' ')
+      .trim() ||
+    stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '')
+      .replace(/\s*[|\-–]\s*Kuramonzen.*$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  if (!title) {
+    throw new Error('Could not extract event title from Kuramonzen detail page');
+  }
+
+  // Prefer <strong> containing a dotted YYYY.MM.DD date over generic date extraction —
+  // the publication date (English "Month DD, YYYY") appears earlier in the DOM and would
+  // otherwise win.
+  const strongTexts = [...mainHtml.matchAll(/<strong[^>]*>([\s\S]*?)<\/strong>/gi)]
+    .map((m) => stripTags(m[1]).replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const rawDateText =
+    strongTexts.find((t) => /\d{4}\.\d{1,2}\.\d{1,2}/.test(t)) ??
+    extractBestDateText(mainHtml);
+  const parsedDates = parseGenericDateRange(rawDateText);
+
+  // og:image is unique per Shopify article — use it as the authoritative image source
+  const ogImage = extractMeta(detailHtml, 'og:image');
+  const imageUrls = finalizeImageUrls(
+    [
+      ...(ogImage ? [{ url: ogImage, source: 'og:image' }] : []),
+      ...[...mainHtml.matchAll(/<img\b[^>]*>/gi)].map((match) => {
+        const attrs = parseTagAttributes(match[0]);
+        const { width, height } = getImageAttributeDimensions(attrs);
+        return { url: attrs.src ?? attrs['data-src'] ?? null, width, height, source: 'img' };
+      }),
+    ],
+    detailUrl,
+  );
+
+  const description = [...mainHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((m) => stripTags(m[1]).replace(/\s+/g, ' ').trim())
+    .filter((t) => t.length > 40 && !/^\d{4}\.\d{1,2}\.\d{1,2}/.test(t))
+    .slice(0, 3)
+    .join('\n\n');
+
+  return {
+    title,
+    categories: ['exhibition', 'gallery'],
+    description: description || extractGenericDescription(mainHtml),
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
+    date_text: rawDateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: 'Asia/Tokyo',
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+  };
+}
+
 const detailUrlExtractors = {
   'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
   'chushin-bijutsu': extractChushinDetailUrls,
@@ -4764,6 +4863,7 @@ const eventExtractors = {
   kyotographie: extractKyotographieEvent,
   kyotophonie: extractKyotophonieEvent,
   kankakari: extractKankakariEvent,
+  kuramonzen: extractKuramonzenEvent,
   'raku-museum': extractRakuMuseumEvent,
   momak: extractMomakEvent,
   mtk: extractMtkEvent,

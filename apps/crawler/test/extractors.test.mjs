@@ -338,6 +338,35 @@ test("generic detail extraction can use configured listing link selectors", () =
   );
 });
 
+test("generic listing selectors support common attribute filters", () => {
+  const listingHtml = `
+    <main>
+      <section class="archive-current">
+        <a href="/exhibitions/kyoto-show/overview/">Kyoto show</a>
+        <a href="/exhibitions/osaka-show/overview/">Osaka show</a>
+        <a href="/exhibitions/kyoto-show/artists/">Artists</a>
+      </section>
+      <section class="news-current">
+        <a href="/exhibitions/news/overview/">News</a>
+      </section>
+    </main>
+  `;
+  const source = {
+    allowed_domains: ["example.test"],
+    selectors: {
+      listing_links: '[class*="archive"] a[href*="/exhibitions/"][href$="/overview/"]',
+    },
+  };
+
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, "https://example.test/exhibitions/", source, 4),
+    [
+      "https://example.test/exhibitions/kyoto-show/overview/",
+      "https://example.test/exhibitions/osaka-show/overview/",
+    ],
+  );
+});
+
 test("Kyocera detail extraction finds Japanese default URLs", () => {
   const extractKyoceraDetailUrls =
     detailUrlExtractors["kyoto-city-kyocera-museum-of-art"];
@@ -1071,6 +1100,74 @@ test("source config includes Sokyo Kyoto location exhibitions", async () => {
     "https://sokyogallery.com/en/exhibitions/location/6/",
   );
   assert.match(source?.notes ?? "", /Only the Kyoto SOKYO location/);
+});
+
+test("source config follows Kuramonzen detail pages for per-event fields", async () => {
+  const payload = JSON.parse(
+    await readFile(resolve(import.meta.dirname, "../../../data/sources/kyoto-sources.json"), "utf8")
+  );
+  const source = payload.sources.find((item) => item.slug === "kuramonzen");
+  const listingHtml = `
+    <main>
+      <section class="ai-blog-archive-aqllqdzy2thdfng9qwaigenblocke36ebc8dyangx">
+        <a href="/blogs/exhibitions/2026-solo-exhibition" class="ai-blog-archive-hero-article-aqllqdzy2thdfng9qwaigenblocke36ebc8dyangx">Solo</a>
+        <a href="/blogs/exhibitions/nomura-ko" class="ai-blog-archive-article-aqllqdzy2thdfng9qwaigenblocke36ebc8dyangx">Nomura</a>
+        <a href="/blogs/exhibitions">Archive</a>
+      </section>
+    </main>
+  `;
+  const detailHtml = `
+    <article class="article-template">
+      <div class="article-template__hero-container">
+        <img src="//kuramonzen.com/cdn/shop/articles/nomura.jpg?v=1776495202" alt="">
+      </div>
+      <h1 class="article-template__title">野村 耕 -Nomura Ko || SCREAMING LOTS OF DIFFERENT SONGS</h1>
+      <span><time datetime="2026-02-03T03:06:26Z">February 3, 2026</time></span>
+      <div class="article-template__content page-width page-width--narrow rte">
+        <h3>Collection Exhibition 2026</h3>
+        <p><strong>2026.02.28 - 06.01</strong></p>
+        <p>This exhibition traces the creative trajectory of Nomura Ko through postwar Japanese art.</p>
+        <p><img src="https://cdn.shopify.com/s/files/1/0658/7472/3063/files/work.jpg?v=1" alt=""></p>
+      </div>
+    </article>
+    <section class="blog">
+      <h2>Others exhibitions</h2>
+      <a href="/blogs/exhibitions/2026-solo-exhibition">Solo exhibition</a>
+      <p><strong>2026.04.18 - 06.01</strong></p>
+      <img src="//kuramonzen.com/cdn/shop/articles/related.jpg?v=1" alt="">
+    </section>
+  `;
+
+  assert.equal(source?.language, "en");
+  assert.deepEqual(source?.locales?.ja?.start_urls, ["https://kuramonzen.com/ja/blogs/exhibitions"]);
+  assert.deepEqual(source?.locales?.en?.start_urls, ["https://kuramonzen.com/blogs/exhibitions"]);
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, "https://kuramonzen.com/blogs/exhibitions", source, 4),
+    [
+      "https://kuramonzen.com/blogs/exhibitions/2026-solo-exhibition",
+      "https://kuramonzen.com/blogs/exhibitions/nomura-ko",
+    ],
+  );
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    "https://kuramonzen.com/blogs/exhibitions/nomura-ko",
+  );
+
+  assert.equal(event.title, "野村 耕 -Nomura Ko || SCREAMING LOTS OF DIFFERENT SONGS");
+  assert.equal(event.date_text, "2026.02.28 - 06.01");
+  assert.equal(event.start_date, "2026-02-28");
+  assert.equal(event.end_date, "2026-06-01");
+  assert.equal(
+    event.primary_image_url,
+    "https://kuramonzen.com/cdn/shop/articles/nomura.jpg?v=1776495202",
+  );
+  assert.doesNotMatch(event.description, /Others exhibitions/);
+  assert.deepEqual(event.image_urls, [
+    "https://kuramonzen.com/cdn/shop/articles/nomura.jpg?v=1776495202",
+    "https://cdn.shopify.com/s/files/1/0658/7472/3063/files/work.jpg?v=1",
+  ]);
 });
 
 test("source config keeps MTK exhibition links in listing order", async () => {

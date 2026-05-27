@@ -864,7 +864,10 @@
       "lat": 35.0059464,
       "lng": 135.7625443,
       "base_url": "https://artro.jp/exhibition/",
-      "start_urls": ["https://artro.jp/exhibition/", "https://artro.jp/exhibition/?state=before"],
+      "start_urls": [
+        "https://artro.jp/exhibition/",
+        "https://artro.jp/exhibition/?state=before"
+      ],
       "allowed_domains": ["artro.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
@@ -883,7 +886,10 @@
           "event_page_patterns": []
         },
         "en": {
-          "start_urls": ["https://artro.jp/exhibition/", "https://artro.jp/exhibition/?state=before"],
+          "start_urls": [
+            "https://artro.jp/exhibition/",
+            "https://artro.jp/exhibition/?state=before"
+          ],
           "event_page_patterns": ["/exhibition/"]
         }
       }
@@ -1070,7 +1076,11 @@
         "images": ".restricted-image-container img, .subsection-exhibition-detail-page img"
       },
       "crawl_hints": {
-        "skip_patterns": ["/exhibitions/archive/", "/exhibitions/location/3/", "/exhibitions/location/4/"],
+        "skip_patterns": [
+          "/exhibitions/archive/",
+          "/exhibitions/location/3/",
+          "/exhibitions/location/4/"
+        ],
         "max_detail_pages": 8
       },
       "capabilities": {
@@ -1156,7 +1166,7 @@
       "slug": "kuramonzen",
       "name": "Kuramonzen",
       "source_type": "gallery",
-      "language": "ja",
+      "language": "en",
       "address_text": "23 Murasakino Monzencho, Kita-ku, Kyoto 603-8216 Japan",
       "lat": 35.0429155,
       "lng": 135.7479959,
@@ -1165,18 +1175,28 @@
       "allowed_domains": ["kuramonzen.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blogs/exhibitions"],
-      "notes": "The header offers an English/Japanese language toggle.",
+      "selectors": {
+        "listing_links": "main a"
+      },
+      "crawl_hints": {
+        "max_detail_pages": 12
+      },
+      "capabilities": {
+        "native_locales": ["en", "ja"],
+        "machine_translate_missing_locales": false
+      },
+      "notes": "The header offers an English/Japanese language toggle. The listing mixes current, upcoming, and past exhibitions, so crawl article links and parse dates on each detail page. Detail pages include a related section titled \"Others exhibitions\" after the article content.",
       "is_active": true,
       "source_categories": ["gallery"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://kuramonzen.com/blogs/exhibitions"],
-          "event_page_patterns": ["/blogs/exhibitions"]
+          "start_urls": ["https://kuramonzen.com/ja/blogs/exhibitions"],
+          "event_page_patterns": ["/ja/blogs/exhibitions"]
         },
         "en": {
-          "start_urls": [],
-          "event_page_patterns": []
+          "start_urls": ["https://kuramonzen.com/blogs/exhibitions"],
+          "event_page_patterns": ["/blogs/exhibitions"]
         }
       }
     },
