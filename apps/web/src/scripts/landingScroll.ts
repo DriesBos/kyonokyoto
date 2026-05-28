@@ -11,7 +11,7 @@ const landingTriggerSelector = "[data-landing-trigger]";
 const mainContentSelector = "[data-main-content]";
 const launchedAttribute = "data-landing-launched";
 const activeAttribute = "data-landing-active";
-const greenTheme = "#138e00";
+const purpleTheme = "#7d4cff";
 const beigeTheme = "#EFEFEF";
 const wheelThreshold = 80;
 const touchThreshold = 48;
@@ -74,7 +74,7 @@ const resetScrollPosition = () => {
   cancelCurrentAnimation();
   document.documentElement.setAttribute(activeAttribute, "");
   document.documentElement.removeAttribute(launchedAttribute);
-  setThemeColor(greenTheme);
+  setThemeColor(purpleTheme);
   window.scrollTo(0, 0);
 };
 
