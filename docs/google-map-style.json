@@ -12,7 +12,7 @@
     {
       "id": "natural.water",
       "geometry": {
-        "fillColor": "#7D4CFF",
+        "fillColor": "#138E00",
         "fillOpacity": 0.12
       },
       "label": {
@@ -22,7 +22,7 @@
     {
       "id": "natural.land.landCover",
       "geometry": {
-        "fillColor": "#7D4CFF",
+        "fillColor": "#138E00",
         "fillOpacity": 0.07
       }
     },
@@ -30,11 +30,11 @@
       "id": "infrastructure.roadNetwork",
       "geometry": {
         "fillColor": "#ffffff",
-        "strokeColor": "#7D4CFF",
+        "strokeColor": "#138E00",
         "strokeWidth": 0.5
       },
       "label": {
-        "textFillColor": "#7D4CFF",
+        "textFillColor": "#138E00",
         "textStrokeColor": "#ffffff"
       }
     },
@@ -47,7 +47,7 @@
     {
       "id": "infrastructure.railwayTrack",
       "geometry": {
-        "strokeColor": "#7D4CFF",
+        "strokeColor": "#138E00",
         "strokeWidth": 0.75
       }
     },
@@ -71,7 +71,7 @@
     {
       "id": "political",
       "label": {
-        "textFillColor": "#7D4CFF",
+        "textFillColor": "#138E00",
         "textStrokeColor": "#ffffff"
       }
     },
