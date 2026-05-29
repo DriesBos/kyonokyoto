@@ -43,7 +43,7 @@
       "start_urls": ["https://www.artizon.museum/en/exhibition/"],
       "allowed_domains": ["www.artizon.museum", "artizon.museum"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "event_page_patterns": ["/en/exhibition/detail/", "/exhibition/detail/"],
       "notes": "Purple art marker from Google My Maps.",
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
@@ -51,14 +51,17 @@
       "locales": {
         "ja": {
           "start_urls": ["https://www.artizon.museum/exhibition/"],
-          "event_page_patterns": ["/exhibition/"]
+          "event_page_patterns": ["/exhibition/detail/"]
         },
         "en": {
           "start_urls": ["https://www.artizon.museum/en/exhibition/"],
-          "event_page_patterns": ["/en/exhibition/"]
+          "event_page_patterns": ["/en/exhibition/detail/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "skip_patterns": ["/exhibition/past", "/exhibition/schedule"],
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "atelier-muji-ginza",
@@ -123,6 +126,9 @@
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "listing_links": ".exhibitionsList a"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.mori.art.museum/jp/exhibitions/"],
@@ -133,7 +139,10 @@
           "event_page_patterns": ["/en/exhibitions/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "skip_patterns": ["/exhibitions/index.html", "/exhibitions/past/", "/exhibitions/tours/"],
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "museum-of-contemporary-art-tokyo",
@@ -148,10 +157,13 @@
       "allowed_domains": ["www.mot-art-museum.jp", "mot-art-museum.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
-      "notes": "Purple art marker from Google My Maps.",
+      "notes": "Purple art marker from Google My Maps. Listing cards are client-rendered; force render and use card selectors to avoid template links.",
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.mot-art-museum.jp/exhibitions/"],
@@ -162,7 +174,11 @@
           "event_page_patterns": ["/en/exhibitions/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 10 }
+      "crawl_hints": {
+        "render_mode": "always",
+        "skip_patterns": ["%7B%7B", "{{=", "/exhibitions/past/", ".pdf"],
+        "max_detail_pages": 10
+      }
     },
     {
       "slug": "national-art-center-tokyo",
