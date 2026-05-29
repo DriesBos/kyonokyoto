@@ -15,7 +15,7 @@
       "allowed_domains": ["www.2121designsight.jp", "2121designsight.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/program/", "/program/"],
-      "notes": "Purple art marker from Google My Maps.",
+      "notes": "Purple art marker from Google My Maps. Temporarily suppress detail crawling until a source-specific extractor can read the Title/Date rows reliably.",
       "is_active": true,
       "source_categories": ["design", "museum", "exhibition"],
       "map_visibility": true,
@@ -29,7 +29,10 @@
           "event_page_patterns": ["/en/program/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8,
+        "skip_patterns": ["/en/program/"]
+      }
     },
     {
       "slug": "artizon-museum",
@@ -77,14 +80,17 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/jp/exhibition/"],
       "notes": "Purple art marker from Google My Maps. Japanese-first source; direct HTTP can rate-limit.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["design", "gallery", "exhibition"],
       "map_visibility": true,
       "capabilities": {
         "native_locales": ["ja"],
         "machine_translate_missing_locales": true
       },
-      "crawl_hints": { "render_mode": "auto", "max_detail_pages": 6 }
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 6
+      }
     },
     {
       "slug": "ginza-graphic-gallery",
@@ -100,14 +106,16 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/gallery/ggg/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["design", "gallery", "exhibition"],
       "map_visibility": true,
       "capabilities": {
         "native_locales": ["ja"],
         "machine_translate_missing_locales": true
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "mori-art-museum",
@@ -215,7 +223,9 @@
           ]
         }
       },
-      "crawl_hints": { "max_detail_pages": 12 }
+      "crawl_hints": {
+        "max_detail_pages": 12
+      }
     },
     {
       "slug": "national-museum-of-modern-art-tokyo",
@@ -231,7 +241,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -244,7 +254,9 @@
           "event_page_patterns": ["/en/exhibitions"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 10 }
+      "crawl_hints": {
+        "max_detail_pages": 10
+      }
     },
     {
       "slug": "tokyo-metropolitan-art-museum",
@@ -260,7 +272,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -273,7 +285,9 @@
           "event_page_patterns": ["/en/exhibition/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 12 }
+      "crawl_hints": {
+        "max_detail_pages": 12
+      }
     },
     {
       "slug": "tokyo-opera-city-art-gallery",
@@ -292,14 +306,16 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/ag/exh/"],
       "notes": "Purple art marker from Google My Maps. Japanese-first source.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "capabilities": {
         "native_locales": ["ja"],
         "machine_translate_missing_locales": true
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "tokyo-photographic-art-museum",
@@ -315,7 +331,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/e/contents/exhibition/", "/contents/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["photography", "museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -328,7 +344,9 @@
           "event_page_patterns": ["/e/contents/exhibition/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 10 }
+      "crawl_hints": {
+        "max_detail_pages": 10
+      }
     },
     {
       "slug": "sumida-hokusai-museum",
@@ -344,7 +362,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/modules/Exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -357,7 +375,9 @@
           "event_page_patterns": ["/modules/Exhibition/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "yayoi-kusama-museum",
@@ -373,7 +393,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -386,7 +406,9 @@
           "event_page_patterns": ["/en/exhibition/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 4 }
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
     },
     {
       "slug": "scai-the-bathhouse",
@@ -434,14 +456,16 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Multi-location gallery; prefer Tokyo venue text when present.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "capabilities": {
         "native_locales": ["en"],
         "machine_translate_missing_locales": true
       },
-      "crawl_hints": { "max_detail_pages": 6 }
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
     },
     {
       "slug": "take-ninagawa",
@@ -457,14 +481,16 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "capabilities": {
         "native_locales": ["en"],
         "machine_translate_missing_locales": true
       },
-      "crawl_hints": { "max_detail_pages": 6 }
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
     },
     {
       "slug": "taro-okamoto-memorial-museum",
@@ -480,7 +506,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -493,7 +519,9 @@
           "event_page_patterns": ["/en/exhibition/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 6 }
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
     },
     {
       "slug": "what-museum",
@@ -509,14 +537,16 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "capabilities": {
         "native_locales": ["ja", "en"],
         "machine_translate_missing_locales": true
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "university-art-museum-tokyo-geidai",
@@ -532,7 +562,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibit/", "/exhibit/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -545,7 +575,9 @@
           "event_page_patterns": ["/en/exhibit/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "setagaya-art-museum",
@@ -561,7 +593,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -574,7 +606,9 @@
           "event_page_patterns": ["/en/exhibition/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "yamatane-museum-of-art",
@@ -593,7 +627,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exh/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -609,7 +643,9 @@
           "event_page_patterns": ["/en/exhibitions/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "japan-folk-crafts-museum",
@@ -625,7 +661,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["museum", "craft", "mingei", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -638,7 +674,9 @@
           "event_page_patterns": ["/exhibition/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 4 }
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
     },
     {
       "slug": "perrotin-tokyo",
@@ -654,7 +692,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Multi-location gallery; prefer Tokyo venue text when present.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "capabilities": {
@@ -680,7 +718,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/ja/exhibitions"],
       "notes": "Purple art markers from Google My Maps. One source covers NANZUKA Tokyo exhibition pages and known Tokyo map venues.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -709,7 +747,9 @@
           "lng": 139.698939
         }
       ],
-      "crawl_hints": { "max_detail_pages": 8 }
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "maho-kubota-gallery",
@@ -725,7 +765,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Purple art marker from Google My Maps.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -738,7 +778,9 @@
           "event_page_patterns": ["/en/exhibitions/"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 6 }
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
     },
     {
       "slug": "lurf-museum",
@@ -754,7 +796,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
       "notes": "Purple art marker from Google My Maps. Former lurfmuseum.art route redirects; current official exhibition index is lurfgallery.com.",
-      "is_active": true,
+      "is_active": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -767,7 +809,9 @@
           "event_page_patterns": ["/en/exhibitions"]
         }
       },
-      "crawl_hints": { "max_detail_pages": 6 }
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
     }
   ]
 }
