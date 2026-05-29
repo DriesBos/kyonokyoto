@@ -1124,9 +1124,16 @@ test("source config validator reports missing source truth", () => {
   );
 });
 
-test("empty Osaka and Tokyo source configs are valid crawl inputs", async () => {
-  assert.deepEqual(await loadSourcesConfig({ city: "osaka" }), []);
-  assert.deepEqual(await loadSourcesConfig({ city: "tokyo" }), []);
+test("city source configs are valid crawl inputs", async () => {
+  for (const city of ["osaka", "tokyo"]) {
+    const sources = await loadSourcesConfig({ city });
+
+    assert.ok(sources.length > 0);
+    for (const source of sources) {
+      assert.equal(source.city, city);
+      assert.deepEqual(validateSourceConfig(source), []);
+    }
+  }
 });
 
 test("source config includes Imura Art exhibition tabs", async () => {
