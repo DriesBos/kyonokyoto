@@ -126,9 +126,6 @@
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
-      "selectors": {
-        "listing_links": ".exhibitionsList a"
-      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.mori.art.museum/jp/exhibitions/"],
