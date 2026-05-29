@@ -2,9 +2,8 @@
 Description=Run Tokyo crawl cycle every 36 hours
 
 [Timer]
-OnBootSec=5h10m
+OnActiveSec=5h10m
 OnUnitActiveSec=36h
-Persistent=true
 Unit=kyo-no-kyoto-crawl@tokyo.service
 
 [Install]
