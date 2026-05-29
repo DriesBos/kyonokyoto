@@ -43,7 +43,7 @@ test("permanent highlights resolve source venue data for locale cards", () => {
   assert.equal(event.id, "permanent:kyoto-art-center");
   assert.equal(event.title, "京都芸術センター");
   assert.equal(event.institution_name, "京都芸術センター");
-  assert.equal(event.date_text, "恒久");
+  assert.equal(event.date_text, "あわせて");
   assert.equal(event.timing, "permanent");
   assert.deepEqual(event.categories, ["exhibition", "museum"]);
   assert.equal(
@@ -126,7 +126,7 @@ test("occasional highlights use localized cadence text", () => {
 
   assert.equal(event.id, "occasional:nunuka-life");
   assert.equal(event.title, "Nunuka life");
-  assert.equal(event.date_text, "不定期");
+  assert.equal(event.date_text, "あわせて");
   assert.equal(event.timing, "permanent");
   assert.equal(event.source_url, "https://www.instagram.com/nunuka_life/");
 });

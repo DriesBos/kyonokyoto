@@ -141,6 +141,24 @@ const parseSources = (element: HTMLElement): MapSource[] => {
   }
 };
 
+const parseMapCenter = (element: HTMLElement) => {
+  const lat = Number(element.dataset.mapCenterLat);
+  const lng = Number(element.dataset.mapCenterLng);
+
+  if (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  ) {
+    return { lat, lng };
+  }
+
+  return kyotoCenter;
+};
+
 const createMarkerContent = (source: MapSource) => {
   const marker = document.createElement("button");
   marker.className = "map-marker";
@@ -194,6 +212,7 @@ const initMap = async (element: Element) => {
 
   const apiKey = element.dataset.apiKey?.trim() ?? "";
   const mapId = element.dataset.mapId?.trim() ?? "";
+  const mapCenter = parseMapCenter(element);
   const sources = parseSources(element);
 
   if (!apiKey || !mapId) {
@@ -242,7 +261,7 @@ const initMap = async (element: Element) => {
     }
 
     const map = new MapConstructor(element, {
-      center: kyotoCenter,
+      center: mapCenter,
       zoom: getMapZoom(),
       mapId,
       mapTypeId: "terrain",

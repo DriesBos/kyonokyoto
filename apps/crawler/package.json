@@ -9,6 +9,9 @@
   "scripts": {
     "crawl:once": "node src/run-once.mjs",
     "crawl:all": "node src/run-once.mjs --source=all",
+    "crawl:kyoto": "node src/run-once.mjs --city=kyoto --source=all",
+    "crawl:osaka": "node src/run-once.mjs --city=osaka --source=all",
+    "crawl:tokyo": "node src/run-once.mjs --city=tokyo --source=all",
     "crawl:kac": "node src/run-once.mjs --source=kyoto-art-center",
     "crawl:kyocera": "node src/run-once.mjs --source=kyoto-city-kyocera-museum-of-art",
     "crawl:momak": "node src/run-once.mjs --source=the-national-museum-of-modern-art",

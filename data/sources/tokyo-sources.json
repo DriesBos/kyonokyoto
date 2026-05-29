@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Tokyo cultural source batch. Starts empty so city routing, sync, crawl, and deploy plumbing can be verified before source-specific crawls are added.",
+  "sources": []
+}

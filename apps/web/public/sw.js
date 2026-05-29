@@ -1,4 +1,4 @@
-const CACHE_NAME = "kyo-no-kyoto-v2";
+const CACHE_NAME = "kyo-no-kyoto-v3";
 const APP_SHELL = [
   "/site.webmanifest",
   "/favicon.svg",
@@ -68,7 +68,7 @@ self.addEventListener("fetch", (event) => {
         } catch {
           return (
             (await caches.match(request)) ??
-            (await caches.match("/en/")) ??
+            (await caches.match("/kyoto/en/")) ??
             Response.error()
           );
         }

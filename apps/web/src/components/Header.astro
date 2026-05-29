@@ -1,6 +1,7 @@
 ---
 import Logo from "./Logo.astro";
 import GeneralButton from "./GeneralButton.astro";
+import { cityPathFor, nextCityFor, type AppCity } from "../lib/cities";
 import type { AppLocale } from "../lib/i18n";
 import { uiText } from "../lib/i18n";
 
@@ -16,6 +17,7 @@ type Props = {
   showFilters?: boolean;
   showTimingFilters?: boolean;
   compact?: boolean;
+  city?: AppCity;
   locale?: AppLocale;
 };
 
@@ -26,12 +28,14 @@ const {
   showFilters = true,
   showTimingFilters = true,
   compact = false,
+  city = "kyoto",
   locale = "en",
 } = Astro.props;
 const copy = uiText.en;
-const homeHref = `/${locale}/`;
-const localePathFor = (targetLocale: AppLocale) => `/${targetLocale}/`;
+const homeHref = cityPathFor(city, locale);
+const localePathFor = (targetLocale: AppLocale) => cityPathFor(city, targetLocale);
 const nextLocale: AppLocale = locale === "en" ? "ja" : "en";
+const nextCity = nextCityFor(city);
 const languageLabels: Record<AppLocale, string> = {
   en: "eng",
   ja: "jp",
@@ -77,6 +81,14 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
           data-map-toggle
           aria-expanded="false"
           aria-controls="map-section"
+        />
+        <GeneralButton
+          verticalPadding="full"
+          href={cityPathFor(nextCity.slug, locale)}
+          label={nextCity.label}
+          aria-label={`Switch to ${nextCity.label}`}
+          data-city-toggle
+          data-city-option={nextCity.slug}
         />
         <GeneralButton
           edge="last"

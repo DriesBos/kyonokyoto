@@ -1,6 +1,12 @@
 # Adding Sources
 
-Use `data/sources/kyoto-sources.json` as source of truth. Crawler should not guess stable venue facts when you can write them once.
+Use the matching city source file as source of truth:
+
+- `data/sources/kyoto-sources.json`
+- `data/sources/osaka-sources.json`
+- `data/sources/tokyo-sources.json`
+
+Crawler should not guess stable venue facts when you can write them once.
 
 ## Required Source Truth
 
@@ -133,7 +139,7 @@ First matching location wins. If nothing matches, source `lat`/`lng` are used.
 
 1. Add source config.
 2. Run `cd apps/crawler && npm test`.
-3. Run one source crawl locally or on VPS.
+3. Run one source crawl locally or on VPS with `--city=<city>`.
 4. Check crawl result:
    - detail URLs found
    - title/description present

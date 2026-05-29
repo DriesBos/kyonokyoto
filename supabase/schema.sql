@@ -3,6 +3,7 @@ create extension if not exists pgcrypto;
 create table if not exists public.sources (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
+  city text not null default 'kyoto',
   name text not null,
   source_type text not null,
   language text not null default 'ja',
@@ -21,9 +22,16 @@ create table if not exists public.sources (
 alter table public.sources
   add column if not exists locales jsonb not null default '{}'::jsonb;
 
+alter table public.sources
+  add column if not exists city text not null default 'kyoto';
+
 update public.sources
 set locales = '{}'::jsonb
 where locales is null;
+
+update public.sources
+set city = 'kyoto'
+where city is null or city = '';
 
 alter table public.sources
   alter column locales set default '{}'::jsonb,
@@ -210,6 +218,7 @@ end;
 $$;
 
 create unique index if not exists sources_slug_idx on public.sources (slug);
+create index if not exists sources_city_idx on public.sources (city);
 create index if not exists crawl_runs_source_id_idx on public.crawl_runs (source_id, created_at desc);
 create index if not exists raw_pages_source_id_idx on public.raw_pages (source_id, fetched_at desc);
 create index if not exists raw_pages_crawl_run_id_idx on public.raw_pages (crawl_run_id);

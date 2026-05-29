@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   applySourceOverride,
   loadSourcesConfig,
+  normalizeCity,
 } from '../../../data/sources/source-config.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildEventDedupeKey } from '../../../packages/shared/event-dedupe.mjs';
@@ -3491,10 +3492,17 @@ function extractGenericTitle(detailHtml, source) {
     stripTags(detailHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ''),
     stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
   ].filter(Boolean);
+  const escapedSourceName = String(source?.name ?? '')
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   const title = candidates[0]
     ?.replace(/\s*[|｜\-–—]\s*KYOTOGRAPHIE 京都国際写真祭$/i, '')
-    .replace(/\s*[|｜-]\s*.+$/, '')
+    .replace(
+      escapedSourceName
+        ? new RegExp(`\\s*[|｜\\-–—]\\s*${escapedSourceName}$`, 'i')
+        : /a^/,
+      '',
+    )
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -6558,11 +6566,15 @@ async function main() {
   const fileEnv = parseEnvFile(envContents);
   applyEnvToProcess(fileEnv);
   const env = { ...fileEnv, ...process.env };
+  const city = normalizeCity(getArg('city', 'kyoto'));
+  if (!city) {
+    throw new Error(`Unsupported source city "${getArg('city')}"`);
+  }
   const sourceSlug = getArg('source', 'kyoto-art-center');
   const userAgent = env.CRAWLER_USER_AGENT ?? 'kyo-no-kyoto-bot/0.1';
   const genericDetailLimit = getNumberArg('generic-limit', 8);
   const renderMode = getCrawl4AiRenderMode(env);
-  const configuredSources = await loadSourcesConfig();
+  const configuredSources = await loadSourcesConfig({ city });
   const sourceOverrides = Object.fromEntries(
     configuredSources.map((source) => [source.slug, source]),
   );
@@ -6605,6 +6617,7 @@ async function main() {
       JSON.stringify(
         {
           status: failed.length ? 'partial_success' : 'success',
+          city,
           sources_total: results.length,
           sources_succeeded: results.length - failed.length,
           sources_failed: failed.length,

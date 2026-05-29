@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Editorial venue highlights. Venue metadata can be resolved from data/sources/kyoto-sources.json by slug or stored directly here for non-crawler venues. Use cadence to label permanent or occasional venues.",
+  "description": "Kyoto editorial venue highlights. Venue metadata can be resolved from data/sources/kyoto-sources.json by slug or stored directly here for non-crawler venues. Use cadence to label permanent or occasional venues.",
   "items": [
     {
       "slug": "kyoto-art-center",

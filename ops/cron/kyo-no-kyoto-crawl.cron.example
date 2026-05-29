@@ -1,3 +1,5 @@
-# Kyo no Kyoto daily crawl cycle
-# Runs every day at 03:15 server time.
-15 3 * * * cd /srv/kyo-no-kyoto && export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" && /usr/bin/env node scripts/run-crawl-cycle.mjs >> /var/log/kyo-no-kyoto-crawl.log 2>&1
+# Fallback cron shape only. Prefer systemd instance timers in ops/systemd.
+# City runs should stay staggered and use --city.
+15 3 */3 * * cd /srv/kyo-no-kyoto && export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" && /usr/bin/env node scripts/run-crawl-cycle.mjs --city=kyoto >> /var/log/kyo-no-kyoto-crawl-kyoto.log 2>&1
+45 5 */3 * * cd /srv/kyo-no-kyoto && export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" && /usr/bin/env node scripts/run-crawl-cycle.mjs --city=osaka >> /var/log/kyo-no-kyoto-crawl-osaka.log 2>&1
+15 8 */3 * * cd /srv/kyo-no-kyoto && export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" && /usr/bin/env node scripts/run-crawl-cycle.mjs --city=tokyo >> /var/log/kyo-no-kyoto-crawl-tokyo.log 2>&1

@@ -1,6 +1,12 @@
 # Source Config Reference
 
-Use this for `data/sources/kyoto-sources.json` and `data/sources/source-overrides.json`.
+Use this for city source files:
+
+- `data/sources/kyoto-sources.json`
+- `data/sources/osaka-sources.json`
+- `data/sources/tokyo-sources.json`
+
+City-specific overrides live in `data/sources/overrides/<city>-overrides.json`.
 
 ## `name` / `names`
 

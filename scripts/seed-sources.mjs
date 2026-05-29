@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { loadSourcesConfig } from "../data/sources/source-config.mjs";
+import {
+  loadSourcesConfig,
+  normalizeCity,
+} from "../data/sources/source-config.mjs";
 
 const projectRoot = process.cwd();
 const crawlerEnvPath = resolve(projectRoot, "apps/crawler/.env");
@@ -23,6 +26,12 @@ function parseEnvFile(contents) {
   return env;
 }
 
+function getArg(name, fallback = null) {
+  const prefix = `--${name}=`;
+  const match = process.argv.find((arg) => arg.startsWith(prefix));
+  return match ? match.slice(prefix.length) : fallback;
+}
+
 const envContents = await readFile(crawlerEnvPath, "utf8");
 const env = parseEnvFile(envContents);
 
@@ -35,10 +44,16 @@ if (!supabaseUrl || !serviceRoleKey) {
   );
 }
 
-const sourceConfig = await loadSourcesConfig();
+const city = normalizeCity(getArg("city", "kyoto"));
+if (!city) {
+  throw new Error(`Unsupported source city "${getArg("city")}"`);
+}
+
+const sourceConfig = await loadSourcesConfig({ city });
 
 const sources = sourceConfig.map((source) => ({
   slug: source.slug,
+  city,
   name: source.name,
   source_type: source.source_type,
   language: source.language ?? "ja",
@@ -52,19 +67,21 @@ const sources = sourceConfig.map((source) => ({
   is_active: source.is_active ?? true,
 }));
 
-const response = await fetch(
-  `${supabaseUrl}/rest/v1/sources?on_conflict=slug`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
-      Prefer: "resolution=merge-duplicates,return=representation",
-    },
-    body: JSON.stringify(sources),
+if (sources.length === 0) {
+  console.log(`Seeded 0 ${city} sources into public.sources`);
+  process.exit(0);
+}
+
+const response = await fetch(`${supabaseUrl}/rest/v1/sources?on_conflict=slug`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    Prefer: "resolution=merge-duplicates,return=representation",
   },
-);
+  body: JSON.stringify(sources),
+});
 
 if (!response.ok) {
   const errorText = await response.text();
@@ -72,4 +89,4 @@ if (!response.ok) {
 }
 
 const inserted = await response.json();
-console.log(`Seeded ${inserted.length} sources into public.sources`);
+console.log(`Seeded ${inserted.length} ${city} sources into public.sources`);

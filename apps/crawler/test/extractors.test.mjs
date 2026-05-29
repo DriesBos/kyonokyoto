@@ -36,7 +36,10 @@ import {
   withSourceLocaleConfig,
 } from "../src/run-once.mjs";
 import { buildCrawlQaReport } from "../src/crawl-qa.mjs";
-import { validateSourceConfig } from "../../../data/sources/source-config.mjs";
+import {
+  loadSourcesConfig,
+  validateSourceConfig,
+} from "../../../data/sources/source-config.mjs";
 
 const fixturesRoot = resolve(import.meta.dirname, "fixtures");
 
@@ -1121,6 +1124,11 @@ test("source config validator reports missing source truth", () => {
   );
 });
 
+test("empty Osaka and Tokyo source configs are valid crawl inputs", async () => {
+  assert.deepEqual(await loadSourcesConfig({ city: "osaka" }), []);
+  assert.deepEqual(await loadSourcesConfig({ city: "tokyo" }), []);
+});
+
 test("source config includes Imura Art exhibition tabs", async () => {
   const payload = JSON.parse(
     await readFile(
@@ -1549,13 +1557,21 @@ test("source-specific skip rule drops past Kankakari events", () => {
 });
 
 test("Raku Museum extraction keeps only the first image", async () => {
-  const detailHtml = await readFile(
-    resolve(fixturesRoot, "generic-detail.html"),
-    "utf8",
-  );
+  const detailHtml = `
+    <section class="tabContent">
+      <h4>
+        <span>Tea Bowls Across Time</span>
+        <span>June 6, 2027 - September 6, 2027</span>
+      </h4>
+      <p>This exhibition brings together historic Raku tea bowls and related works from the collection.</p>
+      <img src="/images/install-view.jpg" width="900" height="600" alt="Installation view">
+      <img src="/images/second-view.jpg" width="900" height="600" alt="Second installation view">
+    </section>
+  `;
   const source = {
     name: "Raku Museum",
     source_type: "museum",
+    language: "en",
     source_categories: ["art", "museum"],
   };
 

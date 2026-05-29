@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { loadSourcesConfig } from "../data/sources/source-config.mjs";
+import {
+  loadSourcesConfig,
+  normalizeCity,
+} from "../data/sources/source-config.mjs";
 
 const projectRoot = process.cwd();
 const crawlerEnvPath = resolve(projectRoot, "apps/crawler/.env");
@@ -21,6 +24,12 @@ function parseEnvFile(contents) {
   }
 
   return env;
+}
+
+function getArg(name, fallback = null) {
+  const prefix = `--${name}=`;
+  const match = process.argv.find((arg) => arg.startsWith(prefix));
+  return match ? match.slice(prefix.length) : fallback;
 }
 
 async function restRequest({
@@ -61,11 +70,17 @@ if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
   );
 }
 
-const sourceConfig = await loadSourcesConfig();
+const city = normalizeCity(getArg("city", "kyoto"));
+if (!city) {
+  throw new Error(`Unsupported source city "${getArg("city")}"`);
+}
+
+const sourceConfig = await loadSourcesConfig({ city });
 const configuredSlugs = new Set(sourceConfig.map((source) => source.slug));
 
 const sources = sourceConfig.map((source) => ({
   slug: source.slug,
+  city,
   name: source.name,
   source_type: source.source_type,
   language: source.language ?? "ja",
@@ -79,17 +94,19 @@ const sources = sourceConfig.map((source) => ({
   is_active: source.is_active ?? true,
 }));
 
-const upsertedSources = await restRequest({
-  env,
-  path: "sources?on_conflict=slug",
-  method: "POST",
-  prefer: "resolution=merge-duplicates,return=representation",
-  body: sources,
-});
+const upsertedSources = sources.length
+  ? await restRequest({
+      env,
+      path: "sources?on_conflict=slug",
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=representation",
+      body: sources,
+    })
+  : [];
 
 const existingSources = await restRequest({
   env,
-  path: "sources?select=id,slug",
+  path: `sources?select=id,slug&city=eq.${encodeURIComponent(city)}`,
 });
 
 const removedSources = existingSources.filter(
@@ -123,6 +140,7 @@ console.log(
   JSON.stringify(
     {
       configured_sources: sources.length,
+      city,
       upserted_sources: upsertedSources?.length ?? 0,
       removed_sources: deletedSourceCount,
       removed_events: deletedEventCount,

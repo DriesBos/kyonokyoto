@@ -1,8 +1,8 @@
 # kyo-no-kyoto
 
-Kyoto cultural events app.
+Multi-city cultural events app, currently focused on Kyoto, Osaka, and Tokyo.
 
-The goal is to crawl museums, galleries, festival pages, and venue sites in Kyoto, normalize that data, store it in Supabase, and publish it through an Astro frontend.
+The goal is to crawl museums, galleries, festival pages, and venue sites by city, normalize that data, store it in Supabase, and publish it through an Astro frontend.
 
 ## Structure
 
@@ -57,6 +57,11 @@ Current public env vars used by the web app:
 ```env
 PUBLIC_SUPABASE_URL=
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+PUBLIC_GOOGLE_MAPS_API_KEY=
+PUBLIC_GOOGLE_MAPS_MAP_ID=
+PUBLIC_GOOGLE_MAPS_MAP_ID_KYOTO=
+PUBLIC_GOOGLE_MAPS_MAP_ID_OSAKA=
+PUBLIC_GOOGLE_MAPS_MAP_ID_TOKYO=
 ```
 
 ## Crawler Setup
@@ -128,27 +133,27 @@ psql "$DATABASE_URL" -f supabase/schema.sql
 2. Seed sources:
 
 ```bash
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/sync-sources.mjs
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/sync-sources.mjs --city=kyoto
 ```
 
 3. Crawl one source while tuning:
 
 ```bash
 cd apps/crawler
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:once -- --source=<slug>
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:once -- --city=kyoto --source=<slug>
 ```
 
 4. Crawl everything for QA:
 
 ```bash
 cd apps/crawler
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:all -- --generic-limit=6
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:all -- --city=kyoto --generic-limit=6
 ```
 
 5. Run the full production-style cycle locally:
 
 ```bash
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/run-crawl-cycle.mjs
+PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/run-crawl-cycle.mjs --city=kyoto
 ```
 
 Create or reuse the Netlify build hook and write it into `apps/crawler/.env`:
@@ -161,9 +166,10 @@ Useful flags:
 
 ```bash
 node scripts/run-crawl-cycle.mjs --skip-deploy
-node scripts/run-crawl-cycle.mjs --skip-sync
-node scripts/run-crawl-cycle.mjs --generic-limit=8
-cd apps/crawler && npm run crawl:once -- --source=<slug> --render=always
+node scripts/run-crawl-cycle.mjs --city=osaka --skip-sync
+node scripts/run-crawl-cycle.mjs --city=tokyo --generic-limit=8
+node scripts/run-crawl-cycle.mjs --strict-translations
+cd apps/crawler && npm run crawl:once -- --city=kyoto --source=<slug> --render=always
 node scripts/create-netlify-build-hook.mjs --name="Daily crawler deploy"
 ```
 
@@ -175,7 +181,7 @@ node --test apps/crawler/test/*.test.mjs
 
 How to tune effectively:
 
-- Start with `data/sources/kyoto-sources.json`:
+- Start with the city source file, such as `data/sources/kyoto-sources.json`, `data/sources/osaka-sources.json`, or `data/sources/tokyo-sources.json`:
   tighten `start_urls`, `allowed_domains`, and especially `event_page_patterns`.
 - If a source is noisy, narrow the generic candidate set first by making `event_page_patterns` more specific.
 - If a source is important and recurring, add a source-specific pair in `apps/crawler/src/run-once.mjs`:
@@ -184,7 +190,7 @@ How to tune effectively:
 - Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
 - When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
 - Lazy-loaded images are handled as a second pass when `CRAWL4AI_RENDER_MODE=auto`: the crawler keeps the normal static fetch first, then asks Crawl4AI to render and scroll detail pages whose extracted event has no image.
-- If a source leaks logo, social, or navigation images without useful HTML dimensions, add `"measure_image_dimensions": true` to that source in `data/sources/kyoto-sources.json` or to its slug in `data/sources/source-overrides.json`.
+- If a source leaks logo, social, or navigation images without useful HTML dimensions, add `"measure_image_dimensions": true` to that source in the city source file or to its slug in `data/sources/overrides/<city>-overrides.json`.
 - JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
 - Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
@@ -210,19 +216,27 @@ Recommended production path:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `NETLIFY_BUILD_HOOK_URL`
-3. Copy the example cron file from `ops/cron/`.
+3. Prefer the systemd instance templates in `ops/systemd/`.
 4. Adjust the repo path and Node path.
-5. Install the cron entry:
+5. Enable the city timers:
 
 ```bash
-crontab ops/cron/kyo-no-kyoto-crawl.cron.example
-crontab -l
+sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@.service.example /etc/systemd/system/kyo-no-kyoto-crawl@.service
+sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@kyoto.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@kyoto.timer
+sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@osaka.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@osaka.timer
+sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@tokyo.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@tokyo.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now kyo-no-kyoto-crawl@kyoto.timer
+sudo systemctl enable --now kyo-no-kyoto-crawl@osaka.timer
+sudo systemctl enable --now kyo-no-kyoto-crawl@tokyo.timer
 ```
 
-The example job runs daily at `03:15` server time.
+Each city runs every 36 hours. Initial timers use 2h30m stagger slots.
 
 Important:
 
 - Supabase does not trigger a rebuild by itself here.
 - The rebuild happens because `scripts/run-crawl-cycle.mjs` calls the Netlify build hook after a successful crawl.
+- A shared lock in `scripts/run-crawl-cycle.mjs` prevents overlapping city crawl cycles on small VPS instances.
+- Translation checks report missing translations during crawl cycles. Add `--strict-translations` only when missing translations should block deployment.
 - If you want Japan-local timing on a Europe-based VPS, either set the VPS timezone to JST or shift the cron time accordingly.
