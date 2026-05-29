@@ -792,6 +792,9 @@ test("generic event extraction ignores common site chrome images", () => {
         <p>Details will be announced later.</p>
       </main>
       <img src="/assets/img/common/logo.png" alt="logo">
+      <img src="/assets/img/common/no_image_jsonx.png" width="2400" height="1134" alt="">
+      <img src="{{= imagePc }}" alt="">
+      <img src="/_assets/images/ico-sp-open-arrowx.png" alt="">
       <img src="/assets/img/layout/menu_about-01.png" alt="">
       <img src="/assets/img/icon/facebook.svg" alt="">
     `,
