@@ -2,6 +2,7 @@
 import "../styles/reset.css";
 import "../styles/app.sass";
 import { CITY_COOKIE, CITY_STORAGE_KEY, type AppCity } from "../lib/cities";
+import { CITY_SWITCH_SKIP_LANDING_KEY } from "../scripts/citySwitch";
 import type { AppLocale } from "../lib/i18n";
 import { uiText } from "../lib/i18n";
 
@@ -68,6 +69,16 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <script is:inline>
       history.scrollRestoration = "manual";
+    </script>
+    <script is:inline define:vars={{ skipLandingStorageKey: CITY_SWITCH_SKIP_LANDING_KEY }}>
+      try {
+        if (window.sessionStorage?.getItem(skipLandingStorageKey) === "1") {
+          document.documentElement.setAttribute("data-skip-landing", "");
+          document.documentElement.removeAttribute("data-landing-active");
+        }
+      } catch {
+        // Landing remains available when sessionStorage is unavailable.
+      }
     </script>
     <script is:inline define:vars={{ city, cityCookie: CITY_COOKIE, cityStorageKey: CITY_STORAGE_KEY }}>
       document.cookie = `${cityCookie}=${encodeURIComponent(city)}; Max-Age=31536000; Path=/; SameSite=Lax`;

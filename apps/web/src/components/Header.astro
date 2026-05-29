@@ -89,6 +89,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
           aria-label={`Switch to ${nextCity.label}`}
           data-city-toggle
           data-city-option={nextCity.slug}
+          data-city-theme-color={nextCity.themeColor}
         />
         <GeneralButton
           edge="last"
@@ -149,9 +150,11 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
 </header>
 
 <script>
+  import { initCitySwitch } from "../scripts/citySwitch";
   import { initHeaderControls } from "../scripts/headerControls";
 
   initHeaderControls();
+  initCitySwitch();
 </script>
 
 <style lang="sass">

@@ -1,4 +1,5 @@
 import { gsap } from "gsap";
+import { CITY_SWITCH_SKIP_LANDING_KEY } from "./citySwitch";
 
 type LandingScrollWindow = Window &
   typeof globalThis & {
@@ -11,6 +12,7 @@ const landingTriggerSelector = "[data-landing-trigger]";
 const mainContentSelector = "[data-main-content]";
 const launchedAttribute = "data-landing-launched";
 const activeAttribute = "data-landing-active";
+const skipLandingAttribute = "data-skip-landing";
 const beigeTheme = "#EFEFEF";
 const wheelThreshold = 80;
 const touchThreshold = 48;
@@ -75,8 +77,42 @@ const scrollToMainContent = (mainContent: HTMLElement) => {
   });
 };
 
+const consumeSkipLandingRequest = () => {
+  const hasSkipAttribute = document.documentElement.hasAttribute(skipLandingAttribute);
+
+  try {
+    if (window.sessionStorage?.getItem(CITY_SWITCH_SKIP_LANDING_KEY) === "1") {
+      window.sessionStorage.removeItem(CITY_SWITCH_SKIP_LANDING_KEY);
+      return true;
+    }
+  } catch {
+    return hasSkipAttribute;
+  }
+
+  return hasSkipAttribute;
+};
+
+const showMainContentImmediately = () => {
+  const elements = getElements();
+  const targetY = elements
+    ? elements.mainContent.getBoundingClientRect().top + window.scrollY
+    : 0;
+
+  cancelCurrentAnimation();
+  document.documentElement.removeAttribute(activeAttribute);
+  document.documentElement.setAttribute(launchedAttribute, "");
+  setThemeColor(beigeTheme);
+  window.scrollTo(0, targetY);
+  window.requestAnimationFrame(() => window.scrollTo(0, targetY));
+};
+
 const resetScrollPosition = () => {
   if (window.location.hash) return;
+  if (consumeSkipLandingRequest()) {
+    showMainContentImmediately();
+    return;
+  }
+
   cancelCurrentAnimation();
   document.documentElement.setAttribute(activeAttribute, "");
   document.documentElement.removeAttribute(launchedAttribute);
