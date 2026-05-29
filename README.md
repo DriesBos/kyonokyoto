@@ -168,6 +168,7 @@ Useful flags:
 node scripts/run-crawl-cycle.mjs --skip-deploy
 node scripts/run-crawl-cycle.mjs --city=osaka --skip-sync
 node scripts/run-crawl-cycle.mjs --city=tokyo --generic-limit=8
+node scripts/run-crawl-cycle.mjs --strict-translations
 cd apps/crawler && npm run crawl:once -- --city=kyoto --source=<slug> --render=always
 node scripts/create-netlify-build-hook.mjs --name="Daily crawler deploy"
 ```
@@ -237,4 +238,5 @@ Important:
 - Supabase does not trigger a rebuild by itself here.
 - The rebuild happens because `scripts/run-crawl-cycle.mjs` calls the Netlify build hook after a successful crawl.
 - A shared lock in `scripts/run-crawl-cycle.mjs` prevents overlapping city crawl cycles on small VPS instances.
+- Translation checks report missing translations during crawl cycles. Add `--strict-translations` only when missing translations should block deployment.
 - If you want Japan-local timing on a Europe-based VPS, either set the VPS timezone to JST or shift the cron time accordingly.

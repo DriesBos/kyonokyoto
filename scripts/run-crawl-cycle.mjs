@@ -37,7 +37,7 @@ function getArg(name, fallback = null) {
 async function runStep(label, cmd, args, options = {}) {
   console.log(`\n== ${label} ==`);
 
-  await new Promise((resolvePromise, rejectPromise) => {
+  return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(cmd, args, {
       cwd: projectRoot,
       stdio: "inherit",
@@ -50,7 +50,15 @@ async function runStep(label, cmd, args, options = {}) {
 
     child.on("exit", (code) => {
       if (code === 0) {
-        resolvePromise();
+        resolvePromise(true);
+        return;
+      }
+
+      if (options.allowFailure) {
+        console.warn(
+          `${label} reported exit code ${code ?? "unknown"}; continuing.`,
+        );
+        resolvePromise(false);
         return;
       }
 
@@ -69,6 +77,7 @@ const env = parseEnvFile(envContents);
 const skipSync = hasFlag("--skip-sync");
 const skipCrawl = hasFlag("--skip-crawl");
 const skipDeploy = hasFlag("--skip-deploy");
+const strictTranslations = hasFlag("--strict-translations");
 const genericLimit = getArg("generic-limit", "6");
 const city = normalizeCity(getArg("city", "kyoto"));
 if (!city) {
@@ -115,12 +124,12 @@ try {
     ]);
   }
 
-  await runStep("Check translations", "npm", [
-    "--prefix",
-    "apps/crawler",
-    "run",
-    "translations:check",
-  ]);
+  await runStep(
+    "Check translations",
+    "npm",
+    ["--prefix", "apps/crawler", "run", "translations:check"],
+    { allowFailure: !strictTranslations },
+  );
 
   if (!skipDeploy) {
     if (!buildHookUrl) {
