@@ -15,8 +15,8 @@
       "allowed_domains": ["www.2121designsight.jp", "2121designsight.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/program/", "/program/"],
-      "notes": "Purple art marker from Google My Maps. Temporarily suppress detail crawling until a source-specific extractor can read the Title/Date rows reliably.",
-      "is_active": true,
+      "notes": "Purple art marker from Google My Maps. Inactive until a source-specific extractor can read Title/Date rows reliably and avoid venue/info pages.",
+      "is_active": false,
       "source_categories": ["design", "museum", "exhibition"],
       "map_visibility": true,
       "locales": {
