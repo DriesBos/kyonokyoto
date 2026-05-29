@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Osaka crawl cycle every 36 hours
+
+[Timer]
+OnBootSec=2h40m
+OnUnitActiveSec=36h
+Persistent=true
+Unit=kyo-no-kyoto-crawl@osaka.service
+
+[Install]
+WantedBy=timers.target

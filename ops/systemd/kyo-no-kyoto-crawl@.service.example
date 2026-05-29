@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Kyo no Kyoto crawl cycle for %i
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/kyo-no-kyoto
+Environment=PATH=/home/ubuntu/.nvm/versions/node/v22.22.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/env node scripts/run-crawl-cycle.mjs --city=%i
+StandardOutput=append:/var/log/kyo-no-kyoto-crawl-%i.log
+StandardError=append:/var/log/kyo-no-kyoto-crawl-%i.log

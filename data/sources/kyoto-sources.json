@@ -1176,7 +1176,8 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blogs/exhibitions"],
       "selectors": {
-        "listing_links": "main a"
+        "listing_links": "main a",
+        "images": ".article-template img"
       },
       "crawl_hints": {
         "max_detail_pages": 12

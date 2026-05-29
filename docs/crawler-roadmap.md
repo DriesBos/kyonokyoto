@@ -30,7 +30,7 @@ VPS crawl command, when repo path is known:
 cd /home/ubuntu/kyo-no-kyoto/apps/crawler && \
 git pull && \
 npm install && \
-npm run crawl:all && \
+npm run crawl:all -- --city=kyoto && \
 npm run translations:check
 ```
 
@@ -52,8 +52,16 @@ Then run the crawl from the returned path:
 cd /returned/path/apps/crawler && \
 git pull && \
 npm install && \
-npm run crawl:all && \
+npm run crawl:all -- --city=kyoto && \
 npm run translations:check
+```
+
+For production-style city runs from the repo root, use:
+
+```bash
+node scripts/run-crawl-cycle.mjs --city=kyoto
+node scripts/run-crawl-cycle.mjs --city=osaka
+node scripts/run-crawl-cycle.mjs --city=tokyo
 ```
 
 ## Option C: Split Crawler Internals

@@ -1,17 +1,22 @@
 ---
 import "../styles/reset.css";
 import "../styles/app.sass";
+import { CITY_COOKIE, CITY_STORAGE_KEY, type AppCity } from "../lib/cities";
 import type { AppLocale } from "../lib/i18n";
 import { uiText } from "../lib/i18n";
 
 type Props = {
   title?: string;
   description?: string;
+  city?: AppCity;
+  cityThemeColor?: string;
   locale?: AppLocale;
   landingActive?: boolean;
 };
 
 const {
+  city = "kyoto",
+  cityThemeColor = "#138e00",
   locale = "en",
   title = uiText.en.title,
   description = uiText.en.description,
@@ -21,11 +26,18 @@ const {
 const appName = "KyōNoKyōto";
 const ogImage = new URL("/og.png", Astro.url).href;
 const shouldRegisterServiceWorker = import.meta.env.PROD;
+const themeColor = landingActive ? cityThemeColor : "#EFEFEF";
 
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 ---
 
-<html lang={uiText[locale].lang} data-landing-active={landingActive ? "" : undefined}>
+<html
+  lang={uiText[locale].lang}
+  data-city={city}
+  data-locale={locale}
+  data-landing-active={landingActive ? "" : undefined}
+  style={`--color-green: ${cityThemeColor}`}
+>
   <head>
     <meta charset="utf-8" />
     <link
@@ -46,7 +58,7 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content={landingActive ? "#138e00" : "#EFEFEF"} />
+    <meta name="theme-color" content={themeColor} />
     <meta name="application-name" content={appName} />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -56,6 +68,14 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <script is:inline>
       history.scrollRestoration = "manual";
+    </script>
+    <script is:inline define:vars={{ city, cityCookie: CITY_COOKIE, cityStorageKey: CITY_STORAGE_KEY }}>
+      document.cookie = `${cityCookie}=${encodeURIComponent(city)}; Max-Age=31536000; Path=/; SameSite=Lax`;
+      try {
+        window.localStorage?.setItem(cityStorageKey, city);
+      } catch {
+        // Cookie still carries preference when storage fails.
+      }
     </script>
     {
       shouldRegisterServiceWorker ? (

@@ -3,8 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const sourcesPath = resolve(__dirname, "kyoto-sources.json");
-const overridesPath = resolve(__dirname, "source-overrides.json");
+const supportedCities = new Set(["kyoto", "osaka", "tokyo"]);
 const supportedLocales = new Set(["en", "ja"]);
 const supportedRenderModes = new Set(["auto", "always", "never"]);
 const selectorKeys = new Set([
@@ -20,6 +19,30 @@ function normalizeLocale(value) {
   const normalized = value.trim().toLowerCase();
   if (normalized === "jp") return "ja";
   return supportedLocales.has(normalized) ? normalized : null;
+}
+
+export function normalizeCity(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return supportedCities.has(normalized) ? normalized : null;
+}
+
+export function sourcePathForCity(city = "kyoto") {
+  const normalizedCity = normalizeCity(city);
+  if (!normalizedCity) {
+    throw new Error(`Unsupported source city "${city}"`);
+  }
+
+  return resolve(__dirname, `${normalizedCity}-sources.json`);
+}
+
+export function overridePathForCity(city = "kyoto") {
+  const normalizedCity = normalizeCity(city);
+  if (!normalizedCity) {
+    throw new Error(`Unsupported source city "${city}"`);
+  }
+
+  return resolve(__dirname, "overrides", `${normalizedCity}-overrides.json`);
 }
 
 function normalizeLocaleConfig(value = {}) {
@@ -248,8 +271,9 @@ export function validateSourceConfig(source) {
   return warnings;
 }
 
-export async function loadSourceOverrides() {
+export async function loadSourceOverrides({ city = "kyoto" } = {}) {
   try {
+    const overridesPath = overridePathForCity(city);
     const fileContents = await readFile(overridesPath, "utf8");
     const payload = JSON.parse(fileContents);
     return payload.sources ?? {};
@@ -267,19 +291,39 @@ export async function loadSourceOverrides() {
   }
 }
 
-export async function loadSourcesConfig() {
+export async function loadSourcesConfig({ city = "kyoto" } = {}) {
+  const normalizedCity = normalizeCity(city);
+  if (!normalizedCity) {
+    throw new Error(`Unsupported source city "${city}"`);
+  }
+
+  const sourcesPath = sourcePathForCity(normalizedCity);
   const fileContents = await readFile(sourcesPath, "utf8");
   const payload = JSON.parse(fileContents);
 
   if (!Array.isArray(payload.sources)) {
     throw new Error(
-      "Expected data/sources/kyoto-sources.json to contain a sources array",
+      `Expected data/sources/${normalizedCity}-sources.json to contain a sources array`,
     );
   }
 
-  const overrides = await loadSourceOverrides();
+  const overrides = await loadSourceOverrides({ city: normalizedCity });
 
-  return payload.sources.map((source) =>
-    applySourceOverride(source, overrides[source.slug]),
+  return payload.sources.map((source) => ({
+    ...applySourceOverride(
+      {
+        ...source,
+        city: normalizedCity,
+      },
+      overrides[source.slug],
+    ),
+    city: normalizedCity,
+  }));
+}
+
+export async function loadAllSourcesConfig() {
+  const sourcesByCity = await Promise.all(
+    [...supportedCities].map((city) => loadSourcesConfig({ city })),
   );
+  return sourcesByCity.flat();
 }

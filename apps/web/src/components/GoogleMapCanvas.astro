@@ -9,19 +9,33 @@ type MapSource = {
 };
 
 type Props = {
+  cityLabel?: string;
+  mapCenter?: {
+    lat: number;
+    lng: number;
+  };
+  mapIdEnvKey?: string;
   sources?: MapSource[];
 };
 
-const { sources = [] } = Astro.props;
+const {
+  cityLabel = "Kyoto",
+  mapCenter = { lat: 35.0240977, lng: 135.7621436 },
+  mapIdEnvKey = "PUBLIC_GOOGLE_MAPS_MAP_ID_KYOTO",
+  sources = [],
+} = Astro.props;
 const mapsApiKey = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-const mapsMapId = import.meta.env.PUBLIC_GOOGLE_MAPS_MAP_ID ?? "";
+const mapsMapId =
+  (import.meta.env[mapIdEnvKey] as string | undefined) ??
+  import.meta.env.PUBLIC_GOOGLE_MAPS_MAP_ID ??
+  "";
 const sourcesJson = JSON.stringify(sources);
 ---
 
 <div
   class="map-canvas"
   role="application"
-  aria-label="Kyoto cultural map"
+  aria-label={`${cityLabel} cultural map`}
   data-map-loading
 >
   <script type="application/json" data-map-sources set:html={sourcesJson} />
@@ -30,6 +44,8 @@ const sourcesJson = JSON.stringify(sources);
     data-google-map
     data-api-key={mapsApiKey}
     data-map-id={mapsMapId}
+    data-map-center-lat={mapCenter.lat}
+    data-map-center-lng={mapCenter.lng}
   ></div>
   <div class="map-controls" data-map-controls>
     <button class="map-find-me" type="button" data-map-find-me aria-pressed="false" aria-describedby="map-find-me-status">
