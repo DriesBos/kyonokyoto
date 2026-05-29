@@ -1,5 +1,370 @@
 {
   "version": 1,
-  "description": "Osaka cultural source batch. Starts empty so city routing, sync, crawl, and deploy plumbing can be verified before source-specific crawls are added.",
-  "sources": []
+  "description": "Osaka cultural source batch seeded from purple art markers in the shared Google My Maps export. Oyamazaki Villa Museum is intentionally excluded because it is in Kyoto prefecture, not Osaka.",
+  "sources": [
+    {
+      "slug": "abeno-harukas-art-museum",
+      "name": "ABENO HARUKAS Art Museum",
+      "names": {
+        "en": "ABENO HARUKAS Art Museum",
+        "ja": "あべのハルカス美術館"
+      },
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "ABENO HARUKAS 16F, 1-1-43 Abenosuji, Abeno-ku, Osaka 545-6016 Japan",
+      "directions_query": "ABENO HARUKAS Art Museum, 1-1-43 Abenosuji, Abeno-ku, Osaka",
+      "lat": 34.6463189,
+      "lng": 135.5132739,
+      "base_url": "https://www.aham.jp/exhibition/future/",
+      "start_urls": ["https://www.aham.jp/exhibition/future/"],
+      "allowed_domains": ["www.aham.jp", "aham.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/future/", "/exhibition/now/"],
+      "notes": "Purple art marker from Google My Maps. Official exhibition index is Japanese-first and contains current/future exhibition detail links.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.aham.jp/exhibition/future/"],
+          "event_page_patterns": ["/exhibition/future/", "/exhibition/now/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "koji-kinutani-tenku-art-museum",
+      "name": "Koji Kinutani Tenku Art Museum",
+      "names": {
+        "en": "Koji Kinutani Tenku Art Museum",
+        "ja": "絹谷幸二 天空美術館"
+      },
+      "source_type": "museum",
+      "language": "en",
+      "address_text": "Umeda Sky Building Tower West 27F, 1-1-30 Oyodonaka, Kita-ku, Osaka 531-0076 Japan",
+      "directions_query": "Koji Kinutani Tenku Art Museum, Umeda Sky Building, Osaka",
+      "lat": 34.705319,
+      "lng": 135.4896224,
+      "base_url": "https://www.kinutani-tenku.jp/en/s_exhib/",
+      "start_urls": ["https://www.kinutani-tenku.jp/en/s_exhib/"],
+      "allowed_domains": ["www.kinutani-tenku.jp", "kinutani-tenku.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/s_exhib/", "/s_exhib/"],
+      "notes": "Purple art marker from Google My Maps. Special exhibition page has English and Japanese versions.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.kinutani-tenku.jp/s_exhib/"],
+          "event_page_patterns": ["/s_exhib/"]
+        },
+        "en": {
+          "start_urls": ["https://www.kinutani-tenku.jp/en/s_exhib/"],
+          "event_page_patterns": ["/en/s_exhib/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": [
+          "/about_us",
+          "/access",
+          "/cafe",
+          "/enjoy",
+          "/faq",
+          "/gallery",
+          "/guide",
+          "/magazine",
+          "/ticket"
+        ],
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "yod-gallery",
+      "name": "YOD Gallery",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "4-9-15 Nishitenma, Kita-ku, Osaka 530-0047 Japan",
+      "directions_query": "YOD Gallery, Nishitenma, Kita-ku, Osaka",
+      "lat": 34.6972094,
+      "lng": 135.5039913,
+      "base_url": "https://www.yodgallery.com/en/currentexhibition",
+      "start_urls": ["https://www.yodgallery.com/en/currentexhibition"],
+      "allowed_domains": ["www.yodgallery.com", "yodgallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": [
+        "/en/currentexhibition",
+        "/en/upcoming-exhibition",
+        "/currentexhibition",
+        "/upcoming-exhibition"
+      ],
+      "notes": "Purple art marker from Google My Maps. Wix site; render may be needed for reliable current/upcoming content.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".not-present-yet a"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.yodgallery.com/currentexhibition"],
+          "event_page_patterns": ["/currentexhibition", "/upcoming-exhibition"]
+        },
+        "en": {
+          "start_urls": ["https://www.yodgallery.com/en/currentexhibition"],
+          "event_page_patterns": ["/en/currentexhibition", "/en/upcoming-exhibition"]
+        }
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "skip_patterns": ["/artists", "/japan-exhibitions", "/japanese-news", "/past-exhibitions"],
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "nakanoshima-museum-of-art-osaka",
+      "name": "Nakanoshima Museum of Art, Osaka",
+      "names": {
+        "en": "Nakanoshima Museum of Art, Osaka",
+        "ja": "大阪中之島美術館"
+      },
+      "source_type": "museum",
+      "language": "en",
+      "address_text": "4-3-1 Nakanoshima, Kita-ku, Osaka 530-0005 Japan",
+      "directions_query": "Nakanoshima Museum of Art, Osaka, 4-3-1 Nakanoshima, Kita-ku, Osaka",
+      "lat": 34.6924461,
+      "lng": 135.4913924,
+      "base_url": "https://nakka-art.jp/en/exhibition-en/",
+      "start_urls": [
+        "https://nakka-art.jp/en/exhibition-en/held/",
+        "https://nakka-art.jp/en/exhibition-en/date-held/"
+      ],
+      "allowed_domains": ["nakka-art.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition-post/", "/exhibition-post/"],
+      "notes": "Purple art marker from Google My Maps. Official exhibitions index lists current, upcoming, and past exhibitions.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".li-list .li a"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://nakka-art.jp/exhibition/held/",
+            "https://nakka-art.jp/exhibition/date-held/"
+          ],
+          "event_page_patterns": ["/exhibition-post/"]
+        },
+        "en": {
+          "start_urls": [
+            "https://nakka-art.jp/en/exhibition-en/held/",
+            "https://nakka-art.jp/en/exhibition-en/date-held/"
+          ],
+          "event_page_patterns": ["/en/exhibition-post/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "yoshimi-arts",
+      "name": "Yoshimi Arts",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "Wakasa Bldg. 3F, 1-8-24 Edobori, Nishi-ku, Osaka 550-0002 Japan",
+      "directions_query": "Yoshimi Arts, 1-8-24 Edobori, Nishi-ku, Osaka",
+      "lat": 34.6894613,
+      "lng": 135.49725,
+      "base_url": "https://www.yoshimiarts.com/en/exhibition.html",
+      "start_urls": ["https://www.yoshimiarts.com/en/exhibition.html"],
+      "allowed_domains": ["www.yoshimiarts.com", "yoshimiarts.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition", "/exhibition"],
+      "notes": "Purple art marker from Google My Maps. Official exhibition page includes Osaka and Tokyo sections; crawler should prefer Osaka venue text.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": "p.style2 a"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.yoshimiarts.com/exhibition.html"],
+          "event_page_patterns": ["/exhibition"]
+        },
+        "en": {
+          "start_urls": ["https://www.yoshimiarts.com/en/exhibition.html"],
+          "event_page_patterns": ["/en/exhibition"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["YAST", "Storage-Tokyo"],
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "national-museum-of-art-osaka",
+      "name": "The National Museum of Art, Osaka",
+      "names": {
+        "en": "The National Museum of Art, Osaka",
+        "ja": "国立国際美術館"
+      },
+      "source_type": "museum",
+      "language": "en",
+      "address_text": "4-2-55 Nakanoshima, Kita-ku, Osaka 530-0005 Japan",
+      "directions_query": "The National Museum of Art, Osaka, 4-2-55 Nakanoshima, Kita-ku, Osaka",
+      "lat": 34.6917819,
+      "lng": 135.491984,
+      "base_url": "https://www.nmao.go.jp/en/exhibition/upcoming.html",
+      "start_urls": ["https://www.nmao.go.jp/en/exhibition/upcoming.html"],
+      "allowed_domains": ["www.nmao.go.jp", "nmao.go.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": [
+        "/en/exhibition/",
+        "/en/exhibitions/",
+        "/exhibition/",
+        "/exhibitions/"
+      ],
+      "notes": "Purple art marker from Google My Maps. Official current/upcoming exhibitions page.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".ex_poster a"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.nmao.go.jp/exhibition/upcoming.html"],
+          "event_page_patterns": ["/events/event/"]
+        },
+        "en": {
+          "start_urls": ["https://www.nmao.go.jp/en/exhibition/upcoming.html"],
+          "event_page_patterns": ["/events/event/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "wa-gallery-osaka",
+      "name": "Wa.gallery",
+      "names": {
+        "en": "Wa.gallery",
+        "ja": "Wa.gallery"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "Osaka, Japan",
+      "directions_query": "Wa.gallery Osaka",
+      "lat": 34.6779648,
+      "lng": 135.4974656,
+      "base_url": "https://wa-gallery.art/exhibitions-single2.html",
+      "start_urls": ["https://wa-gallery.art/exhibitions-single2.html"],
+      "allowed_domains": ["wa-gallery.art"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions", "/past-exhibitions"],
+      "notes": "Purple art marker from Google My Maps. Official current exhibition page; address needs manual enrichment if a fuller postal address is desired.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://wa-gallery.art/exhibitions-single2.html"],
+          "event_page_patterns": ["/exhibitions"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "congres-square-grand-green-osaka",
+      "name": "Congres Square Grand Green Osaka",
+      "names": {
+        "en": "Congres Square Grand Green Osaka",
+        "ja": "コングレスクエア グラングリーン大阪"
+      },
+      "source_type": "venue",
+      "language": "ja",
+      "address_text": "Grand Green Osaka South Building 4F, 5-54 Ofuka-cho, Kita-ku, Osaka 530-0011 Japan",
+      "directions_query": "Congres Square Grand Green Osaka, 5-54 Ofuka-cho, Kita-ku, Osaka",
+      "lat": 34.7024579,
+      "lng": 135.4913958,
+      "base_url": "https://osaka.congres-square.jp/grandgreen/",
+      "start_urls": ["https://osaka.congres-square.jp/grandgreen/event/"],
+      "allowed_domains": ["osaka.congres-square.jp", "artosaka.jp", "www.artosaka.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/grandgreen/event/", "/2026/"],
+      "notes": "Purple art marker from Google My Maps as GRAND GREEN OSAKA. The art/event source is the official Congres Square Grand Green Osaka venue page.",
+      "is_active": true,
+      "source_categories": ["art-fair", "exhibition"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".p-event_card"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://osaka.congres-square.jp/grandgreen/event/"],
+          "event_page_patterns": ["/grandgreen/event/", "/2026/"]
+        },
+        "en": {
+          "start_urls": ["https://osaka.congres-square.jp/grandgreen/en/"],
+          "event_page_patterns": ["/grandgreen/en/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["ac-lab.jp", "fair.f2f.or.jp"],
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "nakanoshima-kosetsu-museum",
+      "name": "Nakanoshima Kosetsu Museum of Art",
+      "names": {
+        "en": "Nakanoshima Kosetsu Museum of Art",
+        "ja": "中之島香雪美術館"
+      },
+      "source_type": "museum",
+      "language": "en",
+      "address_text": "Nakanoshima Festival Tower West 4F, 3-2-4 Nakanoshima, Kita-ku, Osaka 530-0005 Japan",
+      "directions_query": "Nakanoshima Kosetsu Museum of Art, Festival Tower West, Osaka",
+      "lat": 34.6934048,
+      "lng": 135.4955867,
+      "base_url": "https://www.kosetsu-museum.or.jp/nakanoshima/english/4246/",
+      "start_urls": ["https://www.kosetsu-museum.or.jp/nakanoshima/english/4246/"],
+      "allowed_domains": ["www.kosetsu-museum.or.jp", "kosetsu-museum.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/nakanoshima/exhibition/"],
+      "notes": "Purple art marker from Google My Maps. English landing page links current exhibitions; Japanese exhibition details live under /nakanoshima/exhibition/.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.kosetsu-museum.or.jp/nakanoshima/"],
+          "event_page_patterns": ["/nakanoshima/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://www.kosetsu-museum.or.jp/nakanoshima/english/4246/"],
+          "event_page_patterns": ["/nakanoshima/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["?mcat=", "?yr=", "/event/", ".pdf"],
+        "max_detail_pages": 6
+      }
+    }
+  ]
 }
