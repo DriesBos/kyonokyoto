@@ -988,6 +988,33 @@ test("generic event extraction can use configured field selectors", () => {
   );
 });
 
+test("generic event extraction can use configured meta image selectors", () => {
+  const detailHtml = `
+    <article>
+      <meta property="og:image" content="https://example.test/images/meta-card.jpg">
+      <img class="hero" src="/images/hero.jpg" alt="">
+    </article>
+  `;
+  const source = {
+    name: "Example Museum",
+    source_type: "museum",
+    selectors: {
+      images: ['meta[property="og:image"]', ".hero"],
+    },
+  };
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    "https://example.test/exhibitions/configured/",
+  );
+
+  assert.deepEqual(event.image_urls, [
+    "https://example.test/images/meta-card.jpg",
+    "https://example.test/images/hero.jpg",
+  ]);
+});
+
 test("Oyamazaki extraction uses article metadata and skips flyer image", () => {
   const detailHtml = `
     <div class="p-exhibitionArticle">

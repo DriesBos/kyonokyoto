@@ -3533,7 +3533,7 @@ function extractConfiguredImageUrls(detailHtml, detailUrl, source) {
       selectorAttributeValues(
         detailHtml,
         imageSelectors,
-        ['src', 'data-src', 'data-original', 'data-lazy-src'],
+        ['src', 'data-src', 'data-original', 'data-lazy-src', 'content'],
       )
         .map((value) => normalizeUrl(value, detailUrl))
         .filter(Boolean),
