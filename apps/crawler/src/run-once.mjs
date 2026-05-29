@@ -1788,7 +1788,7 @@ function looksLikeSocialOrUiImage(url) {
     /\/wp-content\/themes\/[^/]+\/img\/exhibitions\//i.test(url);
 
   return (
-    /data:image|spacer|sprite|logo|icon|favicon|avatar|loader|loading|blank|pixel|tracking|analytics/i.test(
+    /data:image|%7b%7b|\{\{=|imagepc|spacer|sprite|logo|icon|favicon|avatar|loader|loading|blank|no[_-]?image|ico[-_]|pixel|tracking|analytics/i.test(
       url,
     ) ||
     /\/assets\/img\/(?:common|layout|icon)\//i.test(url) ||

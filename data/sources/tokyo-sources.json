@@ -172,6 +172,7 @@
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
+      "skip_og_image": true,
       "selectors": {
         "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper",
         "images": "img[src*=\"/en/exhibitions/exhibitions/images/\"]"
