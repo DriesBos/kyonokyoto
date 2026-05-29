@@ -28,6 +28,10 @@ test("city registry normalizes supported routes and cycles in header order", () 
   assert.equal(normalizeCity("nagoya"), null);
 
   assert.equal(cityConfigFor("kyoto")?.themeColor, "#138e00");
+  assert.deepEqual(cityConfigFor("tokyo")?.mapCenter, {
+    lat: 35.6651,
+    lng: 139.7125,
+  });
   assert.equal(nextCityFor("kyoto").slug, "osaka");
   assert.equal(nextCityFor("osaka").slug, "tokyo");
   assert.equal(nextCityFor("tokyo").slug, "kyoto");

@@ -39,7 +39,7 @@ export const cityConfigs: CityConfig[] = [
     slug: "tokyo",
     label: "Tokyo",
     themeColor: "#006fd6",
-    mapCenter: { lat: 35.6764225, lng: 139.650027 },
+    mapCenter: { lat: 35.6651, lng: 139.7125 },
     mapIdEnvKey: "PUBLIC_GOOGLE_MAPS_MAP_ID_TOKYO",
     sourceFile: "tokyo-sources.json",
     permanentFile: "tokyo-permanent.json",

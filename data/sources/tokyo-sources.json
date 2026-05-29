@@ -1,5 +1,817 @@
 {
   "version": 1,
-  "description": "Tokyo cultural source batch. Starts empty so city routing, sync, crawl, and deploy plumbing can be verified before source-specific crawls are added.",
-  "sources": []
+  "description": "Tokyo cultural source batch seeded from purple art markers in the shared Google My Maps export. First active batch keeps to Tokyo museums and galleries with official crawl-ready exhibition or event pages; cinemas, restaurants, outside-Tokyo markers, and venue-only/permanent attractions stay out until classified.",
+  "sources": [
+    {
+      "slug": "21-21-design-sight",
+      "name": "21_21 DESIGN SIGHT",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "21_21 DESIGN SIGHT, Tokyo",
+      "lat": 35.6675382,
+      "lng": 139.7303015,
+      "base_url": "https://www.2121designsight.jp/en/program/",
+      "start_urls": ["https://www.2121designsight.jp/en/program/"],
+      "allowed_domains": ["www.2121designsight.jp", "2121designsight.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/program/", "/program/"],
+      "notes": "Purple art marker from Google My Maps. Temporarily suppress detail crawling until a source-specific extractor can read the Title/Date rows reliably.",
+      "is_active": true,
+      "source_categories": ["design", "museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.2121designsight.jp/program/"],
+          "event_page_patterns": ["/program/"]
+        },
+        "en": {
+          "start_urls": ["https://www.2121designsight.jp/en/program/"],
+          "event_page_patterns": ["/en/program/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8,
+        "skip_patterns": ["/en/program/"]
+      }
+    },
+    {
+      "slug": "artizon-museum",
+      "name": "Artizon Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Artizon Museum, Tokyo",
+      "lat": 35.6788414,
+      "lng": 139.7716322,
+      "base_url": "https://www.artizon.museum/en/exhibition/",
+      "start_urls": ["https://www.artizon.museum/en/exhibition/"],
+      "allowed_domains": ["www.artizon.museum", "artizon.museum"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/detail/", "/exhibition/detail/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.artizon.museum/exhibition/"],
+          "event_page_patterns": ["/exhibition/detail/"]
+        },
+        "en": {
+          "start_urls": ["https://www.artizon.museum/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/detail/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/exhibition/past", "/exhibition/schedule"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "atelier-muji-ginza",
+      "name": "ATELIER MUJI GINZA",
+      "source_type": "gallery",
+      "language": "ja",
+      "directions_query": "ATELIER MUJI GINZA, Tokyo",
+      "lat": 35.6730811,
+      "lng": 139.7653516,
+      "base_url": "https://atelier.muji.com/jp/exhibition/",
+      "start_urls": ["https://atelier.muji.com/jp/exhibition/"],
+      "allowed_domains": ["atelier.muji.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/jp/exhibition/"],
+      "notes": "Purple art marker from Google My Maps. Japanese-first source; direct HTTP can rate-limit.",
+      "is_active": false,
+      "source_categories": ["design", "gallery", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "ginza-graphic-gallery",
+      "name": "ginza graphic gallery",
+      "source_type": "gallery",
+      "language": "ja",
+      "directions_query": "ginza graphic gallery, Tokyo",
+      "lat": 35.6697019,
+      "lng": 139.7624842,
+      "base_url": "https://www.dnpfcp.jp/gallery/ggg/",
+      "start_urls": ["https://www.dnpfcp.jp/gallery/ggg/"],
+      "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/gallery/ggg/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["design", "gallery", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "mori-art-museum",
+      "name": "Mori Art Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Mori Art Museum, Tokyo",
+      "lat": 35.6604621,
+      "lng": 139.7292785,
+      "base_url": "https://www.mori.art.museum/en/exhibitions/",
+      "start_urls": ["https://www.mori.art.museum/en/exhibitions/"],
+      "allowed_domains": ["www.mori.art.museum", "mori.art.museum"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/jp/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.mori.art.museum/jp/exhibitions/"],
+          "event_page_patterns": ["/jp/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.mori.art.museum/en/exhibitions/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/exhibitions/index.html", "/exhibitions/past/", "/exhibitions/tours/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "museum-of-contemporary-art-tokyo",
+      "name": "Museum of Contemporary Art Tokyo",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Museum of Contemporary Art Tokyo, Tokyo",
+      "lat": 35.6797467,
+      "lng": 139.8081921,
+      "base_url": "https://www.mot-art-museum.jp/en/exhibitions/",
+      "start_urls": ["https://www.mot-art-museum.jp/en/exhibitions/"],
+      "allowed_domains": ["www.mot-art-museum.jp", "mot-art-museum.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps. Listing cards are client-rendered; force render and use card selectors to avoid template links.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "selectors": {
+        "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.mot-art-museum.jp/exhibitions/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.mot-art-museum.jp/en/exhibitions/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "render_mode": "always",
+        "skip_patterns": ["%7B%7B", "{{=", "/exhibitions/past/", ".pdf"],
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "national-art-center-tokyo",
+      "name": "The National Art Center Tokyo",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "The National Art Center Tokyo, Tokyo",
+      "lat": 35.665289,
+      "lng": 139.726374,
+      "base_url": "https://www.nact.jp/english/exhibition_and_event/",
+      "start_urls": [
+        "https://www.nact.jp/english/exhibition_and_event/",
+        "https://www.nact.jp/english/exhibition_special/"
+      ],
+      "allowed_domains": ["www.nact.jp", "nact.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": [
+        "/english/exhibition_special/",
+        "/english/exhibition_public/",
+        "/english/event/"
+      ],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.nact.jp/exhibition_and_event/"],
+          "event_page_patterns": ["/exhibition_special/", "/exhibition_public/", "/event/"]
+        },
+        "en": {
+          "start_urls": ["https://www.nact.jp/english/exhibition_and_event/"],
+          "event_page_patterns": [
+            "/english/exhibition_special/",
+            "/english/exhibition_public/",
+            "/english/event/"
+          ]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 12
+      }
+    },
+    {
+      "slug": "national-museum-of-modern-art-tokyo",
+      "name": "The National Museum of Modern Art, Tokyo",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "The National Museum of Modern Art, Tokyo",
+      "lat": 35.6905432,
+      "lng": 139.7546932,
+      "base_url": "https://www.momat.go.jp/en/exhibitions",
+      "start_urls": ["https://www.momat.go.jp/en/exhibitions"],
+      "allowed_domains": ["www.momat.go.jp", "momat.go.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.momat.go.jp/exhibitions"],
+          "event_page_patterns": ["/exhibitions"]
+        },
+        "en": {
+          "start_urls": ["https://www.momat.go.jp/en/exhibitions"],
+          "event_page_patterns": ["/en/exhibitions"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "tokyo-metropolitan-art-museum",
+      "name": "Tokyo Metropolitan Art Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Tokyo Metropolitan Art Museum, Tokyo",
+      "lat": 35.7172113,
+      "lng": 139.7729387,
+      "base_url": "https://www.tobikan.jp/en/exhibition/",
+      "start_urls": ["https://www.tobikan.jp/en/exhibition/"],
+      "allowed_domains": ["www.tobikan.jp", "tobikan.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.tobikan.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://www.tobikan.jp/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 12
+      }
+    },
+    {
+      "slug": "tokyo-opera-city-art-gallery",
+      "name": "Tokyo Opera City Art Gallery",
+      "source_type": "gallery",
+      "language": "ja",
+      "directions_query": "Tokyo Opera City Art Gallery, Tokyo",
+      "lat": 35.6824478,
+      "lng": 139.6873281,
+      "base_url": "https://www.operacity.jp/ag/exh/current_exhibitions/",
+      "start_urls": [
+        "https://www.operacity.jp/ag/exh/current_exhibitions/",
+        "https://www.operacity.jp/ag/exh/upcoming_exhibitions/"
+      ],
+      "allowed_domains": ["www.operacity.jp", "operacity.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/ag/exh/"],
+      "notes": "Purple art marker from Google My Maps. Japanese-first source.",
+      "is_active": false,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "tokyo-photographic-art-museum",
+      "name": "Tokyo Photographic Art Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Tokyo Photographic Art Museum, Tokyo",
+      "lat": 35.6416411,
+      "lng": 139.7132893,
+      "base_url": "https://topmuseum.jp/e/contents/exhibition/",
+      "start_urls": ["https://topmuseum.jp/e/contents/exhibition/"],
+      "allowed_domains": ["topmuseum.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/e/contents/exhibition/", "/contents/exhibition/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["photography", "museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://topmuseum.jp/contents/exhibition/"],
+          "event_page_patterns": ["/contents/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://topmuseum.jp/e/contents/exhibition/"],
+          "event_page_patterns": ["/e/contents/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "sumida-hokusai-museum",
+      "name": "The Sumida Hokusai Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "The Sumida Hokusai Museum, Tokyo",
+      "lat": 35.6963607,
+      "lng": 139.8005148,
+      "base_url": "https://hokusai-museum.jp/modules/Exhibition/exhibitions?lang=en",
+      "start_urls": ["https://hokusai-museum.jp/modules/Exhibition/exhibitions?lang=en"],
+      "allowed_domains": ["hokusai-museum.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/modules/Exhibition/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://hokusai-museum.jp/modules/Exhibition/exhibitions"],
+          "event_page_patterns": ["/modules/Exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://hokusai-museum.jp/modules/Exhibition/exhibitions?lang=en"],
+          "event_page_patterns": ["/modules/Exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "yayoi-kusama-museum",
+      "name": "Yayoi Kusama Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Yayoi Kusama Museum, Tokyo",
+      "lat": 35.7031959,
+      "lng": 139.7264918,
+      "base_url": "https://yayoikusamamuseum.jp/en/exhibition/current/",
+      "start_urls": ["https://yayoikusamamuseum.jp/en/exhibition/current/"],
+      "allowed_domains": ["yayoikusamamuseum.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://yayoikusamamuseum.jp/exhibition/current/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://yayoikusamamuseum.jp/en/exhibition/current/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "scai-the-bathhouse",
+      "name": "SCAI The Bathhouse",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "SCAI The Bathhouse, Tokyo",
+      "lat": 35.7218447,
+      "lng": 139.7700608,
+      "base_url": "https://www.scaithebathhouse.com/en/",
+      "start_urls": ["https://www.scaithebathhouse.com/en/"],
+      "allowed_domains": ["www.scaithebathhouse.com", "scaithebathhouse.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps. Homepage links current exhibition detail pages.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.scaithebathhouse.com/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.scaithebathhouse.com/en/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/news/", "/artists/", "/publications/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "ota-fine-arts",
+      "name": "OTA FINE ARTS",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "OTA FINE ARTS, Tokyo",
+      "lat": 35.6618246,
+      "lng": 139.73157,
+      "base_url": "https://www.otafinearts.com/exhibitions/",
+      "start_urls": ["https://www.otafinearts.com/exhibitions/"],
+      "allowed_domains": ["www.otafinearts.com", "otafinearts.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps. Multi-location gallery; prefer Tokyo venue text when present.",
+      "is_active": false,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["en"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "take-ninagawa",
+      "name": "Take Ninagawa",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "Take Ninagawa, Tokyo",
+      "lat": 35.6576415,
+      "lng": 139.7402423,
+      "base_url": "https://www.takeninagawa.com/exhibitions/",
+      "start_urls": ["https://www.takeninagawa.com/exhibitions/"],
+      "allowed_domains": ["www.takeninagawa.com", "takeninagawa.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["en"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "taro-okamoto-memorial-museum",
+      "name": "Taro Okamoto Memorial Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Taro Okamoto Memorial Museum, Tokyo",
+      "lat": 35.661308,
+      "lng": 139.715583,
+      "base_url": "https://taro-okamoto.or.jp/en/exhibition/",
+      "start_urls": ["https://taro-okamoto.or.jp/en/exhibition/"],
+      "allowed_domains": ["taro-okamoto.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://taro-okamoto.or.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://taro-okamoto.or.jp/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "what-museum",
+      "name": "WHAT MUSEUM",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "WHAT MUSEUM, Tokyo",
+      "lat": 35.6207667,
+      "lng": 139.7486878,
+      "base_url": "https://what.warehouseofart.org/exhibitions/",
+      "start_urls": ["https://what.warehouseofart.org/exhibitions/"],
+      "allowed_domains": ["what.warehouseofart.org"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["ja", "en"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "university-art-museum-tokyo-geidai",
+      "name": "The University Art Museum, Tokyo University of the Arts",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "The University Art Museum, Tokyo University of the Arts, Tokyo",
+      "lat": 35.7192079,
+      "lng": 139.7718863,
+      "base_url": "https://museum.geidai.ac.jp/en/exhibit/",
+      "start_urls": ["https://museum.geidai.ac.jp/en/exhibit/"],
+      "allowed_domains": ["museum.geidai.ac.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibit/", "/exhibit/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://museum.geidai.ac.jp/exhibit/"],
+          "event_page_patterns": ["/exhibit/"]
+        },
+        "en": {
+          "start_urls": ["https://museum.geidai.ac.jp/en/exhibit/"],
+          "event_page_patterns": ["/en/exhibit/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "setagaya-art-museum",
+      "name": "Setagaya Art Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Setagaya Art Museum, Tokyo",
+      "lat": 35.6314881,
+      "lng": 139.6219859,
+      "base_url": "https://www.setagayaartmuseum.or.jp/en/exhibition/",
+      "start_urls": ["https://www.setagayaartmuseum.or.jp/en/exhibition/"],
+      "allowed_domains": ["www.setagayaartmuseum.or.jp", "setagayaartmuseum.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.setagayaartmuseum.or.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://www.setagayaartmuseum.or.jp/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "yamatane-museum-of-art",
+      "name": "Yamatane Museum of Art",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Yamatane Museum of Art, Tokyo",
+      "lat": 35.6533454,
+      "lng": 139.713797,
+      "base_url": "https://www.yamatane-museum.jp/en/exhibitions/",
+      "start_urls": [
+        "https://www.yamatane-museum.jp/en/exhibitions/",
+        "https://www.yamatane-museum.jp/en/exhibitions/schedule.html"
+      ],
+      "allowed_domains": ["www.yamatane-museum.jp", "yamatane-museum.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exh/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.yamatane-museum.jp/exh/"],
+          "event_page_patterns": ["/exh/"]
+        },
+        "en": {
+          "start_urls": [
+            "https://www.yamatane-museum.jp/en/exhibitions/",
+            "https://www.yamatane-museum.jp/en/exhibitions/schedule.html"
+          ],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "japan-folk-crafts-museum",
+      "name": "Japan Folk Crafts Museum",
+      "source_type": "museum",
+      "language": "en",
+      "directions_query": "Japan Folk Crafts Museum, Tokyo",
+      "lat": 35.660829,
+      "lng": 139.6792134,
+      "base_url": "https://mingeikan.or.jp/exhibition/special/?lang=en",
+      "start_urls": ["https://mingeikan.or.jp/exhibition/special/?lang=en"],
+      "allowed_domains": ["mingeikan.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["museum", "craft", "mingei", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://mingeikan.or.jp/exhibition/special/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://mingeikan.or.jp/exhibition/special/?lang=en"],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "perrotin-tokyo",
+      "name": "Perrotin Tokyo",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "Perrotin Tokyo, Tokyo",
+      "lat": 35.6619792,
+      "lng": 139.7314636,
+      "base_url": "https://www.perrotin.com/en/agenda",
+      "start_urls": ["https://www.perrotin.com/en/agenda"],
+      "allowed_domains": ["www.perrotin.com", "perrotin.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps. Multi-location gallery; prefer Tokyo venue text when present.",
+      "is_active": false,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["en"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/artists/", "/news/", "/viewing-room/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "nanzuka",
+      "name": "NANZUKA",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "NANZUKA, Tokyo",
+      "lat": 35.6721013,
+      "lng": 139.7100589,
+      "base_url": "https://nanzuka.com/en/exhibitions",
+      "start_urls": ["https://nanzuka.com/en/exhibitions"],
+      "allowed_domains": ["nanzuka.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions", "/ja/exhibitions"],
+      "notes": "Purple art markers from Google My Maps. One source covers NANZUKA Tokyo exhibition pages and known Tokyo map venues.",
+      "is_active": false,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://nanzuka.com/ja/exhibitions"],
+          "event_page_patterns": ["/ja/exhibitions"]
+        },
+        "en": {
+          "start_urls": ["https://nanzuka.com/en/exhibitions"],
+          "event_page_patterns": ["/en/exhibitions"]
+        }
+      },
+      "venue_locations": [
+        {
+          "name": "NANZUKA",
+          "match": ["NANZUKA", "Nanzuka"],
+          "directions_query": "NANZUKA, Jingumae, Tokyo",
+          "lat": 35.6721013,
+          "lng": 139.7100589
+        },
+        {
+          "name": "NANZUKA 2G",
+          "match": ["NANZUKA 2G", "2G"],
+          "directions_query": "NANZUKA 2G, Shibuya, Tokyo",
+          "lat": 35.662117,
+          "lng": 139.698939
+        }
+      ],
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "maho-kubota-gallery",
+      "name": "MAHO KUBOTA GALLERY",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "MAHO KUBOTA GALLERY, Tokyo",
+      "lat": 35.672776,
+      "lng": 139.71319,
+      "base_url": "https://www.mahokubota.com/en/exhibitions/",
+      "start_urls": ["https://www.mahokubota.com/en/exhibitions/"],
+      "allowed_domains": ["www.mahokubota.com", "mahokubota.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Purple art marker from Google My Maps.",
+      "is_active": false,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.mahokubota.com/exhibitions/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.mahokubota.com/en/exhibitions/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "lurf-museum",
+      "name": "Lurf MUSEUM",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "Lurf MUSEUM, Tokyo",
+      "lat": 35.6479401,
+      "lng": 139.7014501,
+      "base_url": "https://lurfgallery.com/en/exhibitions",
+      "start_urls": ["https://lurfgallery.com/en/exhibitions"],
+      "allowed_domains": ["lurfgallery.com", "shop.lurfgallery.com", "lurfmuseum.art"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
+      "notes": "Purple art marker from Google My Maps. Former lurfmuseum.art route redirects; current official exhibition index is lurfgallery.com.",
+      "is_active": false,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://lurfgallery.com/exhibitions"],
+          "event_page_patterns": ["/exhibitions"]
+        },
+        "en": {
+          "start_urls": ["https://lurfgallery.com/en/exhibitions"],
+          "event_page_patterns": ["/en/exhibitions"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    }
+  ]
 }
