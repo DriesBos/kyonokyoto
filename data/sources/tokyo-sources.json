@@ -51,6 +51,9 @@
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "images": "img.protect"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.artizon.museum/exhibition/"],
@@ -134,6 +137,9 @@
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "images": "meta[property=\"og:image\"]"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.mori.art.museum/jp/exhibitions/"],
@@ -167,7 +173,8 @@
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "selectors": {
-        "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper"
+        "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper",
+        "images": "img[src*=\"/en/exhibitions/exhibitions/images/\"]"
       },
       "locales": {
         "ja": {
