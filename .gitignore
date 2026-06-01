@@ -46,7 +46,6 @@ pnpm-debug.log*
 
 # Editors / IDEs
 .idea/
-.vscode/settings.json
 .vscode/tasks.json
 
 # Local build and cache artifacts
