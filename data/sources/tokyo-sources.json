@@ -151,7 +151,7 @@
     },
     {
       "slug": "museum-of-contemporary-art-tokyo",
-      "name": "Museum of Contemporary Art Tokyo",
+      "name": "Museum of Contemporary Art",
       "source_type": "museum",
       "language": "en",
       "directions_query": "Museum of Contemporary Art Tokyo, Tokyo",
@@ -187,7 +187,7 @@
     },
     {
       "slug": "national-art-center-tokyo",
-      "name": "The National Art Center Tokyo",
+      "name": "The National Art Center",
       "source_type": "museum",
       "language": "en",
       "directions_query": "The National Art Center Tokyo, Tokyo",
@@ -229,7 +229,7 @@
     },
     {
       "slug": "national-museum-of-modern-art-tokyo",
-      "name": "The National Museum of Modern Art, Tokyo",
+      "name": "The National Museum of Modern Art",
       "source_type": "museum",
       "language": "en",
       "directions_query": "The National Museum of Modern Art, Tokyo",
@@ -260,7 +260,7 @@
     },
     {
       "slug": "tokyo-metropolitan-art-museum",
-      "name": "Tokyo Metropolitan Art Museum",
+      "name": "Metropolitan Art Museum",
       "source_type": "museum",
       "language": "en",
       "directions_query": "Tokyo Metropolitan Art Museum, Tokyo",
@@ -291,7 +291,7 @@
     },
     {
       "slug": "tokyo-opera-city-art-gallery",
-      "name": "Tokyo Opera City Art Gallery",
+      "name": "Opera City Art Gallery",
       "source_type": "gallery",
       "language": "ja",
       "directions_query": "Tokyo Opera City Art Gallery, Tokyo",
@@ -319,7 +319,7 @@
     },
     {
       "slug": "tokyo-photographic-art-museum",
-      "name": "Tokyo Photographic Art Museum",
+      "name": "Photographic Art Museum",
       "source_type": "museum",
       "language": "en",
       "directions_query": "Tokyo Photographic Art Museum, Tokyo",
@@ -550,7 +550,7 @@
     },
     {
       "slug": "university-art-museum-tokyo-geidai",
-      "name": "The University Art Museum, Tokyo University of the Arts",
+      "name": "Tokyo University of the Arts",
       "source_type": "museum",
       "language": "en",
       "directions_query": "The University Art Museum, Tokyo University of the Arts, Tokyo",
