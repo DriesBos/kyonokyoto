@@ -1,7 +1,7 @@
 ---
 import Logo from "./Logo.astro";
 import GeneralButton from "./GeneralButton.astro";
-import { cityPathFor, nextCityFor, type AppCity } from "../lib/cities";
+import { cityPathFor, nextCityFor, cityConfigFor, type AppCity } from "../lib/cities";
 import type { AppLocale } from "../lib/i18n";
 import { uiText } from "../lib/i18n";
 
@@ -36,6 +36,7 @@ const homeHref = cityPathFor(city, locale);
 const localePathFor = (targetLocale: AppLocale) => cityPathFor(city, targetLocale);
 const nextLocale: AppLocale = locale === "en" ? "ja" : "en";
 const nextCity = nextCityFor(city);
+const currentCityLabel = cityConfigFor(city)?.label ?? city;
 const languageLabels: Record<AppLocale, string> = {
   en: "eng",
   ja: "jp",
@@ -85,7 +86,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         <GeneralButton
           verticalPadding="full"
           href={cityPathFor(nextCity.slug, locale)}
-          label={nextCity.label}
+          label={currentCityLabel}
           aria-label={`Switch to ${nextCity.label}`}
           data-city-toggle
           data-city-option={nextCity.slug}
