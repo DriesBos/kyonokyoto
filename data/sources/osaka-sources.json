@@ -4,10 +4,10 @@
   "sources": [
     {
       "slug": "abeno-harukas-art-museum",
-      "name": "ABENO HARUKAS Art Museum",
+      "name": "ABENO HARUKAS",
       "names": {
-        "en": "ABENO HARUKAS Art Museum",
-        "ja": "あべのハルカス美術館"
+        "en": "ABENO HARUKAS",
+        "ja": "ABENO HARUKAS"
       },
       "source_type": "museum",
       "language": "ja",
@@ -39,10 +39,10 @@
     },
     {
       "slug": "koji-kinutani-tenku-art-museum",
-      "name": "Koji Kinutani Tenku Art Museum",
+      "name": "Koji Kinutani Tenku",
       "names": {
-        "en": "Koji Kinutani Tenku Art Museum",
-        "ja": "絹谷幸二 天空美術館"
+        "en": "Koji Kinutani Tenku",
+        "ja": "Koji Kinutani Tenku"
       },
       "source_type": "museum",
       "language": "en",
@@ -128,10 +128,10 @@
     },
     {
       "slug": "nakanoshima-museum-of-art-osaka",
-      "name": "Nakanoshima Museum of Art, Osaka",
+      "name": "Nakanoshima Museum of Art",
       "names": {
-        "en": "Nakanoshima Museum of Art, Osaka",
-        "ja": "大阪中之島美術館"
+        "en": "Nakanoshima Museum of Art",
+        "ja": "Nakanoshima Museum of Art"
       },
       "source_type": "museum",
       "language": "en",
@@ -212,10 +212,10 @@
     },
     {
       "slug": "national-museum-of-art-osaka",
-      "name": "The National Museum of Art, Osaka",
+      "name": "The National Museum of Art",
       "names": {
-        "en": "The National Museum of Art, Osaka",
-        "ja": "国立国際美術館"
+        "en": "The National Museum of Art",
+        "ja": "The National Museum of Art"
       },
       "source_type": "museum",
       "language": "en",
@@ -293,8 +293,8 @@
       "slug": "congres-square-grand-green-osaka",
       "name": "Congres Square Grand Green Osaka",
       "names": {
-        "en": "Congres Square Grand Green Osaka",
-        "ja": "コングレスクエア グラングリーン大阪"
+        "en": "Congres Square",
+        "ja": "Congres Square"
       },
       "source_type": "venue",
       "language": "ja",
@@ -333,8 +333,8 @@
       "slug": "nakanoshima-kosetsu-museum",
       "name": "Nakanoshima Kosetsu Museum of Art",
       "names": {
-        "en": "Nakanoshima Kosetsu Museum of Art",
-        "ja": "中之島香雪美術館"
+        "en": "Nakanoshima Kosetsu",
+        "ja": "Nakanoshima Kosetsu"
       },
       "source_type": "museum",
       "language": "en",
