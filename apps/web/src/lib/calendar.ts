@@ -190,17 +190,14 @@ const validCoordinatePair = (lat: unknown, lng: unknown) => {
 };
 
 export const mapsUrl = (event: CalendarEvent) => {
-  const coordinates = validCoordinatePair(event.lat, event.lng);
-  if (coordinates)
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinates)}`;
-
-  const query =
+  const namedQuery =
     event.directions_query ??
-    event.address_text ??
     event.venue_name ??
+    event.address_text ??
     event.institution_name;
-  if (/^https?:\/\//i.test(query)) return query;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  if (/^https?:\/\//i.test(namedQuery)) return namedQuery;
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(namedQuery)}`;
 };
 
 export const addDays = (value: string, days: number) => {

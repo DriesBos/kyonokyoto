@@ -7,7 +7,7 @@
       "name": "Kyoto Art Center",
       "names": {
         "en": "Kyoto Art Center",
-        "ja": "京都芸術センター"
+        "ja": "Kyoto Art Center"
       },
       "source_type": "art-center",
       "language": "ja",
@@ -15,10 +15,7 @@
       "lat": 35.005436,
       "lng": 135.758345,
       "base_url": "https://www.kac.or.jp",
-      "start_urls": [
-        "https://www.kac.or.jp/events/",
-        "https://www.kac.or.jp/en/events/"
-      ],
+      "start_urls": ["https://www.kac.or.jp/events/", "https://www.kac.or.jp/en/events/"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.kac.or.jp/events/"],
@@ -303,15 +300,11 @@
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [
-            "https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/"
-          ],
+          "start_urls": ["https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/"],
           "event_page_patterns": ["/exhibitions/kyoto-yada-cho/"]
         },
         "en": {
-          "start_urls": [
-            "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
-          ],
+          "start_urls": ["https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"],
           "event_page_patterns": ["/en/exhibitions/kyoto-yada-cho/"]
         }
       }
@@ -325,10 +318,7 @@
       "lat": 35.0160636,
       "lng": 135.7862949,
       "base_url": "https://sibasi.jp/events/",
-      "start_urls": [
-        "https://sibasi.jp/category/live/",
-        "https://sibasi.jp/category/exhibitions/"
-      ],
+      "start_urls": ["https://sibasi.jp/category/live/", "https://sibasi.jp/category/exhibitions/"],
       "allowed_domains": ["sibasi.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/category/live/", "/category/exhibitions/"],
@@ -481,9 +471,7 @@
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [
-            "https://www.chushin.co.jp/bijyutu/exhibition/index.html"
-          ],
+          "start_urls": ["https://www.chushin.co.jp/bijyutu/exhibition/index.html"],
           "event_page_patterns": ["/bijyutu/exhibition/index.html"]
         },
         "en": {
@@ -532,9 +520,7 @@
       "lat": 35.0030675,
       "lng": 135.7591268,
       "base_url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2",
-      "start_urls": [
-        "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"
-      ],
+      "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"],
       "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": [
@@ -548,9 +534,7 @@
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [
-            "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"
-          ],
+          "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"],
           "event_page_patterns": [
             "/CGI/gallery/schedule/list.cgi",
             "/CGI/gallery/schedule/detail.cgi",
@@ -558,9 +542,7 @@
           ]
         },
         "en": {
-          "start_urls": [
-            "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"
-          ],
+          "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2"],
           "event_page_patterns": [
             "/CGI/gallery/schedule/list.cgi",
             "/CGI/gallery/schedule/detail.cgi",
@@ -696,10 +678,7 @@
       "lat": 35.0176144,
       "lng": 135.7928201,
       "base_url": "https://sen-oku.or.jp/kyoto/",
-      "start_urls": [
-        "https://www.sen-oku.or.jp/kyoto",
-        "https://sen-oku.or.jp/kyoto"
-      ],
+      "start_urls": ["https://www.sen-oku.or.jp/kyoto", "https://sen-oku.or.jp/kyoto"],
       "allowed_domains": ["www.sen-oku.or.jp", "sen-oku.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program/"],
@@ -709,10 +688,7 @@
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [
-            "https://www.sen-oku.or.jp/kyoto",
-            "https://sen-oku.or.jp/kyoto"
-          ],
+          "start_urls": ["https://www.sen-oku.or.jp/kyoto", "https://sen-oku.or.jp/kyoto"],
           "event_page_patterns": ["/program/"]
         },
         "en": {
@@ -734,10 +710,7 @@
         "https://gallerymorningkyoto.com/",
         "https://gallerymorningkyoto.blogspot.com/"
       ],
-      "allowed_domains": [
-        "gallerymorningkyoto.com",
-        "gallerymorningkyoto.blogspot.com"
-      ],
+      "allowed_domains": ["gallerymorningkyoto.com", "gallerymorningkyoto.blogspot.com"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/20"],
       "notes": "Homepage cards point to Blogspot post URLs like `/2026/04/...html`. Allow the Blogspot domain and prefer dated post URLs over archive pages.",
@@ -831,9 +804,7 @@
       "lat": 35.0007069,
       "lng": 135.7568866,
       "base_url": "https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu",
-      "start_urls": [
-        "https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"
-      ],
+      "start_urls": ["https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"],
       "allowed_domains": ["kyoto.theterminal.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/event_type/exhibition/"],
@@ -844,9 +815,7 @@
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": [
-            "https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"
-          ],
+          "start_urls": ["https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"],
           "event_page_patterns": ["/event_type/exhibition/"]
         },
         "en": {
@@ -864,10 +833,7 @@
       "lat": 35.0059464,
       "lng": 135.7625443,
       "base_url": "https://artro.jp/exhibition/",
-      "start_urls": [
-        "https://artro.jp/exhibition/",
-        "https://artro.jp/exhibition/?state=before"
-      ],
+      "start_urls": ["https://artro.jp/exhibition/", "https://artro.jp/exhibition/?state=before"],
       "allowed_domains": ["artro.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
@@ -1107,9 +1073,7 @@
       "lat": 35.0255428,
       "lng": 135.753455,
       "base_url": "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html",
-      "start_urls": [
-        "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"
-      ],
+      "start_urls": ["https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"],
       "allowed_domains": ["www.raku-yaki.or.jp", "raku-yaki.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"],
@@ -1124,13 +1088,8 @@
           "event_page_patterns": ["/museum/exhibition/"]
         },
         "en": {
-          "start_urls": [
-            "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"
-          ],
-          "event_page_patterns": [
-            "/e/museum/exhibition/",
-            "/museum/exhibition/"
-          ]
+          "start_urls": ["https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"],
+          "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"]
         }
       }
     },
@@ -1354,10 +1313,7 @@
         "https://www.asahigroup-oyamazaki.com/english/exhibition/",
         "https://www.asahigroup-oyamazaki.com/exhibition/"
       ],
-      "allowed_domains": [
-        "www.asahigroup-oyamazaki.com",
-        "asahigroup-oyamazaki.com"
-      ],
+      "allowed_domains": ["www.asahigroup-oyamazaki.com", "asahigroup-oyamazaki.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/english/exhibition/", "/exhibition/"],
       "notes": "English exhibition listing for the Oyamazaki Villa Museum, just outside Kyoto.",
@@ -1382,9 +1338,7 @@
           "event_page_patterns": ["/exhibition/"]
         },
         "en": {
-          "start_urls": [
-            "https://www.asahigroup-oyamazaki.com/english/exhibition/"
-          ],
+          "start_urls": ["https://www.asahigroup-oyamazaki.com/english/exhibition/"],
           "event_page_patterns": ["/english/exhibition/"]
         }
       }
