@@ -1,33 +1,27 @@
-import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const supportedCities = new Set(["kyoto", "osaka", "tokyo"]);
-const supportedLocales = new Set(["en", "ja"]);
-const supportedRenderModes = new Set(["auto", "always", "never"]);
-const selectorKeys = new Set([
-  "listing_links",
-  "title",
-  "description",
-  "date",
-  "images",
-]);
+const supportedCities = new Set(['kyoto', 'osaka', 'tokyo']);
+const supportedLocales = new Set(['en', 'ja']);
+const supportedRenderModes = new Set(['auto', 'always', 'never']);
+const selectorKeys = new Set(['listing_links', 'title', 'description', 'date', 'images']);
 
 function normalizeLocale(value) {
-  if (typeof value !== "string") return null;
+  if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
-  if (normalized === "jp") return "ja";
+  if (normalized === 'jp') return 'ja';
   return supportedLocales.has(normalized) ? normalized : null;
 }
 
 export function normalizeCity(value) {
-  if (typeof value !== "string") return null;
+  if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
   return supportedCities.has(normalized) ? normalized : null;
 }
 
-export function sourcePathForCity(city = "kyoto") {
+export function sourcePathForCity(city = 'kyoto') {
   const normalizedCity = normalizeCity(city);
   if (!normalizedCity) {
     throw new Error(`Unsupported source city "${city}"`);
@@ -36,13 +30,13 @@ export function sourcePathForCity(city = "kyoto") {
   return resolve(__dirname, `${normalizedCity}-sources.json`);
 }
 
-export function overridePathForCity(city = "kyoto") {
+export function overridePathForCity(city = 'kyoto') {
   const normalizedCity = normalizeCity(city);
   if (!normalizedCity) {
     throw new Error(`Unsupported source city "${city}"`);
   }
 
-  return resolve(__dirname, "overrides", `${normalizedCity}-overrides.json`);
+  return resolve(__dirname, 'overrides', `${normalizedCity}-overrides.json`);
 }
 
 function normalizeLocaleConfig(value = {}) {
@@ -50,12 +44,10 @@ function normalizeLocaleConfig(value = {}) {
 
   for (const [rawLocale, rawConfig] of Object.entries(value ?? {})) {
     const locale = normalizeLocale(rawLocale);
-    if (!locale || !rawConfig || typeof rawConfig !== "object") continue;
+    if (!locale || !rawConfig || typeof rawConfig !== 'object') continue;
 
     locales[locale] = {
-      start_urls: Array.isArray(rawConfig.start_urls)
-        ? rawConfig.start_urls
-        : [],
+      start_urls: Array.isArray(rawConfig.start_urls) ? rawConfig.start_urls : [],
       event_page_patterns: Array.isArray(rawConfig.event_page_patterns)
         ? rawConfig.event_page_patterns
         : [],
@@ -70,7 +62,7 @@ function normalizeLocaleTextMap(value = {}) {
 
   for (const [rawLocale, rawValue] of Object.entries(value ?? {})) {
     const locale = normalizeLocale(rawLocale);
-    if (!locale || typeof rawValue !== "string" || !rawValue.trim()) continue;
+    if (!locale || typeof rawValue !== 'string' || !rawValue.trim()) continue;
 
     textMap[locale] = rawValue.trim();
   }
@@ -85,37 +77,36 @@ function normalizeLocaleList(value = []) {
 }
 
 function normalizeCapabilities(value = {}) {
-  const capabilities = value && typeof value === "object" ? value : {};
+  const capabilities = value && typeof value === 'object' ? value : {};
   const nativeLocales = normalizeLocaleList(capabilities.native_locales);
   const output = {};
 
   if (nativeLocales.length) output.native_locales = nativeLocales;
-  if (typeof capabilities.machine_translate_missing_locales === "boolean") {
-    output.machine_translate_missing_locales =
-      capabilities.machine_translate_missing_locales;
+  if (typeof capabilities.machine_translate_missing_locales === 'boolean') {
+    output.machine_translate_missing_locales = capabilities.machine_translate_missing_locales;
   }
 
   return output;
 }
 
 function normalizeSelectors(value = {}) {
-  if (!value || typeof value !== "object") return {};
+  if (!value || typeof value !== 'object') return {};
 
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key, selector]) => {
         if (!selectorKeys.has(key)) return false;
-        if (typeof selector === "string") return selector.trim();
+        if (typeof selector === 'string') return selector.trim();
         return (
           Array.isArray(selector) &&
-          selector.some((item) => typeof item === "string" && item.trim())
+          selector.some((item) => typeof item === 'string' && item.trim())
         );
       })
       .map(([key, selector]) => [
         key,
         Array.isArray(selector)
           ? selector
-              .filter((item) => typeof item === "string" && item.trim())
+              .filter((item) => typeof item === 'string' && item.trim())
               .map((item) => item.trim())
           : selector.trim(),
       ]),
@@ -125,19 +116,16 @@ function normalizeSelectors(value = {}) {
 function normalizeStringList(value = []) {
   if (!Array.isArray(value)) return [];
 
-  return value
-    .filter((item) => typeof item === "string" && item.trim())
-    .map((item) => item.trim());
+  return value.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim());
 }
 
 function normalizeCrawlHints(value = {}) {
-  const hints = value && typeof value === "object" ? value : {};
+  const hints = value && typeof value === 'object' ? value : {};
   const output = {};
 
-  if (typeof hints.requires_render === "boolean")
-    output.requires_render = hints.requires_render;
+  if (typeof hints.requires_render === 'boolean') output.requires_render = hints.requires_render;
   if (
-    typeof hints.render_mode === "string" &&
+    typeof hints.render_mode === 'string' &&
     supportedRenderModes.has(hints.render_mode.trim().toLowerCase())
   ) {
     output.render_mode = hints.render_mode.trim().toLowerCase();
@@ -158,7 +146,7 @@ function normalizeVenueLocations(value = []) {
 
   return value
     .map((location) => {
-      if (!location || typeof location !== "object") return null;
+      if (!location || typeof location !== 'object') return null;
 
       const lat = Number(location.lat);
       const lng = Number(location.lng);
@@ -168,7 +156,7 @@ function normalizeVenueLocations(value = []) {
         ? location.match
         : [location.match ?? location.name];
       const normalizedMatch = match
-        .filter((item) => typeof item === "string" && item.trim())
+        .filter((item) => typeof item === 'string' && item.trim())
         .map((item) => item.trim());
 
       if (!normalizedMatch.length) return null;
@@ -189,9 +177,7 @@ export function applySourceOverride(source, override = {}) {
   const sourceNames = normalizeLocaleTextMap(source.names);
   const overrideNames = normalizeLocaleTextMap(override.names);
   const sourceVenueLocations = normalizeVenueLocations(source.venue_locations);
-  const overrideVenueLocations = normalizeVenueLocations(
-    override.venue_locations,
-  );
+  const overrideVenueLocations = normalizeVenueLocations(override.venue_locations);
   const sourceCapabilities = normalizeCapabilities(source.capabilities);
   const overrideCapabilities = normalizeCapabilities(override.capabilities);
   const sourceSelectors = normalizeSelectors(source.selectors);
@@ -204,10 +190,8 @@ export function applySourceOverride(source, override = {}) {
     ...override,
     start_urls: override.start_urls ?? source.start_urls ?? [],
     allowed_domains: override.allowed_domains ?? source.allowed_domains ?? [],
-    event_page_patterns:
-      override.event_page_patterns ?? source.event_page_patterns ?? [],
-    source_categories:
-      override.source_categories ?? source.source_categories ?? [],
+    event_page_patterns: override.event_page_patterns ?? source.event_page_patterns ?? [],
+    source_categories: override.source_categories ?? source.source_categories ?? [],
     locales: {
       ...sourceLocales,
       ...overrideLocales,
@@ -228,27 +212,19 @@ export function applySourceOverride(source, override = {}) {
       ...sourceCrawlHints,
       ...overrideCrawlHints,
     },
-    venue_locations: override.venue_locations
-      ? overrideVenueLocations
-      : sourceVenueLocations,
+    venue_locations: override.venue_locations ? overrideVenueLocations : sourceVenueLocations,
   };
 }
 
 export function validateSourceConfig(source) {
   const warnings = [];
-  const slug = source?.slug ?? "unknown-source";
+  const slug = source?.slug ?? 'unknown-source';
 
   if (!source?.name) warnings.push(`${slug}: missing name`);
-  if (
-    !Array.isArray(source?.source_categories) ||
-    !source.source_categories.length
-  ) {
+  if (!Array.isArray(source?.source_categories) || !source.source_categories.length) {
     warnings.push(`${slug}: missing source_categories`);
   }
-  if (
-    !Number.isFinite(Number(source?.lat)) ||
-    !Number.isFinite(Number(source?.lng))
-  ) {
+  if (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng))) {
     warnings.push(`${slug}: missing lat/lng`);
   }
 
@@ -263,27 +239,20 @@ export function validateSourceConfig(source) {
   }
 
   if (!nativeLocales.length && !localeKeys.length) {
-    warnings.push(
-      `${slug}: no locale start_urls or capabilities.native_locales`,
-    );
+    warnings.push(`${slug}: no locale start_urls or capabilities.native_locales`);
   }
 
   return warnings;
 }
 
-export async function loadSourceOverrides({ city = "kyoto" } = {}) {
+export async function loadSourceOverrides({ city = 'kyoto' } = {}) {
   try {
     const overridesPath = overridePathForCity(city);
-    const fileContents = await readFile(overridesPath, "utf8");
+    const fileContents = await readFile(overridesPath, 'utf8');
     const payload = JSON.parse(fileContents);
     return payload.sources ?? {};
   } catch (error) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "ENOENT"
-    ) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       return {};
     }
 
@@ -291,14 +260,14 @@ export async function loadSourceOverrides({ city = "kyoto" } = {}) {
   }
 }
 
-export async function loadSourcesConfig({ city = "kyoto" } = {}) {
+export async function loadSourcesConfig({ city = 'kyoto' } = {}) {
   const normalizedCity = normalizeCity(city);
   if (!normalizedCity) {
     throw new Error(`Unsupported source city "${city}"`);
   }
 
   const sourcesPath = sourcePathForCity(normalizedCity);
-  const fileContents = await readFile(sourcesPath, "utf8");
+  const fileContents = await readFile(sourcesPath, 'utf8');
   const payload = JSON.parse(fileContents);
 
   if (!Array.isArray(payload.sources)) {

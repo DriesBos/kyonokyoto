@@ -1,16 +1,16 @@
 ---
-import GeneralButton from "./GeneralButton.astro";
-import YouTubeEmbed from "./YouTubeEmbed.astro";
-import type { AppLocale } from "../lib/i18n";
-import { uiText } from "../lib/i18n";
-import { calendarDetailsFor, calendarLocationFor } from "../lib/calendar";
+import GeneralButton from './GeneralButton.astro';
+import YouTubeEmbed from './YouTubeEmbed.astro';
+import type { AppLocale } from '../lib/i18n';
+import { uiText } from '../lib/i18n';
+import { calendarDetailsFor, calendarLocationFor } from '../lib/calendar';
 
 type EventRow = {
   id: string;
   title: string;
   categories: string[];
   date_text: string;
-  timing?: "ongoing" | "upcoming" | "past" | "permanent";
+  timing?: 'ongoing' | 'upcoming' | 'past' | 'permanent';
   institution_name: string;
   venue_name: string | null;
   address_text: string | null;
@@ -19,11 +19,13 @@ type EventRow = {
   calendar_ends_at: string | null;
   primary_image_url: string | null;
   image_urls: string[] | null;
-  media_embeds?: {
-    type: "youtube";
-    url: string;
-    video_id: string;
-  }[] | null;
+  media_embeds?:
+    | {
+        type: 'youtube';
+        url: string;
+        video_id: string;
+      }[]
+    | null;
   source_url: string;
   description: string | null;
 };
@@ -40,32 +42,44 @@ type Props = {
   beta?: boolean;
 };
 
-const { event, mapSourceSlug, mapLocationId, mapsUrl, googleCalendarUrl, excerpt, hideTopBorder = false, beta = false } = Astro.props;
+const {
+  event,
+  mapSourceSlug,
+  mapLocationId,
+  mapsUrl,
+  googleCalendarUrl,
+  excerpt,
+  hideTopBorder = false,
+  beta = false,
+} = Astro.props;
 const copy = uiText.en;
 
 const normalizeCategory = (value: string) =>
   value
     .toLowerCase()
     .trim()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
 const categorySlugs = event.categories.map(normalizeCategory);
 const maxImagesPerCard = 3;
-const mediaEmbeds = (event.media_embeds ?? []).filter((embed) => embed.type === "youtube" && embed.video_id);
+const mediaEmbeds = (event.media_embeds ?? []).filter(
+  (embed) => embed.type === 'youtube' && embed.video_id,
+);
 const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
-const images = imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
+const images =
+  imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
 const hasMedia = mediaEmbeds.length > 0 || images.length > 0;
 const desktopImageHeightRem = 10;
 const mobileImageHeightRem = 6;
 const desktopImageHeightActiveRem = 20;
 const mobileImageHeightActiveRem = 10;
-const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? "";
-const calendarEndDate = event.calendar_ends_at?.slice(0, 10) ?? "";
+const calendarStartDate = event.calendar_starts_at?.slice(0, 10) ?? '';
+const calendarEndDate = event.calendar_ends_at?.slice(0, 10) ?? '';
 const calendarDetails = calendarDetailsFor(event);
 const calendarLocation = calendarLocationFor(event);
-const showInstitutionMeta = event.timing !== "permanent";
+const showInstitutionMeta = event.timing !== 'permanent';
 ---
 
 <article
@@ -78,26 +92,45 @@ const showInstitutionMeta = event.timing !== "permanent";
   data-map-location-id={mapLocationId ?? undefined}
   data-active="false"
   data-timing={event.timing}
-  data-categories={categorySlugs.join("|")}
-  data-hide-top-border={hideTopBorder ? "" : undefined}
-  data-beta={beta ? "" : undefined}
+  data-categories={categorySlugs.join('|')}
+  data-hide-top-border={hideTopBorder ? '' : undefined}
+  data-beta={beta ? '' : undefined}
   style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem; --event-card-media-row-height-active-desktop: ${desktopImageHeightActiveRem}rem; --event-card-media-row-height-active-mobile: ${mobileImageHeightActiveRem}rem;`}
   role="button"
   tabindex="0"
   aria-pressed="false"
 >
-  <button class="event-card__star" type="button" data-event-star-toggle aria-label="Star event" aria-pressed="false">
+  <button
+    class="event-card__star"
+    type="button"
+    data-event-star-toggle
+    aria-label="Star event"
+    aria-pressed="false"
+  >
     <svg class="event-card__star-icon" viewBox="0 0 25 25" aria-hidden="true">
-      <path class="event-card__star-ring" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
-      <path class="event-card__star-ring event-card__star-ring--second" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
-      <path class="event-card__star-shape" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
+      <path
+        class="event-card__star-ring"
+        d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z"
+      ></path>
+      <path
+        class="event-card__star-ring event-card__star-ring--second"
+        d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z"
+      ></path>
+      <path
+        class="event-card__star-shape"
+        d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z"
+      ></path>
     </svg>
   </button>
   <div class="event-card__body">
     <div class="event-card__body__header">
       <div class="event-card__body__meta">
         <span data-event-field="dateText">{event.date_text}</span>
-        {showInstitutionMeta ? <span data-event-field="institutionName">{event.institution_name}</span> : null}
+        {
+          showInstitutionMeta ? (
+            <span data-event-field="institutionName">{event.institution_name}</span>
+          ) : null
+        }
       </div>
       <div class="event-card__body__title">
         <h2 class="event-card__title" data-event-field="title">{event.title}</h2>
@@ -105,37 +138,42 @@ const showInstitutionMeta = event.timing !== "permanent";
     </div>
 
     <div class="event-card__body__content">
-      <p class="event-card__body__description" data-event-card-fade data-event-field="excerpt">{excerpt}</p>
+      <p class="event-card__body__description" data-event-card-fade data-event-field="excerpt">
+        {excerpt}
+      </p>
       <div class="event-card__body__actions" data-event-card-fade>
-      
-        {calendarStartDate ? (
-          <GeneralButton
-            edge="first"
-            verticalPadding="full"
-            label={copy.apple}
-            icon="calendar"
-            data-apple-calendar-button
-            data-calendar-title={event.title}
-            data-calendar-start={calendarStartDate}
-            data-calendar-end={calendarEndDate}
-            data-calendar-details={calendarDetails}
-            data-calendar-location={calendarLocation}
-          />
-        ) : null}
-        {googleCalendarUrl ? (
-          <GeneralButton
-            edge={calendarStartDate ? undefined : "first"}
-            verticalPadding="full"
-            label={copy.google}
-            icon="calendar"
-            href={googleCalendarUrl}
-            data-event-href="googleCalendarUrl"
-            target="_blank"
-            rel="noreferrer"
-          />
-        ) : null}
+        {
+          calendarStartDate ? (
+            <GeneralButton
+              edge="first"
+              verticalPadding="full"
+              label={copy.apple}
+              icon="calendar"
+              data-apple-calendar-button
+              data-calendar-title={event.title}
+              data-calendar-start={calendarStartDate}
+              data-calendar-end={calendarEndDate}
+              data-calendar-details={calendarDetails}
+              data-calendar-location={calendarLocation}
+            />
+          ) : null
+        }
+        {
+          googleCalendarUrl ? (
+            <GeneralButton
+              edge={calendarStartDate ? undefined : 'first'}
+              verticalPadding="full"
+              label={copy.google}
+              icon="calendar"
+              href={googleCalendarUrl}
+              data-event-href="googleCalendarUrl"
+              target="_blank"
+              rel="noreferrer"
+            />
+          ) : null
+        }
         <GeneralButton
-          edge={!calendarStartDate && !googleCalendarUrl ? "first" : undefined}
+          edge={!calendarStartDate && !googleCalendarUrl ? 'first' : undefined}
           verticalPadding="full"
           label={copy.directions}
           icon="map"
@@ -156,34 +194,35 @@ const showInstitutionMeta = event.timing !== "permanent";
         />
       </div>
     </div>
-
   </div>
-  {hasMedia ? (
-    <div class="event-card__media">
-      {mediaEmbeds.map((embed) => (
-        <YouTubeEmbed videoId={embed.video_id} title={`${event.title} video`} />
-      ))}
-      {images.map((imageUrl, index) => (
-        <span class="event-card__image-frame">
-          <img
-            class="event-card__image"
-            src={imageUrl}
-            alt={index === 0 ? event.title : ""}
-            data-event-image-alt={index === 0 ? "" : undefined}
-            loading="lazy"
-            decoding="async"
-            aria-hidden={index === 0 ? undefined : "true"}
-          />
-        </span>
-      ))}
-    </div>
-  ) : null}
+  {
+    hasMedia ? (
+      <div class="event-card__media">
+        {mediaEmbeds.map((embed) => (
+          <YouTubeEmbed videoId={embed.video_id} title={`${event.title} video`} />
+        ))}
+        {images.map((imageUrl, index) => (
+          <span class="event-card__image-frame">
+            <img
+              class="event-card__image"
+              src={imageUrl}
+              alt={index === 0 ? event.title : ''}
+              data-event-image-alt={index === 0 ? '' : undefined}
+              loading="lazy"
+              decoding="async"
+              aria-hidden={index === 0 ? undefined : 'true'}
+            />
+          </span>
+        ))}
+      </div>
+    ) : null
+  }
 </article>
 
 <script>
-  import { initAppleCalendar } from "../scripts/appleCalendar";
-  import { initEventCardControls } from "../scripts/eventCardControls";
-  import { initEventStars } from "../scripts/eventStars";
+  import { initAppleCalendar } from '../scripts/appleCalendar';
+  import { initEventCardControls } from '../scripts/eventCardControls';
+  import { initEventStars } from '../scripts/eventStars';
 
   initEventCardControls();
   initEventStars();

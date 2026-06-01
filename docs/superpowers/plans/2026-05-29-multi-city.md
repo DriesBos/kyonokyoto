@@ -13,6 +13,7 @@
 ### Task 1: Shared city registry and data split
 
 **Files:**
+
 - Create: `apps/web/src/lib/cities.ts`
 - Modify: `data/sources/source-config.mjs`
 - Move/create: `data/permanent/kyoto-permanent.json`
@@ -36,6 +37,7 @@
 ### Task 2: City routes, redirects, theme, header, landing, and map config
 
 **Files:**
+
 - Create: `apps/web/src/pages/[city]/[locale]/index.astro`
 - Modify: `apps/web/src/pages/[locale]/index.astro`
 - Modify: `apps/web/src/pages/index.astro`
@@ -61,6 +63,7 @@
 ### Task 3: Database and crawler city scoping
 
 **Files:**
+
 - Modify: `supabase/schema.sql`
 - Modify: `scripts/sync-sources.mjs`
 - Modify: `scripts/seed-sources.mjs`
@@ -80,6 +83,7 @@
 ### Task 4: Ops docs and systemd templates
 
 **Files:**
+
 - Delete: `ops/systemd/kyo-no-kyoto-crawl.service.example`
 - Delete: `ops/systemd/kyo-no-kyoto-crawl.timer.example`
 - Create: `ops/systemd/kyo-no-kyoto-crawl@.service.example`
@@ -100,6 +104,7 @@
 ### Task 5: Verification
 
 **Commands:**
+
 - `node --test apps/web/test/cities.test.mjs apps/web/test/sources.test.mjs apps/web/test/permanentExhibitions.test.mjs`
 - `node --test apps/crawler/test/extractors.test.mjs`
 - `npm --prefix apps/web run build`

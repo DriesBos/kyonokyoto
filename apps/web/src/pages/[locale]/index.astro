@@ -1,17 +1,17 @@
 ---
-import { normalizeLocale } from "../../lib/i18n";
+import { normalizeLocale } from '../../lib/i18n';
 
 export const prerender = false;
 
-const routeLocale = normalizeLocale(Astro.params.locale) ?? "en";
+const routeLocale = normalizeLocale(Astro.params.locale) ?? 'en';
 
 return new Response(null, {
   status: 302,
   headers: {
     Location: `/kyoto/${routeLocale}/`,
-    "Cache-Control": "no-store",
-    "Netlify-CDN-Cache-Control": "no-store",
-    Vary: "Cookie, Accept-Language",
+    'Cache-Control': 'no-store',
+    'Netlify-CDN-Cache-Control': 'no-store',
+    Vary: 'Cookie, Accept-Language',
   },
 });
 ---

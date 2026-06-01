@@ -34,10 +34,7 @@ type MapsWindow = Window &
     google?: {
       maps?: {
         importLibrary?: (libraryName: string) => Promise<unknown>;
-        Map?: new (
-          element: HTMLElement,
-          options: Record<string, unknown>,
-        ) => MapInstance;
+        Map?: new (element: HTMLElement, options: Record<string, unknown>) => MapInstance;
         __ib__?: () => void;
       };
     };
@@ -45,16 +42,13 @@ type MapsWindow = Window &
   };
 
 const mapWindow = window as MapsWindow;
-const mapElements = Array.from(document.querySelectorAll("[data-google-map]"));
+const mapElements = Array.from(document.querySelectorAll('[data-google-map]'));
 const kyotoCenter = { lat: 35.0240977, lng: 135.7621436 };
-const mobileMapQuery = window.matchMedia("(max-width: 768px)");
+const mobileMapQuery = window.matchMedia('(max-width: 768px)');
 const getMapZoom = () => (mobileMapQuery.matches ? 13 : 14);
-const getMapShell = (element: HTMLElement) =>
-  element.closest(".map-canvas") ?? element;
+const getMapShell = (element: HTMLElement) => element.closest('.map-canvas') ?? element;
 const pxFromCssVar = (name: string) => {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(
-    name,
-  );
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name);
   const px = Number.parseFloat(value);
   return Number.isFinite(px) ? px : 0;
 };
@@ -73,28 +67,27 @@ const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
     if (!mapWindow.__kyoGoogleMapsLoader) {
       mapWindow.__kyoGoogleMapsLoader = new Promise((resolve, reject) => {
         if (!mapWindow.google?.maps) {
-          reject(new Error("Google Maps namespace unavailable."));
+          reject(new Error('Google Maps namespace unavailable.'));
           return;
         }
 
         const parameters = new URLSearchParams({
           key: apiKey,
-          v: "weekly",
-          libraries: Array.from(requestedLibraries).join(","),
-          callback: "google.maps.__ib__",
+          v: 'weekly',
+          libraries: Array.from(requestedLibraries).join(','),
+          callback: 'google.maps.__ib__',
         });
 
         if (mapId) {
-          parameters.set("map_ids", mapId);
+          parameters.set('map_ids', mapId);
         }
 
         mapWindow.google.maps.__ib__ = resolve;
 
-        const script = document.createElement("script");
+        const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?${parameters.toString()}`;
         script.async = true;
-        script.onerror = () =>
-          reject(new Error("Google Maps JavaScript API could not load."));
+        script.onerror = () => reject(new Error('Google Maps JavaScript API could not load.'));
         document.head.append(script);
       });
     }
@@ -114,27 +107,26 @@ const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
 };
 
 const showPlaceholder = (element: Element, message?: string) => {
-  const mapShell =
-    element instanceof HTMLElement ? getMapShell(element) : element;
+  const mapShell = element instanceof HTMLElement ? getMapShell(element) : element;
   if (mapShell instanceof HTMLElement) {
-    mapShell.removeAttribute("data-map-loading");
+    mapShell.removeAttribute('data-map-loading');
   }
 
-  const placeholder = mapShell.querySelector("[data-map-placeholder]");
+  const placeholder = mapShell.querySelector('[data-map-placeholder]');
   if (!(placeholder instanceof HTMLElement)) return;
 
   placeholder.hidden = false;
   if (message) {
-    placeholder.querySelector("p")?.replaceChildren(message);
+    placeholder.querySelector('p')?.replaceChildren(message);
   }
 };
 
 const parseSources = (element: HTMLElement): MapSource[] => {
-  const sourceScript = getMapShell(element).querySelector("[data-map-sources]");
+  const sourceScript = getMapShell(element).querySelector('[data-map-sources]');
   if (!(sourceScript instanceof HTMLScriptElement)) return [];
 
   try {
-    const parsed = JSON.parse(sourceScript.textContent ?? "[]");
+    const parsed = JSON.parse(sourceScript.textContent ?? '[]');
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -160,18 +152,18 @@ const parseMapCenter = (element: HTMLElement) => {
 };
 
 const createMarkerContent = (source: MapSource) => {
-  const marker = document.createElement("button");
-  marker.className = "map-marker";
-  marker.type = "button";
+  const marker = document.createElement('button');
+  marker.className = 'map-marker';
+  marker.type = 'button';
   marker.dataset.locationId = source.id;
   marker.dataset.sourceSlug = source.sourceSlug;
-  marker.dataset.categories = source.categories.join("|");
-  marker.setAttribute("aria-label", source.name);
+  marker.dataset.categories = source.categories.join('|');
+  marker.setAttribute('aria-label', source.name);
   marker.innerHTML = `
     <span class="map-marker__dot" aria-hidden="true"></span>
     <span class="map-marker__star" aria-hidden="true">
       <svg viewBox="0 0 25 25" focusable="false">
-        <path fill="var(--color-pink)" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
+        <path fill="var(--color-green)" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
       </svg>
     </span>
     <span class="map-marker__label">${source.name}</span>
@@ -180,9 +172,9 @@ const createMarkerContent = (source: MapSource) => {
 };
 
 const createUserMarkerContent = () => {
-  const marker = document.createElement("div");
-  marker.className = "map-user-marker";
-  marker.setAttribute("aria-hidden", "true");
+  const marker = document.createElement('div');
+  marker.className = 'map-user-marker';
+  marker.setAttribute('aria-hidden', 'true');
   marker.innerHTML = `
     <span class="map-user-marker__ring"></span>
     <span class="map-user-marker__ring map-user-marker__ring--second"></span>
@@ -192,26 +184,20 @@ const createUserMarkerContent = () => {
 };
 
 const getActiveMapCategory = () => {
-  const activeButton = document.querySelector(
-    "[data-category-button][aria-pressed='true']",
-  );
-  return activeButton instanceof HTMLElement
-    ? (activeButton.dataset.category ?? "")
-    : "";
+  const activeButton = document.querySelector("[data-category-button][aria-pressed='true']");
+  return activeButton instanceof HTMLElement ? (activeButton.dataset.category ?? '') : '';
 };
 
 const getActiveMapStarred = () => {
-  const activeButton = document.querySelector(
-    "[data-starred-button][aria-pressed='true']",
-  );
+  const activeButton = document.querySelector("[data-starred-button][aria-pressed='true']");
   return activeButton instanceof HTMLElement;
 };
 
 const initMap = async (element: Element) => {
   if (!(element instanceof HTMLElement)) return;
 
-  const apiKey = element.dataset.apiKey?.trim() ?? "";
-  const mapId = element.dataset.mapId?.trim() ?? "";
+  const apiKey = element.dataset.apiKey?.trim() ?? '';
+  const mapId = element.dataset.mapId?.trim() ?? '';
   const mapCenter = parseMapCenter(element);
   const sources = parseSources(element);
 
@@ -221,64 +207,58 @@ const initMap = async (element: Element) => {
   }
 
   if (sources.length === 0) {
-    showPlaceholder(element, "No map locations available.");
+    showPlaceholder(element, 'No map locations available.');
     return;
   }
 
   try {
     ensureGoogleMapsLoader(apiKey, mapId);
     const [mapsLibrary, markerLibrary, coreLibrary] = await Promise.all([
-      mapWindow.google?.maps?.importLibrary?.("maps"),
-      mapWindow.google?.maps?.importLibrary?.("marker"),
-      mapWindow.google?.maps?.importLibrary?.("core"),
+      mapWindow.google?.maps?.importLibrary?.('maps'),
+      mapWindow.google?.maps?.importLibrary?.('marker'),
+      mapWindow.google?.maps?.importLibrary?.('core'),
     ]);
     const MapConstructor =
       (
         mapsLibrary as {
-          Map?: new (
-            element: HTMLElement,
-            options: Record<string, unknown>,
-          ) => MapInstance;
+          Map?: new (element: HTMLElement, options: Record<string, unknown>) => MapInstance;
         }
       )?.Map ?? mapWindow.google?.maps?.Map;
     const AdvancedMarkerElement = (
       markerLibrary as { AdvancedMarkerElement?: AdvancedMarkerConstructor }
     )?.AdvancedMarkerElement;
-    const ColorScheme = (coreLibrary as { ColorScheme?: { LIGHT?: unknown } })
-      ?.ColorScheme;
+    const ColorScheme = (coreLibrary as { ColorScheme?: { LIGHT?: unknown } })?.ColorScheme;
 
     if (!MapConstructor || !AdvancedMarkerElement) {
-      throw new Error("Google Maps constructors unavailable.");
+      throw new Error('Google Maps constructors unavailable.');
     }
 
     const mapShell = getMapShell(element);
 
-    mapShell
-      .querySelector("[data-map-placeholder]")
-      ?.setAttribute("hidden", "");
+    mapShell.querySelector('[data-map-placeholder]')?.setAttribute('hidden', '');
     if (mapShell instanceof HTMLElement) {
-      mapShell.removeAttribute("data-map-loading");
+      mapShell.removeAttribute('data-map-loading');
     }
 
     const map = new MapConstructor(element, {
       center: mapCenter,
       zoom: getMapZoom(),
       mapId,
-      mapTypeId: "terrain",
+      mapTypeId: 'terrain',
       ...(ColorScheme?.LIGHT ? { colorScheme: ColorScheme.LIGHT } : {}),
       disableDefaultUI: true,
       clickableIcons: false,
-      gestureHandling: "greedy",
+      gestureHandling: 'greedy',
       keyboardShortcuts: true,
     });
-    const findMeButton = mapShell.querySelector("[data-map-find-me]");
-    const findMeStatus = mapShell.querySelector("[data-map-find-me-status]");
+    const findMeButton = mapShell.querySelector('[data-map-find-me]');
+    const findMeStatus = mapShell.querySelector('[data-map-find-me-status]');
     let userWatchId: number | null = null;
     let userMarker: AdvancedMarkerInstance | null = null;
     let userMarkerContent: HTMLElement | null = null;
     let hasCenteredUserLocation = false;
 
-    const setFindMeStatus = (message = "") => {
+    const setFindMeStatus = (message = '') => {
       if (findMeStatus instanceof HTMLElement) {
         findMeStatus.textContent = message;
       }
@@ -286,7 +266,7 @@ const initMap = async (element: Element) => {
 
     const setFindMePressed = (isPressed: boolean) => {
       if (findMeButton instanceof HTMLElement) {
-        findMeButton.setAttribute("aria-pressed", String(isPressed));
+        findMeButton.setAttribute('aria-pressed', String(isPressed));
       }
     };
 
@@ -302,31 +282,26 @@ const initMap = async (element: Element) => {
 
       hasCenteredUserLocation = false;
       setFindMePressed(false);
-      setFindMeStatus("");
+      setFindMeStatus('');
     };
 
     const updateUserMarker = (position: GeolocationPosition) => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
       const nextPosition = { lat, lng };
-      const heading = Number.isFinite(position.coords.heading)
-        ? position.coords.heading
-        : 0;
+      const heading = Number.isFinite(position.coords.heading) ? position.coords.heading : 0;
 
       if (!userMarkerContent) {
         userMarkerContent = createUserMarkerContent();
       }
 
-      userMarkerContent.style.setProperty(
-        "--map-user-heading",
-        `${heading}deg`,
-      );
+      userMarkerContent.style.setProperty('--map-user-heading', `${heading}deg`);
 
       if (!userMarker) {
         userMarker = new AdvancedMarkerElement({
           map,
           position: nextPosition,
-          title: "Your location",
+          title: 'Your location',
           content: userMarkerContent,
         });
         userMarker.zIndex = 2000;
@@ -342,26 +317,26 @@ const initMap = async (element: Element) => {
         hasCenteredUserLocation = true;
       }
 
-      setFindMeStatus("");
+      setFindMeStatus('');
     };
 
     const startUserTracking = () => {
-      if (!("geolocation" in navigator)) {
+      if (!('geolocation' in navigator)) {
         if (findMeButton instanceof HTMLButtonElement) {
           findMeButton.disabled = true;
         }
-        setFindMeStatus("location unavailable");
+        setFindMeStatus('location unavailable');
         return;
       }
 
-      setFindMeStatus("finding location");
+      setFindMeStatus('finding location');
       setFindMePressed(true);
       hasCenteredUserLocation = false;
       userWatchId = navigator.geolocation.watchPosition(
         updateUserMarker,
         () => {
           stopUserTracking();
-          setFindMeStatus("location unavailable");
+          setFindMeStatus('location unavailable');
         },
         {
           enableHighAccuracy: true,
@@ -372,7 +347,7 @@ const initMap = async (element: Element) => {
     };
 
     if (findMeButton instanceof HTMLButtonElement) {
-      findMeButton.addEventListener("click", () => {
+      findMeButton.addEventListener('click', () => {
         if (userWatchId !== null) {
           stopUserTracking();
           return;
@@ -383,29 +358,23 @@ const initMap = async (element: Element) => {
     }
 
     const getFirstVisibleLocationCard = (locationId: string) => {
-      const eventsSection = document.querySelector("[data-events-section]");
+      const eventsSection = document.querySelector('[data-events-section]');
       if (!(eventsSection instanceof HTMLElement)) return null;
 
-      const escapedLocationId = locationId.replace(/["\\]/g, "\\$&");
+      const escapedLocationId = locationId.replace(/["\\]/g, '\\$&');
       const locationCards = Array.from(
-        document.querySelectorAll(
-          `[data-event-card][data-map-location-id="${escapedLocationId}"]`,
-        ),
+        document.querySelectorAll(`[data-event-card][data-map-location-id="${escapedLocationId}"]`),
       );
       const targetCard = locationCards.find((card) => {
         if (!(card instanceof HTMLElement)) return false;
-        return (
-          !card.hidden &&
-          !card.closest("[hidden]") &&
-          card.getClientRects().length > 0
-        );
+        return !card.hidden && !card.closest('[hidden]') && card.getClientRects().length > 0;
       });
 
       return targetCard instanceof HTMLElement ? targetCard : null;
     };
 
     const scrollToLocationEvent = (locationId: string) => {
-      const eventsSection = document.querySelector("[data-events-section]");
+      const eventsSection = document.querySelector('[data-events-section]');
       if (!(eventsSection instanceof HTMLElement)) return;
 
       const targetCard = getFirstVisibleLocationCard(locationId);
@@ -413,55 +382,42 @@ const initMap = async (element: Element) => {
 
       const eventsSectionRect = eventsSection.getBoundingClientRect();
       const cardRect = targetCard.getBoundingClientRect();
-      const mainHeader = eventsSection.querySelector("[data-main-header]");
+      const mainHeader = eventsSection.querySelector('[data-main-header]');
       const headerOffset =
         mainHeader instanceof HTMLElement
           ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
           : 0;
-      const strokeOffset = pxFromCssVar("--stroke-width");
+      const strokeOffset = pxFromCssVar('--stroke-width');
       const scrollPadding = Math.max(0, headerOffset - strokeOffset);
       const nextScrollTop =
-        eventsSection.scrollTop +
-        cardRect.top -
-        eventsSectionRect.top -
-        scrollPadding;
+        eventsSection.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
 
       eventsSection.scrollTo({
         top: Math.max(0, nextScrollTop),
-        behavior: "smooth",
+        behavior: 'smooth',
       });
     };
 
     const waitForCardDeactivation = () =>
       new Promise<void>((resolve) => {
-        const activeCards = document.querySelectorAll(
-          "[data-event-card][data-active='true']",
-        );
+        const activeCards = document.querySelectorAll("[data-event-card][data-active='true']");
 
         if (activeCards.length === 0) {
           resolve();
           return;
         }
 
-        document.addEventListener(
-          "event-card:deactivated-all",
-          () => resolve(),
-          { once: true },
-        );
-        document.dispatchEvent(new CustomEvent("event-card:deactivate-all"));
+        document.addEventListener('event-card:deactivated-all', () => resolve(), { once: true });
+        document.dispatchEvent(new CustomEvent('event-card:deactivate-all'));
       });
 
-    let lastMarkerActivationId = "";
+    let lastMarkerActivationId = '';
     let lastMarkerActivationTime = 0;
-    let markerNavigationLocationId = "";
+    let markerNavigationLocationId = '';
     const activateMarkerLocation = (locationId: string) => {
       const now = performance.now();
 
-      if (
-        lastMarkerActivationId === locationId &&
-        now - lastMarkerActivationTime < 80
-      )
-        return;
+      if (lastMarkerActivationId === locationId && now - lastMarkerActivationTime < 80) return;
 
       lastMarkerActivationId = locationId;
       lastMarkerActivationTime = now;
@@ -470,7 +426,7 @@ const initMap = async (element: Element) => {
       waitForCardDeactivation().then(() => {
         scrollToLocationEvent(locationId);
         highlightLocation(locationId, false);
-        markerNavigationLocationId = "";
+        markerNavigationLocationId = '';
       });
     };
 
@@ -485,44 +441,30 @@ const initMap = async (element: Element) => {
       });
       marker.zIndex = 0;
 
-      content.addEventListener("click", (event) => {
+      content.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
         activateMarkerLocation(source.id);
       });
-      marker.addEventListener?.("gmp-click", () =>
-        activateMarkerLocation(source.id),
-      );
-      marker.addListener?.("click", () => activateMarkerLocation(source.id));
+      marker.addEventListener?.('gmp-click', () => activateMarkerLocation(source.id));
+      marker.addListener?.('click', () => activateMarkerLocation(source.id));
 
       return { marker, source, content };
     });
-    const markerRecordsById = new Map(
-      markerRecords.map((record) => [record.source.id, record]),
-    );
-    let highlightedLocationId = "";
+    const markerRecordsById = new Map(markerRecords.map((record) => [record.source.id, record]));
+    let highlightedLocationId = '';
 
-    const isMapVisible = () =>
-      !element.closest("[hidden]") && element.getClientRects().length > 0;
+    const isMapVisible = () => !element.closest('[hidden]') && element.getClientRects().length > 0;
 
     const syncStarredMarkers = () => {
       const starredLocationIds = new Set(
-        Array.from(
-          document.querySelectorAll("[data-event-card][data-starred='true']"),
-        )
-          .map((card) =>
-            card instanceof HTMLElement
-              ? (card.dataset.mapLocationId ?? "")
-              : "",
-          )
+        Array.from(document.querySelectorAll("[data-event-card][data-starred='true']"))
+          .map((card) => (card instanceof HTMLElement ? (card.dataset.mapLocationId ?? '') : ''))
           .filter(Boolean),
       );
 
       markerRecords.forEach(({ source, content }) => {
-        content.toggleAttribute(
-          "data-starred",
-          starredLocationIds.has(source.id),
-        );
+        content.toggleAttribute('data-starred', starredLocationIds.has(source.id));
       });
     };
 
@@ -530,22 +472,22 @@ const initMap = async (element: Element) => {
       if (!highlightedLocationId) return;
 
       const highlightedRecord = markerRecordsById.get(highlightedLocationId);
-      highlightedRecord?.content.removeAttribute("data-highlighted");
+      highlightedRecord?.content.removeAttribute('data-highlighted');
       if (highlightedRecord?.marker) highlightedRecord.marker.zIndex = 0;
-      highlightedLocationId = "";
+      highlightedLocationId = '';
     };
 
     const highlightLocation = (locationId: string, shouldPan: boolean) => {
       const record = markerRecordsById.get(locationId);
 
-      if (!record || record.content.hasAttribute("data-hidden")) {
+      if (!record || record.content.hasAttribute('data-hidden')) {
         clearHighlight();
         return;
       }
 
       clearHighlight();
       highlightedLocationId = locationId;
-      record.content.toggleAttribute("data-highlighted", true);
+      record.content.toggleAttribute('data-highlighted', true);
       record.marker.zIndex = 1000;
 
       if (shouldPan) {
@@ -556,15 +498,13 @@ const initMap = async (element: Element) => {
     const syncActiveCardHighlight = () => {
       if (!isMapVisible()) return;
 
-      const activeCard = document.querySelector(
-        "[data-event-card][data-active='true']",
-      );
+      const activeCard = document.querySelector("[data-event-card][data-active='true']");
       if (!(activeCard instanceof HTMLElement)) {
         clearHighlight();
         return;
       }
 
-      const locationId = activeCard.dataset.mapLocationId || "";
+      const locationId = activeCard.dataset.mapLocationId || '';
       if (!locationId) {
         clearHighlight();
         return;
@@ -575,57 +515,43 @@ const initMap = async (element: Element) => {
 
     const getVisibleStarredLocationIds = () =>
       new Set(
-        Array.from(
-          document.querySelectorAll("[data-event-card][data-starred='true']"),
-        )
+        Array.from(document.querySelectorAll("[data-event-card][data-starred='true']"))
           .filter((card) => {
             if (!(card instanceof HTMLElement)) return false;
-            return !card.hidden && !card.closest("[hidden]");
+            return !card.hidden && !card.closest('[hidden]');
           })
-          .map((card) =>
-            card instanceof HTMLElement
-              ? (card.dataset.mapLocationId ?? "")
-              : "",
-          )
+          .map((card) => (card instanceof HTMLElement ? (card.dataset.mapLocationId ?? '') : ''))
           .filter(Boolean),
       );
 
     const applyMapFilter = () => {
       const activeCategory = getActiveMapCategory();
       const activeStarred = getActiveMapStarred();
-      const visibleStarredLocationIds = activeStarred
-        ? getVisibleStarredLocationIds()
-        : null;
+      const visibleStarredLocationIds = activeStarred ? getVisibleStarredLocationIds() : null;
 
       markerRecords.forEach(({ marker, source, content }) => {
-        const matchesCategory =
-          !activeCategory || source.categories.includes(activeCategory);
+        const matchesCategory = !activeCategory || source.categories.includes(activeCategory);
         const matchesStarred =
-          !visibleStarredLocationIds ||
-          visibleStarredLocationIds.has(source.id);
+          !visibleStarredLocationIds || visibleStarredLocationIds.has(source.id);
         const matches = matchesCategory && matchesStarred;
         marker.map = matches ? map : null;
-        content.toggleAttribute("data-hidden", !matches);
+        content.toggleAttribute('data-hidden', !matches);
       });
 
       if (highlightedLocationId) {
         const highlightedRecord = markerRecordsById.get(highlightedLocationId);
-        if (
-          !highlightedRecord ||
-          highlightedRecord.content.hasAttribute("data-hidden")
-        ) {
+        if (!highlightedRecord || highlightedRecord.content.hasAttribute('data-hidden')) {
           clearHighlight();
         }
       }
     };
 
-    document.addEventListener("event-card:active-change", (event) => {
+    document.addEventListener('event-card:active-change', (event) => {
       if (!isMapVisible()) return;
       if (!(event instanceof CustomEvent)) return;
 
       const detail = event.detail ?? {};
-      const locationId =
-        typeof detail.locationId === "string" ? detail.locationId : "";
+      const locationId = typeof detail.locationId === 'string' ? detail.locationId : '';
 
       if (!detail.active) {
         if (markerNavigationLocationId) return;
@@ -640,10 +566,10 @@ const initMap = async (element: Element) => {
 
       highlightLocation(locationId, true);
     });
-    document.addEventListener("event-filter:updated", applyMapFilter);
-    document.addEventListener("event-stars:updated", syncStarredMarkers);
-    document.addEventListener("map-layout:updated", syncActiveCardHighlight);
-    mobileMapQuery.addEventListener("change", () => {
+    document.addEventListener('event-filter:updated', applyMapFilter);
+    document.addEventListener('event-stars:updated', syncStarredMarkers);
+    document.addEventListener('map-layout:updated', syncActiveCardHighlight);
+    mobileMapQuery.addEventListener('change', () => {
       if (isMapVisible()) map.setZoom?.(getMapZoom());
     });
     applyMapFilter();
@@ -651,28 +577,28 @@ const initMap = async (element: Element) => {
     syncActiveCardHighlight();
   } catch (error) {
     console.error(error);
-    showPlaceholder(element, "Map failed to load.");
+    showPlaceholder(element, 'Map failed to load.');
   }
 };
 
 const initMapOnce = (element: Element) => {
   if (!(element instanceof HTMLElement)) return;
-  if (element.dataset.mapInitialized === "true") return;
+  if (element.dataset.mapInitialized === 'true') return;
 
-  element.dataset.mapInitialized = "true";
+  element.dataset.mapInitialized = 'true';
   initMap(element);
 };
 
 mapElements.forEach((element) => {
-  if (element.closest("[hidden]")) {
+  if (element.closest('[hidden]')) {
     const initWhenVisible = () => {
-      if (element.closest("[hidden]")) return;
+      if (element.closest('[hidden]')) return;
 
-      document.removeEventListener("map-layout:updated", initWhenVisible);
+      document.removeEventListener('map-layout:updated', initWhenVisible);
       initMapOnce(element);
     };
 
-    document.addEventListener("map-layout:updated", initWhenVisible);
+    document.addEventListener('map-layout:updated', initWhenVisible);
     return;
   }
 

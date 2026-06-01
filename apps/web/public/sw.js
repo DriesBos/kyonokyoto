@@ -1,19 +1,19 @@
-const CACHE_NAME = "kyo-no-kyoto-v3";
+const CACHE_NAME = 'kyo-no-kyoto-v3';
 const APP_SHELL = [
-  "/site.webmanifest",
-  "/favicon.svg",
-  "/favicon-32x32.png",
-  "/favicon-16x16.png",
-  "/favicon.ico",
-  "/apple-touch-icon.png",
-  "/android-chrome-192x192.png",
-  "/android-chrome-512x512.png",
-  "/android-chrome-192x192-maskable.png",
-  "/android-chrome-512x512-maskable.png",
-  "/fonts/GT-Walsheim-Regular.woff2",
+  '/site.webmanifest',
+  '/favicon.svg',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
+  '/android-chrome-192x192-maskable.png',
+  '/android-chrome-512x512-maskable.png',
+  '/fonts/GT-Walsheim-Regular.woff2',
 ];
 
-self.addEventListener("install", (event) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
@@ -23,7 +23,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       const cacheNames = await caches.keys();
@@ -37,10 +37,10 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  if (request.method !== "GET") {
+  if (request.method !== 'GET') {
     return;
   }
 
@@ -50,7 +50,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate") {
+  if (request.mode === 'navigate') {
     event.respondWith(
       (async () => {
         try {
@@ -58,8 +58,8 @@ self.addEventListener("fetch", (event) => {
           if (
             response.ok &&
             !response.redirected &&
-            url.pathname !== "/" &&
-            url.pathname !== "/map"
+            url.pathname !== '/' &&
+            url.pathname !== '/map'
           ) {
             const cache = await caches.open(CACHE_NAME);
             cache.put(request, response.clone());
@@ -67,9 +67,7 @@ self.addEventListener("fetch", (event) => {
           return response;
         } catch {
           return (
-            (await caches.match(request)) ??
-            (await caches.match("/kyoto/en/")) ??
-            Response.error()
+            (await caches.match(request)) ?? (await caches.match('/kyoto/en/')) ?? Response.error()
           );
         }
       })(),
@@ -77,7 +75,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (["style", "script", "font", "image"].includes(request.destination)) {
+  if (['style', 'script', 'font', 'image'].includes(request.destination)) {
     event.respondWith(
       (async () => {
         const cachedResponse = await caches.match(request);

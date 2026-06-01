@@ -1,10 +1,10 @@
 ---
-import Icon from "./Icon.astro";
+import Icon from './Icon.astro';
 
-type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map" | "star";
-type IconDirection = "top" | "right" | "bottom" | "left";
-type Edge = "first" | "last";
-type VerticalPadding = "none" | "full";
+type IconName = 'arrow' | 'arrow-long' | 'calendar' | 'exit' | 'map' | 'star';
+type IconDirection = 'top' | 'right' | 'bottom' | 'left';
+type Edge = 'first' | 'last';
+type VerticalPadding = 'none' | 'full';
 
 type Props = {
   label: string;
@@ -12,7 +12,7 @@ type Props = {
   iconRotation?: IconDirection;
   href?: string;
   pressed?: boolean;
-  type?: "button" | "submit" | "reset";
+  type?: 'button' | 'submit' | 'reset';
   value?: string;
   name?: string;
   class?: string;
@@ -37,14 +37,14 @@ const {
   iconRotation,
   href,
   pressed,
-  type = "button",
+  type = 'button',
   value,
   name,
   class: className,
   showDot = false,
   disabled = false,
   edge,
-  verticalPadding = "none",
+  verticalPadding = 'none',
   target,
   rel,
   dataCategory,
@@ -58,10 +58,10 @@ const {
 } = Astro.props;
 
 const classes = [
-  "general-button",
-  disabled && "general-button--disabled",
+  'general-button',
+  disabled && 'general-button--disabled',
   edge && `general-button--edge-${edge}`,
-  verticalPadding !== "none" && `general-button--vertical-${verticalPadding}`,
+  verticalPadding !== 'none' && `general-button--vertical-${verticalPadding}`,
   className,
 ];
 ---
@@ -74,12 +74,12 @@ const classes = [
       target={target}
       rel={rel}
       data-category={dataCategory}
-      data-category-button={dataCategoryButton ? "" : undefined}
+      data-category-button={dataCategoryButton ? '' : undefined}
       data-timing={dataTiming}
-      data-timing-button={dataTimingButton ? "" : undefined}
-      data-filter-button={dataFilterButton ? "" : undefined}
-      data-starred-button={dataStarredButton ? "" : undefined}
-      aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
+      data-timing-button={dataTimingButton ? '' : undefined}
+      data-filter-button={dataFilterButton ? '' : undefined}
+      data-starred-button={dataStarredButton ? '' : undefined}
+      aria-pressed={typeof pressed === 'boolean' ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
     >
@@ -87,19 +87,19 @@ const classes = [
         <span class="general-button__label">{label}</span>
         {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       </span>
-      {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
+      {showDot ? <span class="general-button__dot" aria-hidden="true" /> : null}
     </a>
   ) : disabled ? (
     <span
       class:list={classes}
       aria-disabled="true"
       data-category={dataCategory}
-      data-category-button={dataCategoryButton ? "" : undefined}
+      data-category-button={dataCategoryButton ? '' : undefined}
       data-timing={dataTiming}
-      data-timing-button={dataTimingButton ? "" : undefined}
-      data-filter-button={dataFilterButton ? "" : undefined}
-      data-starred-button={dataStarredButton ? "" : undefined}
-      aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
+      data-timing-button={dataTimingButton ? '' : undefined}
+      data-filter-button={dataFilterButton ? '' : undefined}
+      data-starred-button={dataStarredButton ? '' : undefined}
+      aria-pressed={typeof pressed === 'boolean' ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
     >
@@ -107,7 +107,7 @@ const classes = [
         <span class="general-button__label">{label}</span>
         {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       </span>
-      {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
+      {showDot ? <span class="general-button__dot" aria-hidden="true" /> : null}
     </span>
   ) : (
     <button
@@ -116,12 +116,12 @@ const classes = [
       value={value}
       name={name}
       data-category={dataCategory}
-      data-category-button={dataCategoryButton ? "" : undefined}
+      data-category-button={dataCategoryButton ? '' : undefined}
       data-timing={dataTiming}
-      data-timing-button={dataTimingButton ? "" : undefined}
-      data-filter-button={dataFilterButton ? "" : undefined}
-      data-starred-button={dataStarredButton ? "" : undefined}
-      aria-pressed={typeof pressed === "boolean" ? String(pressed) : undefined}
+      data-timing-button={dataTimingButton ? '' : undefined}
+      data-filter-button={dataFilterButton ? '' : undefined}
+      data-starred-button={dataStarredButton ? '' : undefined}
+      aria-pressed={typeof pressed === 'boolean' ? String(pressed) : undefined}
       aria-controls={ariaControls}
       {...rest}
     >
@@ -129,13 +129,13 @@ const classes = [
         <span class="general-button__label">{label}</span>
         {icon ? <Icon name={icon} rotation={iconRotation} class="general-button__icon" /> : null}
       </span>
-      {showDot ? <span class="general-button__dot" aria-hidden="true"></span> : null}
+      {showDot ? <span class="general-button__dot" aria-hidden="true" /> : null}
     </button>
   )
 }
 
 <script>
-  import { initGeneralButtonDot } from "../scripts/generalButtonDot";
+  import { initGeneralButtonDot } from '../scripts/generalButtonDot';
 
   initGeneralButtonDot();
 </script>

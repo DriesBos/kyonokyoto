@@ -14,21 +14,16 @@ type Props = {
     lat: number;
     lng: number;
   };
-  mapIdEnvKey?: string;
   sources?: MapSource[];
 };
 
 const {
-  cityLabel = "Kyoto",
+  cityLabel = 'Kyoto',
   mapCenter = { lat: 35.0240977, lng: 135.7621436 },
-  mapIdEnvKey = "PUBLIC_GOOGLE_MAPS_MAP_ID_KYOTO",
   sources = [],
 } = Astro.props;
-const mapsApiKey = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-const mapsMapId =
-  (import.meta.env[mapIdEnvKey] as string | undefined) ??
-  import.meta.env.PUBLIC_GOOGLE_MAPS_MAP_ID ??
-  "";
+const mapsApiKey = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+const mapsMapId = import.meta.env.PUBLIC_GOOGLE_MAPS_MAP_ID ?? '';
 const sourcesJson = JSON.stringify(sources);
 ---
 
@@ -46,12 +41,25 @@ const sourcesJson = JSON.stringify(sources);
     data-map-id={mapsMapId}
     data-map-center-lat={mapCenter.lat}
     data-map-center-lng={mapCenter.lng}
-  ></div>
+  >
+  </div>
   <div class="map-controls" data-map-controls>
-    <button class="map-find-me" type="button" data-map-find-me aria-pressed="false" aria-describedby="map-find-me-status">
+    <button
+      class="map-find-me"
+      type="button"
+      data-map-find-me
+      aria-pressed="false"
+      aria-describedby="map-find-me-status"
+    >
       <span class="map-find-me__label">Find me</span>
     </button>
-    <p class="map-find-me-status" id="map-find-me-status" data-map-find-me-status aria-live="polite"></p>
+    <p
+      class="map-find-me-status"
+      id="map-find-me-status"
+      data-map-find-me-status
+      aria-live="polite"
+    >
+    </p>
   </div>
   <div class="map-placeholder" data-map-placeholder hidden>
     <p>Map unavailable.</p>
@@ -60,7 +68,7 @@ const sourcesJson = JSON.stringify(sources);
 </div>
 
 <script>
-  import "../scripts/googleMap";
+  import '../scripts/googleMap';
 </script>
 
 <style lang="sass">
@@ -151,11 +159,11 @@ const sourcesJson = JSON.stringify(sources);
     padding-top: calc(3px + 1px)
     border: 1px solid white
     border-radius: 1000px
-    background: var(--color-pink)
+    background: var(--color-green)
     color: white
 
   .map-find-me[aria-pressed='true'] .map-find-me__label
-    background: var(--color-pink)
+    background: var(--color-green)
 
   .map-find-me-status
     max-width: 12rem
@@ -202,7 +210,7 @@ const sourcesJson = JSON.stringify(sources);
     box-sizing: border-box
     width: 100%
     height: 100%
-    background: var(--color-pink)
+    background: var(--color-green)
     border: 1px solid white
     border-radius: 999px
     box-shadow: none
@@ -225,7 +233,7 @@ const sourcesJson = JSON.stringify(sources);
     overflow: visible
 
   :global(.map-marker__star path)
-    fill: var(--color-pink)
+    fill: var(--color-green)
     stroke: currentColor
     stroke-width: 1
     stroke-linejoin: round
@@ -246,7 +254,7 @@ const sourcesJson = JSON.stringify(sources);
     padding-top: calc(3px + 1px)
     border: 1px solid white
     border-radius: 1000px
-    background: var(--color-pink)
+    background: var(--color-green)
     color: white
     font-size: 13px
     line-height: 1
@@ -268,7 +276,7 @@ const sourcesJson = JSON.stringify(sources);
     height: 1.25rem
     border: 1px solid white
     border-radius: 999px
-    background: var(--color-pink)
+    background: var(--color-green)
     box-sizing: border-box
 
   :global(.map-user-marker__pointer)
@@ -279,7 +287,7 @@ const sourcesJson = JSON.stringify(sources);
     height: 0
     border-left: 0.28rem solid transparent
     border-right: 0.28rem solid transparent
-    border-bottom: 0.65rem solid var(--color-pink)
+    border-bottom: 0.65rem solid var(--color-green)
     transform: translateX(-50%) rotate(var(--map-user-heading))
     transform-origin: 50% calc(100% + 0.65rem)
 

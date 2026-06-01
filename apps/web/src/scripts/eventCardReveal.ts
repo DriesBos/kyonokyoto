@@ -4,27 +4,26 @@ type EventCardRevealWindow = Window &
     __eventCardRevealObserver?: IntersectionObserver;
   };
 
-const cardSelector = "[data-event-card]";
-const eventsSectionSelector = "[data-events-section]";
+const cardSelector = '[data-event-card]';
+const eventsSectionSelector = '[data-events-section]';
 const revealTransition = {
   duration: 420,
-  easing: "ease",
+  easing: 'ease',
 };
 
 const revealWindow = window as EventCardRevealWindow;
 
 const markVisible = (card: Element) => {
   if (!(card instanceof HTMLElement)) return;
-  card.dataset.revealState = "visible";
+  card.dataset.revealState = 'visible';
 };
 
 const markQueued = (card: Element) => {
   if (!(card instanceof HTMLElement)) return;
-  card.dataset.revealState = "queued";
+  card.dataset.revealState = 'queued';
 };
 
-const revealOpacity = (card: HTMLElement) =>
-  card.hasAttribute("data-beta") ? "0.5" : "1";
+const revealOpacity = (card: HTMLElement) => (card.hasAttribute('data-beta') ? '0.5' : '1');
 
 const revealCard = (card: Element, animate: boolean) => {
   if (!(card instanceof HTMLElement)) return;
@@ -34,7 +33,7 @@ const revealCard = (card: Element, animate: boolean) => {
   const targetOpacity = revealOpacity(card);
 
   if (animate) {
-    card.style.visibility = "visible";
+    card.style.visibility = 'visible';
     card
       .animate([{ opacity: 0 }, { opacity: targetOpacity }], revealTransition)
       .finished.then(() => {
@@ -43,12 +42,11 @@ const revealCard = (card: Element, animate: boolean) => {
       .catch(() => {});
   } else {
     card.style.opacity = targetOpacity;
-    card.style.visibility = "visible";
+    card.style.visibility = 'visible';
   }
 };
 
-const isRendered = (card: HTMLElement) =>
-  !card.hidden && card.getClientRects().length > 0;
+const isRendered = (card: HTMLElement) => !card.hidden && card.getClientRects().length > 0;
 
 const getEventsSection = () => document.querySelector(eventsSectionSelector);
 
@@ -86,15 +84,15 @@ const buildAnimations = () => {
     if (
       !isRendered(card) ||
       isInScrollRoot(card, eventsSection) ||
-      card.dataset.revealState === "visible"
+      card.dataset.revealState === 'visible'
     ) {
       revealCard(card, false);
       return;
     }
 
     markQueued(card);
-    card.style.opacity = "0";
-    card.style.visibility = "visible";
+    card.style.opacity = '0';
+    card.style.visibility = 'visible';
     revealWindow.__eventCardRevealObserver?.observe(card);
   });
 };
@@ -117,9 +115,9 @@ export const initEventCardReveal = () => {
 
   buildAnimations();
 
-  document.addEventListener("astro:page-load", scheduleBuildAnimations);
-  window.addEventListener("load", scheduleBuildAnimations, { once: true });
-  window.addEventListener("resize", scheduleBuildAnimations);
-  document.addEventListener("event-filter:updated", scheduleBuildAnimations);
+  document.addEventListener('astro:page-load', scheduleBuildAnimations);
+  window.addEventListener('load', scheduleBuildAnimations, { once: true });
+  window.addEventListener('resize', scheduleBuildAnimations);
+  document.addEventListener('event-filter:updated', scheduleBuildAnimations);
   revealWindow.__eventCardRevealBound = true;
 };

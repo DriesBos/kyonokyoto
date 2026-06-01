@@ -1,9 +1,9 @@
-import type { EventRow } from "./events";
+import type { EventRow } from './events';
 
 export type SourceConfig = {
   slug: string;
   name: string;
-  names?: Partial<Record<"en" | "ja", string>>;
+  names?: Partial<Record<'en' | 'ja', string>>;
   source_type: string;
   base_url: string;
   start_urls?: string[];
@@ -42,30 +42,30 @@ export type CategoryOption = {
 };
 
 export const preferredCategoryOrder = [
-  "exhibition",
-  "museum",
-  "gallery",
-  "art",
-  "photography",
-  "design",
-  "craft",
-  "event",
-  "music",
-  "performance",
-  "mingei",
-  "ceramics",
-  "workshop",
-  "festival",
-  "fair",
+  'exhibition',
+  'museum',
+  'gallery',
+  'art',
+  'photography',
+  'design',
+  'craft',
+  'event',
+  'music',
+  'performance',
+  'mingei',
+  'ceramics',
+  'workshop',
+  'festival',
+  'fair',
 ];
 
 export const normalizeCategory = (value: string) =>
   value
     .toLowerCase()
     .trim()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
 export const normalizeCategoryList = (values: string[]) => [
   ...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean)),
@@ -78,7 +78,7 @@ export const titleCaseCategory = (value: string) =>
     .split(/[\s-]+/)
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 
 export const allActiveSourcesFrom = (sources: SourceConfig[]) =>
   sources
@@ -102,9 +102,9 @@ export const normalizeUrl = (value: string | undefined) => {
 
   try {
     const url = new URL(value);
-    url.hash = "";
-    url.search = "";
-    url.pathname = url.pathname.replace(/\/+$/, "") || "/";
+    url.hash = '';
+    url.search = '';
+    url.pathname = url.pathname.replace(/\/+$/, '') || '/';
     return url;
   } catch {
     return null;
@@ -121,10 +121,7 @@ export const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
 
   for (const domain of source.allowed_domains ?? []) {
     const normalizedDomain = domain.toLowerCase();
-    if (
-      hostname === normalizedDomain ||
-      hostname.endsWith(`.${normalizedDomain}`)
-    ) {
+    if (hostname === normalizedDomain || hostname.endsWith(`.${normalizedDomain}`)) {
       matchesSourceHost = true;
       score = Math.max(score, 10);
     }
@@ -155,19 +152,13 @@ export const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
   return score;
 };
 
-export const sourceCategoriesForEvent = (
-  event: EventRow,
-  configuredSources: SourceConfig[],
-) => {
+export const sourceCategoriesForEvent = (event: EventRow, configuredSources: SourceConfig[]) => {
   const bestSource = configuredSources
     .map((source) => ({
       source,
       score: sourceMatchScore(event.source_url, source),
     }))
-    .filter(
-      (match) =>
-        match.score > 0 && (match.source.source_categories?.length ?? 0) > 0,
-    )
+    .filter((match) => match.score > 0 && (match.source.source_categories?.length ?? 0) > 0)
     .sort((a, b) => b.score - a.score)[0]?.source;
 
   return bestSource?.source_categories?.length
@@ -175,10 +166,7 @@ export const sourceCategoriesForEvent = (
     : normalizeCategoryList(event.categories ?? []);
 };
 
-export const sourceSlugForEvent = (
-  event: EventRow,
-  configuredSources: SourceConfig[],
-) =>
+export const sourceSlugForEvent = (event: EventRow, configuredSources: SourceConfig[]) =>
   configuredSources
     .map((source) => ({
       source,
@@ -187,10 +175,8 @@ export const sourceSlugForEvent = (
     .filter((match) => match.score > 0)
     .sort((a, b) => b.score - a.score)[0]?.source.slug ?? null;
 
-const sourceBySlug = (
-  configuredSources: SourceConfig[],
-  sourceSlug: string | null,
-) => configuredSources.find((source) => source.slug === sourceSlug) ?? null;
+const sourceBySlug = (configuredSources: SourceConfig[], sourceSlug: string | null) =>
+  configuredSources.find((source) => source.slug === sourceSlug) ?? null;
 
 const toCoordinate = (value: unknown) => {
   const coordinate = Number(value);
@@ -241,17 +227,14 @@ const locationNameForEvent = (
   source: SourceConfig | null,
   lat: number | null,
   lng: number | null,
-  fallbackName = "Map location",
+  fallbackName = 'Map location',
 ) => {
   const venueLocation = findVenueLocationForCoordinates(source, lat, lng);
   return venueLocation?.name || source?.name || fallbackName;
 };
 
 const locationCategoriesForSource = (source: SourceConfig) => {
-  const categorySlugs = [
-    source.source_type,
-    ...(source.source_categories ?? []),
-  ]
+  const categorySlugs = [source.source_type, ...(source.source_categories ?? [])]
     .map(normalizeCategory)
     .filter(Boolean);
 
@@ -264,11 +247,7 @@ export const mapLocationIdForEvent = (
   configuredSources: SourceConfig[],
 ) => {
   const source = sourceBySlug(configuredSources, sourceSlug);
-  const coordinates = mapCoordinatesForEvent(
-    event,
-    sourceSlug,
-    configuredSources,
-  );
+  const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
   const lat = coordinates?.lat ?? null;
   const lng = coordinates?.lng ?? null;
 
@@ -286,10 +265,7 @@ export const mapCoordinatesForEvent = (
   configuredSources: SourceConfig[],
 ) => {
   const source = sourceBySlug(configuredSources, sourceSlug);
-  return (
-    coordinatePairFrom(event.lat, event.lng) ??
-    coordinatePairFrom(source?.lat, source?.lng)
-  );
+  return coordinatePairFrom(event.lat, event.lng) ?? coordinatePairFrom(source?.lat, source?.lng);
 };
 
 export const categoriesForEvents = (events: EventRow[]): CategoryOption[] => {
@@ -328,11 +304,7 @@ export const mapSourcesForEvents = (
     const source = sourceBySlug(configuredSources, sourceSlug);
     if (!sourceSlug || source?.map_visibility === false) return;
 
-    const coordinates = mapCoordinatesForEvent(
-      event,
-      sourceSlug,
-      configuredSources,
-    );
+    const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
     const lat = coordinates?.lat ?? null;
     const lng = coordinates?.lng ?? null;
     const id = mapLocationIdForEvent(event, sourceSlug, configuredSources);
@@ -343,9 +315,7 @@ export const mapSourcesForEvents = (
       ? locationCategoriesForSource(source)
       : normalizeCategoryList(event.categories ?? []);
     if (existing) {
-      existing.categories = [
-        ...new Set([...existing.categories, ...categories]),
-      ];
+      existing.categories = [...new Set([...existing.categories, ...categories])];
       return;
     }
 

@@ -62,9 +62,7 @@
       "source_categories": ["design", "craft", "gallery"],
       "is_active": true,
       "primary_image_url": "https://essencekyoto.com/cdn/shop/files/IMG_7993_4472x.JPG?v=1615927295",
-      "image_urls": [
-        "https://essencekyoto.com/cdn/shop/files/IMG_7993_4472x.JPG?v=1615927295"
-      ],
+      "image_urls": ["https://essencekyoto.com/cdn/shop/files/IMG_7993_4472x.JPG?v=1615927295"],
       "description": {
         "en": "A Kyoto gallery and shop focused on handmade tableware, tea and works by artists, potters, woodworkers and lacquer artists, with retail prices set by the makers.",
         "ja": "うつわやお茶を中心に紹介する岡崎のギャラリーショップ。作家・陶芸家・木工作家・漆作家による手仕事の作品を扱っています。"
@@ -93,9 +91,7 @@
         "ja": "1966年に日本画家・堂本印象が設立した美術館。伝統を破って新しい芸術を創造するという理念に基づく作品と、印象自身が内外装を手がけた建物を紹介しています。"
       },
       "primary_image_url": "https://insho-domoto.com/assets/images/top/museum-img.jpg",
-      "image_urls": [
-        "https://insho-domoto.com/assets/images/top/museum-img.jpg"
-      ],
+      "image_urls": ["https://insho-domoto.com/assets/images/top/museum-img.jpg"],
       "urls": {
         "en": "https://insho-domoto.com/en/#collection",
         "ja": "https://insho-domoto.com/collection/"

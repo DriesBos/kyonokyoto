@@ -1,25 +1,34 @@
 ---
-import EventCard from "../../../components/EventCard.astro";
-import Footer from "../../../components/Footer.astro";
-import GoogleMapCanvas from "../../../components/GoogleMapCanvas.astro";
-import Header from "../../../components/Header.astro";
-import Landing from "../../../components/Landing.astro";
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import TimeDivider from "../../../components/TimeDivider.astro";
-import kyotoPermanentPayload from "../../../../../../data/permanent/kyoto-permanent.json";
-import osakaPermanentPayload from "../../../../../../data/permanent/osaka-permanent.json";
-import tokyoPermanentPayload from "../../../../../../data/permanent/tokyo-permanent.json";
-import kyotoSourcesPayload from "../../../../../../data/sources/kyoto-sources.json";
-import osakaSourcesPayload from "../../../../../../data/sources/osaka-sources.json";
-import tokyoSourcesPayload from "../../../../../../data/sources/tokyo-sources.json";
-import { cityConfigFor, type AppCity } from "../../../lib/cities";
-import { normalizeLocale, supportedLocales, uiText } from "../../../lib/i18n";
-import { calendarDetailsFor, calendarLocationFor, cleanDisplayText, googleCalendarUrl, mapsUrl } from "../../../lib/calendar";
-import { displayEventsByLocale as buildDisplayEventsByLocale, fetchPublishedEvents } from "../../../lib/events";
+import EventCard from '../../../components/EventCard.astro';
+import Footer from '../../../components/Footer.astro';
+import GoogleMapCanvas from '../../../components/GoogleMapCanvas.astro';
+import Header from '../../../components/Header.astro';
+import Landing from '../../../components/Landing.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import TimeDivider from '../../../components/TimeDivider.astro';
+import kyotoPermanentPayload from '../../../../../../data/permanent/kyoto-permanent.json';
+import osakaPermanentPayload from '../../../../../../data/permanent/osaka-permanent.json';
+import tokyoPermanentPayload from '../../../../../../data/permanent/tokyo-permanent.json';
+import kyotoSourcesPayload from '../../../../../../data/sources/kyoto-sources.json';
+import osakaSourcesPayload from '../../../../../../data/sources/osaka-sources.json';
+import tokyoSourcesPayload from '../../../../../../data/sources/tokyo-sources.json';
+import { cityConfigFor, type AppCity } from '../../../lib/cities';
+import { normalizeLocale, supportedLocales, uiText } from '../../../lib/i18n';
+import {
+  calendarDetailsFor,
+  calendarLocationFor,
+  cleanDisplayText,
+  googleCalendarUrl,
+  mapsUrl,
+} from '../../../lib/calendar';
+import {
+  displayEventsByLocale as buildDisplayEventsByLocale,
+  fetchPublishedEvents,
+} from '../../../lib/events';
 import {
   permanentEventsByLocale as buildPermanentEventsByLocale,
   type PermanentExhibitionHighlight,
-} from "../../../lib/permanentExhibitions";
+} from '../../../lib/permanentExhibitions';
 import {
   allActiveSourcesFrom,
   categoriesForEvents,
@@ -29,22 +38,22 @@ import {
   mapSourcesForEvents,
   sourceSlugForEvent,
   type SourceConfig,
-} from "../../../lib/sources";
+} from '../../../lib/sources';
 
 export const prerender = false;
 
 Astro.response.headers.set(
-  "Cache-Control",
-  "public, max-age=60, s-maxage=300, stale-while-revalidate=86400"
+  'Cache-Control',
+  'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
 );
 Astro.response.headers.set(
-  "Netlify-CDN-Cache-Control",
-  "public, s-maxage=300, stale-while-revalidate=86400"
+  'Netlify-CDN-Cache-Control',
+  'public, s-maxage=300, stale-while-revalidate=86400',
 );
 
 const routeCity = cityConfigFor(Astro.params.city);
 const routeLocale = normalizeLocale(Astro.params.locale);
-const city = routeCity?.slug ?? "kyoto";
+const city = routeCity?.slug ?? 'kyoto';
 if (!routeCity && routeLocale) return Astro.redirect(`/kyoto/${routeLocale}/`, 302);
 if (!routeLocale) return Astro.redirect(`/${city}/en/`, 302);
 if (Astro.params.city !== city || Astro.params.locale !== routeLocale) {
@@ -54,15 +63,16 @@ if (Astro.params.city !== city || Astro.params.locale !== routeLocale) {
 const locale = routeLocale;
 const copy = uiText.en;
 const metaCopy = uiText[locale];
-const cityConfig = routeCity ?? cityConfigFor("kyoto")!;
-const cityMetaTitle = city === "kyoto" ? metaCopy.title : `${cityConfig.label} | ${uiText.en.title}`;
+const cityConfig = routeCity ?? cityConfigFor('kyoto')!;
+const cityMetaTitle =
+  city === 'kyoto' ? metaCopy.title : `${cityConfig.label} | ${uiText.en.title}`;
 const cityMetaDescription =
-  city === "kyoto"
+  city === 'kyoto'
     ? metaCopy.description
     : metaCopy.description
-        .replaceAll("Kyōto", cityConfig.label)
-        .replaceAll("Kyoto", cityConfig.label)
-        .replaceAll("京都", cityConfig.label);
+        .replaceAll('Kyōto', cityConfig.label)
+        .replaceAll('Kyoto', cityConfig.label)
+        .replaceAll('京都', cityConfig.label);
 const sourcesPayloadByCity = {
   kyoto: kyotoSourcesPayload,
   osaka: osakaSourcesPayload,
@@ -101,30 +111,33 @@ const displayEvents = displayEventsByLocale[locale];
 const permanentEvents = permanentEventsByLocale[locale];
 const visibleCards = [...displayEvents, ...permanentEvents];
 const categories = categoriesForEvents(visibleCards);
-const ongoingEvents = displayEvents.filter((event) => event.timing === "ongoing");
-const upcomingEvents = displayEvents.filter((event) => event.timing === "upcoming");
+const ongoingEvents = displayEvents.filter((event) => event.timing === 'ongoing');
+const upcomingEvents = displayEvents.filter((event) => event.timing === 'upcoming');
 const sourceSlugForDisplayEvent = (event: (typeof visibleCards)[number]) =>
-  event.timing === "permanent" ? event.source_id : sourceSlugForEvent(event, configuredSources);
-const sourceSlugByEventId = new Map(visibleCards.map((event) => [event.id, sourceSlugForDisplayEvent(event)]));
+  event.timing === 'permanent' ? event.source_id : sourceSlugForEvent(event, configuredSources);
+const sourceSlugByEventId = new Map(
+  visibleCards.map((event) => [event.id, sourceSlugForDisplayEvent(event)]),
+);
 const betaSourceSlugs = betaSourceSlugsAll;
 const betaPermanentSlugs = new Set(
   (permanentHighlightsPayload.items as PermanentExhibitionHighlight[])
     .filter((h) => h.beta)
-    .map((h) => h.slug)
+    .map((h) => h.slug),
 );
 const isEventBeta = (event: (typeof visibleCards)[number]) =>
-  betaSourceSlugs.has(sourceSlugByEventId.get(event.id) ?? "") ||
-  (event.timing === "permanent" && betaPermanentSlugs.has(event.source_id));
+  betaSourceSlugs.has(sourceSlugByEventId.get(event.id) ?? '') ||
+  (event.timing === 'permanent' && betaPermanentSlugs.has(event.source_id));
 const mapLocationIdByEventId = new Map(
   visibleCards.map((event) => [
     event.id,
     mapLocationIdForEvent(event, sourceSlugByEventId.get(event.id) ?? null, configuredSources),
-  ])
+  ]),
 );
 const mapSources = mapSourcesForEvents(visibleCards, sourceSlugByEventId, configuredSources);
 
 const mapsUrlForEvent = (event: (typeof displayEvents)[number]) => {
-  const sourceSlug = sourceSlugByEventId.get(event.id) ?? sourceSlugForEvent(event, configuredSources);
+  const sourceSlug =
+    sourceSlugByEventId.get(event.id) ?? sourceSlugForEvent(event, configuredSources);
   const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
   return mapsUrl(coordinates ? { ...event, ...coordinates } : event);
 };
@@ -158,11 +171,11 @@ const eventPayloadById = Object.fromEntries(
             calendarLocation: calendarLocationFor(localizedEvent),
           },
         ];
-      })
+      }),
     );
 
     return [event.id, localePayload];
-  })
+  }),
 );
 
 const localePayload = {
@@ -172,27 +185,38 @@ const localePayload = {
       supportedLocale,
       {
         title:
-          city === "kyoto"
+          city === 'kyoto'
             ? uiText[supportedLocale].title
             : `${cityConfig.label} | ${uiText.en.title}`,
         description:
-          city === "kyoto"
+          city === 'kyoto'
             ? uiText[supportedLocale].description
             : uiText[supportedLocale].description
-                .replaceAll("Kyōto", cityConfig.label)
-                .replaceAll("Kyoto", cityConfig.label)
-                .replaceAll("京都", cityConfig.label),
+                .replaceAll('Kyōto', cityConfig.label)
+                .replaceAll('Kyoto', cityConfig.label)
+                .replaceAll('京都', cityConfig.label),
       },
-    ])
+    ]),
   ),
 };
-const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c");
-
+const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c');
 ---
 
-<BaseLayout city={city} cityThemeColor={cityConfig.themeColor} locale={locale} title={cityMetaTitle} description={cityMetaDescription} landingActive={true}>
+<BaseLayout
+  city={city}
+  cityThemeColor={cityConfig.themeColor}
+  locale={locale}
+  title={cityMetaTitle}
+  description={cityMetaDescription}
+  landingActive={true}
+>
   <main class="page-shell">
-    <Landing cityLabel={cityConfig.label} categories={categories} ongoingCount={ongoingEvents.length} upcomingCount={upcomingEvents.length} />
+    <Landing
+      cityLabel={cityConfig.label}
+      categories={categories}
+      ongoingCount={ongoingEvents.length}
+      upcomingCount={upcomingEvents.length}
+    />
     <div class="content-container" data-content-container data-main-content>
       <section class="events-section" data-events-section>
         <Header categories={categories} city={city} locale={locale} />
@@ -210,7 +234,12 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
             </div>
           ) : (
             <>
-              <section class="event-group" data-event-group data-event-group-name="ongoing" hidden={ongoingEvents.length === 0}>
+              <section
+                class="event-group"
+                data-event-group
+                data-event-group-name="ongoing"
+                hidden={ongoingEvents.length === 0}
+              >
                 {ongoingEvents.map((event, index) => (
                   <EventCard
                     event={event}
@@ -233,10 +262,19 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                 data-after-group="upcoming"
                 hidden={ongoingEvents.length === 0 || upcomingEvents.length === 0}
               >
-                <TimeDivider label={copy.upcoming} readyLabel={copy.getReady} ariaLabel={copy.upcomingEventsAria} />
+                <TimeDivider
+                  label={copy.upcoming}
+                  readyLabel={copy.getReady}
+                  ariaLabel={copy.upcomingEventsAria}
+                />
               </div>
 
-              <section class="event-group" data-event-group data-event-group-name="upcoming" hidden={upcomingEvents.length === 0}>
+              <section
+                class="event-group"
+                data-event-group
+                data-event-group-name="upcoming"
+                hidden={upcomingEvents.length === 0}
+              >
                 {upcomingEvents.map((event, index) => (
                   <EventCard
                     event={event}
@@ -259,15 +297,26 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
                 data-after-group="permanent"
                 hidden={upcomingEvents.length === 0 || permanentEvents.length === 0}
               >
-                <TimeDivider label="permanent" readyLabel="permanent" ariaLabel="permanent venues" />
+                <TimeDivider
+                  label="permanent"
+                  readyLabel="permanent"
+                  ariaLabel="permanent venues"
+                />
               </div>
 
-              <section class="event-group" data-event-group data-event-group-name="permanent" hidden={permanentEvents.length === 0}>
+              <section
+                class="event-group"
+                data-event-group
+                data-event-group-name="permanent"
+                hidden={permanentEvents.length === 0}
+              >
                 {permanentEvents.map((event, index) => (
                   <EventCard
                     event={event}
                     locale={locale}
-                    hideTopBorder={ongoingEvents.length === 0 && upcomingEvents.length === 0 && index === 0}
+                    hideTopBorder={
+                      ongoingEvents.length === 0 && upcomingEvents.length === 0 && index === 0
+                    }
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}
@@ -292,11 +341,16 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
         aria-orientation="vertical"
         hidden
         inert
-      ></div>
+      >
+      </div>
       <span class="map-resizer-handle" aria-hidden="true"></span>
 
       <section class="map-section" id="map-section" data-map-section hidden>
-        <GoogleMapCanvas cityLabel={cityConfig.label} mapCenter={cityConfig.mapCenter} mapIdEnvKey={cityConfig.mapIdEnvKey} sources={mapSources} />
+        <GoogleMapCanvas
+          cityLabel={cityConfig.label}
+          mapCenter={cityConfig.mapCenter}
+          sources={mapSources}
+        />
       </section>
     </div>
     <script type="application/json" data-locale-payload set:html={localePayloadJson} />
@@ -304,8 +358,8 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
 </BaseLayout>
 
 <script>
-  import { initEventCardReveal } from "../../../scripts/eventCardReveal";
-  import { initMapResizer } from "../../../scripts/mapResizer";
+  import { initEventCardReveal } from '../../../scripts/eventCardReveal';
+  import { initMapResizer } from '../../../scripts/mapResizer';
 
   initEventCardReveal();
   initMapResizer();
@@ -376,7 +430,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, "\\u003c")
     transition: flex-basis var(--layout-transition-duration) var(--layout-transition-ease), flex-grow var(--layout-transition-duration) var(--layout-transition-ease)
     &::-webkit-scrollbar
       display: none
-      
+
   .map-section
     flex: 0 1 0
     height: 100%

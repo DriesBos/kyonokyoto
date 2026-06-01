@@ -1,4 +1,4 @@
-const supportedLocales = ["en", "ja"];
+const supportedLocales = ['en', 'ja'];
 
 export function buildCrawlQaReport({
   source,
@@ -11,8 +11,7 @@ export function buildCrawlQaReport({
   const missingTranslations = Object.fromEntries(
     supportedLocales.map((locale) => [
       locale,
-      savedEvents.filter((event) => !event.translations?.includes(locale))
-        .length,
+      savedEvents.filter((event) => !event.translations?.includes(locale)).length,
     ]),
   );
 

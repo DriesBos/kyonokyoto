@@ -1,6 +1,6 @@
 ---
 type Props = {
-  position: "top" | "bottom";
+  position: 'top' | 'bottom';
   lines?: number;
 };
 
@@ -8,10 +8,8 @@ const { position, lines = 4 } = Astro.props;
 const strokeCount = Math.max(0, Math.floor(lines));
 ---
 
-<div class:list={["page-edge-strokes", `page-edge-strokes--${position}`]}>
-  {Array.from({ length: strokeCount }).map(() => (
-    <span aria-hidden="true"></span>
-  ))}
+<div class:list={['page-edge-strokes', `page-edge-strokes--${position}`]}>
+  {Array.from({ length: strokeCount }).map(() => <span aria-hidden="true" />)}
 </div>
 
 <style lang="sass">

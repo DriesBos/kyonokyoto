@@ -3,14 +3,14 @@ name: Fallow
 on:
   pull_request:
     paths:
-      - "apps/web/**"
-      - ".github/workflows/fallow.yml"
+      - 'apps/web/**'
+      - '.github/workflows/fallow.yml'
   push:
     branches:
       - main
     paths:
-      - "apps/web/**"
-      - ".github/workflows/fallow.yml"
+      - 'apps/web/**'
+      - '.github/workflows/fallow.yml'
 
 permissions:
   contents: read

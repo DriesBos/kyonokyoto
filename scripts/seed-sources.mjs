@@ -1,21 +1,18 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
-import {
-  loadSourcesConfig,
-  normalizeCity,
-} from "../data/sources/source-config.mjs";
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { loadSourcesConfig, normalizeCity } from '../data/sources/source-config.mjs';
 
 const projectRoot = process.cwd();
-const crawlerEnvPath = resolve(projectRoot, "apps/crawler/.env");
+const crawlerEnvPath = resolve(projectRoot, 'apps/crawler/.env');
 
 function parseEnvFile(contents) {
   const env = {};
 
-  for (const rawLine of contents.split("\n")) {
+  for (const rawLine of contents.split('\n')) {
     const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
+    if (!line || line.startsWith('#')) continue;
 
-    const separatorIndex = line.indexOf("=");
+    const separatorIndex = line.indexOf('=');
     if (separatorIndex === -1) continue;
 
     const key = line.slice(0, separatorIndex).trim();
@@ -32,21 +29,19 @@ function getArg(name, fallback = null) {
   return match ? match.slice(prefix.length) : fallback;
 }
 
-const envContents = await readFile(crawlerEnvPath, "utf8");
+const envContents = await readFile(crawlerEnvPath, 'utf8');
 const env = parseEnvFile(envContents);
 
 const supabaseUrl = env.SUPABASE_URL;
 const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error(
-    "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env",
-  );
+  throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env');
 }
 
-const city = normalizeCity(getArg("city", "kyoto"));
+const city = normalizeCity(getArg('city', 'kyoto'));
 if (!city) {
-  throw new Error(`Unsupported source city "${getArg("city")}"`);
+  throw new Error(`Unsupported source city "${getArg('city')}"`);
 }
 
 const sourceConfig = await loadSourcesConfig({ city });
@@ -56,11 +51,11 @@ const sources = sourceConfig.map((source) => ({
   city,
   name: source.name,
   source_type: source.source_type,
-  language: source.language ?? "ja",
+  language: source.language ?? 'ja',
   base_url: source.base_url,
   start_urls: source.start_urls ?? [],
   allowed_domains: source.allowed_domains ?? [],
-  crawl_strategy: source.crawl_strategy ?? "listing-and-detail-pages",
+  crawl_strategy: source.crawl_strategy ?? 'listing-and-detail-pages',
   event_page_patterns: source.event_page_patterns ?? [],
   locales: source.locales ?? {},
   notes: source.notes ?? null,
@@ -73,12 +68,12 @@ if (sources.length === 0) {
 }
 
 const response = await fetch(`${supabaseUrl}/rest/v1/sources?on_conflict=slug`, {
-  method: "POST",
+  method: 'POST',
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
     apikey: serviceRoleKey,
     Authorization: `Bearer ${serviceRoleKey}`,
-    Prefer: "resolution=merge-duplicates,return=representation",
+    Prefer: 'resolution=merge-duplicates,return=representation',
   },
   body: JSON.stringify(sources),
 });

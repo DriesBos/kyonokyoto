@@ -1,6 +1,6 @@
 ---
-type IconName = "arrow" | "arrow-long" | "calendar" | "exit" | "map" | "star";
-type IconDirection = "top" | "right" | "bottom" | "left";
+type IconName = 'arrow' | 'arrow-long' | 'calendar' | 'exit' | 'map' | 'star';
+type IconDirection = 'top' | 'right' | 'bottom' | 'left';
 
 type Props = {
   name: IconName;
@@ -13,18 +13,24 @@ type Props = {
 const { name, direction, rotation, class: className, title } = Astro.props;
 const labelled = Boolean(title);
 const iconDirection = rotation ?? direction;
-const classes = ["icon", `icon--${name}`, name === "arrow-long" && "icon--long", iconDirection && `icon--${iconDirection}`, className];
+const classes = [
+  'icon',
+  `icon--${name}`,
+  name === 'arrow-long' && 'icon--long',
+  iconDirection && `icon--${iconDirection}`,
+  className,
+];
 ---
 
 {
-  name === "arrow" ? (
+  name === 'arrow' ? (
     <svg
       class:list={classes}
       viewBox="0 0 25 25"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-hidden={labelled ? undefined : "true"}
-      role={labelled ? "img" : undefined}
+      aria-hidden={labelled ? undefined : 'true'}
+      role={labelled ? 'img' : undefined}
     >
       {title ? <title>{title}</title> : null}
       <path
@@ -34,14 +40,14 @@ const classes = ["icon", `icon--${name}`, name === "arrow-long" && "icon--long",
         fill="currentColor"
       />
     </svg>
-  ) : name === "arrow-long" ? (
+  ) : name === 'arrow-long' ? (
     <svg
       class:list={classes}
       viewBox="0 0 25 50"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-hidden={labelled ? undefined : "true"}
-      role={labelled ? "img" : undefined}
+      aria-hidden={labelled ? undefined : 'true'}
+      role={labelled ? 'img' : undefined}
     >
       {title ? <title>{title}</title> : null}
       <path
@@ -51,29 +57,26 @@ const classes = ["icon", `icon--${name}`, name === "arrow-long" && "icon--long",
         fill="currentColor"
       />
     </svg>
-  ) : name === "exit" ? (
+  ) : name === 'exit' ? (
     <svg
       class:list={classes}
       viewBox="0 -960 960 960"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-hidden={labelled ? undefined : "true"}
-      role={labelled ? "img" : undefined}
+      aria-hidden={labelled ? undefined : 'true'}
+      role={labelled ? 'img' : undefined}
     >
       {title ? <title>{title}</title> : null}
-      <path
-        d="m256-240-56-56 384-384H240v-80h480v480h-80v-344L256-240Z"
-        fill="currentColor"
-      />
+      <path d="m256-240-56-56 384-384H240v-80h480v480h-80v-344L256-240Z" fill="currentColor" />
     </svg>
-  ) : name === "map" ? (
+  ) : name === 'map' ? (
     <svg
       class:list={classes}
       viewBox="0 0 25 25"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-hidden={labelled ? undefined : "true"}
-      role={labelled ? "img" : undefined}
+      aria-hidden={labelled ? undefined : 'true'}
+      role={labelled ? 'img' : undefined}
     >
       {title ? <title>{title}</title> : null}
       <path
@@ -81,14 +84,14 @@ const classes = ["icon", `icon--${name}`, name === "arrow-long" && "icon--long",
         fill="currentColor"
       />
     </svg>
-  ) : name === "star" ? (
+  ) : name === 'star' ? (
     <svg
       class:list={classes}
       viewBox="0 0 25 25"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-hidden={labelled ? undefined : "true"}
-      role={labelled ? "img" : undefined}
+      aria-hidden={labelled ? undefined : 'true'}
+      role={labelled ? 'img' : undefined}
     >
       {title ? <title>{title}</title> : null}
       <path
@@ -105,8 +108,8 @@ const classes = ["icon", `icon--${name}`, name === "arrow-long" && "icon--long",
       viewBox="0 0 25 25"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-hidden={labelled ? undefined : "true"}
-      role={labelled ? "img" : undefined}
+      aria-hidden={labelled ? undefined : 'true'}
+      role={labelled ? 'img' : undefined}
     >
       {title ? <title>{title}</title> : null}
       <path

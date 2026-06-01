@@ -1,5 +1,5 @@
 ---
-import Icon from "./Icon.astro";
+import Icon from './Icon.astro';
 
 type Props = {
   label?: string;
@@ -8,65 +8,65 @@ type Props = {
 };
 
 const {
-  label = "upcoming",
-  readyLabel = "get ready!",
-  ariaLabel = "upcoming events",
+  label = 'upcoming',
+  readyLabel = 'get ready!',
+  ariaLabel = 'upcoming events',
 } = Astro.props;
 const items = Array.from({ length: 20 });
 const tracks = [
   {
     label,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     travel: 16,
   },
   {
     label: readyLabel,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     start: -28,
     end: -10,
     travel: 14,
   },
   {
     label,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     travel: 12,
   },
   {
     label,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     travel: 14,
     mobileOnly: true,
   },
   {
     label,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     travel: 17,
     mobileOnly: true,
   },
   {
     label,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     travel: 15,
     mobileOnly: true,
   },
   {
     label,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     travel: 19,
     mobileOnly: true,
     mobileHidden: true,
   },
   {
     label,
-    className: "time-divider__track--right",
-    direction: "right",
+    className: 'time-divider__track--right',
+    direction: 'right',
     travel: 11,
     mobileOnly: true,
     mobileHidden: true,
@@ -77,52 +77,54 @@ const tracks = [
 <astro-time-divider class="time-divider" aria-label={ariaLabel} data-time-divider>
   <div class="time-divider__viewport" data-time-divider-viewport>
     <div class="time-divider__scroller" aria-hidden="true">
-      {tracks.map((track) => (
-        <div
-          class:list={[
-            "time-divider__track",
-            track.className,
-            {
-              "time-divider__track--mobile-extra": track.mobileOnly,
-              "time-divider__track--mobile-hidden": track.mobileHidden,
-            },
-          ]}
-          data-time-divider-track
-          data-direction={track.direction}
-          data-travel={"travel" in track ? track.travel : undefined}
-          data-start={"start" in track ? track.start : undefined}
-          data-end={"end" in track ? track.end : undefined}
-        >
-          <div class="time-divider__group">
-            {items.map(() => (
-              <>
-                <span>{track.label}</span>
-                <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
-              </>
-            ))}
+      {
+        tracks.map((track) => (
+          <div
+            class:list={[
+              'time-divider__track',
+              track.className,
+              {
+                'time-divider__track--mobile-extra': track.mobileOnly,
+                'time-divider__track--mobile-hidden': track.mobileHidden,
+              },
+            ]}
+            data-time-divider-track
+            data-direction={track.direction}
+            data-travel={'travel' in track ? track.travel : undefined}
+            data-start={'start' in track ? track.start : undefined}
+            data-end={'end' in track ? track.end : undefined}
+          >
+            <div class="time-divider__group">
+              {items.map(() => (
+                <>
+                  <span>{track.label}</span>
+                  <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
+                </>
+              ))}
+            </div>
+            <div class="time-divider__group">
+              {items.map(() => (
+                <>
+                  <span>{track.label}</span>
+                  <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
+                </>
+              ))}
+            </div>
           </div>
-          <div class="time-divider__group">
-            {items.map(() => (
-              <>
-                <span>{track.label}</span>
-                <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
-              </>
-            ))}
-          </div>
-        </div>
-      ))}
+        ))
+      }
     </div>
   </div>
 </astro-time-divider>
 
 <script>
-  import { gsap } from "gsap";
-  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
   gsap.registerPlugin(ScrollTrigger);
 
-  const trackSelector = "[data-time-divider-track]";
-  const eventsSectionSelector = "[data-events-section]";
+  const trackSelector = '[data-time-divider-track]';
+  const eventsSectionSelector = '[data-events-section]';
   const scrollScrubSeconds = 0.33;
   const layoutSettledFrameCount = 3;
   let dividerInstanceCount = 0;
@@ -158,13 +160,13 @@ const tracks = [
   };
 
   const parseDistance = (track: HTMLElement) => {
-    const direction = track.dataset.direction === "right" ? "right" : "left";
-    const travel = Number.parseFloat(track.dataset.travel || "50");
+    const direction = track.dataset.direction === 'right' ? 'right' : 'left';
+    const travel = Number.parseFloat(track.dataset.travel || '50');
     const distance = Number.isFinite(travel) ? travel : 50;
-    const customStart = Number.parseFloat(track.dataset.start || "");
-    const customEnd = Number.parseFloat(track.dataset.end || "");
-    const defaultStartX = direction === "right" ? -distance : 0;
-    const defaultEndX = direction === "right" ? 0 : -distance;
+    const customStart = Number.parseFloat(track.dataset.start || '');
+    const customEnd = Number.parseFloat(track.dataset.end || '');
+    const defaultStartX = direction === 'right' ? -distance : 0;
+    const defaultEndX = direction === 'right' ? 0 : -distance;
 
     return {
       startX: Number.isFinite(customStart) ? customStart : defaultStartX,
@@ -176,7 +178,7 @@ const tracks = [
     buildFrame = 0;
     buildToken = 0;
     context: gsap.Context | null = null;
-    instanceId = "";
+    instanceId = '';
     refreshFrame = 0;
     releaseFontReady: (() => void) | null = null;
     resizeObserver: ResizeObserver | null = null;
@@ -205,9 +207,9 @@ const tracks = [
         this.dataset.timeDividerInstance = this.instanceId;
       }
 
-      document.addEventListener("event-filter:updated", this.handleFilterUpdate);
-      window.addEventListener("resize", this.handleResize);
-      window.addEventListener("load", this.handleLoad, { once: true });
+      document.addEventListener('event-filter:updated', this.handleFilterUpdate);
+      window.addEventListener('resize', this.handleResize);
+      window.addEventListener('load', this.handleLoad, { once: true });
 
       const fontsReady = document.fonts?.ready;
       if (fontsReady) {
@@ -228,9 +230,9 @@ const tracks = [
     }
 
     disconnectedCallback() {
-      document.removeEventListener("event-filter:updated", this.handleFilterUpdate);
-      window.removeEventListener("resize", this.handleResize);
-      window.removeEventListener("load", this.handleLoad);
+      document.removeEventListener('event-filter:updated', this.handleFilterUpdate);
+      window.removeEventListener('resize', this.handleResize);
+      window.removeEventListener('load', this.handleLoad);
       this.releaseFontReady?.();
       this.releaseFontReady = null;
 
@@ -278,7 +280,7 @@ const tracks = [
       this.resizeObserver?.disconnect();
       this.resizeObserver = null;
 
-      if (!("ResizeObserver" in window)) return;
+      if (!('ResizeObserver' in window)) return;
 
       this.resizeObserver = new ResizeObserver(() => {
         this.scheduleRefresh();
@@ -308,7 +310,7 @@ const tracks = [
     }
 
     isRenderable() {
-      return !this.closest("[hidden]") && this.getClientRects().length > 0 && this.offsetHeight > 0;
+      return !this.closest('[hidden]') && this.getClientRects().length > 0 && this.offsetHeight > 0;
     }
 
     getScrollRoot() {
@@ -332,8 +334,8 @@ const tracks = [
         const scrollTriggerConfig: ScrollTrigger.Vars = {
           id: this.instanceId,
           trigger: this,
-          start: "top bottom",
-          end: "bottom top",
+          start: 'top bottom',
+          end: 'bottom top',
           scrub: scrollScrubSeconds,
           invalidateOnRefresh: true,
         };
@@ -343,7 +345,7 @@ const tracks = [
         }
 
         const timeline = gsap.timeline({
-          defaults: { ease: "none" },
+          defaults: { ease: 'none' },
           scrollTrigger: scrollTriggerConfig,
         });
 
@@ -359,8 +361,8 @@ const tracks = [
     }
   }
 
-  if (!customElements.get("astro-time-divider")) {
-    customElements.define("astro-time-divider", AstroTimeDivider);
+  if (!customElements.get('astro-time-divider')) {
+    customElements.define('astro-time-divider', AstroTimeDivider);
   }
 </script>
 

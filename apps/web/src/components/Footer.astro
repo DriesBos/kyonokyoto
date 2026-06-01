@@ -1,13 +1,13 @@
 ---
-import Icon from "./Icon.astro";
-import PageEdgeStrokes from "./PageEdgeStrokes.astro";
+import Icon from './Icon.astro';
+import PageEdgeStrokes from './PageEdgeStrokes.astro';
 
 type Props = {
   lines?: number;
   scrollTopLabel?: string;
 };
 
-const { lines = 24, scrollTopLabel = "Scroll to top" } = Astro.props;
+const { lines = 24, scrollTopLabel = 'Scroll to top' } = Astro.props;
 ---
 
 <footer class="site-footer" data-site-footer>
@@ -16,10 +16,8 @@ const { lines = 24, scrollTopLabel = "Scroll to top" } = Astro.props;
     <div class="site-footer__left page-edge-strokes__left">
       <div class="site-footer__credit page-edge-strokes__credit">
         <p>
-          Site by{" "}
-          <a href="https://driesbos.com" target="_blank" rel="noopener noreferrer">
-            Dries Bos
-          </a>
+          Site by{' '}
+          <a href="https://driesbos.com" target="_blank" rel="noopener noreferrer"> Dries Bos </a>
         </p>
       </div>
       <div class="site-footer__note page-edge-strokes__note">
@@ -46,21 +44,21 @@ const { lines = 24, scrollTopLabel = "Scroll to top" } = Astro.props;
   const scrollTopWindow = window as ScrollTopWindow;
 
   if (!scrollTopWindow.__siteFooterScrollTopBound) {
-    document.addEventListener("click", (event) => {
+    document.addEventListener('click', (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
-      const button = target.closest("[data-scroll-top-button]");
+      const button = target.closest('[data-scroll-top-button]');
       if (!(button instanceof HTMLElement)) return;
 
       event.preventDefault();
-      const eventsSection = button.closest("[data-events-section]");
+      const eventsSection = button.closest('[data-events-section]');
       if (eventsSection instanceof HTMLElement) {
-        eventsSection.scrollTo({ top: 0, behavior: "smooth" });
+        eventsSection.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     scrollTopWindow.__siteFooterScrollTopBound = true;

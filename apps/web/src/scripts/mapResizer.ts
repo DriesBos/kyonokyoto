@@ -1,8 +1,8 @@
-const contentSelector = "[data-content-container]";
-const eventsSelector = "[data-events-section]";
-const mapSelector = "[data-map-section]";
-const resizerSelector = "[data-map-resizer]";
-const mobileQuery = window.matchMedia("(max-width: 768px)");
+const contentSelector = '[data-content-container]';
+const eventsSelector = '[data-events-section]';
+const mapSelector = '[data-map-section]';
+const resizerSelector = '[data-map-resizer]';
+const mobileQuery = window.matchMedia('(max-width: 768px)');
 const minDesktopPanelRem = 20;
 const minMobileMapRem = 10;
 const maxMobileMapSvh = 70;
@@ -18,16 +18,13 @@ type ResizeState = {
 };
 
 const pxFromRem = (value: number) => {
-  const rootSize = Number.parseFloat(
-    getComputedStyle(document.documentElement).fontSize,
-  );
+  const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
   return value * (Number.isFinite(rootSize) ? rootSize : 16);
 };
 
 const svhToPx = (value: number) => window.innerHeight * (value / 100);
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const getElements = () => {
   const content = document.querySelector(contentSelector);
@@ -53,8 +50,8 @@ const emitLayoutUpdated = () => {
 
   layoutFrame = window.requestAnimationFrame(() => {
     layoutFrame = 0;
-    document.dispatchEvent(new CustomEvent("map-layout:updated"));
-    window.dispatchEvent(new Event("resize"));
+    document.dispatchEvent(new CustomEvent('map-layout:updated'));
+    window.dispatchEvent(new Event('resize'));
   });
 };
 
@@ -64,10 +61,7 @@ const setOrientation = () => {
   const elements = getElements();
   if (!elements) return;
 
-  elements.resizer.setAttribute(
-    "aria-orientation",
-    isMobileLayout() ? "horizontal" : "vertical",
-  );
+  elements.resizer.setAttribute('aria-orientation', isMobileLayout() ? 'horizontal' : 'vertical');
 };
 
 const getDesktopBounds = (content: HTMLElement) => {
@@ -83,30 +77,21 @@ const getMobileBounds = () => ({
 
 const setDesktopEventsSize = (content: HTMLElement, nextSize: number) => {
   const { minSize, maxSize } = getDesktopBounds(content);
-  content.style.setProperty(
-    "--events-panel-size",
-    `${clamp(nextSize, minSize, maxSize)}px`,
-  );
+  content.style.setProperty('--events-panel-size', `${clamp(nextSize, minSize, maxSize)}px`);
 };
 
 const setMobileMapSize = (content: HTMLElement, nextSize: number) => {
   const { minSize, maxSize } = getMobileBounds();
-  content.style.setProperty(
-    "--map-panel-size",
-    `${clamp(nextSize, minSize, maxSize)}px`,
-  );
+  content.style.setProperty('--map-panel-size', `${clamp(nextSize, minSize, maxSize)}px`);
 };
 
-const startDrag = (
-  event: PointerEvent,
-  elements: NonNullable<ReturnType<typeof getElements>>,
-) => {
-  if (!elements.content.hasAttribute("data-map-visible")) return null;
+const startDrag = (event: PointerEvent, elements: NonNullable<ReturnType<typeof getElements>>) => {
+  if (!elements.content.hasAttribute('data-map-visible')) return null;
 
   event.preventDefault();
   elements.resizer.setPointerCapture(event.pointerId);
-  elements.content.toggleAttribute("data-map-resizing", true);
-  elements.resizer.toggleAttribute("data-dragging", true);
+  elements.content.toggleAttribute('data-map-resizing', true);
+  elements.resizer.toggleAttribute('data-dragging', true);
 
   return {
     pointerId: event.pointerId,
@@ -127,8 +112,8 @@ const stopDrag = (
     elements.resizer.releasePointerCapture(state.pointerId);
   }
 
-  elements.content.toggleAttribute("data-map-resizing", false);
-  elements.resizer.toggleAttribute("data-dragging", false);
+  elements.content.toggleAttribute('data-map-resizing', false);
+  elements.resizer.toggleAttribute('data-dragging', false);
   emitLayoutUpdated();
 };
 
@@ -152,12 +137,10 @@ const applyKeyboardResize = (
   event: KeyboardEvent,
   elements: NonNullable<ReturnType<typeof getElements>>,
 ) => {
-  if (!elements.content.hasAttribute("data-map-visible")) return;
+  if (!elements.content.hasAttribute('data-map-visible')) return;
 
   const isMobile = isMobileLayout();
-  const keys = isMobile
-    ? ["ArrowUp", "ArrowDown"]
-    : ["ArrowLeft", "ArrowRight"];
+  const keys = isMobile ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight'];
   if (!keys.includes(event.key)) return;
 
   event.preventDefault();
@@ -165,15 +148,12 @@ const applyKeyboardResize = (
 
   if (isMobile) {
     const currentSize = elements.map.getBoundingClientRect().height;
-    setMobileMapSize(
-      elements.content,
-      currentSize + (event.key === "ArrowDown" ? step : -step),
-    );
+    setMobileMapSize(elements.content, currentSize + (event.key === 'ArrowDown' ? step : -step));
   } else {
     const currentSize = elements.events.getBoundingClientRect().width;
     setDesktopEventsSize(
       elements.content,
-      currentSize + (event.key === "ArrowRight" ? step : -step),
+      currentSize + (event.key === 'ArrowRight' ? step : -step),
     );
   }
 
@@ -189,31 +169,31 @@ export const initMapResizer = () => {
   let dragState: ResizeState | null = null;
 
   setOrientation();
-  mobileQuery.addEventListener("change", () => {
+  mobileQuery.addEventListener('change', () => {
     setOrientation();
     emitLayoutUpdated();
   });
 
-  elements.resizer.addEventListener("pointerdown", (event) => {
+  elements.resizer.addEventListener('pointerdown', (event) => {
     dragState = startDrag(event, elements);
   });
 
-  elements.resizer.addEventListener("pointermove", (event) => {
+  elements.resizer.addEventListener('pointermove', (event) => {
     if (!dragState || event.pointerId !== dragState.pointerId) return;
     applyDrag(event, dragState, elements);
   });
 
-  elements.resizer.addEventListener("pointerup", () => {
+  elements.resizer.addEventListener('pointerup', () => {
     stopDrag(dragState, elements);
     dragState = null;
   });
 
-  elements.resizer.addEventListener("pointercancel", () => {
+  elements.resizer.addEventListener('pointercancel', () => {
     stopDrag(dragState, elements);
     dragState = null;
   });
 
-  elements.resizer.addEventListener("keydown", (event) => {
+  elements.resizer.addEventListener('keydown', (event) => {
     applyKeyboardResize(event, elements);
   });
 

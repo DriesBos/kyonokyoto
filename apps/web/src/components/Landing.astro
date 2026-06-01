@@ -1,6 +1,6 @@
 ---
-import Icon from "./Icon.astro";
-import Logo from "./Logo.astro";
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
 
 type Props = {
   cityLabel?: string;
@@ -12,12 +12,17 @@ type Props = {
   upcomingCount: number;
 };
 
-const { cityLabel = "Kyoto", categories, ongoingCount, upcomingCount } = Astro.props;
+const { cityLabel = 'Kyoto', categories, ongoingCount, upcomingCount } = Astro.props;
 const landingLabel = `What's on in ${cityLabel}`;
 ---
 
 <section class="landing" data-landing aria-label={`Kyō-no-Kyōto: ${landingLabel}`}>
-  <button class="landing__button" type="button" data-landing-trigger aria-label={`Enter ${landingLabel}`}>
+  <button
+    class="landing__button"
+    type="button"
+    data-landing-trigger
+    aria-label={`Enter ${landingLabel}`}
+  >
     <span class="landing__content">
       <span class="landing__logo" aria-hidden="true">
         <Logo />
@@ -38,7 +43,7 @@ const landingLabel = `What's on in ${cityLabel}`;
 </section>
 
 <script>
-  import { initLandingScroll } from "../scripts/landingScroll";
+  import { initLandingScroll } from '../scripts/landingScroll';
 
   initLandingScroll();
 </script>

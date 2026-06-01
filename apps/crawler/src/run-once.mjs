@@ -25,10 +25,7 @@ let googleTranslationClientPromise = null;
 let missingGoogleTranslateConfigWarningShown = false;
 const domainFetchSchedule = new Map();
 const supportedTranslationLocales = ['en', 'ja'];
-const localizedEventFields = [
-  'title',
-  'description',
-];
+const localizedEventFields = ['title', 'description'];
 const missingDateCanMeanNoCurrentEventSources = new Set(['sibasi']);
 
 function parseEnvFile(contents) {
@@ -75,10 +72,7 @@ function getEnvNumber(env, name, fallback) {
 }
 
 function getCrawl4AiRenderMode(env) {
-  const value = getArg(
-    'render',
-    env.CRAWL4AI_RENDER_MODE ?? 'auto',
-  ).toLowerCase();
+  const value = getArg('render', env.CRAWL4AI_RENDER_MODE ?? 'auto').toLowerCase();
   return ['auto', 'always', 'never'].includes(value) ? value : 'auto';
 }
 
@@ -105,10 +99,9 @@ function getMissingLocale(locale) {
 }
 
 function getNativeLocales(source) {
-  const configuredNativeLocales =
-    Array.isArray(source?.capabilities?.native_locales)
-      ? source.capabilities.native_locales.map(normalizeLocaleCode).filter(Boolean)
-      : [];
+  const configuredNativeLocales = Array.isArray(source?.capabilities?.native_locales)
+    ? source.capabilities.native_locales.map(normalizeLocaleCode).filter(Boolean)
+    : [];
 
   if (configuredNativeLocales.length) {
     return [...new Set(configuredNativeLocales)];
@@ -155,10 +148,7 @@ function sourceSkipsUrl(source, url) {
 
     try {
       const parsedUrl = new URL(url);
-      return (
-        parsedUrl.href.includes(trimmedPattern) ||
-        parsedUrl.pathname.includes(trimmedPattern)
-      );
+      return parsedUrl.href.includes(trimmedPattern) || parsedUrl.pathname.includes(trimmedPattern);
     } catch {
       return String(url ?? '').includes(trimmedPattern);
     }
@@ -167,13 +157,8 @@ function sourceSkipsUrl(source, url) {
 
 function getLocalizedSourceName(source, locale) {
   const normalizedLocale = normalizeLocaleCode(locale) ?? getSourceLocale(source);
-  const names = source?.names && typeof source.names === 'object'
-    ? source.names
-    : {};
-  const localizedName =
-    names[normalizedLocale] ??
-    source?.[`name_${normalizedLocale}`] ??
-    null;
+  const names = source?.names && typeof source.names === 'object' ? source.names : {};
+  const localizedName = names[normalizedLocale] ?? source?.[`name_${normalizedLocale}`] ?? null;
 
   return typeof localizedName === 'string' && localizedName.trim()
     ? localizedName.trim()
@@ -315,16 +300,13 @@ function findVenueLocation(eventData, source) {
         lat,
         lng,
         name:
-          typeof location.name === 'string' && location.name.trim()
-            ? location.name.trim()
-            : null,
+          typeof location.name === 'string' && location.name.trim() ? location.name.trim() : null,
         address_text:
           typeof location.address_text === 'string' && location.address_text.trim()
             ? location.address_text.trim()
             : null,
         directions_query:
-          typeof location.directions_query === 'string' &&
-          location.directions_query.trim()
+          typeof location.directions_query === 'string' && location.directions_query.trim()
             ? location.directions_query.trim()
             : null,
       };
@@ -347,10 +329,7 @@ function normalizeEventSourceTruth(eventData, source) {
   const venueName = venueLocation?.name ?? source?.name;
   const addressText = venueLocation?.address_text ?? sourceAddress ?? source?.name;
   const directionsQuery =
-    venueLocation?.directions_query ??
-    source?.directions_query ??
-    addressText ??
-    source?.name;
+    venueLocation?.directions_query ?? source?.directions_query ?? addressText ?? source?.name;
 
   return {
     ...eventData,
@@ -393,10 +372,7 @@ function sanitizePostgresJson(value) {
   if (!value || typeof value !== 'object') return value;
 
   return Object.fromEntries(
-    Object.entries(value).map(([key, currentValue]) => [
-      key,
-      sanitizePostgresJson(currentValue),
-    ]),
+    Object.entries(value).map(([key, currentValue]) => [key, sanitizePostgresJson(currentValue)]),
   );
 }
 
@@ -409,10 +385,7 @@ function extractMeta(html, property) {
 }
 
 function extractTagAttribute(tag, attributeName) {
-  const pattern = new RegExp(
-    `${attributeName}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`,
-    'i',
-  );
+  const pattern = new RegExp(`${attributeName}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i');
   const match = tag.match(pattern);
   return match?.[2] ?? match?.[3] ?? match?.[4] ?? null;
 }
@@ -428,8 +401,7 @@ function parseSimpleSelector(selector) {
   const attributePattern =
     /\[\s*([a-z0-9_:-]+)\s*(?:(\*|\^|\$)?=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]+)))?\s*\]/gi;
   const attributes = [...trimmed.matchAll(attributePattern)].map((match) => {
-    const hasValue =
-      match[3] !== undefined || match[4] !== undefined || match[5] !== undefined;
+    const hasValue = match[3] !== undefined || match[4] !== undefined || match[5] !== undefined;
 
     return {
       name: match[1],
@@ -440,7 +412,9 @@ function parseSimpleSelector(selector) {
   const selectorWithoutAttributes = trimmed.replace(attributePattern, '');
   const tag = selectorWithoutAttributes.match(/^[a-z][a-z0-9-]*/i)?.[0]?.toLowerCase() ?? null;
   const id = selectorWithoutAttributes.match(/#([a-z0-9_-]+)/i)?.[1] ?? null;
-  const classes = [...selectorWithoutAttributes.matchAll(/\.([a-z0-9_-]+)/gi)].map((match) => match[1]);
+  const classes = [...selectorWithoutAttributes.matchAll(/\.([a-z0-9_-]+)/gi)].map(
+    (match) => match[1],
+  );
 
   if (!tag && !id && !classes.length && !attributes.length) return null;
 
@@ -488,7 +462,23 @@ function selectSimpleElements(html, selector) {
     if (!tagMatchesSimpleSelector(tagName, attrs, selector)) continue;
 
     const lowerTagName = tagName.toLowerCase();
-    if (['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'].includes(lowerTagName)) {
+    if (
+      [
+        'area',
+        'base',
+        'br',
+        'col',
+        'embed',
+        'hr',
+        'img',
+        'input',
+        'link',
+        'meta',
+        'source',
+        'track',
+        'wbr',
+      ].includes(lowerTagName)
+    ) {
       elements.push(openTag);
       continue;
     }
@@ -547,12 +537,11 @@ function selectorAttributeValues(html, selectors, attributeNames) {
 
         if (values.length) return values;
 
-        return [...element.matchAll(/<img\b[^>]*>/gi)]
-          .flatMap((match) =>
-            attributeNames
-              .map((attributeName) => extractTagAttribute(match[0], attributeName))
-              .filter(Boolean),
-          );
+        return [...element.matchAll(/<img\b[^>]*>/gi)].flatMap((match) =>
+          attributeNames
+            .map((attributeName) => extractTagAttribute(match[0], attributeName))
+            .filter(Boolean),
+        );
       })
       .filter(Boolean),
   );
@@ -647,7 +636,9 @@ function extractLocaleUrlsFromHtml(html, pageUrl) {
     }
   }
 
-  for (const match of html.matchAll(/<a\b[^>]*href\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)[^>]*>[\s\S]*?<\/a>/gi)) {
+  for (const match of html.matchAll(
+    /<a\b[^>]*href\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)[^>]*>[\s\S]*?<\/a>/gi,
+  )) {
     const anchorHtml = match[0];
     const tag = anchorHtml.match(/^<a\b[^>]*>/i)?.[0] ?? '';
     const href = resolveHref(extractTagAttribute(tag, 'href'), pageUrl);
@@ -664,12 +655,7 @@ function extractLocaleUrlsFromHtml(html, pageUrl) {
   return localeUrls;
 }
 
-function inferAlternateLocaleUrlFromConfig(
-  detailUrl,
-  source,
-  sourceLocale,
-  targetLocale,
-) {
+function inferAlternateLocaleUrlFromConfig(detailUrl, source, sourceLocale, targetLocale) {
   const sourceConfig = source?.locales?.[sourceLocale];
   const targetConfig = source?.locales?.[targetLocale];
   const sourceStartUrls = sourceConfig?.start_urls?.filter(Boolean) ?? [];
@@ -718,10 +704,7 @@ function getUrlPathParts(url) {
 }
 
 function isUsableNativeLocaleUrl(detailUrl, alternateUrl) {
-  if (
-    !alternateUrl ||
-    alternateUrl === canonicalizeUrlWithoutHash(detailUrl)
-  ) {
+  if (!alternateUrl || alternateUrl === canonicalizeUrlWithoutHash(detailUrl)) {
     return false;
   }
 
@@ -751,10 +734,7 @@ function nativeLocaleEventMatchesCanonical(canonicalEvent, nativeEvent) {
 
 function extractSectionValue(html, dtText) {
   const escaped = dtText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(
-    `<dt>${escaped}</dt>\\s*<dd>([\\s\\S]*?)</dd>`,
-    'i',
-  );
+  const pattern = new RegExp(`<dt>${escaped}</dt>\\s*<dd>([\\s\\S]*?)</dd>`, 'i');
   const match = html.match(pattern)?.[1];
   return match ? stripTags(match) : null;
 }
@@ -838,8 +818,7 @@ function parseKyoceraDateRange(dateText) {
 }
 
 function parseSlashDateRange(dateText) {
-  const pattern =
-    /(\d{4})\/(\d{1,2})\/(\d{1,2})\s*[-–—]\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/;
+  const pattern = /(\d{4})\/(\d{1,2})\/(\d{1,2})\s*[-–—]\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/;
   const match = dateText.match(pattern);
 
   if (!match) {
@@ -930,9 +909,7 @@ function parseDottedDateRange(dateText) {
   const [, sy, sm, sd, explicitEy, em, ed] = match;
   const startDate = `${sy}-${sm.padStart(2, '0')}-${sd.padStart(2, '0')}`;
   const endDate =
-    em && ed
-      ? `${explicitEy ?? sy}-${em.padStart(2, '0')}-${ed.padStart(2, '0')}`
-      : startDate;
+    em && ed ? `${explicitEy ?? sy}-${em.padStart(2, '0')}-${ed.padStart(2, '0')}` : startDate;
 
   return {
     startDate,
@@ -1058,15 +1035,7 @@ function parseEnglishMonthDateRangeWithOptionalStartYear(dateText) {
     };
   }
 
-  const [
-    ,
-    startMonthName,
-    startDay,
-    maybeStartYear,
-    endMonthName,
-    endDay,
-    endYear,
-  ] = match;
+  const [, startMonthName, startDay, maybeStartYear, endMonthName, endDay, endYear] = match;
   const startMonth = months[startMonthName.toLowerCase()];
   const endMonth = months[endMonthName.toLowerCase()];
   const startYear = maybeStartYear ?? endYear;
@@ -1094,10 +1063,7 @@ function parseEnglishMonthDateRangeWithOptionalStartYear(dateText) {
 function parseEnglishMonthDateRangeWithWeekdays(dateText) {
   const cleaned = dateText
     .replace(/\([^)]*\)/g, '')
-    .replace(
-      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi,
-      '',
-    )
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -1134,15 +1100,10 @@ function parseEnglishMonthDayRangeWithYear(dateText, year) {
   const normalizedYear = String(year ?? '').match(/20\d{2}/)?.[0];
   const cleaned = decodeHtml(dateText)
     .replace(/\([^)]*\)/g, '')
-    .replace(
-      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi,
-      '',
-    )
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
-  const match = cleaned.match(
-    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/,
-  );
+  const match = cleaned.match(/([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/);
 
   if (!normalizedYear || !match) {
     return {
@@ -1195,10 +1156,7 @@ function parseEnglishDayMonthYearRange(dateText) {
 
   const cleaned = dateText
     .replace(/\([^)]*\)/g, '')
-    .replace(
-      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi,
-      '',
-    )
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, '')
     .replace(/&#8211;|–|—/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
@@ -1216,8 +1174,7 @@ function parseEnglishDayMonthYearRange(dateText) {
     };
   }
 
-  const [, startDay, startMonthName, maybeStartYear, endDay, endMonthName, endYear] =
-    match;
+  const [, startDay, startMonthName, maybeStartYear, endDay, endMonthName, endYear] = match;
   const startMonth = months[startMonthName.toLowerCase()];
   const endMonth = months[endMonthName.toLowerCase()];
   const startYear = maybeStartYear ?? endYear;
@@ -1272,10 +1229,7 @@ function parseEnglishSingleDate(dateText) {
 
   const cleaned = decodeHtml(dateText)
     .replace(/\([^)]*\)/g, '')
-    .replace(
-      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi,
-      '',
-    )
+    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -1371,8 +1325,8 @@ function getLatestEventYearHint(event, detailUrl) {
 
   const years = haystacks
     .flatMap((value) =>
-      [...decodeHtml(value).matchAll(/(?:^|[^\d])(20\d{2})(?!\d)/g)].map(
-        (match) => Number(match[1]),
+      [...decodeHtml(value).matchAll(/(?:^|[^\d])(20\d{2})(?!\d)/g)].map((match) =>
+        Number(match[1]),
       ),
     )
     .filter((value) => Number.isFinite(value));
@@ -1397,16 +1351,8 @@ function parseSibasiDateRange(text, detailUrl) {
     /(?:日時|日程|会期)[：:\s]*((\d{4})年(\d{1,2})月(\d{1,2})日[^。\n]{0,40}?[〜～\-－]\s*(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日)/u,
   );
   if (explicitRange) {
-    const [
-      ,
-      matchedText,
-      startYear,
-      startMonth,
-      startDay,
-      endYear,
-      endMonth,
-      endDay,
-    ] = explicitRange;
+    const [, matchedText, startYear, startMonth, startDay, endYear, endMonth, endDay] =
+      explicitRange;
     return {
       dateText: matchedText.trim(),
       startDate: toDateOnly(startYear, startMonth, startDay),
@@ -1421,17 +1367,13 @@ function parseSibasiDateRange(text, detailUrl) {
     const [, startMonth, startDay, maybeEndMonth, endDay] = shortRange;
     const endMonth = maybeEndMonth ?? startMonth;
     return {
-      dateText: shortRange[0]
-        .replace(/^(?:日時|日程|会期|を)\s*[：:\s]*/u, '')
-        .trim(),
+      dateText: shortRange[0].replace(/^(?:日時|日程|会期|を)\s*[：:\s]*/u, '').trim(),
       startDate: toDateOnly(inferredYear, startMonth, startDay),
       endDate: toDateOnly(inferredYear, endMonth, endDay),
     };
   }
 
-  const explicitSingle = text.match(
-    /(?:日時|日程|会期)[：:\s]*((\d{4})年(\d{1,2})月(\d{1,2})日)/u,
-  );
+  const explicitSingle = text.match(/(?:日時|日程|会期)[：:\s]*((\d{4})年(\d{1,2})月(\d{1,2})日)/u);
   if (explicitSingle) {
     const [, matchedText, year, month, day] = explicitSingle;
     return {
@@ -1441,9 +1383,7 @@ function parseSibasiDateRange(text, detailUrl) {
     };
   }
 
-  const shortSingle = text.match(
-    /(?:日時|日程|会期)[：:\s]*((\d{1,2})月(\d{1,2})日)/u,
-  );
+  const shortSingle = text.match(/(?:日時|日程|会期)[：:\s]*((\d{1,2})月(\d{1,2})日)/u);
   if (shortSingle && inferredYear) {
     const [, matchedText, month, day] = shortSingle;
     return {
@@ -1517,9 +1457,7 @@ function escapeHtmlAttribute(value) {
 function parseTagAttributes(tagHtml) {
   const attributes = {};
 
-  for (const match of tagHtml.matchAll(
-    /([:@a-zA-Z0-9_-]+)\s*=\s*(["'])(.*?)\2/g,
-  )) {
+  for (const match of tagHtml.matchAll(/([:@a-zA-Z0-9_-]+)\s*=\s*(["'])(.*?)\2/g)) {
     attributes[match[1].toLowerCase()] = match[3];
   }
 
@@ -1537,10 +1475,7 @@ function parsePositiveInteger(value) {
 function parseCssPixelDimension(style, propertyName) {
   if (!style) return null;
 
-  const pattern = new RegExp(
-    `(?:^|;)\\s*${propertyName}\\s*:\\s*(\\d+(?:\\.\\d+)?)px`,
-    'i',
-  );
+  const pattern = new RegExp(`(?:^|;)\\s*${propertyName}\\s*:\\s*(\\d+(?:\\.\\d+)?)px`, 'i');
   const parsed = Number(style.match(pattern)?.[1]);
 
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : null;
@@ -1572,10 +1507,8 @@ function parseImageDimensionsFromUrl(url) {
     parsedUrl = null;
   }
 
-  const widthQuery =
-    parsedUrl?.searchParams.get('w') ?? parsedUrl?.searchParams.get('width');
-  const heightQuery =
-    parsedUrl?.searchParams.get('h') ?? parsedUrl?.searchParams.get('height');
+  const widthQuery = parsedUrl?.searchParams.get('w') ?? parsedUrl?.searchParams.get('width');
+  const heightQuery = parsedUrl?.searchParams.get('h') ?? parsedUrl?.searchParams.get('height');
   const width = parsePositiveInteger(widthQuery);
   const height = parsePositiveInteger(heightQuery);
 
@@ -1608,7 +1541,7 @@ function isSmallImageCandidate(candidate, url) {
 
   return Boolean(
     (width && width < MIN_CONTENT_IMAGE_WIDTH_PX) ||
-      (height && height < MIN_CONTENT_IMAGE_HEIGHT_PX),
+    (height && height < MIN_CONTENT_IMAGE_HEIGHT_PX),
   );
 }
 
@@ -1641,23 +1574,15 @@ function parseSvgDimensions(buffer) {
   return {
     width:
       parseSvgDimension(attributes.width) ??
-      (viewBox?.length === 4 && Number.isFinite(viewBox[2])
-        ? Math.round(viewBox[2])
-        : null),
+      (viewBox?.length === 4 && Number.isFinite(viewBox[2]) ? Math.round(viewBox[2]) : null),
     height:
       parseSvgDimension(attributes.height) ??
-      (viewBox?.length === 4 && Number.isFinite(viewBox[3])
-        ? Math.round(viewBox[3])
-        : null),
+      (viewBox?.length === 4 && Number.isFinite(viewBox[3]) ? Math.round(viewBox[3]) : null),
   };
 }
 
 function parsePngDimensions(buffer) {
-  if (
-    buffer.length < 24 ||
-    buffer[0] !== 0x89 ||
-    buffer.toString('ascii', 1, 4) !== 'PNG'
-  ) {
+  if (buffer.length < 24 || buffer[0] !== 0x89 || buffer.toString('ascii', 1, 4) !== 'PNG') {
     return null;
   }
 
@@ -1685,8 +1610,7 @@ function parseJpegDimensions(buffer) {
 
   let offset = 2;
   const frameMarkers = new Set([
-    0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce,
-    0xcf,
+    0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf,
   ]);
 
   while (offset + 9 < buffer.length) {
@@ -1784,8 +1708,7 @@ function parseImageDimensionsFromBytes(bytes, contentType = '') {
 }
 
 function looksLikeSocialOrUiImage(url) {
-  const isWpThemeExhibitionImage =
-    /\/wp-content\/themes\/[^/]+\/img\/exhibitions\//i.test(url);
+  const isWpThemeExhibitionImage = /\/wp-content\/themes\/[^/]+\/img\/exhibitions\//i.test(url);
 
   return (
     /data:image|spacer|sprite|logo|icon|favicon|avatar|loader|loading|blank|pixel|tracking|analytics/i.test(
@@ -1807,14 +1730,8 @@ function scoreImageCandidate(candidate) {
   const height = candidate.height ?? 0;
 
   if (candidate.source === 'og:image') score += 20;
-  if (/wp-content\/uploads|\/uploads\/|\/media\/|\/images?\//i.test(url))
-    score += 15;
-  if (
-    /exhi|exhibition|event|program|museum|art|craft|gallery|film|schedule/i.test(
-      url,
-    )
-  )
-    score += 8;
+  if (/wp-content\/uploads|\/uploads\/|\/media\/|\/images?\//i.test(url)) score += 15;
+  if (/exhi|exhibition|event|program|museum|art|craft|gallery|film|schedule/i.test(url)) score += 8;
   if (width >= 256) score += 8;
   if (height >= 256) score += 8;
   if (width >= 512) score += 8;
@@ -1867,10 +1784,7 @@ function finalizeImageUrls(candidates, baseUrl) {
   }
 
   const ranked = [...deduped.values()]
-    .sort(
-      (left, right) =>
-        right.score - left.score || left.url.localeCompare(right.url),
-    )
+    .sort((left, right) => right.score - left.score || left.url.localeCompare(right.url))
     .map((candidate) => candidate.url)
     .slice(0, MAX_IMAGES_PER_EVENT);
 
@@ -1891,10 +1805,7 @@ function sourceAllowsUrl(source, url) {
 function pathnameMatchesPattern(pathname, pattern) {
   const normalizedPathname = pathname.toLowerCase().replace(/\/+$/, '') || '/';
   const normalizedPattern = pattern.toLowerCase().replace(/\/+$/, '') || '/';
-  return (
-    normalizedPathname.includes(normalizedPattern) &&
-    normalizedPathname !== normalizedPattern
-  );
+  return normalizedPathname.includes(normalizedPattern) && normalizedPathname !== normalizedPattern;
 }
 
 function getGenericDetailUrlRecencyHint(url) {
@@ -1902,9 +1813,7 @@ function getGenericDetailUrlRecencyHint(url) {
   const haystack = `${parsed.pathname} ${parsed.search}`;
   const hints = [];
 
-  for (const match of haystack.matchAll(
-    /(20\d{2})[./_-](\d{1,2})(?:[./_-](\d{1,2}))?/g,
-  )) {
+  for (const match of haystack.matchAll(/(20\d{2})[./_-](\d{1,2})(?:[./_-](\d{1,2}))?/g)) {
     const year = Number(match[1]);
     const month = Number(match[2]);
     const day = Number(match[3] ?? '1');
@@ -1914,9 +1823,7 @@ function getGenericDetailUrlRecencyHint(url) {
     }
   }
 
-  for (const match of haystack.matchAll(
-    /(?:^|[\/=_-])(20\d{2})(?:[\/._-]|$)/g,
-  )) {
+  for (const match of haystack.matchAll(/(?:^|[\/=_-])(20\d{2})(?:[\/._-]|$)/g)) {
     hints.push(Number(match[1]) * 10000);
   }
 
@@ -1926,9 +1833,7 @@ function getGenericDetailUrlRecencyHint(url) {
   const pageId = Number(parsed.searchParams.get('page_id') ?? '0');
   if (Number.isFinite(pageId) && pageId > 0) hints.push(pageId);
 
-  for (const match of haystack.matchAll(
-    /(?:^|[\/=_-])(\d{5,})(?:[\/._-]|$)/g,
-  )) {
+  for (const match of haystack.matchAll(/(?:^|[\/=_-])(\d{5,})(?:[\/._-]|$)/g)) {
     hints.push(Number(match[1]));
   }
 
@@ -1964,9 +1869,7 @@ function scoreGenericDetailUrl(source, url) {
   const patterns = (source.event_page_patterns ?? []).filter(
     (pattern) => pattern && pattern !== '/',
   );
-  const patternScore = patterns.some((pattern) =>
-    pathnameMatchesPattern(pathname, pattern),
-  )
+  const patternScore = patterns.some((pattern) => pathnameMatchesPattern(pathname, pattern))
     ? 8
     : 0;
   const keywordScore =
@@ -1975,11 +1878,7 @@ function scoreGenericDetailUrl(source, url) {
     )
       ? 4
       : 0;
-  const dateScore = /20\d{2}|202\d|\d{4}[./-]\d{1,2}/.test(
-    `${pathname} ${search}`,
-  )
-    ? 2
-    : 0;
+  const dateScore = /20\d{2}|202\d|\d{4}[./-]\d{1,2}/.test(`${pathname} ${search}`) ? 2 : 0;
   const depthScore = pathname.split('/').filter(Boolean).length > 1 ? 1 : 0;
   const queryScore = parsed.searchParams.has('p') ? 6 : 0;
 
@@ -1993,11 +1892,10 @@ function extractConfiguredDetailUrls(listingHtml, listingUrl, source) {
   return listingLinkSelectors
     .flatMap((selector) => selectElements(listingHtml, selector))
     .flatMap((element) => {
-      const directHref = /^<a\b/i.test(element)
-        ? extractTagAttribute(element, 'href')
-        : null;
-      const nestedHrefs = [...element.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
-        .map((match) => match[2]);
+      const directHref = /^<a\b/i.test(element) ? extractTagAttribute(element, 'href') : null;
+      const nestedHrefs = [...element.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)].map(
+        (match) => match[2],
+      );
 
       return [directHref, ...nestedHrefs].filter(Boolean);
     })
@@ -2126,25 +2024,18 @@ function extractClassBlock(html, className, tagName = '[a-z0-9]+') {
 
 function extractDefinitionValue(html, term) {
   const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(
-    `<dt>${escaped}</dt>\\s*<dd>([\\s\\S]*?)</dd>`,
-    'i',
-  );
+  const pattern = new RegExp(`<dt>${escaped}</dt>\\s*<dd>([\\s\\S]*?)</dd>`, 'i');
 
   return html.match(pattern)?.[1] ?? null;
 }
 
 function extractKacDetailUrls(listingHtml, listingUrl) {
   const matches = [
-    ...listingHtml.matchAll(
-      /https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/\d+\//g,
-    ),
+    ...listingHtml.matchAll(/https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/\d+\//g),
   ].map((match) => new URL(match[0], listingUrl).toString());
 
   if (!matches.length) {
-    throw new Error(
-      'Could not find Kyoto Art Center event detail URLs on the listing page',
-    );
+    throw new Error('Could not find Kyoto Art Center event detail URLs on the listing page');
   }
 
   return [...new Set(matches)];
@@ -2152,13 +2043,16 @@ function extractKacDetailUrls(listingHtml, listingUrl) {
 
 function extractFukudaDetailUrls(listingHtml, listingUrl) {
   const sectionHtml =
-    listingHtml.match(/<section\b[^>]*id="exArv"[^>]*>([\s\S]*?)<\/section>/i)?.[1] ??
-    '';
+    listingHtml.match(/<section\b[^>]*id="exArv"[^>]*>([\s\S]*?)<\/section>/i)?.[1] ?? '';
   if (!sectionHtml) return [];
 
   return [
     ...new Set(
-      [...sectionHtml.matchAll(/<article\b[^>]*class="[^"]*\bpostbox\b[^"]*"[^>]*>([\s\S]*?)<\/article>/gi)]
+      [
+        ...sectionHtml.matchAll(
+          /<article\b[^>]*class="[^"]*\bpostbox\b[^"]*"[^>]*>([\s\S]*?)<\/article>/gi,
+        ),
+      ]
         .map((match) => match[1].match(/<a\b[^>]+href=(["'])(.*?)\1/i)?.[2])
         .map((href) => (href ? normalizeUrl(href, listingUrl) : null))
         .filter(Boolean)
@@ -2169,17 +2063,13 @@ function extractFukudaDetailUrls(listingHtml, listingUrl) {
 
 function extractSibasiDetailUrls(listingPages, genericDetailLimit = 8) {
   const detailUrls = listingPages.flatMap(({ html, url }) => {
-    const matches = [
-      ...html.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi),
-    ]
+    const matches = [...html.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
       .map((match) => ({
         url: normalizeUrl(match[2], url),
         text: stripTags(match[3]).replace(/\s+/g, ' ').trim(),
       }))
       .filter((entry) => entry.url)
-      .filter((entry) =>
-        /\/20\d{2}\/\d{2}\/\d{2}\//.test(new URL(entry.url).pathname),
-      )
+      .filter((entry) => /\/20\d{2}\/\d{2}\/\d{2}\//.test(new URL(entry.url).pathname))
       .filter(
         (entry) =>
           !/追加チケット|予約開始|会場限定|ご案内|ありがとうございました|item list|items/i.test(
@@ -2213,35 +2103,24 @@ function extractHosooDetailUrls(listingHtml, listingUrl) {
   const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
     .map((match) => normalizeUrl(match[2], listingUrl))
     .filter(Boolean)
-    .filter((url) =>
-      /\/(?:en\/)?exhibitions\/[^/]+\/?$/.test(new URL(url).pathname),
-    );
+    .filter((url) => /\/(?:en\/)?exhibitions\/[^/]+\/?$/.test(new URL(url).pathname));
 
   if (!matches.length) {
-    throw new Error(
-      'Could not find HOSOO exhibition detail URLs on the listing page',
-    );
+    throw new Error('Could not find HOSOO exhibition detail URLs on the listing page');
   }
 
   return [...new Set(matches)];
 }
 
 function extractZenbiDetailUrls(listingHtml, listingUrl) {
-  const blocks = [
-    ...listingHtml.matchAll(
-      /<article id="exhibition-\d+"[\s\S]*?<\/article>/gi,
-    ),
-  ].map((match) => match[0]);
+  const blocks = [...listingHtml.matchAll(/<article id="exhibition-\d+"[\s\S]*?<\/article>/gi)].map(
+    (match) => match[0],
+  );
 
   const matches = blocks
     .map((block) => ({
-      url: normalizeUrl(
-        block.match(/<a href="([^"]+)"/i)?.[1] ?? '',
-        listingUrl,
-      ),
-      term: stripTags(
-        block.match(/<div class="exTerm[\s\S]*?>([\s\S]*?)<\/div>/i)?.[1] ?? '',
-      )
+      url: normalizeUrl(block.match(/<a href="([^"]+)"/i)?.[1] ?? '', listingUrl),
+      term: stripTags(block.match(/<div class="exTerm[\s\S]*?>([\s\S]*?)<\/div>/i)?.[1] ?? '')
         .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase(),
@@ -2249,21 +2128,13 @@ function extractZenbiDetailUrls(listingHtml, listingUrl) {
     .filter((entry) => entry.url)
     .filter((entry) => /\/exhibition\//.test(new URL(entry.url).pathname));
 
-  const preferred = matches.filter((entry) =>
-    /current|upcoming|開催中|開催予定/.test(entry.term),
-  );
+  const preferred = matches.filter((entry) => /current|upcoming|開催中|開催予定/.test(entry.term));
   const urls = [
-    ...new Set(
-      (preferred.length ? preferred : matches.slice(0, 2)).map(
-        (entry) => entry.url,
-      ),
-    ),
+    ...new Set((preferred.length ? preferred : matches.slice(0, 2)).map((entry) => entry.url)),
   ];
 
   if (!urls.length) {
-    throw new Error(
-      'Could not find ZENBI exhibition detail URLs on the listing page',
-    );
+    throw new Error('Could not find ZENBI exhibition detail URLs on the listing page');
   }
 
   return urls;
@@ -2272,35 +2143,23 @@ function extractZenbiDetailUrls(listingHtml, listingUrl) {
 function extractTakaIshiiDetailUrls(listingHtml, listingUrl) {
   const kyotoLocationPattern =
     /taka\s+ishii\s+gallery\s+kyoto|kyoto\s*\(yada-cho\)|yada-cho|タカ・イシイギャラリー\s*京都|京都(?:矢田町)?/i;
-  const sectionMatches = [
-    ...listingHtml.matchAll(/<section\b[^>]*>([\s\S]*?)<\/section>/gi),
-  ];
+  const sectionMatches = [...listingHtml.matchAll(/<section\b[^>]*>([\s\S]*?)<\/section>/gi)];
   const matches = sectionMatches
-    .filter((sectionMatch) =>
-      kyotoLocationPattern.test(stripTags(sectionMatch[0])),
-    )
-    .flatMap((sectionMatch) => [
-      ...sectionMatch[0].matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi),
-    ])
+    .filter((sectionMatch) => kyotoLocationPattern.test(stripTags(sectionMatch[0])))
+    .flatMap((sectionMatch) => [...sectionMatch[0].matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)])
     .map((match) => normalizeUrl(match[2], listingUrl))
     .filter(Boolean)
     .filter((url) => /\/(?:en\/)?archives\/\d+\/?$/.test(new URL(url).pathname));
 
   if (!matches.length) {
-    throw new Error(
-      'Could not find Taka Ishii Gallery Kyoto detail URLs on the listing page',
-    );
+    throw new Error('Could not find Taka Ishii Gallery Kyoto detail URLs on the listing page');
   }
 
   return [...new Set(matches)];
 }
 
 function extractKyohakuDetailUrls(listingHtml, listingUrl) {
-  const matches = [
-    ...listingHtml.matchAll(
-      /<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi,
-    ),
-  ]
+  const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
     .map((match) => ({
       url: normalizeUrl(match[2], listingUrl),
       text: stripTags(match[3]).replace(/\s+/g, ' ').trim(),
@@ -2335,19 +2194,14 @@ function toDetailUrlList(value) {
 }
 
 function extractKacEvent(detailHtml, source, detailUrl) {
-  const titleMatch = detailHtml.match(
-    /<h1 class="sectionTitle">([\s\S]*?)<\/h1>/i,
-  );
+  const titleMatch = detailHtml.match(/<h1 class="sectionTitle">([\s\S]*?)<\/h1>/i);
   const title = titleMatch ? stripTags(titleMatch[1]) : null;
 
   if (!title) {
-    throw new Error(
-      'Could not extract event title from Kyoto Art Center detail page',
-    );
+    throw new Error('Could not extract event title from Kyoto Art Center detail page');
   }
 
-  const dateText =
-    extractSectionValue(detailHtml, '開催日時') ?? 'See source page';
+  const dateText = extractSectionValue(detailHtml, '開催日時') ?? 'See source page';
   const venueName = extractSectionValue(detailHtml, '会場');
   const genre = extractSectionValue(detailHtml, 'ジャンル');
   const category = extractSectionValue(detailHtml, 'カテゴリー');
@@ -2359,14 +2213,12 @@ function extractKacEvent(detailHtml, source, detailUrl) {
   const imageUrls = finalizeImageUrls(
     [
       { url: extractMeta(detailHtml, 'og:image'), source: 'og:image' },
-      ...[
-        ...detailHtml.matchAll(
-          /<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi,
-        ),
-      ].map((match) => ({
-        url: match[1],
-        source: 'img',
-      })),
+      ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map(
+        (match) => ({
+          url: match[1],
+          source: 'img',
+        }),
+      ),
     ],
     detailUrl,
   );
@@ -2413,9 +2265,7 @@ function extractKacEvent(detailHtml, source, detailUrl) {
 }
 
 function extractSibasiEvent(detailHtml, source, detailUrl) {
-  const title = stripTags(
-    detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '',
-  )
+  const title = stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '')
     .replace(/\s*[–-]\s*sibasi$/i, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -2449,12 +2299,8 @@ function extractSibasiEvent(detailHtml, source, detailUrl) {
       startDate: parsedDates.startDate,
       endDate: parsedDates.endDate,
     }),
-    calendar_starts_at: parsedDates.startDate
-      ? `${parsedDates.startDate}T00:00:00+09:00`
-      : null,
-    calendar_ends_at: parsedDates.endDate
-      ? `${parsedDates.endDate}T23:59:00+09:00`
-      : null,
+    calendar_starts_at: parsedDates.startDate ? `${parsedDates.startDate}T00:00:00+09:00` : null,
+    calendar_ends_at: parsedDates.endDate ? `${parsedDates.endDate}T23:59:00+09:00` : null,
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     source_url: detailUrl,
@@ -2478,13 +2324,10 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
   const topRows = featureRows.slice(0, 2);
 
   if (!topRows.length) {
-    throw new Error(
-      'Could not extract homepage exhibition rows from Essence Kyoto',
-    );
+    throw new Error('Could not extract homepage exhibition rows from Essence Kyoto');
   }
 
-  const englishRow =
-    topRows.find((row) => /exhib/i.test(row.title)) ?? topRows[0];
+  const englishRow = topRows.find((row) => /exhib/i.test(row.title)) ?? topRows[0];
   const bilingualTitle = topRows[0]?.title ?? englishRow.title;
   const englishTitle = englishRow.title;
   const dateTextMatch = englishRow.bodyText.match(/Dates[：:]\s*([^\n<]+)/i);
@@ -2495,36 +2338,26 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
     timeZone: 'Asia/Tokyo',
     year: 'numeric',
   }).format(new Date());
-  const parsedDateRange =
-    parseEnglishMonthDateRangeWithWeekdays(dateText).startDate
-      ? parseEnglishMonthDateRangeWithWeekdays(dateText)
-      : parseDottedDateRange(dateText).startDate
-        ? parseDottedDateRange(dateText)
-        : parseEnglishMonthDayRangeWithYear(
-            dateText,
-            detailYear ?? pageYear ?? currentJapanYear,
-          );
+  const parsedDateRange = parseEnglishMonthDateRangeWithWeekdays(dateText).startDate
+    ? parseEnglishMonthDateRangeWithWeekdays(dateText)
+    : parseDottedDateRange(dateText).startDate
+      ? parseDottedDateRange(dateText)
+      : parseEnglishMonthDayRangeWithYear(dateText, detailYear ?? pageYear ?? currentJapanYear);
   const parsedDates = parsedDateRange;
-  const openText =
-    englishRow.bodyText.match(/Open:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
+  const openText = englishRow.bodyText.match(/Open:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
   const description = englishRow.bodyText
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
     .filter(
-      (line) =>
-        !/^Dates:/i.test(line) &&
-        !/^Open:/i.test(line) &&
-        !/^No reservations/i.test(line),
+      (line) => !/^Dates:/i.test(line) && !/^Open:/i.test(line) && !/^No reservations/i.test(line),
     )
     .slice(0, 3)
     .join('\n\n');
 
   const imageUrls = finalizeImageUrls(
     topRows.map((row) => ({
-      url: row.imageUrl.startsWith('//')
-        ? `https:${row.imageUrl}`
-        : row.imageUrl,
+      url: row.imageUrl.startsWith('//') ? `https:${row.imageUrl}` : row.imageUrl,
       source: 'img',
     })),
     detailUrl,
@@ -2559,9 +2392,7 @@ function extractEssenceEvent(detailHtml, source, detailUrl) {
 
 function extractHosooEvent(detailHtml, source, detailUrl) {
   const title = stripTags(
-    detailHtml.match(
-      /<div class="c-title">[\s\S]*?<h3 class="title">([\s\S]*?)<\/h3>/i,
-    )?.[1] ??
+    detailHtml.match(/<div class="c-title">[\s\S]*?<h3 class="title">([\s\S]*?)<\/h3>/i)?.[1] ??
       extractMeta(detailHtml, 'og:title') ??
       '',
   )
@@ -2573,31 +2404,21 @@ function extractHosooEvent(detailHtml, source, detailUrl) {
     throw new Error('Could not extract event title from HOSOO detail page');
   }
 
-  const subtitle = stripTags(
-    detailHtml.match(/<p class="subtitle">([\s\S]*?)<\/p>/i)?.[1] ?? '',
-  );
+  const subtitle = stripTags(detailHtml.match(/<p class="subtitle">([\s\S]*?)<\/p>/i)?.[1] ?? '');
   const dateText =
     stripTags(
-      detailHtml.match(
-        /<dt class="term">Dates<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i,
-      )?.[1] ?? '',
+      detailHtml.match(/<dt class="term">Dates<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i)?.[1] ?? '',
     ) || 'See source page';
   const hoursText =
     stripTags(
-      detailHtml.match(
-        /<dt class="term">Hours<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i,
-      )?.[1] ?? '',
+      detailHtml.match(/<dt class="term">Hours<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i)?.[1] ?? '',
     ) || null;
   const venueName =
     stripTags(
-      detailHtml.match(
-        /<dt class="term">Venue<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i,
-      )?.[1] ?? '',
+      detailHtml.match(/<dt class="term">Venue<\/dt><dd class="desc">([\s\S]*?)<\/dd>/i)?.[1] ?? '',
     ) || source.name;
 
-  const description = [
-    ...detailHtml.matchAll(/<p class="cmt">([\s\S]*?)<\/p>/gi),
-  ]
+  const description = [...detailHtml.matchAll(/<p class="cmt">([\s\S]*?)<\/p>/gi)]
     .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
     .filter(Boolean)
     .slice(0, 4)
@@ -2607,9 +2428,7 @@ function extractHosooEvent(detailHtml, source, detailUrl) {
     [
       { url: extractMeta(detailHtml, 'og:image'), source: 'og:image' },
       ...[
-        ...detailHtml.matchAll(
-          /<img\b[^>]+(?:src|data-src)="([^"]*\/img\/exhibitions\/[^"]+)"/gi,
-        ),
+        ...detailHtml.matchAll(/<img\b[^>]+(?:src|data-src)="([^"]*\/img\/exhibitions\/[^"]+)"/gi),
       ]
         .map((match) => match[1])
         .filter((url) => !/\/profile[_-]/i.test(url))
@@ -2689,9 +2508,7 @@ function extractArtroEvent(detailHtml, source, detailUrl) {
     .filter((value) => value.length > 80)
     .slice(0, 2)
     .join('\n\n');
-  const mainVisualImageStart = detailHtml.search(
-    /<div\b[^>]*class="[^"]*\bmainVisual__image\b/i,
-  );
+  const mainVisualImageStart = detailHtml.search(/<div\b[^>]*class="[^"]*\bmainVisual__image\b/i);
   const mainVisualImageEnd = detailHtml.indexOf(
     '<!-- ////////////////////////////// mainVisual END -->',
     mainVisualImageStart,
@@ -2748,8 +2565,7 @@ function extractZenbiEvent(detailHtml, source, detailUrl) {
     detailHtml.match(/<span class="exTitle_en">([\s\S]*?)<\/span>/i)?.[1] ?? '',
   );
   const subtitleEn = stripTags(
-    detailHtml.match(/<span class="exSubtitle_en">([\s\S]*?)<\/span>/i)?.[1] ??
-      '',
+    detailHtml.match(/<span class="exSubtitle_en">([\s\S]*?)<\/span>/i)?.[1] ?? '',
   );
   const exhibitionType = stripTags(
     detailHtml.match(/<span class="exCat_en">([\s\S]*?)<\/span>/i)?.[1] ?? '',
@@ -2761,30 +2577,23 @@ function extractZenbiEvent(detailHtml, source, detailUrl) {
   }
 
   const dateText =
-    stripTags(
-      detailHtml.match(/<span class="exPeriod">([\s\S]*?)<\/span>/i)?.[1] ?? '',
-    ) || 'See source page';
+    stripTags(detailHtml.match(/<span class="exPeriod">([\s\S]*?)<\/span>/i)?.[1] ?? '') ||
+    'See source page';
   const description = stripTags(
-    detailHtml.match(
-      /<div class="exIntro(?:_en)?[^"]*">([\s\S]*?)<\/div>/i,
-    )?.[1] ??
+    detailHtml.match(/<div class="exIntro(?:_en)?[^"]*">([\s\S]*?)<\/div>/i)?.[1] ??
       detailHtml.match(/<div class="exIntro[^"]*">([\s\S]*?)<\/div>/i)?.[1] ??
       '',
   );
   const hoursText =
-    stripTags(
-      detailHtml.match(/<p class="exOpen en">([\s\S]*?)<\/p>/i)?.[1] ?? '',
-    ) || null;
+    stripTags(detailHtml.match(/<p class="exOpen en">([\s\S]*?)<\/p>/i)?.[1] ?? '') || null;
   const imageUrls = finalizeImageUrls(
     [
-      ...[
-        ...detailHtml.matchAll(
-          /<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi,
-        ),
-      ].map((match) => ({
-        url: match[1],
-        source: 'img',
-      })),
+      ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map(
+        (match) => ({
+          url: match[1],
+          source: 'img',
+        }),
+      ),
     ],
     detailUrl,
   );
@@ -2793,9 +2602,7 @@ function extractZenbiEvent(detailHtml, source, detailUrl) {
   return {
     title,
     categories: [
-      ...new Set(
-        ['exhibition', 'museum', exhibitionType.toLowerCase()].filter(Boolean),
-      ),
+      ...new Set(['exhibition', 'museum', exhibitionType.toLowerCase()].filter(Boolean)),
     ],
     description: description || extractGenericDescription(detailHtml),
     institution_name: source.name,
@@ -2833,29 +2640,22 @@ function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
     .trim();
 
   if (!title) {
-    throw new Error(
-      'Could not extract event title from Taka Ishii Gallery detail page',
-    );
+    throw new Error('Could not extract event title from Taka Ishii Gallery detail page');
   }
 
   const pageText = stripTags(detailHtml);
-  const dateText =
-    pageText.match(/Dates:\s*([^\n]+)/i)?.[1]?.trim() ?? 'See source page';
-  const locationText =
-    pageText.match(/Location:\s*([^\n]+)/i)?.[1]?.trim() ?? source.name;
-  const appointmentText =
-    pageText.match(/Appointment required\.[^\n]*/i)?.[0] ?? null;
+  const dateText = pageText.match(/Dates:\s*([^\n]+)/i)?.[1]?.trim() ?? 'See source page';
+  const locationText = pageText.match(/Location:\s*([^\n]+)/i)?.[1]?.trim() ?? source.name;
+  const appointmentText = pageText.match(/Appointment required\.[^\n]*/i)?.[0] ?? null;
   const description = extractGenericDescription(detailHtml);
   const imageUrls = finalizeImageUrls(
     [
-      ...[
-        ...detailHtml.matchAll(
-          /<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi,
-        ),
-      ].map((match) => ({
-        url: match[1],
-        source: 'img',
-      })),
+      ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map(
+        (match) => ({
+          url: match[1],
+          source: 'img',
+        }),
+      ),
     ],
     detailUrl,
   );
@@ -2864,9 +2664,7 @@ function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
   return {
     title,
     categories: ['exhibition', 'gallery'],
-    description: appointmentText
-      ? `${appointmentText}\n\n${description}`.trim()
-      : description,
+    description: appointmentText ? `${appointmentText}\n\n${description}`.trim() : description,
     institution_name: source.name,
     venue_name: locationText,
     address_text: source.address_text ?? locationText,
@@ -2892,22 +2690,15 @@ function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
 
 function extractKyohakuEvent(detailHtml, source, detailUrl) {
   const title = stripTags(
-    detailHtml.match(
-      /<dt>Exhibition Title<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i,
-    )?.[1] ?? '',
+    detailHtml.match(/<dt>Exhibition Title<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ?? '',
   );
 
   if (!title) {
-    throw new Error(
-      'Could not extract event title from Kyoto National Museum detail page',
-    );
+    throw new Error('Could not extract event title from Kyoto National Museum detail page');
   }
 
   const dateText =
-    stripTags(
-      detailHtml.match(/<dt>Period<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ??
-        '',
-    )
+    stripTags(detailHtml.match(/<dt>Period<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ?? '')
       .split('\n')[0]
       .trim() || 'See source page';
 
@@ -2924,21 +2715,17 @@ function extractKyohakuEvent(detailHtml, source, detailUrl) {
     .join('\n\n');
 
   const venueName =
-    stripTags(
-      detailHtml.match(/<dt>Venue<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ??
-        '',
-    ) || source.name;
+    stripTags(detailHtml.match(/<dt>Venue<\/dt>\s*<dd>\s*<p>([\s\S]*?)<\/p>/i)?.[1] ?? '') ||
+    source.name;
 
   const imageCandidates = [
     ...detailHtml.matchAll(/<img[^>]+src="([^"]*\/exhibitions\/[^"]+)"/gi),
   ].map((match) => ({
-      url: match[1],
-      source: 'img',
-    }));
+    url: match[1],
+    source: 'img',
+  }));
   const nonFlyerImageCandidates = imageCandidates.slice(1);
-  const acceptedImageUrls = new Set(
-    finalizeImageUrls(nonFlyerImageCandidates, detailUrl),
-  );
+  const acceptedImageUrls = new Set(finalizeImageUrls(nonFlyerImageCandidates, detailUrl));
   const imageUrls = [
     ...new Set(
       nonFlyerImageCandidates
@@ -3004,12 +2791,9 @@ function parseDddScheduleEntries(listingHtml, listingUrl) {
       const seriesTitle = stripTags(
         block.match(/<span class="ttl01">([\s\S]*?)<\/span>/i)?.[1] ?? '',
       );
-      const title = stripTags(
-        block.match(/<span class="ttl02">([\s\S]*?)<\/span>/i)?.[1] ?? '',
-      );
+      const title = stripTags(block.match(/<span class="ttl02">([\s\S]*?)<\/span>/i)?.[1] ?? '');
       const dateText =
-        stripTags(block.match(/<p class="date">([\s\S]*?)<\/p>/i)?.[1] ?? '') ||
-        'See source page';
+        stripTags(block.match(/<p class="date">([\s\S]*?)<\/p>/i)?.[1] ?? '') || 'See source page';
 
       return {
         href: href ? normalizeUrl(href, listingUrl) : null,
@@ -3024,15 +2808,11 @@ function parseDddScheduleEntries(listingHtml, listingUrl) {
 function extractDddDetailUrls(listingHtml, listingUrl) {
   return parseDddScheduleEntries(listingHtml, listingUrl)
     .slice(0, 2)
-    .map(
-      (entry, index) => entry.href ?? `${listingUrl}#ddd-schedule-${index + 1}`,
-    );
+    .map((entry, index) => entry.href ?? `${listingUrl}#ddd-schedule-${index + 1}`);
 }
 
 function extractKyoceraFooterAddress(detailHtml) {
-  const footerInfo = detailHtml.match(
-    /<p class="footer_info">([\s\S]*?)<\/p>/i,
-  )?.[1];
+  const footerInfo = detailHtml.match(/<p class="footer_info">([\s\S]*?)<\/p>/i)?.[1];
   if (!footerInfo) return null;
 
   const lines = stripTags(footerInfo)
@@ -3040,10 +2820,7 @@ function extractKyoceraFooterAddress(detailHtml) {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  return (
-    lines.find((line) => /\bKyoto\b/.test(line) && /\d{3}-\d{4}/.test(line)) ??
-    null
-  );
+  return lines.find((line) => /\bKyoto\b/.test(line) && /\d{3}-\d{4}/.test(line)) ?? null;
 }
 
 function extractKyoceraEvent(detailHtml, source, detailUrl) {
@@ -3057,9 +2834,7 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
   const title = titleLines[0] ?? null;
 
   if (!title) {
-    throw new Error(
-      'Could not extract event title from Kyoto City KYOCERA Museum of Art page',
-    );
+    throw new Error('Could not extract event title from Kyoto City KYOCERA Museum of Art page');
   }
 
   const subtitleBlocks = [
@@ -3069,16 +2844,13 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
     .filter(Boolean);
 
   const dateText =
-    stripTags(extractClassBlock(detailHtml, 'exhibition_date', 'p') ?? '') ||
-    'See source page';
+    stripTags(extractClassBlock(detailHtml, 'exhibition_date', 'p') ?? '') || 'See source page';
   const venueName =
     stripTags(extractClassBlock(detailHtml, 'exhibition_venue', 'p') ?? '')
       .replace(/^Venue\s*\[/i, '')
       .replace(/\]$/i, '')
       .trim() || null;
-  const heading = stripTags(
-    extractClassBlock(detailHtml, 'cont_heading', 'h3') ?? '',
-  );
+  const heading = stripTags(extractClassBlock(detailHtml, 'cont_heading', 'h3') ?? '');
   const descriptionHtml =
     detailHtml.match(
       /<div class="tab_cont_inner cont_col2 post_catch">[\s\S]*?<div class="cont_desc">([\s\S]*?)<\/div>/i,
@@ -3087,22 +2859,19 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
     extractMeta(detailHtml, 'og:description') ??
     '';
 
-  const timeText =
-    stripTags(extractDefinitionValue(detailHtml, 'Time') ?? '') || null;
+  const timeText = stripTags(extractDefinitionValue(detailHtml, 'Time') ?? '') || null;
   const mainContentHtml =
     detailHtml.match(
       /<main\b(?=[^>]*\bcontMain\b)(?=[^>]*\bcont_post\b)[^>]*>([\s\S]*?)<\/main>/i,
     )?.[1] ?? '';
   const allImageUrls = finalizeImageUrls(
     [
-      ...[
-        ...mainContentHtml.matchAll(
-          /<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi,
-        ),
-      ].map((match) => ({
-        url: match[1],
-        source: 'img',
-      })),
+      ...[...mainContentHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map(
+        (match) => ({
+          url: match[1],
+          source: 'img',
+        }),
+      ),
     ],
     detailUrl,
   );
@@ -3116,15 +2885,10 @@ function extractKyoceraEvent(detailHtml, source, detailUrl) {
   ];
   const categories = [...new Set(normalizedCategories.filter(Boolean))];
   const parsedDates = parseKyoceraDateRange(dateText);
-  const addressText =
-    extractKyoceraFooterAddress(detailHtml) ??
-    source.address_text ??
-    source.name;
+  const addressText = extractKyoceraFooterAddress(detailHtml) ?? source.address_text ?? source.name;
   const directionsQuery =
     source.directions_query ??
-    (venueName
-      ? `${venueName}, ${source.name}, Kyoto`
-      : `${source.name}, Kyoto`);
+    (venueName ? `${venueName}, ${source.name}, Kyoto` : `${source.name}, Kyoto`);
 
   return {
     title,
@@ -3158,10 +2922,7 @@ function extractDddEvent(detailHtml, source, detailUrl) {
 
   if (scheduleMatch) {
     const index = Number(scheduleMatch[1]) - 1;
-    const entry = parseDddScheduleEntries(
-      detailHtml,
-      detailUrl.replace(/#.*$/, ''),
-    )[index];
+    const entry = parseDddScheduleEntries(detailHtml, detailUrl.replace(/#.*$/, ''))[index];
 
     if (!entry) {
       throw new Error(`Could not extract DDD schedule entry ${index + 1}`);
@@ -3172,9 +2933,7 @@ function extractDddEvent(detailHtml, source, detailUrl) {
     return {
       title: entry.title,
       categories: ['exhibition', 'gallery', 'design'],
-      description:
-        entry.seriesTitle ||
-        'Upcoming exhibition listed on the DDD schedule page.',
+      description: entry.seriesTitle || 'Upcoming exhibition listed on the DDD schedule page.',
       institution_name: source.name,
       venue_name: source.name,
       address_text: source.address_text ?? source.name,
@@ -3211,9 +2970,7 @@ function extractDddEvent(detailHtml, source, detailUrl) {
   }
 
   const dateText =
-    stripTags(
-      detailHtml.match(/<p class="date">([\s\S]*?)<\/p>/i)?.[1] ?? '',
-    ) || 'See source page';
+    stripTags(detailHtml.match(/<p class="date">([\s\S]*?)<\/p>/i)?.[1] ?? '') || 'See source page';
   const parsedDates = parseGenericDateRange(dateText);
   const description = stripTags(
     extractMeta(detailHtml, 'og:description') ??
@@ -3254,11 +3011,7 @@ function extractDddEvent(detailHtml, source, detailUrl) {
 }
 
 function extractMomakDetailUrls(listingHtml, listingUrl) {
-  const matches = [
-    ...listingHtml.matchAll(
-      /https:\/\/www\.momak\.go\.jp\/English\/\?p=(\d+)/g,
-    ),
-  ]
+  const matches = [...listingHtml.matchAll(/https:\/\/www\.momak\.go\.jp\/English\/\?p=(\d+)/g)]
     .map((match) => {
       const id = Number(match[1]);
       return id > 0 ? new URL(match[0], listingUrl).toString() : null;
@@ -3290,30 +3043,22 @@ function extractMomakGoogleMapsUrl(accessHtml) {
 
 function extractSenOkuDetailUrls(listingHtml, listingUrl) {
   const matches = [
-    ...listingHtml.matchAll(
-      /https:\/\/(?:www\.)?sen-oku\.or\.jp\/program\/[A-Za-z0-9_./-]+/g,
-    ),
+    ...listingHtml.matchAll(/https:\/\/(?:www\.)?sen-oku\.or\.jp\/program\/[A-Za-z0-9_./-]+/g),
   ]
     .map((match) => new URL(match[0], listingUrl).toString())
     .filter((url) => /\/program\/[^/]+\/?$/.test(url));
 
   if (!matches.length) {
-    throw new Error(
-      'Could not find Sen-Oku Hakukokan Museum detail URLs on the listing page',
-    );
+    throw new Error('Could not find Sen-Oku Hakukokan Museum detail URLs on the listing page');
   }
 
   return [...new Set(matches)];
 }
 
 function extractSenOkuAddress(accessHtml) {
-  const postalCode = stripTags(
-    accessHtml.match(/〒\s*&nbsp;\s*(\d{3}-\d{4})/i)?.[1] ?? '',
-  );
+  const postalCode = stripTags(accessHtml.match(/〒\s*&nbsp;\s*(\d{3}-\d{4})/i)?.[1] ?? '');
   const streetAddress = stripTags(
-    accessHtml.match(
-      /<div class="address">\s*〒[\s\S]*?<br>\s*([\s\S]*?)\s*<\/div>/i,
-    )?.[1] ?? '',
+    accessHtml.match(/<div class="address">\s*〒[\s\S]*?<br>\s*([\s\S]*?)\s*<\/div>/i)?.[1] ?? '',
   );
 
   if (!postalCode && !streetAddress) return null;
@@ -3321,10 +3066,9 @@ function extractSenOkuAddress(accessHtml) {
 }
 
 function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
-  const scTitle =
-    detailHtml.match(/<section id="scTitle"[\s\S]*?<\/section>/i)?.[0] ?? '';
-  const scTitleParagraphs = [...scTitle.matchAll(/<p>([\s\S]*?)<\/p>/gi)].map(
-    (match) => stripTags(match[1]),
+  const scTitle = detailHtml.match(/<section id="scTitle"[\s\S]*?<\/section>/i)?.[0] ?? '';
+  const scTitleParagraphs = [...scTitle.matchAll(/<p>([\s\S]*?)<\/p>/gi)].map((match) =>
+    stripTags(match[1]),
   );
   const title = scTitleParagraphs[1] ?? '';
 
@@ -3333,27 +3077,20 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
   }
 
   const dateText =
-    scTitleParagraphs.find((paragraph) =>
-      /\d{4}\.\d{2}\.\d{2}/.test(paragraph),
-    ) ?? 'See source page';
+    scTitleParagraphs.find((paragraph) => /\d{4}\.\d{2}\.\d{2}/.test(paragraph)) ??
+    'See source page';
 
   const description = stripTags(
-    detailHtml.match(
-      /<div class="description">[\s\S]*?<p>([\s\S]*?)<\/p>/i,
-    )?.[1] ?? '',
+    detailHtml.match(/<div class="description">[\s\S]*?<p>([\s\S]*?)<\/p>/i)?.[1] ?? '',
   );
 
   const uniqueImageUrls = finalizeImageUrls(
     [
       {
-        url: detailHtml.match(
-          /<section id="scMainImg"[\s\S]*?<img src="([^"]+)"/i,
-        )?.[1],
+        url: detailHtml.match(/<section id="scMainImg"[\s\S]*?<img src="([^"]+)"/i)?.[1],
         source: 'img',
       },
-      ...[
-        ...detailHtml.matchAll(/<img src="([^"]*wp-content\/uploads[^"]+)"/gi),
-      ].map((match) => ({
+      ...[...detailHtml.matchAll(/<img src="([^"]*wp-content\/uploads[^"]+)"/gi)].map((match) => ({
         url: match[1],
         source: 'img',
       })),
@@ -3367,8 +3104,7 @@ function extractMomakEvent(detailHtml, source, detailUrl, context = {}) {
     source.address_text ??
     source.name;
   const directionsQuery =
-    source.directions_query ??
-    extractMomakGoogleMapsUrl(context.accessHtml ?? '');
+    source.directions_query ?? extractMomakGoogleMapsUrl(context.accessHtml ?? '');
 
   return {
     title,
@@ -3405,33 +3141,23 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
   const titleHtml =
     catchHtml.match(/<font\b[^>]*>([\s\S]*?)<\/font>/i)?.[1] ??
     catchHtml.replace(/<span\b[^>]*>[\s\S]*?<\/span>/gi, '');
-  const title = stripTags(
-    titleHtml,
-  );
+  const title = stripTags(titleHtml);
 
   if (!title) {
-    throw new Error(
-      'Could not extract event title from Sen-Oku Hakukokan Museum page',
-    );
+    throw new Error('Could not extract event title from Sen-Oku Hakukokan Museum page');
   }
 
   const dateParts = [
-    ...detailHtml.matchAll(
-      /<span class="num">(\d{4}\.\d{1,2}\.\d{1,2})<\/span>/gi,
-    ),
+    ...detailHtml.matchAll(/<span class="num">(\d{4}\.\d{1,2}\.\d{1,2})<\/span>/gi),
   ].map((match) => match[1]);
   const dateText =
     dateParts.length > 1
       ? `${dateParts[0]} - ${dateParts[1]}`
       : (dateParts[0] ?? 'See source page');
   const venueName =
-    stripTags(
-      detailHtml.match(/<div class="spot">([\s\S]*?)<\/div>/i)?.[1] ?? '',
-    ) || source.name;
+    stripTags(detailHtml.match(/<div class="spot">([\s\S]*?)<\/div>/i)?.[1] ?? '') || source.name;
   const description = stripTags(
-    detailHtml.match(
-      /<div class="leadArea">\s*<p class="copy">\s*([\s\S]*?)<\/p>/i,
-    )?.[1] ??
+    detailHtml.match(/<div class="leadArea">\s*<p class="copy">\s*([\s\S]*?)<\/p>/i)?.[1] ??
       extractMeta(detailHtml, 'og:description') ??
       '',
   );
@@ -3439,19 +3165,16 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
   const allImageUrls = finalizeImageUrls(
     [
       { url: extractMeta(detailHtml, 'og:image'), source: 'og:image' },
-      ...[
-        ...detailHtml.matchAll(
-          /<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi,
-        ),
-      ].map((match) => ({
-        url: match[1],
-        source: 'img',
-      })),
+      ...[...detailHtml.matchAll(/<img[^>]+src="([^"]*wp-content\/uploads[^"]+)"/gi)].map(
+        (match) => ({
+          url: match[1],
+          source: 'img',
+        }),
+      ),
     ],
     detailUrl,
   );
-  const uniqueImageUrls =
-    allImageUrls.length > 1 ? allImageUrls.slice(0, -1) : allImageUrls;
+  const uniqueImageUrls = allImageUrls.length > 1 ? allImageUrls.slice(0, -1) : allImageUrls;
   const parsedDates = parseDottedDateRange(dateText);
   const addressText =
     (context.accessHtml ? extractSenOkuAddress(context.accessHtml) : null) ??
@@ -3465,8 +3188,7 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
     institution_name: source.name,
     venue_name: venueName,
     address_text: addressText,
-    directions_query:
-      source.directions_query ?? 'https://maps.app.goo.gl/xh91N3FpPHUAhiqZA',
+    directions_query: source.directions_query ?? 'https://maps.app.goo.gl/xh91N3FpPHUAhiqZA',
     date_text: dateText,
     start_date: parsedDates.startDate,
     end_date: parsedDates.endDate,
@@ -3492,15 +3214,12 @@ function extractGenericTitle(detailHtml, source) {
     stripTags(detailHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ''),
     stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
   ].filter(Boolean);
-  const escapedSourceName = String(source?.name ?? '')
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedSourceName = String(source?.name ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   const title = candidates[0]
     ?.replace(/\s*[|｜\-–—]\s*KYOTOGRAPHIE 京都国際写真祭$/i, '')
     .replace(
-      escapedSourceName
-        ? new RegExp(`\\s*[|｜\\-–—]\\s*${escapedSourceName}$`, 'i')
-        : /a^/,
+      escapedSourceName ? new RegExp(`\\s*[|｜\\-–—]\\s*${escapedSourceName}$`, 'i') : /a^/,
       '',
     )
     .replace(/\s+/g, ' ')
@@ -3511,8 +3230,7 @@ function extractGenericTitle(detailHtml, source) {
 
 function extractGenericDescription(detailHtml) {
   const metaDescription =
-    extractMeta(detailHtml, 'og:description') ??
-    extractMeta(detailHtml, 'description');
+    extractMeta(detailHtml, 'og:description') ?? extractMeta(detailHtml, 'description');
 
   if (metaDescription) return stripTags(metaDescription).slice(0, 1200);
 
@@ -3530,11 +3248,12 @@ function extractConfiguredImageUrls(detailHtml, detailUrl, source) {
 
   return [
     ...new Set(
-      selectorAttributeValues(
-        detailHtml,
-        imageSelectors,
-        ['src', 'data-src', 'data-original', 'data-lazy-src'],
-      )
+      selectorAttributeValues(detailHtml, imageSelectors, [
+        'src',
+        'data-src',
+        'data-original',
+        'data-lazy-src',
+      ])
         .map((value) => normalizeUrl(value, detailUrl))
         .filter(Boolean),
     ),
@@ -3590,7 +3309,9 @@ function inferBaikenYear(detailHtml) {
   const imageYear = detailHtml.match(/\/uploads\/(?:exhibition|post)\/(20\d{2})\//)?.[1];
   if (imageYear) return Number(imageYear);
 
-  const publishedYear = extractMeta(detailHtml, 'article:published_time')?.match(/^(20\d{2})-/)?.[1];
+  const publishedYear = extractMeta(detailHtml, 'article:published_time')?.match(
+    /^(20\d{2})-/,
+  )?.[1];
   return publishedYear ? Number(publishedYear) : null;
 }
 
@@ -3651,7 +3372,10 @@ function parseBaikenDateRange(dateText, fallbackYear) {
 
 function cleanBaikenTitle(title) {
   return decodeHtml(title)
-    .replace(/\s*(?:\d{4}年)?\d{1,2}月\d{1,2}日(?:\([^)]*\))?\s*[〜～\-－]\s*(?:(?:\d{4}年)?\d{1,2}月)?\d{1,2}日(?:\([^)]*\))?/u, '')
+    .replace(
+      /\s*(?:\d{4}年)?\d{1,2}月\d{1,2}日(?:\([^)]*\))?\s*[〜～\-－]\s*(?:(?:\d{4}年)?\d{1,2}月)?\d{1,2}日(?:\([^)]*\))?/u,
+      '',
+    )
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -3659,11 +3383,8 @@ function cleanBaikenTitle(title) {
 function extractBaikenEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const rawTitle =
-    selectorTextValues(detailHtml, ['.detail-box .post-title', '.post-title'])[0] ??
-    event.title;
-  const description = selectorTextValues(detailHtml, ['.des-box'])
-    .slice(0, 2)
-    .join('\n\n');
+    selectorTextValues(detailHtml, ['.detail-box .post-title', '.post-title'])[0] ?? event.title;
+  const description = selectorTextValues(detailHtml, ['.des-box']).slice(0, 2).join('\n\n');
   const dateCandidates = [
     selectorTextValues(detailHtml, ['.field-date'])[0],
     rawTitle,
@@ -3671,9 +3392,10 @@ function extractBaikenEvent(detailHtml, source, detailUrl) {
     decodeURIComponent(detailUrl),
   ].filter(Boolean);
   const fallbackYear = inferBaikenYear(detailHtml);
-  const parsedDates = dateCandidates
-    .map((candidate) => parseBaikenDateRange(candidate, fallbackYear))
-    .find((candidate) => candidate.startDate) ?? parseBaikenDateRange('', fallbackYear);
+  const parsedDates =
+    dateCandidates
+      .map((candidate) => parseBaikenDateRange(candidate, fallbackYear))
+      .find((candidate) => candidate.startDate) ?? parseBaikenDateRange('', fallbackYear);
   const title = cleanBaikenTitle(rawTitle) || source.name;
   const imageUrls = (event.image_urls ?? []).slice(0, 6);
 
@@ -3698,20 +3420,16 @@ function extractBaikenEvent(detailHtml, source, detailUrl) {
 
 function extractOyamazakiEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
-  const articleImageUrls = extractConfiguredImageUrls(
-    detailHtml,
-    detailUrl,
-    {
-      ...source,
-      selectors: {
-        ...(source.selectors ?? {}),
-        images: '.p-exhibitionArticle img',
-      },
+  const articleImageUrls = extractConfiguredImageUrls(detailHtml, detailUrl, {
+    ...source,
+    selectors: {
+      ...(source.selectors ?? {}),
+      images: '.p-exhibitionArticle img',
     },
+  });
+  const imageUrls = (articleImageUrls.length ? articleImageUrls : (event.image_urls ?? [])).slice(
+    1,
   );
-  const imageUrls = (
-    articleImageUrls.length ? articleImageUrls : (event.image_urls ?? [])
-  ).slice(1);
   const normalizedDateText = event.date_text.replace(/\bto\b/gi, ' - ');
   const parsedDates = parseOyamazakiDateRange(normalizedDateText);
   const hasParsedDates = Boolean(parsedDates.startDate || parsedDates.endDate);
@@ -3726,12 +3444,8 @@ function extractOyamazakiEvent(detailHtml, source, detailUrl) {
           endDate: parsedDates.endDate,
         })
       : {}),
-    calendar_starts_at: hasParsedDates
-      ? parsedDates.calendarStartsAt
-      : event.calendar_starts_at,
-    calendar_ends_at: hasParsedDates
-      ? parsedDates.calendarEndsAt
-      : event.calendar_ends_at,
+    calendar_starts_at: hasParsedDates ? parsedDates.calendarStartsAt : event.calendar_starts_at,
+    calendar_ends_at: hasParsedDates ? parsedDates.calendarEndsAt : event.calendar_ends_at,
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     extraction_confidence: 0.55,
@@ -3749,9 +3463,7 @@ function parseOyamazakiDateRange(dateText) {
 
   if (japaneseRange) {
     const [, sy, sm, sd, explicitEy, em, ed] = japaneseRange;
-    const inferredEndYear =
-      explicitEy ??
-      (Number(em) < Number(sm) ? String(Number(sy) + 1) : sy);
+    const inferredEndYear = explicitEy ?? (Number(em) < Number(sm) ? String(Number(sy) + 1) : sy);
     const startDate = toDateOnly(sy, sm, sd);
     const endDate = toDateOnly(inferredEndYear, em, ed);
 
@@ -3782,16 +3494,7 @@ function extractKyotographieFestivalSchedule(planHtml) {
     };
   }
 
-  const [
-    ,
-    year,
-    startWeekday,
-    startDay,
-    startMonth,
-    endWeekday,
-    endDay,
-    endMonth,
-  ] = match;
+  const [, year, startWeekday, startDay, startMonth, endWeekday, endDay, endMonth] = match;
   const dateText = `${startWeekday ? `${startWeekday} ` : ''}${startDay} ${startMonth} - ${endWeekday ? `${endWeekday} ` : ''}${endDay} ${endMonth}, ${year}`;
   const parsedDates = parseEnglishDayMonthYearRange(
     `${startDay} ${startMonth} ${year} - ${endDay} ${endMonth} ${year}`,
@@ -3803,32 +3506,19 @@ function extractKyotographieFestivalSchedule(planHtml) {
   };
 }
 
-function extractKyotographieEvent(
-  detailHtml,
-  source,
-  detailUrl,
-  sourceContext = {},
-) {
+function extractKyotographieEvent(detailHtml, source, detailUrl, sourceContext = {}) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const imageUrls = (event.image_urls ?? []).slice(0, 3);
   const festivalSchedule = sourceContext.festivalSchedule ?? {};
-  const hasFestivalSchedule = Boolean(
-    festivalSchedule.startDate && festivalSchedule.endDate,
-  );
+  const hasFestivalSchedule = Boolean(festivalSchedule.startDate && festivalSchedule.endDate);
 
   return {
     ...event,
-    date_text: hasFestivalSchedule
-      ? festivalSchedule.dateText
-      : event.date_text,
-    start_date: hasFestivalSchedule
-      ? festivalSchedule.startDate
-      : event.start_date,
+    date_text: hasFestivalSchedule ? festivalSchedule.dateText : event.date_text,
+    start_date: hasFestivalSchedule ? festivalSchedule.startDate : event.start_date,
     end_date: hasFestivalSchedule ? festivalSchedule.endDate : event.end_date,
     ...buildScheduleFields({
-      startDate: hasFestivalSchedule
-        ? festivalSchedule.startDate
-        : event.start_date,
+      startDate: hasFestivalSchedule ? festivalSchedule.startDate : event.start_date,
       endDate: hasFestivalSchedule ? festivalSchedule.endDate : event.end_date,
     }),
     calendar_starts_at: hasFestivalSchedule
@@ -3839,9 +3529,7 @@ function extractKyotographieEvent(
       : event.calendar_ends_at,
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
-    extraction_confidence: hasFestivalSchedule
-      ? 0.45
-      : event.extraction_confidence,
+    extraction_confidence: hasFestivalSchedule ? 0.45 : event.extraction_confidence,
   };
 }
 
@@ -3936,28 +3624,21 @@ function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
   const dateText =
     extractAckItemText(detailHtml, 'Dates') ||
     stripTags(
-      detailHtml.match(
-        /alt="([^"]*Art Collaboration Kyoto[^"]*20\d{2}[^"]*)"/i,
-      )?.[1] ?? '',
+      detailHtml.match(/alt="([^"]*Art Collaboration Kyoto[^"]*20\d{2}[^"]*)"/i)?.[1] ?? '',
     );
   const parsedDates = parseAckDateRange(dateText);
   const aboutDescription = stripTags(
-    detailHtml.match(
-      /<p[^>]*class="about-overview"[^>]*>([\s\S]*?)<\/p>/i,
-    )?.[1] ?? '',
+    detailHtml.match(/<p[^>]*class="about-overview"[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? '',
   )
     .replace(/\s+/g, ' ')
     .trim();
-  const description =
-    aboutDescription || stripTags(extractMeta(detailHtml, 'description') ?? '');
+  const description = aboutDescription || stripTags(extractMeta(detailHtml, 'description') ?? '');
   const venueLines = extractAckItemLines(detailHtml, 'Venue');
   const venueName = venueLines[0] ?? 'Kyoto International Conference Center';
   const addressText =
-    venueLines.find((line) => /Kyoto\s+\d{3}-\d{4}\s+Japan/i.test(line)) ??
-    venueName;
+    venueLines.find((line) => /Kyoto\s+\d{3}-\d{4}\s+Japan/i.test(line)) ?? venueName;
   const imageUrls = extractGenericImageUrls(detailHtml, detailUrl).slice(0, 2);
-  const year =
-    parsedDates.startDate?.slice(0, 4) ?? dateText.match(/20\d{2}/)?.[0] ?? '';
+  const year = parsedDates.startDate?.slice(0, 4) ?? dateText.match(/20\d{2}/)?.[0] ?? '';
 
   return {
     title: `Art Collaboration Kyoto${year ? ` ${year}` : ''}`,
@@ -3966,8 +3647,7 @@ function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
     institution_name: source.name,
     venue_name: venueName || 'Kyoto International Conference Center',
     address_text: addressText || 'Takaragaike, Sakyo-ku, Kyoto 606-0001 Japan',
-    directions_query:
-      source.directions_query ?? 'Kyoto International Conference Center, Kyoto',
+    directions_query: source.directions_query ?? 'Kyoto International Conference Center, Kyoto',
     date_text: dateText || 'See source page',
     start_date: parsedDates.startDate,
     end_date: parsedDates.endDate,
@@ -3989,9 +3669,7 @@ function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
 }
 
 function extractGalleryYamahonEvent(detailHtml, source, detailUrl) {
-  const englishHeading = [
-    ...detailHtml.matchAll(/<h5\b[^>]*>([\s\S]*?)<\/h5>/gi),
-  ]
+  const englishHeading = [...detailHtml.matchAll(/<h5\b[^>]*>([\s\S]*?)<\/h5>/gi)]
     .map((match) => stripTags(match[1]))
     .map((value) =>
       value
@@ -4002,27 +3680,19 @@ function extractGalleryYamahonEvent(detailHtml, source, detailUrl) {
     .find((lines) => /^No\.\s*\d+/i.test(lines[0] ?? ''));
 
   if (!englishHeading) {
-    throw new Error(
-      'Could not find Gallery Yamahon English exhibition heading',
-    );
+    throw new Error('Could not find Gallery Yamahon English exhibition heading');
   }
 
-  const [title, dateText = 'See source page', ...headingDetails] =
-    englishHeading;
+  const [title, dateText = 'See source page', ...headingDetails] = englishHeading;
   const yearHint =
     detailHtml.match(/(20\d{2})年/)?.[1] ??
     detailHtml.match(/datetime=["'](20\d{2})/)?.[1] ??
     String(new Date().getFullYear());
   const parseableDateText = `${dateText.replace(/\b([A-Za-z]{3})\./g, '$1')}, ${yearHint}`;
-  const parsedDates =
-    parseEnglishMonthDateRangeWithOptionalStartYear(parseableDateText);
+  const parsedDates = parseEnglishMonthDateRangeWithOptionalStartYear(parseableDateText);
   const timeText =
-    headingDetails.find((line) =>
-      /\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(line),
-    ) ?? null;
-  const timeMatch = timeText?.match(
-    /(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/,
-  );
+    headingDetails.find((line) => /\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(line)) ?? null;
+  const timeMatch = timeText?.match(/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/);
   const startTimeText = timeMatch?.[1] ?? null;
   const endTimeText = timeMatch?.[2] ?? null;
   const venueName =
@@ -4099,13 +3769,11 @@ function getKankakariPublishedYear(detailHtml) {
 }
 
 function cleanKankakariTitle(rawTitle, dateIndex = -1) {
-  const title = decodeHtml(rawTitle)
-    .replace(/\s+/g, ' ')
-    .trim();
+  const title = decodeHtml(rawTitle).replace(/\s+/g, ' ').trim();
 
-  return (dateIndex > 0 ? title.slice(0, dateIndex) : title)
-    .replace(/\s*[-–—]\s*$/u, '')
-    .trim() || title;
+  return (
+    (dateIndex > 0 ? title.slice(0, dateIndex) : title).replace(/\s*[-–—]\s*$/u, '').trim() || title
+  );
 }
 
 function parseKankakariDateRange(text, fallbackYear = null) {
@@ -4120,15 +3788,7 @@ function parseKankakariDateRange(text, fallbackYear = null) {
 
   if (!match) return null;
 
-  const [
-    fullMatch,
-    explicitStartYear,
-    sm,
-    sd,
-    explicitEndYear,
-    maybeEndMonth,
-    ed,
-  ] = match;
+  const [fullMatch, explicitStartYear, sm, sd, explicitEndYear, maybeEndMonth, ed] = match;
   const startMonth = Number(sm);
   const startDay = Number(sd);
   const endMonth = maybeEndMonth ? Number(maybeEndMonth) : startMonth;
@@ -4137,12 +3797,11 @@ function parseKankakariDateRange(text, fallbackYear = null) {
 
   if (!Number.isFinite(startYear)) return null;
 
-  const endYear =
-    explicitEndYear
-      ? Number(explicitEndYear)
-      : endMonth < startMonth
-        ? startYear + 1
-        : startYear;
+  const endYear = explicitEndYear
+    ? Number(explicitEndYear)
+    : endMonth < startMonth
+      ? startYear + 1
+      : startYear;
   const startDate = toDateOnly(startYear, startMonth, startDay);
   const endDate = toDateOnly(endYear, endMonth, endDay);
 
@@ -4161,16 +3820,9 @@ function extractKankakariEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const firstImageUrl = event.image_urls?.[0] ?? null;
   const rawTitle =
-    decodeHtml(extractMeta(detailHtml, 'og:title') ?? '') ||
-    event.title ||
-    source.name;
+    decodeHtml(extractMeta(detailHtml, 'og:title') ?? '') || event.title || source.name;
   const publishedYear = getKankakariPublishedYear(detailHtml);
-  const dateCandidates = [
-    event.description,
-    rawTitle,
-    event.title,
-    detailUrl,
-  ].filter(Boolean);
+  const dateCandidates = [event.description, rawTitle, event.title, detailUrl].filter(Boolean);
   const rawTitleDate = parseKankakariDateRange(rawTitle, publishedYear);
   const parsedDates =
     dateCandidates
@@ -4181,17 +3833,19 @@ function extractKankakariEvent(detailHtml, source, detailUrl) {
   return {
     ...event,
     title: cleanTitle,
-    ...(parsedDates ? {
-      date_text: parsedDates.dateText,
-      start_date: parsedDates.startDate,
-      end_date: parsedDates.endDate,
-      calendar_starts_at: parsedDates.calendarStartsAt,
-      calendar_ends_at: parsedDates.calendarEndsAt,
-      ...buildScheduleFields({
-        startDate: parsedDates.startDate,
-        endDate: parsedDates.endDate,
-      }),
-    } : {}),
+    ...(parsedDates
+      ? {
+          date_text: parsedDates.dateText,
+          start_date: parsedDates.startDate,
+          end_date: parsedDates.endDate,
+          calendar_starts_at: parsedDates.calendarStartsAt,
+          calendar_ends_at: parsedDates.calendarEndsAt,
+          ...buildScheduleFields({
+            startDate: parsedDates.startDate,
+            endDate: parsedDates.endDate,
+          }),
+        }
+      : {}),
     primary_image_url: firstImageUrl,
     image_urls: firstImageUrl ? [firstImageUrl] : [],
   };
@@ -4243,8 +3897,7 @@ function parseFukudaEnglishDateRange(dateText) {
   );
   if (!match) return null;
 
-  const [, startMonthName, startDay, maybeStartYear, endMonthName, endDay, endYear] =
-    match;
+  const [, startMonthName, startDay, maybeStartYear, endMonthName, endDay, endYear] = match;
   const startMonth = months[startMonthName.toLowerCase()];
   const endMonth = months[endMonthName.toLowerCase()];
   const startYear = maybeStartYear ?? endYear;
@@ -4276,7 +3929,9 @@ function parseFukudaDateRange(dateText) {
 }
 
 function extractFukudaHeroImage(detailHtml, detailUrl) {
-  const styleImage = detailHtml.match(/id="eyeVisual"[^>]+style=(["'])[^"']*url\((["']?)(.*?)\2\)[^"']*\1/i)?.[3];
+  const styleImage = detailHtml.match(
+    /id="eyeVisual"[^>]+style=(["'])[^"']*url\((["']?)(.*?)\2\)[^"']*\1/i,
+  )?.[3];
   const imageUrls = [
     styleImage ? normalizeUrl(styleImage, detailUrl) : null,
     extractMeta(detailHtml, 'og:image')
@@ -4291,13 +3946,16 @@ function extractFukudaHeroImage(detailHtml, detailUrl) {
 function extractFukudaEvent(detailHtml, source, detailUrl) {
   const title =
     extractFukudaTableValue(detailHtml, ['タイトル', 'Title']) ??
-    stripTags(detailHtml.match(/<h1\b[^>]*class="[^"]*\btitle\b[^"]*"[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '') ??
+    stripTags(
+      detailHtml.match(/<h1\b[^>]*class="[^"]*\btitle\b[^"]*"[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '',
+    ) ??
     source.name;
   const dateText =
-    extractFukudaTableValue(detailHtml, ['会期', 'Dates']) ??
-    extractBestDateText(detailHtml);
+    extractFukudaTableValue(detailHtml, ['会期', 'Dates']) ?? extractBestDateText(detailHtml);
   const parsedDates = parseFukudaDateRange(dateText);
-  const description = [...detailHtml.matchAll(/<div\b[^>]*class="[^"]*\bpostBody\b[^"]*"[^>]*>([\s\S]*?)<\/div>/gi)]
+  const description = [
+    ...detailHtml.matchAll(/<div\b[^>]*class="[^"]*\bpostBody\b[^"]*"[^>]*>([\s\S]*?)<\/div>/gi),
+  ]
     .flatMap((match) => [...match[1].matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)])
     .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
     .filter((value) => value.length > 40)
@@ -4308,7 +3966,9 @@ function extractFukudaEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(Boolean),
+    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(
+      Boolean,
+    ),
     description: description || extractGenericDescription(detailHtml),
     institution_name: source.name,
     venue_name: source.name,
@@ -4340,9 +4000,7 @@ function stripHtmlComments(html) {
 
 function extractRakuMuseumDetailUrls(listingHtml, listingUrl) {
   const html = stripHtmlComments(listingHtml);
-  const isEnglishExhibitionIndex = /\/e\/museum\/exhibition\//.test(
-    new URL(listingUrl).pathname,
-  );
+  const isEnglishExhibitionIndex = /\/e\/museum\/exhibition\//.test(new URL(listingUrl).pathname);
 
   if (isEnglishExhibitionIndex) {
     const tabHtml = html.match(/<ul\b[^>]*id="ex-tab"[^>]*>([\s\S]*?)<\/ul>/i)?.[1] ?? '';
@@ -4356,11 +4014,14 @@ function extractRakuMuseumDetailUrls(listingHtml, listingUrl) {
     return [...new Set([listingUrl, ...tabUrls])];
   }
 
-  const infoHtml = html.match(/<div\b[^>]*class="[^"]*\binfo\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? html;
+  const infoHtml =
+    html.match(/<div\b[^>]*class="[^"]*\binfo\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? html;
   const eventUrls = [...infoHtml.matchAll(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)]
     .map((match) => match[1])
     .filter((ddHtml) => /会\s*期/.test(stripTags(ddHtml)))
-    .flatMap((ddHtml) => [...ddHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)].map((match) => match[2]))
+    .flatMap((ddHtml) =>
+      [...ddHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)].map((match) => match[2]),
+    )
     .map((href) => normalizeUrl(href, listingUrl))
     .filter(Boolean)
     .filter((url) => /\/museum\/exhibition\//.test(new URL(url).pathname));
@@ -4374,7 +4035,9 @@ function buildRakuMuseumEvent(source, detailUrl, fields) {
 
   return {
     title: fields.title || source.name,
-    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(Boolean),
+    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(
+      Boolean,
+    ),
     description: fields.description || null,
     institution_name: source.name,
     venue_name: source.name,
@@ -4402,7 +4065,9 @@ function buildRakuMuseumEvent(source, detailUrl, fields) {
 
 function extractRakuMuseumDateText(text) {
   const compact = text.replace(/\s+/g, ' ').trim();
-  const JapaneseDate = compact.match(/会\s*期[:：]\s*\d{4}年\d{1,2}月\d{1,2}日[^。]+?\d{1,2}月\d{1,2}日[^。\n]*/u);
+  const JapaneseDate = compact.match(
+    /会\s*期[:：]\s*\d{4}年\d{1,2}月\d{1,2}日[^。]+?\d{1,2}月\d{1,2}日[^。\n]*/u,
+  );
   if (JapaneseDate) return JapaneseDate[0].trim();
 
   const parsed = parseGenericDateRange(compact);
@@ -4430,9 +4095,10 @@ function extractRakuMuseumTabEvent(detailHtml, source, detailUrl) {
     .filter((value) => value.length > 40)
     .slice(0, 2)
     .join('\n\n');
-  const firstImageUrl = extractGenericImageUrls(html, detailUrl, {
-    includeOgImage: false,
-  })[0] ?? null;
+  const firstImageUrl =
+    extractGenericImageUrls(html, detailUrl, {
+      includeOgImage: false,
+    })[0] ?? null;
 
   return buildRakuMuseumEvent(source, detailUrl, {
     title,
@@ -4444,7 +4110,8 @@ function extractRakuMuseumTabEvent(detailHtml, source, detailUrl) {
 
 function extractRakuMuseumHomeInfoEvent(detailHtml, source, detailUrl) {
   const html = stripHtmlComments(detailHtml);
-  const infoHtml = html.match(/<div\b[^>]*class="[^"]*\binfo\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? '';
+  const infoHtml =
+    html.match(/<div\b[^>]*class="[^"]*\binfo\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1] ?? '';
   if (!infoHtml) return null;
 
   for (const match of infoHtml.matchAll(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
@@ -4559,7 +4226,9 @@ function extractKoenEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(Boolean),
+    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(
+      Boolean,
+    ),
     description: description || extractGenericDescription(mainHtml),
     institution_name: source.name,
     venue_name: source.name,
@@ -4587,11 +4256,8 @@ function extractKoenEvent(detailHtml, source, detailUrl) {
 
 function extractMtkEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
-  const descriptionBlock =
-    extractClassBlock(detailHtml, 'ex__detail', 'div') ?? '';
-  const description = [
-    ...descriptionBlock.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi),
-  ]
+  const descriptionBlock = extractClassBlock(detailHtml, 'ex__detail', 'div') ?? '';
+  const description = [...descriptionBlock.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
     .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
     .filter(Boolean)
     .filter((value) => !/^[-–—]+$/.test(value))
@@ -4631,11 +4297,7 @@ function extractGalleryUnfoldDetailUrls(listingHtml, listingUrl) {
     .filter((url) => {
       try {
         const { hostname, pathname } = new URL(url);
-        return (
-          hostname === 'galleryunfold.com' &&
-          pathname !== '/archive' &&
-          pathname.length > 1
-        );
+        return hostname === 'galleryunfold.com' && pathname !== '/archive' && pathname.length > 1;
       } catch {
         return false;
       }
@@ -4653,15 +4315,11 @@ function extractGalleryUnfoldDetailUrls(listingHtml, listingUrl) {
 function extractChushinDetailUrls(listingHtml, listingUrl) {
   const canonicalUrl = new URL(listingUrl);
   canonicalUrl.hash = '';
-  const sections = [
-    ...listingHtml.matchAll(/<section\b[^>]*\bid=(["'])(exh\d{3,})\1[^>]*>/gi),
-  ]
+  const sections = [...listingHtml.matchAll(/<section\b[^>]*\bid=(["'])(exh\d{3,})\1[^>]*>/gi)]
     .map((match) => match[2])
     .filter(Boolean);
 
-  return [...new Set(sections)].map(
-    (sectionId) => `${canonicalUrl.toString()}#${sectionId}`,
-  );
+  return [...new Set(sections)].map((sectionId) => `${canonicalUrl.toString()}#${sectionId}`);
 }
 
 function extractChushinSectionHtml(detailHtml, sectionId) {
@@ -4699,15 +4357,10 @@ function parseChushinDateRange(dateText) {
 
 function extractChushinEvent(detailHtml, source, detailUrl) {
   const sectionId = new URL(detailUrl).hash.replace(/^#/, '');
-  const sectionHtml = sectionId
-    ? extractChushinSectionHtml(detailHtml, sectionId)
-    : null;
+  const sectionHtml = sectionId ? extractChushinSectionHtml(detailHtml, sectionId) : null;
   const eventHtml = sectionHtml ?? detailHtml;
-  const rawTitle =
-    eventHtml.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ?? source.name;
-  const title = stripTags(
-    rawTitle.replace(/<rt\b[^>]*>[\s\S]*?(?:<\/rt>|<\/ruby>)/gi, ''),
-  )
+  const rawTitle = eventHtml.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ?? source.name;
+  const title = stripTags(rawTitle.replace(/<rt\b[^>]*>[\s\S]*?(?:<\/rt>|<\/ruby>)/gi, ''))
     .replace(/\s*終了\s*$/u, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -4777,8 +4430,7 @@ function extractKuramonzenEvent(detailHtml, source, detailUrl) {
     .map((m) => stripTags(m[1]).replace(/\s+/g, ' ').trim())
     .filter(Boolean);
   const rawDateText =
-    strongTexts.find((t) => /\d{4}\.\d{1,2}\.\d{1,2}/.test(t)) ??
-    extractBestDateText(mainHtml);
+    strongTexts.find((t) => /\d{4}\.\d{1,2}\.\d{1,2}/.test(t)) ?? extractBestDateText(mainHtml);
   const parsedDates = parseGenericDateRange(rawDateText);
 
   // og:image is unique per Shopify article — use it as the authoritative image source
@@ -4876,14 +4528,10 @@ const eventExtractors = {
 
 const sourceSpecificSkipMatchers = {
   kankakari(eventData) {
-    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past'
-      ? 'past event'
-      : null;
+    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past' ? 'past event' : null;
   },
   'koen-kyoto'(eventData) {
-    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past'
-      ? 'past event'
-      : null;
+    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past' ? 'past event' : null;
   },
   'kyoto-city-kyocera-museum-of-art'(eventData) {
     return /(\bCollection Room\b|コレクションルーム)/iu.test(eventData?.title ?? '')
@@ -4891,9 +4539,7 @@ const sourceSpecificSkipMatchers = {
       : null;
   },
   momak(eventData) {
-    return /\bcalendar\b/i.test(eventData?.title ?? '')
-      ? 'title contains calendar'
-      : null;
+    return /\bcalendar\b/i.test(eventData?.title ?? '') ? 'title contains calendar' : null;
   },
 };
 
@@ -4921,14 +4567,7 @@ const sourceContextLoaders = {
       pagesFetched: 1,
     };
   },
-  async 'sen-oku-hakukokan'({
-    userAgent,
-    env,
-    crawlContext,
-    diagnostics,
-    source,
-    crawlRun,
-  }) {
+  async 'sen-oku-hakukokan'({ userAgent, env, crawlContext, diagnostics, source, crawlRun }) {
     const accessPage = await fetchHtml(
       'https://sen-oku.or.jp/kyoto/facility/access',
       userAgent,
@@ -4946,14 +4585,7 @@ const sourceContextLoaders = {
       pagesFetched: 1,
     };
   },
-  async kyotographie({
-    userAgent,
-    env,
-    crawlContext,
-    diagnostics,
-    source,
-    crawlRun,
-  }) {
+  async kyotographie({ userAgent, env, crawlContext, diagnostics, source, crawlRun }) {
     const planPage = await fetchHtml(
       'https://www.kyotographie.jp/en/plan_your_visit/',
       userAgent,
@@ -4995,20 +4627,15 @@ function runJsonCommand(command, args, options = {}) {
     child.on('error', reject);
     child.on('close', (code) => {
       if (code !== 0) {
-        reject(
-          new Error(stderr.trim() || `${command} exited with status ${code}`),
-        );
+        reject(new Error(stderr.trim() || `${command} exited with status ${code}`));
         return;
       }
 
       try {
-        const jsonLine =
-          stdout.trim().split(/\r?\n/).filter(Boolean).at(-1) ?? '';
+        const jsonLine = stdout.trim().split(/\r?\n/).filter(Boolean).at(-1) ?? '';
         resolve(JSON.parse(jsonLine));
       } catch (error) {
-        reject(
-          new Error(`Could not parse ${command} JSON output: ${error.message}`),
-        );
+        reject(new Error(`Could not parse ${command} JSON output: ${error.message}`));
       }
     });
   });
@@ -5021,19 +4648,11 @@ function appendCrawl4AiMediaHtml(html, mediaImages) {
       if (!src) return null;
 
       const candidate = { width: image.width, height: image.height };
-      if (
-        looksLikeSocialOrUiImage(src) ||
-        isSmallImageCandidate(candidate, src)
-      )
-        return null;
+      if (looksLikeSocialOrUiImage(src) || isSmallImageCandidate(candidate, src)) return null;
 
       const dimensions = getImageCandidateDimensions(candidate, src);
-      const width = dimensions.width
-        ? ` width="${escapeHtmlAttribute(dimensions.width)}"`
-        : '';
-      const height = dimensions.height
-        ? ` height="${escapeHtmlAttribute(dimensions.height)}"`
-        : '';
+      const width = dimensions.width ? ` width="${escapeHtmlAttribute(dimensions.width)}"` : '';
+      const height = dimensions.height ? ` height="${escapeHtmlAttribute(dimensions.height)}"` : '';
       return `<img src="${escapeHtmlAttribute(src)}"${width}${height} data-crawl4ai-media="true">`;
     })
     .filter(Boolean)
@@ -5109,10 +4728,7 @@ async function fetchImageDimensions(url, userAgent, env) {
     if (!response.ok && response.status !== 206) return null;
 
     const bytes = await readResponsePrefix(response, IMAGE_DIMENSION_PROBE_BYTES);
-    return parseImageDimensionsFromBytes(
-      bytes,
-      response.headers.get('content-type') ?? '',
-    );
+    return parseImageDimensionsFromBytes(bytes, response.headers.get('content-type') ?? '');
   } finally {
     clearTimeout(timeout);
   }
@@ -5120,8 +4736,7 @@ async function fetchImageDimensions(url, userAgent, env) {
 
 function classifyFetchResult({ response = null, html = '', error = null }) {
   if (error) {
-    return error?.name === 'TimeoutError' ||
-      /timeout|aborted/i.test(error.message ?? '')
+    return error?.name === 'TimeoutError' || /timeout|aborted/i.test(error.message ?? '')
       ? 'timeout'
       : 'network_error';
   }
@@ -5136,9 +4751,7 @@ function classifyFetchResult({ response = null, html = '', error = null }) {
     .replace(/<style\b[\s\S]*?<\/style>/gi, ' ');
   const visibleText = stripTags(htmlWithoutScripts).replace(/\s+/g, ' ').trim();
   const visibleTextLower = visibleText.toLowerCase();
-  const titleText = stripTags(
-    html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '',
-  )
+  const titleText = stripTags(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -5147,15 +4760,13 @@ function classifyFetchResult({ response = null, html = '', error = null }) {
   if ([408, 425, 500, 502, 503, 504].includes(status)) return 'transient_error';
   if ([401, 403].includes(status)) return 'forbidden';
   if (!response.ok) return 'http_error';
-  if (contentType && !/html|xml|text\/plain/i.test(contentType))
-    return 'not_html';
+  if (contentType && !/html|xml|text\/plain/i.test(contentType)) return 'not_html';
 
   const hasChallengeTitle =
     /\b(just a moment|access denied|attention required|captcha|security check|request blocked)\b/i.test(
       titleText,
     );
-  const hasChallengeMarkup =
-    /\b(cf-browser-verification|cf-chl-)\b/i.test(normalizedHtml);
+  const hasChallengeMarkup = /\b(cf-browser-verification|cf-chl-)\b/i.test(normalizedHtml);
   const hasShortChallengeText =
     visibleText.length < 2000 &&
     /\b(checking your browser|enable cookies|access denied|request blocked|captcha|cloudflare)\b/i.test(
@@ -5181,18 +4792,11 @@ function classifyFetchResult({ response = null, html = '', error = null }) {
 }
 
 function isRetryableFetchClassification(classification) {
-  return [
-    'timeout',
-    'network_error',
-    'rate_limited',
-    'transient_error',
-  ].includes(classification);
+  return ['timeout', 'network_error', 'rate_limited', 'transient_error'].includes(classification);
 }
 
 function shouldTryRenderFallback(fetched) {
-  return ['js_shell', 'empty_or_suspicious'].includes(
-    fetched?.metadata?.fetch_classification,
-  );
+  return ['js_shell', 'empty_or_suspicious'].includes(fetched?.metadata?.fetch_classification);
 }
 
 function getRetryAfterDelayMs(response) {
@@ -5239,11 +4843,7 @@ function createCrawlDiagnostics(env = {}) {
     skipped_missing_date_count: 0,
     skipped_other_count: 0,
     crawl4ai_render_count: 0,
-    crawl4ai_render_limit: getEnvNumber(
-      env,
-      'CRAWL4AI_MAX_RENDERS_PER_SOURCE',
-      5,
-    ),
+    crawl4ai_render_limit: getEnvNumber(env, 'CRAWL4AI_MAX_RENDERS_PER_SOURCE', 5),
     crawl4ai_render_skipped_count: 0,
     image_dimension_probe_count: 0,
     image_dimension_probe_rejected_count: 0,
@@ -5263,21 +4863,17 @@ function recordFetchedPage(diagnostics, fetched) {
   const classification = fetched.metadata.fetch_classification;
   if (classification === 'bot_challenge') diagnostics.bot_challenge_count += 1;
   if (classification === 'js_shell') diagnostics.js_shell_count += 1;
-  if (classification === 'empty_or_suspicious')
-    diagnostics.empty_or_suspicious_count += 1;
+  if (classification === 'empty_or_suspicious') diagnostics.empty_or_suspicious_count += 1;
 
   const attempts = Number(fetched.metadata.fetch_attempts ?? 1);
   if (Number.isFinite(attempts) && attempts > 1) {
     diagnostics.retry_count += attempts - 1;
   }
 
-  const fallbackClassification =
-    fetched.metadata.fallback_from?.fetch_classification;
-  if (fallbackClassification === 'bot_challenge')
-    diagnostics.bot_challenge_count += 1;
+  const fallbackClassification = fetched.metadata.fallback_from?.fetch_classification;
+  if (fallbackClassification === 'bot_challenge') diagnostics.bot_challenge_count += 1;
   if (fallbackClassification === 'js_shell') diagnostics.js_shell_count += 1;
-  if (fallbackClassification === 'empty_or_suspicious')
-    diagnostics.empty_or_suspicious_count += 1;
+  if (fallbackClassification === 'empty_or_suspicious') diagnostics.empty_or_suspicious_count += 1;
 }
 
 function recordSkippedEvent(diagnostics, reason) {
@@ -5311,15 +4907,11 @@ function classifySourceOutcome({
 }) {
   if (!detailUrls.length) return 'source_empty';
   if (savedEvents.length > 0)
-    return diagnostics.bot_challenge_count > 0
-      ? 'source_degraded'
-      : 'source_ok';
+    return diagnostics.bot_challenge_count > 0 ? 'source_degraded' : 'source_ok';
   if (diagnostics.bot_challenge_count > 0) return 'source_blocked';
   if (
     skippedEvents.length &&
-    skippedEvents.every((event) =>
-      /past event|older than/.test(event.reason ?? ''),
-    )
+    skippedEvents.every((event) => /past event|older than/.test(event.reason ?? ''))
   ) {
     return 'source_no_current_events';
   }
@@ -5327,9 +4919,7 @@ function classifySourceOutcome({
     missingDateCanMeanNoCurrentEventSources.has(sourceSlug) &&
     skippedEvents.length &&
     skippedEvents.every((event) =>
-      /past event|older than|missing verifiable event date/.test(
-        event.reason ?? '',
-      ),
+      /past event|older than|missing verifiable event date/.test(event.reason ?? ''),
     )
   ) {
     return 'source_no_current_events';
@@ -5359,8 +4949,7 @@ async function waitForDomainDelay(url, env) {
   const now = Date.now();
   const availableAt = domainFetchSchedule.get(hostname) ?? 0;
   const waitMs = Math.max(0, availableAt - now);
-  const nextAvailableAt =
-    Math.max(now, availableAt) + getRandomDelayMs(minDelayMs, maxDelayMs);
+  const nextAvailableAt = Math.max(now, availableAt) + getRandomDelayMs(minDelayMs, maxDelayMs);
   domainFetchSchedule.set(hostname, nextAvailableAt);
 
   if (waitMs > 0) {
@@ -5397,10 +4986,8 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
     env.CRAWL4AI_SCROLL_DELAY ?? '0.5',
   ];
 
-  if (envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true))
-    args.push('--wait-for-images');
-  if (envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', true))
-    args.push('--scan-full-page');
+  if (envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true)) args.push('--wait-for-images');
+  if (envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', true)) args.push('--scan-full-page');
   if (envFlag(env, 'CRAWL4AI_BYPASS_CACHE', true)) args.push('--bypass-cache');
 
   try {
@@ -5414,27 +5001,16 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
 
     if (!result.success) {
       const message = result.error_message ?? 'Crawl4AI render failed';
-      if (
-        /No module named|ModuleNotFoundError|ImportError|not found/i.test(
-          message,
-        )
-      ) {
+      if (/No module named|ModuleNotFoundError|ImportError|not found/i.test(message)) {
         crawl4AiDisabled = true;
-        console.warn(
-          `Crawl4AI render unavailable; continuing with static fetches. ${message}`,
-        );
+        console.warn(`Crawl4AI render unavailable; continuing with static fetches. ${message}`);
       } else {
-        console.warn(
-          `Crawl4AI render failed for ${url}; continuing with static fetch. ${message}`,
-        );
+        console.warn(`Crawl4AI render failed for ${url}; continuing with static fetch. ${message}`);
       }
       return null;
     }
 
-    const html = appendCrawl4AiMediaHtml(
-      result.html ?? '',
-      result.media?.images ?? [],
-    );
+    const html = appendCrawl4AiMediaHtml(result.html ?? '', result.media?.images ?? []);
     return {
       url,
       response: {
@@ -5455,9 +5031,7 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
     };
   } catch (error) {
     crawl4AiDisabled = true;
-    console.warn(
-      `Crawl4AI render unavailable; continuing with static fetches. ${error.message}`,
-    );
+    console.warn(`Crawl4AI render unavailable; continuing with static fetches. ${error.message}`);
     return null;
   }
 }
@@ -5495,10 +5069,7 @@ async function fetchStaticHtml(url, userAgent, env = {}) {
       final_url: response?.url ?? null,
     });
 
-    if (
-      !isRetryableFetchClassification(classification) ||
-      attempt > maxRetries
-    ) {
+    if (!isRetryableFetchClassification(classification) || attempt > maxRetries) {
       if (!response && lastError) {
         throw new Error(
           `Fetch failed for ${url} after ${attempt} attempt${attempt === 1 ? '' : 's'}: ${lastError.message}`,
@@ -5530,24 +5101,14 @@ async function fetchStaticHtml(url, userAgent, env = {}) {
 
 async function fetchHtml(url, userAgent, env = {}, options = {}) {
   if (options.renderMode === 'always') {
-    const rendered = await fetchHtmlWithCrawl4Ai(
-      url,
-      userAgent,
-      env,
-      options.context,
-    );
+    const rendered = await fetchHtmlWithCrawl4Ai(url, userAgent, env, options.context);
     if (rendered) return rendered;
   }
 
   const staticPage = await fetchStaticHtml(url, userAgent, env);
 
   if (options.renderMode === 'auto' && shouldTryRenderFallback(staticPage)) {
-    const rendered = await fetchHtmlWithCrawl4Ai(
-      url,
-      userAgent,
-      env,
-      options.context,
-    );
+    const rendered = await fetchHtmlWithCrawl4Ai(url, userAgent, env, options.context);
     if (rendered) {
       return {
         ...rendered,
@@ -5576,9 +5137,7 @@ async function supabaseRequest({ env, path, method = 'GET', body = null }) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(
-      `Supabase request failed (${response.status}) for ${path}: ${errorText}`,
-    );
+    throw new Error(`Supabase request failed (${response.status}) for ${path}: ${errorText}`);
   }
 
   return response.status === 204 ? null : response.json();
@@ -5591,9 +5150,7 @@ async function getSourceBySlug(env, slug) {
   });
 
   if (!rows?.length) {
-    throw new Error(
-      `Could not find source with slug "${slug}" in public.sources`,
-    );
+    throw new Error(`Could not find source with slug "${slug}" in public.sources`);
   }
 
   return rows[0];
@@ -5672,19 +5229,16 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
   };
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
-    const response = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/events?on_conflict=dedupe_key`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-          Prefer: 'return=representation,resolution=merge-duplicates',
-        },
-        body: JSON.stringify([eventPayload]),
+    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/events?on_conflict=dedupe_key`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        Prefer: 'return=representation,resolution=merge-duplicates',
       },
-    );
+      body: JSON.stringify([eventPayload]),
+    });
 
     if (response.ok) {
       const rows = await response.json();
@@ -5692,15 +5246,9 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
     }
 
     const errorText = await response.text();
-    const missingColumn = errorText.match(
-      /Could not find the '([^']+)' column/,
-    )?.[1];
+    const missingColumn = errorText.match(/Could not find the '([^']+)' column/)?.[1];
 
-    if (
-      response.status === 400 &&
-      missingColumn &&
-      missingColumn in eventPayload
-    ) {
+    if (response.status === 400 && missingColumn && missingColumn in eventPayload) {
       delete eventPayload[missingColumn];
       continue;
     }
@@ -5739,33 +5287,24 @@ async function upsertEventTranslation(env, eventId, locale, eventData) {
 }
 
 function getGoogleTranslateProjectId(env) {
-  return (
-    env.GOOGLE_TRANSLATE_PROJECT_ID ??
-    env.GOOGLE_CLOUD_PROJECT ??
-    env.GCLOUD_PROJECT ??
-    null
-  );
+  return env.GOOGLE_TRANSLATE_PROJECT_ID ?? env.GOOGLE_CLOUD_PROJECT ?? env.GCLOUD_PROJECT ?? null;
 }
 
 async function getGoogleTranslationClient() {
   if (!googleTranslationClientPromise) {
-    googleTranslationClientPromise = import('@google-cloud/translate').then(
-      (module) => {
-        const TranslationServiceClient =
-          module.TranslationServiceClient ??
-          module.v3?.TranslationServiceClient ??
-          module.default?.TranslationServiceClient ??
-          module.default?.v3?.TranslationServiceClient;
+    googleTranslationClientPromise = import('@google-cloud/translate').then((module) => {
+      const TranslationServiceClient =
+        module.TranslationServiceClient ??
+        module.v3?.TranslationServiceClient ??
+        module.default?.TranslationServiceClient ??
+        module.default?.v3?.TranslationServiceClient;
 
-        if (!TranslationServiceClient) {
-          throw new Error(
-            'Could not find TranslationServiceClient in @google-cloud/translate',
-          );
-        }
+      if (!TranslationServiceClient) {
+        throw new Error('Could not find TranslationServiceClient in @google-cloud/translate');
+      }
 
-        return new TranslationServiceClient();
-      },
-    );
+      return new TranslationServiceClient();
+    });
   }
 
   return googleTranslationClientPromise;
@@ -5801,10 +5340,7 @@ async function translateTextFields(env, fields, sourceLocale, targetLocale) {
   const translations = response?.translations ?? [];
 
   return Object.fromEntries(
-    entries.map(([field], index) => [
-      field,
-      translations[index]?.translatedText ?? fields[field],
-    ]),
+    entries.map(([field], index) => [field, translations[index]?.translatedText ?? fields[field]]),
   );
 }
 
@@ -5812,12 +5348,7 @@ async function buildMachineTranslatedEvent(env, eventData, sourceLocale, targetL
   const fields = Object.fromEntries(
     localizedEventFields.map((field) => [field, eventData[field] ?? null]),
   );
-  const translatedFields = await translateTextFields(
-    env,
-    fields,
-    sourceLocale,
-    targetLocale,
-  );
+  const translatedFields = await translateTextFields(env, fields, sourceLocale, targetLocale);
 
   if (!translatedFields) return null;
 
@@ -5848,12 +5379,7 @@ async function fetchNativeLocaleEvent({
   const discoveredLocaleUrls = extractLocaleUrlsFromHtml(detailPage.html, detailUrl);
   const alternateUrl =
     discoveredLocaleUrls[targetLocale] ??
-    inferAlternateLocaleUrlFromConfig(
-      detailUrl,
-      source,
-      sourceLocale,
-      targetLocale,
-    );
+    inferAlternateLocaleUrlFromConfig(detailUrl, source, sourceLocale, targetLocale);
 
   if (!isUsableNativeLocaleUrl(detailUrl, alternateUrl)) {
     return null;
@@ -5869,10 +5395,7 @@ async function fetchNativeLocaleEvent({
     recordFetchedPage(diagnostics, nativePage);
 
     const finalUrl = nativePage.response?.url ?? nativePage.url;
-    if (
-      canonicalizeComparableUrl(finalUrl) !==
-      canonicalizeComparableUrl(alternateUrl)
-    ) {
+    if (canonicalizeComparableUrl(finalUrl) !== canonicalizeComparableUrl(alternateUrl)) {
       throw new Error(`alternate URL redirected to ${finalUrl}`);
     }
 
@@ -5883,19 +5406,15 @@ async function fetchNativeLocaleEvent({
 
     if (
       nativeEvent.source_url &&
-      canonicalizeComparableUrl(nativeEvent.source_url) !==
-        canonicalizeComparableUrl(alternateUrl)
+      canonicalizeComparableUrl(nativeEvent.source_url) !== canonicalizeComparableUrl(alternateUrl)
     ) {
-      throw new Error(
-        `alternate page extracted source URL ${nativeEvent.source_url}`,
-      );
+      throw new Error(`alternate page extracted source URL ${nativeEvent.source_url}`);
     }
 
     if (
       nativeEvent.title &&
       nativeSource.name &&
-      nativeEvent.title.trim().toLowerCase() ===
-        nativeSource.name.trim().toLowerCase()
+      nativeEvent.title.trim().toLowerCase() === nativeSource.name.trim().toLowerCase()
     ) {
       throw new Error(`alternate page title matched source name`);
     }
@@ -5937,12 +5456,7 @@ async function upsertEventTranslations(
 
     const nativeTranslation = nativeTranslations[targetLocale];
     if (nativeTranslation) {
-      await upsertEventTranslation(
-        env,
-        savedEvent.id,
-        targetLocale,
-        nativeTranslation,
-      );
+      await upsertEventTranslation(env, savedEvent.id, targetLocale, nativeTranslation);
       savedTranslations.push(targetLocale);
       continue;
     }
@@ -5958,12 +5472,7 @@ async function upsertEventTranslations(
       );
 
       if (translatedEvent) {
-        await upsertEventTranslation(
-          env,
-          savedEvent.id,
-          targetLocale,
-          translatedEvent,
-        );
+        await upsertEventTranslation(env, savedEvent.id, targetLocale, translatedEvent);
         savedTranslations.push(targetLocale);
       }
     } catch (error) {
@@ -6062,10 +5571,7 @@ async function normalizeEventImagesForSource(
       if (diagnostics) diagnostics.image_dimension_probe_count += 1;
       const dimensions = await fetchImageDimensionsFn(imageUrl, userAgent, env);
 
-      if (
-        dimensions &&
-        isSmallImageCandidate(dimensions, imageUrl)
-      ) {
+      if (dimensions && isSmallImageCandidate(dimensions, imageUrl)) {
         if (diagnostics) diagnostics.image_dimension_probe_rejected_count += 1;
         continue;
       }
@@ -6095,18 +5601,13 @@ async function crawlSource({
   const sourceLocale = getSourceLocale(source);
   const crawlSourceConfig = withSourceLocaleConfig(source, sourceLocale);
   const sourceRenderMode = getSourceRenderMode(crawlSourceConfig, renderMode);
-  const sourceDetailLimit = getSourceDetailLimit(
-    crawlSourceConfig,
-    genericDetailLimit,
-  );
+  const sourceDetailLimit = getSourceDetailLimit(crawlSourceConfig, genericDetailLimit);
   const crawlRun = await createCrawlRun(env, source.id);
   const diagnostics = createCrawlDiagnostics(env);
   const crawlContext = { diagnostics };
 
   try {
-    const listingUrls = [
-      ...new Set(crawlSourceConfig.start_urls?.filter(Boolean) ?? []),
-    ];
+    const listingUrls = [...new Set(crawlSourceConfig.start_urls?.filter(Boolean) ?? [])];
     if (!listingUrls.length) {
       throw new Error(`Source "${source.slug}" does not have a start URL`);
     }
@@ -6148,12 +5649,11 @@ async function crawlSource({
       Number(crawlSourceConfig?.crawl_hints?.max_detail_pages),
     );
     const shouldLimitDetailUrls =
-      !detailUrlExtractor ||
-      source.slug === 'sibasi' ||
-      hasConfiguredDetailLimit;
+      !detailUrlExtractor || source.slug === 'sibasi' || hasConfiguredDetailLimit;
 
-    detailUrls = [...new Set(detailUrls)]
-      .filter((detailUrl) => !sourceSkipsUrl(crawlSourceConfig, detailUrl));
+    detailUrls = [...new Set(detailUrls)].filter(
+      (detailUrl) => !sourceSkipsUrl(crawlSourceConfig, detailUrl),
+    );
 
     if (shouldLimitDetailUrls) {
       detailUrls = detailUrls.slice(0, sourceDetailLimit);
@@ -6248,12 +5748,7 @@ async function crawlSource({
       pagesFetched += 1;
       recordFetchedPage(diagnostics, detailPage);
       let extractedEvent = normalizeEventSourceTruth(
-        eventExtractor(
-          detailPage.html,
-          crawlSourceConfig,
-          detailUrl,
-          sourceContext,
-        ),
+        eventExtractor(detailPage.html, crawlSourceConfig, detailUrl, sourceContext),
         crawlSourceConfig,
       );
 
@@ -6272,12 +5767,7 @@ async function crawlSource({
           pagesFetched += 1;
           recordFetchedPage(diagnostics, renderedDetailPage);
           const renderedEvent = normalizeEventSourceTruth(
-            eventExtractor(
-              renderedDetailPage.html,
-              crawlSourceConfig,
-              detailUrl,
-              sourceContext,
-            ),
+            eventExtractor(renderedDetailPage.html, crawlSourceConfig, detailUrl, sourceContext),
             crawlSourceConfig,
           );
           detailPage = renderedDetailPage;
@@ -6285,13 +5775,7 @@ async function crawlSource({
         }
       }
 
-      const detailRawPage = await upsertRawPage(
-        env,
-        source.id,
-        crawlRun.id,
-        'detail',
-        detailPage,
-      );
+      const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, 'detail', detailPage);
 
       if (source.slug === 'sibasi') {
         const hasVerifiedDate =
@@ -6319,10 +5803,7 @@ async function crawlSource({
         }
       }
 
-      const sourceSpecificSkipReason = getSourceSpecificSkipReason(
-        source,
-        extractedEvent,
-      );
+      const sourceSpecificSkipReason = getSourceSpecificSkipReason(source, extractedEvent);
 
       if (sourceSpecificSkipReason) {
         pushSkippedEvent(skippedEvents, diagnostics, {
@@ -6334,11 +5815,7 @@ async function crawlSource({
       }
 
       const latestEventDate = getLatestEventDateOnly(extractedEvent);
-      if (
-        latestEventDate &&
-        oneYearAgoJapan &&
-        latestEventDate < oneYearAgoJapan
-      ) {
+      if (latestEventDate && oneYearAgoJapan && latestEventDate < oneYearAgoJapan) {
         pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
           title: extractedEvent.title,
@@ -6348,10 +5825,7 @@ async function crawlSource({
       }
 
       if (!latestEventDate) {
-        const latestEventYearHint = getLatestEventYearHint(
-          extractedEvent,
-          detailUrl,
-        );
+        const latestEventYearHint = getLatestEventYearHint(extractedEvent, detailUrl);
 
         if (latestEventYearHint && latestEventYearHint < previousYear) {
           pushSkippedEvent(skippedEvents, diagnostics, {
@@ -6363,15 +5837,11 @@ async function crawlSource({
         }
       }
 
-      extractedEvent = await normalizeEventImagesForSource(
-        extractedEvent,
-        crawlSourceConfig,
-        {
-          env,
-          userAgent,
-          diagnostics,
-        },
-      );
+      extractedEvent = await normalizeEventImagesForSource(extractedEvent, crawlSourceConfig, {
+        env,
+        userAgent,
+        diagnostics,
+      });
 
       if (!hasExtractedImage(extractedEvent)) {
         pushSkippedEvent(skippedEvents, diagnostics, {
@@ -6406,13 +5876,7 @@ async function crawlSource({
         if (!nativeTranslation) continue;
 
         pagesFetched += 1;
-        await upsertRawPage(
-          env,
-          source.id,
-          crawlRun.id,
-          'detail',
-          nativeTranslation.page,
-        );
+        await upsertRawPage(env, source.id, crawlRun.id, 'detail', nativeTranslation.page);
         nativeTranslations[targetLocale] = nativeTranslation.event;
       }
 
@@ -6441,11 +5905,7 @@ async function crawlSource({
       });
     }
 
-    const archivedEvents = await archiveStaleEvents(
-      env,
-      source.id,
-      activeDedupeKeys,
-    );
+    const archivedEvents = await archiveStaleEvents(env, source.id, activeDedupeKeys);
     const usedGenericExtractor = !eventExtractors[source.slug];
     const sourceOutcome = classifySourceOutcome({
       detailUrls,
@@ -6580,9 +6040,7 @@ async function main() {
   );
 
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env',
-    );
+    throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env');
   }
 
   const sourceSlugs =
@@ -6668,9 +6126,6 @@ export {
   withSourceLocaleConfig,
 };
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await main();
 }

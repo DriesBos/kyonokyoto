@@ -19,11 +19,11 @@ City config is the source of truth for city behavior.
 
 Initial cities:
 
-| City | Slug | Theme color | Route example |
-| --- | --- | --- | --- |
-| Kyoto | `kyoto` | `#138e00` | `/kyoto/en/` |
-| Osaka | `osaka` | `#7d4cff` | `/osaka/en/` |
-| Tokyo | `tokyo` | `#006fd6` | `/tokyo/en/` |
+| City  | Slug    | Theme color | Route example |
+| ----- | ------- | ----------- | ------------- |
+| Kyoto | `kyoto` | `#138e00`   | `/kyoto/en/`  |
+| Osaka | `osaka` | `#7d4cff`   | `/osaka/en/`  |
+| Tokyo | `tokyo` | `#006fd6`   | `/tokyo/en/`  |
 
 The city toggle cycles:
 

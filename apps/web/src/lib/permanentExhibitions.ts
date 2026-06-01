@@ -1,14 +1,14 @@
-import type { AppLocale } from "./i18n";
-import type { ClassifiedEvent } from "./events";
-import type { SourceConfig } from "./sources";
+import type { AppLocale } from './i18n';
+import type { ClassifiedEvent } from './events';
+import type { SourceConfig } from './sources';
 
 export type MediaEmbed = {
-  type: "youtube";
+  type: 'youtube';
   url: string;
   video_id?: string;
 };
 
-type HighlightCadence = "permanent" | "occasional";
+type HighlightCadence = 'permanent' | 'occasional';
 
 export type PermanentExhibitionHighlight = {
   slug: string;
@@ -37,11 +37,11 @@ const localizedValue = (
 ) => values?.[activeLocale] || values?.en || values?.ja || fallback;
 
 const localizedDescription = (
-  value: PermanentExhibitionHighlight["description"],
+  value: PermanentExhibitionHighlight['description'],
   activeLocale: AppLocale,
 ) => {
   if (!value) return null;
-  if (typeof value === "string") return value;
+  if (typeof value === 'string') return value;
 
   return value[activeLocale] ?? value.en ?? value.ja ?? null;
 };
@@ -49,9 +49,8 @@ const localizedDescription = (
 export const youtubeVideoIdFromUrl = (value: string) => {
   try {
     const url = new URL(value);
-    if (url.hostname === "youtu.be")
-      return url.pathname.split("/").filter(Boolean)[0] ?? null;
-    if (url.hostname.endsWith("youtube.com")) return url.searchParams.get("v");
+    if (url.hostname === 'youtu.be') return url.pathname.split('/').filter(Boolean)[0] ?? null;
+    if (url.hostname.endsWith('youtube.com')) return url.searchParams.get('v');
   } catch {
     return null;
   }
@@ -62,24 +61,22 @@ export const youtubeVideoIdFromUrl = (value: string) => {
 const normalizeMediaEmbeds = (mediaEmbeds: MediaEmbed[] | undefined) =>
   (mediaEmbeds ?? [])
     .map((embed) => {
-      if (embed.type !== "youtube") return null;
+      if (embed.type !== 'youtube') return null;
 
       const videoId = embed.video_id ?? youtubeVideoIdFromUrl(embed.url);
       if (!videoId) return null;
 
       return {
-        type: "youtube" as const,
+        type: 'youtube' as const,
         url: embed.url,
         video_id: videoId,
       };
     })
-    .filter(
-      (embed): embed is MediaEmbed & { video_id: string } => embed !== null,
-    );
+    .filter((embed): embed is MediaEmbed & { video_id: string } => embed !== null);
 
 const cadenceDateText: Record<AppLocale, string> = {
-  en: "also visit",
-  ja: "あわせて",
+  en: 'also visit',
+  ja: 'あわせて',
 };
 
 export const permanentEventsForLocale = ({
@@ -91,9 +88,7 @@ export const permanentEventsForLocale = ({
   configuredSources: SourceConfig[];
   activeLocale: AppLocale;
 }): ClassifiedEvent[] => {
-  const sourceBySlug = new Map(
-    configuredSources.map((source) => [source.slug, source]),
-  );
+  const sourceBySlug = new Map(configuredSources.map((source) => [source.slug, source]));
 
   return highlights
     .filter((highlight) => highlight.is_active !== false)
@@ -104,20 +99,15 @@ export const permanentEventsForLocale = ({
       const baseUrl = source?.base_url ?? highlight.base_url;
       if (!name || !baseUrl) return null;
 
-      const institutionName = localizedValue(
-        source?.names ?? highlight.names,
-        activeLocale,
-        name,
-      );
+      const institutionName = localizedValue(source?.names ?? highlight.names, activeLocale, name);
       const sourceUrl = localizedValue(highlight.urls, activeLocale, baseUrl);
-      const cadence = highlight.cadence ?? "permanent";
+      const cadence = highlight.cadence ?? 'permanent';
 
       return {
         id: `${cadence}:${highlight.slug}`,
         source_id: highlight.slug,
         title: institutionName,
-        categories:
-          source?.source_categories ?? highlight.source_categories ?? [],
+        categories: source?.source_categories ?? highlight.source_categories ?? [],
         date_text: cadenceDateText[activeLocale],
         institution_name: institutionName,
         venue_name: null,
@@ -134,9 +124,9 @@ export const permanentEventsForLocale = ({
         media_embeds: normalizeMediaEmbeds(highlight.media_embeds),
         source_url: sourceUrl,
         description: localizedDescription(highlight.description, activeLocale),
-        schedule_type: "unknown",
+        schedule_type: 'unknown',
         occurrence_dates: [],
-        timing: "permanent",
+        timing: 'permanent',
       } satisfies ClassifiedEvent;
     })
     .filter((event) => event !== null) as ClassifiedEvent[];

@@ -1,19 +1,19 @@
-import { open, readFile, unlink } from "node:fs/promises";
-import { resolve } from "node:path";
-import { spawn } from "node:child_process";
-import { normalizeCity } from "../data/sources/source-config.mjs";
+import { open, readFile, unlink } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { spawn } from 'node:child_process';
+import { normalizeCity } from '../data/sources/source-config.mjs';
 
 const projectRoot = process.cwd();
-const crawlerEnvPath = resolve(projectRoot, "apps/crawler/.env");
+const crawlerEnvPath = resolve(projectRoot, 'apps/crawler/.env');
 
 function parseEnvFile(contents) {
   const env = {};
 
-  for (const rawLine of contents.split("\n")) {
+  for (const rawLine of contents.split('\n')) {
     const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
+    if (!line || line.startsWith('#')) continue;
 
-    const separatorIndex = line.indexOf("=");
+    const separatorIndex = line.indexOf('=');
     if (separatorIndex === -1) continue;
 
     const key = line.slice(0, separatorIndex).trim();
@@ -40,7 +40,7 @@ async function runStep(label, cmd, args, options = {}) {
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(cmd, args, {
       cwd: projectRoot,
-      stdio: "inherit",
+      stdio: 'inherit',
       env: {
         ...process.env,
         ...options.env,
@@ -48,49 +48,44 @@ async function runStep(label, cmd, args, options = {}) {
       shell: false,
     });
 
-    child.on("exit", (code) => {
+    child.on('exit', (code) => {
       if (code === 0) {
         resolvePromise(true);
         return;
       }
 
       if (options.allowFailure) {
-        console.warn(
-          `${label} reported exit code ${code ?? "unknown"}; continuing.`,
-        );
+        console.warn(`${label} reported exit code ${code ?? 'unknown'}; continuing.`);
         resolvePromise(false);
         return;
       }
 
-      rejectPromise(
-        new Error(`${label} failed with exit code ${code ?? "unknown"}`),
-      );
+      rejectPromise(new Error(`${label} failed with exit code ${code ?? 'unknown'}`));
     });
 
-    child.on("error", rejectPromise);
+    child.on('error', rejectPromise);
   });
 }
 
-const envContents = await readFile(crawlerEnvPath, "utf8");
+const envContents = await readFile(crawlerEnvPath, 'utf8');
 const env = parseEnvFile(envContents);
 
-const skipSync = hasFlag("--skip-sync");
-const skipCrawl = hasFlag("--skip-crawl");
-const skipDeploy = hasFlag("--skip-deploy");
-const strictTranslations = hasFlag("--strict-translations");
-const genericLimit = getArg("generic-limit", "6");
-const city = normalizeCity(getArg("city", "kyoto"));
+const skipSync = hasFlag('--skip-sync');
+const skipCrawl = hasFlag('--skip-crawl');
+const skipDeploy = hasFlag('--skip-deploy');
+const strictTranslations = hasFlag('--strict-translations');
+const genericLimit = getArg('generic-limit', '6');
+const city = normalizeCity(getArg('city', 'kyoto'));
 if (!city) {
-  throw new Error(`Unsupported source city "${getArg("city")}"`);
+  throw new Error(`Unsupported source city "${getArg('city')}"`);
 }
-const buildHookUrl =
-  env.NETLIFY_BUILD_HOOK_URL ?? env.WEB_REDEPLOY_HOOK_URL ?? null;
-const lockPath = env.CRAWL_LOCK_PATH ?? "/tmp/kyo-no-kyoto-crawl.lock";
+const buildHookUrl = env.NETLIFY_BUILD_HOOK_URL ?? env.WEB_REDEPLOY_HOOK_URL ?? null;
+const lockPath = env.CRAWL_LOCK_PATH ?? '/tmp/kyo-no-kyoto-crawl.lock';
 let lockHandle = null;
 
 try {
   try {
-    lockHandle = await open(lockPath, "wx");
+    lockHandle = await open(lockPath, 'wx');
     await lockHandle.writeFile(
       JSON.stringify({
         city,
@@ -99,53 +94,50 @@ try {
       }),
     );
   } catch (error) {
-    if (error?.code === "EEXIST") {
+    if (error?.code === 'EEXIST') {
       console.log(`Crawl cycle skipped: lock exists at ${lockPath}`);
       process.exit(0);
     }
     throw error;
   }
 
-  await runStep("Pull latest code", "git", ["pull", "--ff-only"]);
+  await runStep('Pull latest code', 'git', ['pull', '--ff-only']);
 
   if (!skipSync) {
-    await runStep("Sync sources", "node", [
-      "scripts/sync-sources.mjs",
-      `--city=${city}`,
-    ]);
+    await runStep('Sync sources', 'node', ['scripts/sync-sources.mjs', `--city=${city}`]);
   }
 
   if (!skipCrawl) {
-    await runStep("Crawl all sources", "node", [
-      "apps/crawler/src/run-once.mjs",
-      "--source=all",
+    await runStep('Crawl all sources', 'node', [
+      'apps/crawler/src/run-once.mjs',
+      '--source=all',
       `--city=${city}`,
       `--generic-limit=${genericLimit}`,
     ]);
   }
 
   await runStep(
-    "Check translations",
-    "npm",
-    ["--prefix", "apps/crawler", "run", "translations:check"],
+    'Check translations',
+    'npm',
+    ['--prefix', 'apps/crawler', 'run', 'translations:check'],
     { allowFailure: !strictTranslations },
   );
 
   if (!skipDeploy) {
     if (!buildHookUrl) {
       throw new Error(
-        "Missing NETLIFY_BUILD_HOOK_URL (or WEB_REDEPLOY_HOOK_URL) in apps/crawler/.env",
+        'Missing NETLIFY_BUILD_HOOK_URL (or WEB_REDEPLOY_HOOK_URL) in apps/crawler/.env',
       );
     }
 
-    console.log("\n== Trigger Netlify rebuild ==");
+    console.log('\n== Trigger Netlify rebuild ==');
     const response = await fetch(buildHookUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        trigger: "scheduled-crawl",
+        trigger: 'scheduled-crawl',
         city,
         timestamp: new Date().toISOString(),
       }),
@@ -153,9 +145,7 @@ try {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `Netlify build hook failed (${response.status}): ${errorText}`,
-      );
+      throw new Error(`Netlify build hook failed (${response.status}): ${errorText}`);
     }
 
     console.log(`Triggered rebuild: ${response.status}`);

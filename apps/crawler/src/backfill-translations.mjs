@@ -1,23 +1,20 @@
-import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import {
-  buildMachineTranslatedEvent,
-  upsertEventTranslation,
-} from "./run-once.mjs";
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildMachineTranslatedEvent, upsertEventTranslation } from './run-once.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const envPath = resolve(__dirname, "..", ".env");
-const supportedLocales = ["en", "ja"];
+const envPath = resolve(__dirname, '..', '.env');
+const supportedLocales = ['en', 'ja'];
 
 function parseEnvFile(contents) {
   const env = {};
 
-  for (const rawLine of contents.split("\n")) {
+  for (const rawLine of contents.split('\n')) {
     const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
+    if (!line || line.startsWith('#')) continue;
 
-    const separatorIndex = line.indexOf("=");
+    const separatorIndex = line.indexOf('=');
     if (separatorIndex === -1) continue;
 
     const key = line.slice(0, separatorIndex).trim();
@@ -49,40 +46,38 @@ function getNumberArg(name, fallback) {
 }
 
 function getMissingLocale(locale) {
-  return locale === "ja" ? "en" : "ja";
+  return locale === 'ja' ? 'en' : 'ja';
 }
 
 function normalizeLocale(value) {
-  if (typeof value !== "string") return null;
+  if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
-  if (normalized === "jp" || normalized.startsWith("ja")) return "ja";
-  if (normalized.startsWith("en")) return "en";
+  if (normalized === 'jp' || normalized.startsWith('ja')) return 'ja';
+  if (normalized.startsWith('en')) return 'en';
   return null;
 }
 
 async function loadEnv() {
-  const fileEnv = parseEnvFile(await readFile(envPath, "utf8"));
+  const fileEnv = parseEnvFile(await readFile(envPath, 'utf8'));
   applyEnvToProcess(fileEnv);
   return { ...fileEnv, ...process.env };
 }
 
-async function supabaseRequest({ env, path, method = "GET", body = null }) {
+async function supabaseRequest({ env, path, method = 'GET', body = null }) {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
     method,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-      Prefer: "return=representation,resolution=merge-duplicates",
+      Prefer: 'return=representation,resolution=merge-duplicates',
     },
     body: body ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(
-      `Supabase request failed (${response.status}) for ${path}: ${errorText}`,
-    );
+    throw new Error(`Supabase request failed (${response.status}) for ${path}: ${errorText}`);
   }
 
   return response.status === 204 ? null : response.json();
@@ -104,7 +99,7 @@ function eventDataFromTranslation(translation) {
 
 function getTranslationSource(row) {
   const translations = row.event_translations ?? [];
-  const sourceLocale = normalizeLocale(row.sources?.language) ?? "ja";
+  const sourceLocale = normalizeLocale(row.sources?.language) ?? 'ja';
   const preferred =
     translations.find((translation) => translation.locale === sourceLocale) ??
     translations[0] ??
@@ -135,13 +130,11 @@ function getMissingLocales(row) {
 
 async function main() {
   const env = await loadEnv();
-  const dryRun = process.argv.includes("--dry-run");
-  const limit = getNumberArg("limit", 1000);
+  const dryRun = process.argv.includes('--dry-run');
+  const limit = getNumberArg('limit', 1000);
 
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env",
-    );
+    throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env');
   }
 
   const rows = await supabaseRequest({
@@ -182,18 +175,13 @@ async function main() {
         skipped.push({
           id: row.id,
           targetLocale,
-          reason: "translation unavailable",
+          reason: 'translation unavailable',
         });
         continue;
       }
 
       if (!dryRun) {
-        await upsertEventTranslation(
-          env,
-          row.id,
-          targetLocale,
-          translatedEvent,
-        );
+        await upsertEventTranslation(env, row.id, targetLocale, translatedEvent);
       }
 
       written.push({
@@ -207,7 +195,7 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        status: "complete",
+        status: 'complete',
         dryRun,
         events_checked: rows?.length ?? 0,
         events_missing_translations: missing.length,
