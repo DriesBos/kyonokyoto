@@ -1,9 +1,10 @@
 ---
 import Logo from './Logo.astro';
 import GeneralButton from './GeneralButton.astro';
-import { cityPathFor, nextCityFor, cityConfigFor, type AppCity } from '../lib/cities';
+import { nextCityFor, cityConfigFor, type AppCity } from '../lib/cities';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
+import { routePathFor } from '../lib/routeState';
 
 type CategoryOption = {
   slug: string;
@@ -32,8 +33,8 @@ const {
   locale = 'en',
 } = Astro.props;
 const copy = uiText.en;
-const homeHref = cityPathFor(city, locale);
-const localePathFor = (targetLocale: AppLocale) => cityPathFor(city, targetLocale);
+const homeHref = routePathFor({ city, locale });
+const localePathFor = (targetLocale: AppLocale) => routePathFor({ city, locale: targetLocale });
 const nextLocale: AppLocale = locale === 'en' ? 'ja' : 'en';
 const nextCity = nextCityFor(city);
 const currentCityLabel = cityConfigFor(city)?.label ?? city;
@@ -98,7 +99,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         />
         <GeneralButton
           verticalPadding="full"
-          href={cityPathFor(nextCity.slug, locale)}
+          href={routePathFor({ city: nextCity.slug, locale })}
           label={currentCityLabel}
           aria-label={`Switch to ${nextCity.label}`}
           data-city-toggle

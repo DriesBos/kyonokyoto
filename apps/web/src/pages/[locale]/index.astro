@@ -1,14 +1,22 @@
 ---
-import { normalizeLocale } from '../../lib/i18n';
+import { CITY_COOKIE, normalizeCity } from '../../lib/cities';
+import { LOCALE_COOKIE, normalizeLocale, resolveLocale } from '../../lib/i18n';
+import { routePathFor } from '../../lib/routeState';
 
 export const prerender = false;
 
-const routeLocale = normalizeLocale(Astro.params.locale) ?? 'en';
+const routeLocale =
+  normalizeLocale(Astro.params.locale) ??
+  resolveLocale({
+    cookieLocale: Astro.cookies.get(LOCALE_COOKIE)?.value,
+    acceptLanguage: Astro.request.headers.get('accept-language'),
+  });
+const city = normalizeCity(Astro.cookies.get(CITY_COOKIE)?.value) ?? 'kyoto';
 
 return new Response(null, {
   status: 302,
   headers: {
-    Location: `/kyoto/${routeLocale}/`,
+    Location: routePathFor({ city, locale: routeLocale }),
     'Cache-Control': 'no-store',
     'Netlify-CDN-Cache-Control': 'no-store',
     Vary: 'Cookie, Accept-Language',

@@ -12,8 +12,15 @@ import tokyoPermanentPayload from '../../../../../../data/permanent/tokyo-perman
 import kyotoSourcesPayload from '../../../../../../data/sources/kyoto-sources.json';
 import osakaSourcesPayload from '../../../../../../data/sources/osaka-sources.json';
 import tokyoSourcesPayload from '../../../../../../data/sources/tokyo-sources.json';
-import { cityConfigFor, type AppCity } from '../../../lib/cities';
-import { normalizeLocale, supportedLocales, uiText } from '../../../lib/i18n';
+import { CITY_COOKIE, cityConfigFor, normalizeCity, type AppCity } from '../../../lib/cities';
+import {
+  LOCALE_COOKIE,
+  normalizeLocale,
+  resolveLocale,
+  supportedLocales,
+  uiText,
+} from '../../../lib/i18n';
+import { routePathFor } from '../../../lib/routeState';
 import {
   calendarDetailsFor,
   calendarLocationFor,
@@ -53,14 +60,18 @@ Astro.response.headers.set(
 
 const routeCity = cityConfigFor(Astro.params.city);
 const routeLocale = normalizeLocale(Astro.params.locale);
-const city = routeCity?.slug ?? 'kyoto';
-if (!routeCity && routeLocale) return Astro.redirect(`/kyoto/${routeLocale}/`, 302);
-if (!routeLocale) return Astro.redirect(`/${city}/en/`, 302);
+const fallbackCity = normalizeCity(Astro.cookies.get(CITY_COOKIE)?.value) ?? 'kyoto';
+const fallbackLocale = resolveLocale({
+  cookieLocale: Astro.cookies.get(LOCALE_COOKIE)?.value,
+  acceptLanguage: Astro.request.headers.get('accept-language'),
+});
+const city = routeCity?.slug ?? fallbackCity;
+const locale = routeLocale ?? fallbackLocale;
+if (!routeCity || !routeLocale) return Astro.redirect(routePathFor({ city, locale }), 302);
 if (Astro.params.city !== city || Astro.params.locale !== routeLocale) {
-  return Astro.redirect(`/${city}/${routeLocale}/`, 302);
+  return Astro.redirect(routePathFor({ city, locale }), 302);
 }
 
-const locale = routeLocale;
 const copy = uiText.en;
 const metaCopy = uiText[locale];
 const cityConfig = routeCity ?? cityConfigFor('kyoto')!;

@@ -1,4 +1,12 @@
-import { LOCALE_COOKIE, LOCALE_STORAGE_KEY, supportedLocales, uiText } from '../lib/i18n';
+import {
+  LOCALE_COOKIE,
+  LOCALE_STORAGE_KEY,
+  supportedLocales,
+  uiText,
+  type AppLocale,
+} from '../lib/i18n';
+import { normalizeCity, type AppCity } from '../lib/cities';
+import { routePathFor, routeStateFromPath, routeUrlWithState } from '../lib/routeState';
 
 const localeCookie = LOCALE_COOKIE;
 const localeStorageKey = LOCALE_STORAGE_KEY;
@@ -8,7 +16,6 @@ const languageLabels = {
   en: 'eng',
   ja: 'jp',
 };
-const cityCodes = new Set(['kyoto', 'osaka', 'tokyo']);
 
 const normalizeLocale = (value: unknown) => {
   if (typeof value !== 'string') return null;
@@ -24,9 +31,8 @@ const localeFromPath = () => {
   return pathLocale ?? null;
 };
 
-const cityFromPath = () => {
-  const pathCity = window.location.pathname.split('/').filter(Boolean)[0] ?? '';
-  return cityCodes.has(pathCity) ? pathCity : 'kyoto';
+const cityFromPath = (): AppCity => {
+  return routeStateFromPath(window.location.pathname).city ?? 'kyoto';
 };
 
 const getBrowserLocale = () => {
@@ -101,22 +107,6 @@ const setMetaContent = (selector: string, value: string) => {
   }
 };
 
-const replacePathLocale = (locale: string) => {
-  const url = new URL(window.location.href);
-  const parts = url.pathname.split('/');
-  const localeSegment = parts.findIndex((part) => localeCodes.has(part as never));
-
-  if (localeSegment >= 0) {
-    parts[localeSegment] = locale;
-  } else {
-    const citySegment = parts.findIndex((part) => cityCodes.has(part));
-    parts.splice(citySegment >= 0 ? citySegment + 1 : 1, 0, locale);
-  }
-
-  url.pathname = parts.join('/') || `/${locale}/`;
-  return url;
-};
-
 const applyLocale = (
   locale: string,
   options: { updateHistory?: boolean; persist?: boolean } = {},
@@ -124,6 +114,7 @@ const applyLocale = (
   if (!localeCodes.has(locale as never)) return;
 
   const { updateHistory = true, persist = true } = options;
+  const activeLocale = locale as AppLocale;
   const copy = uiText[locale as keyof typeof uiText] ?? uiText.en;
   const nextLocale = locale === 'en' ? 'ja' : 'en';
   const activeCity = cityFromPath();
@@ -143,19 +134,33 @@ const applyLocale = (
 
   const logo = document.querySelector('.mainHeader__logo');
   if (logo instanceof HTMLAnchorElement) {
-    logo.href = `/${activeCity}/${locale}/`;
+    logo.href = routePathFor({ city: activeCity, locale: activeLocale });
     logo.setAttribute('aria-label', uiText.en.homeAria);
   }
 
   const localeButton = document.querySelector('[data-locale-toggle]');
   if (localeButton instanceof HTMLElement) {
     localeButton.dataset.localeOption = nextLocale;
-    localeButton.dataset.localeHref = `/${activeCity}/${nextLocale}/`;
+    localeButton.dataset.localeHref = routePathFor({ city: activeCity, locale: nextLocale });
     localeButton.setAttribute(
       'aria-label',
       `${uiText.en.languageAria}: ${languageLabels[locale as keyof typeof languageLabels]}`,
     );
     setLabel(localeButton, languageLabels[locale as keyof typeof languageLabels]);
+  }
+
+  const cityButton = document.querySelector('[data-city-toggle]');
+  if (cityButton instanceof HTMLAnchorElement) {
+    const nextCity = normalizeCity(cityButton.dataset.cityOption);
+
+    if (nextCity) {
+      const cityUrl = routeUrlWithState(
+        window.location.href,
+        { city: nextCity, locale: activeLocale },
+        { city: activeCity },
+      );
+      cityButton.href = `${cityUrl.pathname}${cityUrl.search}${cityUrl.hash}`;
+    }
   }
 
   const eventPayload = payload?.events ?? {};
@@ -195,7 +200,11 @@ const applyLocale = (
   });
 
   if (updateHistory) {
-    const nextUrl = replacePathLocale(locale);
+    const nextUrl = routeUrlWithState(
+      window.location.href,
+      { locale: activeLocale },
+      { city: activeCity },
+    );
     window.history.pushState({ locale }, '', nextUrl);
   }
 

@@ -59,7 +59,3 @@ export function nextCityFor(city: AppCity): CityConfig {
   const index = cityConfigs.findIndex((config) => config.slug === city);
   return cityConfigs[(index + 1) % cityConfigs.length];
 }
-
-export function cityPathFor(city: AppCity, locale: string) {
-  return `/${city}/${locale}/`;
-}
