@@ -7,13 +7,17 @@ import { supabase } from './supabase';
 import type { AppLocale } from './i18n';
 import { formatEventDateRange, parseEnglishMonthDateRange } from './calendar';
 import type { SourceConfig } from './sources';
-import { sourceCategoriesForEvent } from './sources';
+import { sourceTruthForEvent } from './sources';
 
 export type EventTranslationRow = {
   locale: AppLocale;
   title: string;
   description: string | null;
 };
+
+export type EventSourceRelation = {
+  slug: string | null;
+} | null;
 
 export type EventRow = {
   id: string;
@@ -38,6 +42,7 @@ export type EventRow = {
   updated_at?: string | null;
   schedule_type?: 'range' | 'occurrence_set' | 'unknown';
   occurrence_dates?: string[] | null;
+  sources?: EventSourceRelation | EventSourceRelation[];
   event_translations?: EventTranslationRow[] | null;
 };
 
@@ -54,6 +59,7 @@ const eventSelectWithoutCoordinates =
   'id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at';
 
 export const eventTranslationSelect = 'event_translations(locale, title, description)';
+export const eventSourceSelect = 'sources(slug)';
 
 const fetchEvents = (select: string) =>
   supabase
@@ -72,6 +78,10 @@ const isMissingCoordinateError = (error: { code?: string; message?: string } | n
 
 export const fetchPublishedEvents = async () => {
   const selectAttempts = [
+    `${eventSelect}, ${eventSourceSelect}, ${eventTranslationSelect}`,
+    `${eventSelectWithoutCoordinates}, ${eventSourceSelect}, ${eventTranslationSelect}`,
+    `${eventSelect}, ${eventSourceSelect}`,
+    `${eventSelectWithoutCoordinates}, ${eventSourceSelect}`,
     `${eventSelect}, ${eventTranslationSelect}`,
     `${eventSelectWithoutCoordinates}, ${eventTranslationSelect}`,
     eventSelect,
@@ -131,7 +141,7 @@ export const formatEventsForLocale = ({
 }): ClassifiedEvent[] =>
   events.map((rawEvent) => {
     const event = localizeEvent(rawEvent, activeLocale);
-    const sourceCategories = sourceCategoriesForEvent(event, configuredSources);
+    const sourceTruth = sourceTruthForEvent(event, configuredSources, activeLocale);
     const fallbackCalendarYear =
       event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
     const parsedCalendarDates =
@@ -143,13 +153,19 @@ export const formatEventsForLocale = ({
     const calendarEndsAt = event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
     const eventWithCalendarDates = {
       ...event,
+      institution_name: sourceTruth.institution_name,
+      venue_name: sourceTruth.venue_name,
+      address_text: sourceTruth.address_text,
+      directions_query: sourceTruth.directions_query,
+      categories: sourceTruth.categories,
+      lat: sourceTruth.lat,
+      lng: sourceTruth.lng,
       calendar_starts_at: calendarStartsAt,
       calendar_ends_at: calendarEndsAt,
     };
 
     return {
       ...eventWithCalendarDates,
-      categories: sourceCategories,
       date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
       timing: classifyEventTiming(eventWithCalendarDates, today),
     };

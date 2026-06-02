@@ -1,4 +1,5 @@
 import type { EventRow } from './events';
+import type { AppLocale } from './i18n';
 
 export type SourceConfig = {
   slug: string;
@@ -39,6 +40,33 @@ export type MapSource = {
 export type CategoryOption = {
   slug: string;
   label: string;
+};
+
+type SourceRelation = { slug?: string | null } | { slug?: string | null }[] | null;
+
+type EventSourceCandidate = {
+  source_id?: string | null;
+  source_url?: string | null;
+  institution_name?: string | null;
+  venue_name?: string | null;
+  address_text?: string | null;
+  directions_query?: string | null;
+  categories?: string[] | null;
+  lat?: number | null;
+  lng?: number | null;
+  title?: string | null;
+  sources?: SourceRelation;
+};
+
+export type EventSourceTruth = {
+  sourceSlug: string | null;
+  institution_name: string;
+  venue_name: string | null;
+  address_text: string | null;
+  directions_query: string | null;
+  categories: string[];
+  lat: number | null;
+  lng: number | null;
 };
 
 export const preferredCategoryOrder = [
@@ -153,30 +181,53 @@ export const sourceMatchScore = (eventUrl: string, source: SourceConfig) => {
 };
 
 export const sourceCategoriesForEvent = (event: EventRow, configuredSources: SourceConfig[]) => {
-  const bestSource = configuredSources
-    .map((source) => ({
-      source,
-      score: sourceMatchScore(event.source_url, source),
-    }))
-    .filter((match) => match.score > 0 && (match.source.source_categories?.length ?? 0) > 0)
-    .sort((a, b) => b.score - a.score)[0]?.source;
-
-  return bestSource?.source_categories?.length
-    ? bestSource.source_categories
-    : normalizeCategoryList(event.categories ?? []);
+  return sourceTruthForEvent(event, configuredSources, 'en').categories;
 };
 
-export const sourceSlugForEvent = (event: EventRow, configuredSources: SourceConfig[]) =>
+const sourceBySlug = (configuredSources: SourceConfig[], sourceSlug: string | null) =>
+  configuredSources.find((source) => source.slug === sourceSlug) ?? null;
+
+const sourceSlugFromRelation = (relation: SourceRelation | undefined) => {
+  const slug = Array.isArray(relation) ? relation[0]?.slug : relation?.slug;
+  return typeof slug === 'string' && slug.trim() ? slug.trim() : null;
+};
+
+const sourceSlugFromSourceId = (event: EventSourceCandidate, configuredSources: SourceConfig[]) => {
+  const sourceId = typeof event.source_id === 'string' ? event.source_id.trim() : '';
+  return sourceId && sourceBySlug(configuredSources, sourceId) ? sourceId : null;
+};
+
+const sourceSlugFromUrl = (event: EventSourceCandidate, configuredSources: SourceConfig[]) =>
   configuredSources
     .map((source) => ({
       source,
-      score: sourceMatchScore(event.source_url, source),
+      score: sourceMatchScore(event.source_url ?? '', source),
     }))
     .filter((match) => match.score > 0)
     .sort((a, b) => b.score - a.score)[0]?.source.slug ?? null;
 
-const sourceBySlug = (configuredSources: SourceConfig[], sourceSlug: string | null) =>
-  configuredSources.find((source) => source.slug === sourceSlug) ?? null;
+export const sourceSlugForEvent = (
+  event: EventSourceCandidate,
+  configuredSources: SourceConfig[],
+) => {
+  const relationSlug = sourceSlugFromRelation(event.sources);
+  if (relationSlug && sourceBySlug(configuredSources, relationSlug)) return relationSlug;
+
+  return (
+    sourceSlugFromSourceId(event, configuredSources) ?? sourceSlugFromUrl(event, configuredSources)
+  );
+};
+
+const localizedSourceName = (source: SourceConfig, activeLocale: AppLocale) =>
+  source.names?.[activeLocale] || source.names?.en || source.names?.ja || source.name;
+
+export const sourceDisplayNameForEvent = (
+  event: EventSourceCandidate,
+  configuredSources: SourceConfig[],
+  activeLocale: AppLocale,
+) => {
+  return sourceTruthForEvent(event, configuredSources, activeLocale).institution_name;
+};
 
 const toCoordinate = (value: unknown) => {
   const coordinate = Number(value);
@@ -223,6 +274,96 @@ const findVenueLocationForCoordinates = (
   );
 };
 
+const normalizeLocationMatchText = (value: unknown) =>
+  String(value ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const eventLocationMatchText = (event: EventSourceCandidate) =>
+  [
+    event.venue_name,
+    event.address_text,
+    event.directions_query,
+    event.source_url,
+    event.institution_name,
+    event.title,
+  ]
+    .map(normalizeLocationMatchText)
+    .filter(Boolean)
+    .join(' ');
+
+const findVenueLocationForText = (source: SourceConfig | null, event: EventSourceCandidate) => {
+  if (!source) return null;
+
+  const eventText = eventLocationMatchText(event);
+  if (!eventText) return null;
+
+  return (
+    (source.venue_locations ?? []).find((location) =>
+      (Array.isArray(location.match) ? location.match : [location.match ?? location.name])
+        .map(normalizeLocationMatchText)
+        .filter(Boolean)
+        .some((matcher) => eventText.includes(matcher)),
+    ) ?? null
+  );
+};
+
+const venueLocationForEvent = (source: SourceConfig | null, event: EventSourceCandidate) => {
+  const coordinates = coordinatePairFrom(event.lat, event.lng);
+  return (
+    findVenueLocationForText(source, event) ??
+    findVenueLocationForCoordinates(source, coordinates?.lat ?? null, coordinates?.lng ?? null)
+  );
+};
+
+export const sourceTruthForEvent = (
+  event: EventSourceCandidate,
+  configuredSources: SourceConfig[],
+  activeLocale: AppLocale,
+): EventSourceTruth => {
+  const sourceSlug = sourceSlugForEvent(event, configuredSources);
+  const source = sourceBySlug(configuredSources, sourceSlug);
+
+  if (!source) {
+    const fallbackCoordinates = coordinatePairFrom(event.lat, event.lng);
+    return {
+      sourceSlug: null,
+      institution_name: event.institution_name ?? 'Unknown venue',
+      venue_name: event.venue_name ?? null,
+      address_text: event.address_text ?? null,
+      directions_query: event.directions_query ?? null,
+      categories: normalizeCategoryList(event.categories ?? []),
+      lat: fallbackCoordinates?.lat ?? null,
+      lng: fallbackCoordinates?.lng ?? null,
+    };
+  }
+
+  const venueLocation = venueLocationForEvent(source, event);
+  const sourceCoordinates = coordinatePairFrom(source.lat, source.lng);
+  const eventCoordinates = coordinatePairFrom(event.lat, event.lng);
+  const lat = venueLocation?.lat ?? sourceCoordinates?.lat ?? eventCoordinates?.lat ?? null;
+  const lng = venueLocation?.lng ?? sourceCoordinates?.lng ?? eventCoordinates?.lng ?? null;
+  const addressText =
+    venueLocation?.address_text ?? source.address_text ?? event.address_text ?? null;
+  const venueName = venueLocation?.name ?? source.name ?? event.venue_name ?? null;
+
+  return {
+    sourceSlug: source.slug,
+    institution_name: localizedSourceName(source, activeLocale),
+    venue_name: venueName,
+    address_text: addressText,
+    directions_query:
+      venueLocation?.directions_query ??
+      source.directions_query ??
+      event.directions_query ??
+      addressText,
+    categories: normalizeCategoryList(source.source_categories ?? event.categories ?? []),
+    lat,
+    lng,
+  };
+};
+
 const locationNameForEvent = (
   source: SourceConfig | null,
   lat: number | null,
@@ -265,7 +406,12 @@ export const mapCoordinatesForEvent = (
   configuredSources: SourceConfig[],
 ) => {
   const source = sourceBySlug(configuredSources, sourceSlug);
-  return coordinatePairFrom(event.lat, event.lng) ?? coordinatePairFrom(source?.lat, source?.lng);
+  const venueLocation = venueLocationForEvent(source, event);
+  return (
+    coordinatePairFrom(venueLocation?.lat, venueLocation?.lng) ??
+    coordinatePairFrom(source?.lat, source?.lng) ??
+    coordinatePairFrom(event.lat, event.lng)
+  );
 };
 
 export const categoriesForEvents = (events: EventRow[]): CategoryOption[] => {
