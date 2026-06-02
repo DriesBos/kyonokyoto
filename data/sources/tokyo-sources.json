@@ -96,21 +96,32 @@
       "slug": "ginza-graphic-gallery",
       "name": "ginza graphic gallery",
       "source_type": "gallery",
-      "language": "ja",
+      "language": "en",
       "directions_query": "ginza graphic gallery, Tokyo",
       "lat": 35.6697019,
       "lng": 139.7624842,
-      "base_url": "https://www.dnpfcp.jp/gallery/ggg/",
-      "start_urls": ["https://www.dnpfcp.jp/gallery/ggg/"],
+      "base_url": "https://www.dnpfcp.jp/gallery/ggg_e/",
+      "start_urls": ["https://www.dnpfcp.jp/gallery/ggg_e/"],
       "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/gallery/ggg/"],
-      "notes": "Purple art marker from Google My Maps.",
-      "is_active": false,
+      "event_page_patterns": ["/gallery/ggg_e/", "/gallery/ggg/"],
+      "notes": "Purple art marker from Google My Maps. English GGG page requested as beta source.",
+      "is_active": true,
+      "beta": true,
       "source_categories": ["design", "gallery", "exhibition"],
       "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.dnpfcp.jp/gallery/ggg/"],
+          "event_page_patterns": ["/gallery/ggg/"]
+        },
+        "en": {
+          "start_urls": ["https://www.dnpfcp.jp/gallery/ggg_e/"],
+          "event_page_patterns": ["/gallery/ggg_e/"]
+        }
+      },
       "capabilities": {
-        "native_locales": ["ja"],
+        "native_locales": ["en", "ja"],
         "machine_translate_missing_locales": true
       },
       "crawl_hints": {
@@ -325,19 +336,20 @@
       "directions_query": "Tokyo Photographic Art Museum, Tokyo",
       "lat": 35.6416411,
       "lng": 139.7132893,
-      "base_url": "https://topmuseum.jp/e/contents/exhibition/",
-      "start_urls": ["https://topmuseum.jp/e/contents/exhibition/"],
+      "base_url": "https://topmuseum.jp/current/",
+      "start_urls": ["https://topmuseum.jp/current/"],
       "allowed_domains": ["topmuseum.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/e/contents/exhibition/", "/contents/exhibition/"],
-      "notes": "Purple art marker from Google My Maps.",
-      "is_active": false,
+      "event_page_patterns": ["/current/", "/e/contents/exhibition/", "/contents/exhibition/"],
+      "notes": "Purple art marker from Google My Maps. Current page requested as beta source.",
+      "is_active": true,
+      "beta": true,
       "source_categories": ["photography", "museum", "exhibition"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://topmuseum.jp/contents/exhibition/"],
-          "event_page_patterns": ["/contents/exhibition/"]
+          "start_urls": ["https://topmuseum.jp/current/"],
+          "event_page_patterns": ["/current/", "/contents/exhibition/"]
         },
         "en": {
           "start_urls": ["https://topmuseum.jp/e/contents/exhibition/"],
@@ -480,8 +492,9 @@
       "allowed_domains": ["www.takeninagawa.com", "takeninagawa.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
-      "notes": "Purple art marker from Google My Maps.",
-      "is_active": false,
+      "notes": "Purple art marker from Google My Maps. Re-enabled as beta source.",
+      "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "capabilities": {
@@ -587,23 +600,24 @@
       "directions_query": "Setagaya Art Museum, Tokyo",
       "lat": 35.6314881,
       "lng": 139.6219859,
-      "base_url": "https://www.setagayaartmuseum.or.jp/en/exhibition/",
-      "start_urls": ["https://www.setagayaartmuseum.or.jp/en/exhibition/"],
+      "base_url": "https://www.setagayaartmuseum.or.jp/en/exhibition/special/",
+      "start_urls": ["https://www.setagayaartmuseum.or.jp/en/exhibition/special/"],
       "allowed_domains": ["www.setagayaartmuseum.or.jp", "setagayaartmuseum.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
-      "notes": "Purple art marker from Google My Maps.",
-      "is_active": false,
+      "event_page_patterns": ["/en/exhibition/special/", "/exhibition/special/"],
+      "notes": "Purple art marker from Google My Maps. Special exhibition page requested as beta source.",
+      "is_active": true,
+      "beta": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://www.setagayaartmuseum.or.jp/exhibition/"],
-          "event_page_patterns": ["/exhibition/"]
+          "start_urls": ["https://www.setagayaartmuseum.or.jp/exhibition/special/"],
+          "event_page_patterns": ["/exhibition/special/"]
         },
         "en": {
-          "start_urls": ["https://www.setagayaartmuseum.or.jp/en/exhibition/"],
-          "event_page_patterns": ["/en/exhibition/"]
+          "start_urls": ["https://www.setagayaartmuseum.or.jp/en/exhibition/special/"],
+          "event_page_patterns": ["/en/exhibition/special/"]
         }
       },
       "crawl_hints": {
@@ -814,6 +828,331 @@
       }
     },
     {
+      "slug": "gyre-gallery",
+      "name": "GYRE GALLERY",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "GYRE 3F, 5-10-1 Jingumae, Shibuya-ku, Tokyo 150-0001 Japan",
+      "directions_query": "GYRE GALLERY, 5-10-1 Jingumae, Shibuya-ku, Tokyo",
+      "lat": 35.6692039,
+      "lng": 139.7072847,
+      "base_url": "https://en.gyre-omotesando.com/art/",
+      "start_urls": ["https://en.gyre-omotesando.com/art/"],
+      "allowed_domains": ["en.gyre-omotesando.com", "gyre-omotesando.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/art/", "/artandgallery/"],
+      "notes": "Official GYRE Omotesando art page. Beta source; current exhibition details usually live under /artandgallery/.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["gallery", "art", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "en": {
+          "start_urls": ["https://en.gyre-omotesando.com/art/"],
+          "event_page_patterns": ["/art/", "/artandgallery/"]
+        },
+        "ja": {
+          "start_urls": ["https://gyre-omotesando.com/art/"],
+          "event_page_patterns": ["/art/", "/artandgallery/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "yutaka-kikutake-gallery",
+      "name": "Yutaka Kikutake Gallery",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "Piramide Bldg. 2F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
+      "directions_query": "Yutaka Kikutake Gallery, 6-6-9 Roppongi, Minato-ku, Tokyo",
+      "lat": 35.66018,
+      "lng": 139.73139,
+      "base_url": "https://www.yutakakikutakegallery.com/exhibitions/",
+      "start_urls": ["https://www.yutakakikutakegallery.com/exhibitions/"],
+      "allowed_domains": ["www.yutakakikutakegallery.com", "yutakakikutakegallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official Yutaka Kikutake Gallery exhibitions page. Beta source; gallery also has Kyobashi space.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.yutakakikutakegallery.com/ja/exhibitions/"],
+          "event_page_patterns": ["/ja/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.yutakakikutakegallery.com/exhibitions/"],
+          "event_page_patterns": ["/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "standing-pine-tokyo",
+      "name": "STANDING PINE Tokyo",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "TERRADA ART COMPLEX I 3F, 1-33-10 Higashi-Shinagawa, Shinagawa-ku, Tokyo 140-0002 Japan",
+      "directions_query": "STANDING PINE, TERRADA ART COMPLEX, Tokyo",
+      "lat": 35.62166,
+      "lng": 139.74969,
+      "base_url": "https://standingpine.jp/exhibitions",
+      "start_urls": ["https://standingpine.jp/exhibitions"],
+      "allowed_domains": ["standingpine.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions"],
+      "notes": "Official STANDING PINE exhibitions page. Beta source.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "en": {
+          "start_urls": ["https://standingpine.jp/exhibitions"],
+          "event_page_patterns": ["/exhibitions"]
+        },
+        "ja": {
+          "start_urls": ["https://standingpine.jp/exhibitions"],
+          "event_page_patterns": ["/exhibitions"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "tokyo-node",
+      "name": "TOKYO NODE",
+      "source_type": "venue",
+      "language": "ja",
+      "address_text": "Toranomon Hills Station Tower, 2-6-2 Toranomon, Minato-ku, Tokyo 105-0001 Japan",
+      "directions_query": "TOKYO NODE, Toranomon Hills Station Tower, Tokyo",
+      "lat": 35.6670276,
+      "lng": 139.7460078,
+      "base_url": "https://www.tokyonode.jp/events/index.html",
+      "start_urls": ["https://www.tokyonode.jp/events/index.html"],
+      "allowed_domains": ["www.tokyonode.jp", "tokyonode.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/events/"],
+      "notes": "Official TOKYO NODE events index. Beta source; includes art, design, performance, and mixed cultural events.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["art", "design", "event", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.tokyonode.jp/events/index.html"],
+          "event_page_patterns": ["/events/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "skip_patterns": ["/news/", "/about/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "mitsubishi-ichigokan-museum",
+      "name": "Mitsubishi Ichigokan Museum",
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "2-6-2 Marunouchi, Chiyoda-ku, Tokyo 100-0005 Japan",
+      "directions_query": "Mitsubishi Ichigokan Museum, Tokyo",
+      "lat": 35.6785728,
+      "lng": 139.7633877,
+      "base_url": "https://mimt.jp/exhibition/",
+      "start_urls": ["https://mimt.jp/exhibition/"],
+      "allowed_domains": ["mimt.jp", "www.mimt.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official Mitsubishi Ichigokan Museum exhibition page. Beta source.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://mimt.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "kenji-taki-gallery",
+      "name": "KENJI TAKI GALLERY",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "3-18-2-102 Nishi-Shinjuku, Shinjuku-ku, Tokyo 160-0023 Japan",
+      "directions_query": "KENJI TAKI GALLERY, 3-18-2 Nishi-Shinjuku, Tokyo",
+      "lat": 35.68496,
+      "lng": 139.68694,
+      "base_url": "https://www.kenjitaki.com/pages/info.html",
+      "start_urls": ["https://www.kenjitaki.com/pages/info.html"],
+      "allowed_domains": ["www.kenjitaki.com", "kenjitaki.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/pages/", "/exhibition/"],
+      "notes": "Official Kenji Taki Gallery info/exhibitions page. Beta source.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "en": {
+          "start_urls": ["https://www.kenjitaki.com/pages/info.html"],
+          "event_page_patterns": ["/pages/", "/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "snow-contemporary",
+      "name": "SNOW Contemporary",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "404 Hayano Bldg., 2-13-12 Nishiazabu, Minato-ku, Tokyo 106-0031 Japan",
+      "directions_query": "SNOW Contemporary, 2-13-12 Nishiazabu, Minato-ku, Tokyo",
+      "lat": 35.6363563,
+      "lng": 139.6515776,
+      "base_url": "http://www.snowcontemporary.com/en/exhibition/current.html",
+      "start_urls": ["http://www.snowcontemporary.com/en/exhibition/current.html"],
+      "allowed_domains": ["www.snowcontemporary.com", "snowcontemporary.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "notes": "Official SNOW Contemporary current exhibition page. Beta source.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["http://www.snowcontemporary.com/exhibition/current.html"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["http://www.snowcontemporary.com/en/exhibition/current.html"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 3
+      }
+    },
+    {
+      "slug": "play-museum",
+      "name": "PLAY! MUSEUM",
+      "source_type": "museum",
+      "language": "en",
+      "address_text": "GREEN SPRINGS W3, 3-1 Midoricho, Tachikawa, Tokyo 190-0014 Japan",
+      "directions_query": "PLAY! MUSEUM, GREEN SPRINGS, Tachikawa, Tokyo",
+      "lat": 35.7074626,
+      "lng": 139.4044158,
+      "base_url": "https://play2020.jp/en/",
+      "start_urls": ["https://play2020.jp/en/"],
+      "allowed_domains": ["play2020.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/", "/museum/"],
+      "notes": "Official PLAY! MUSEUM English page. Beta source.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["museum", "design", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://play2020.jp/"],
+          "event_page_patterns": ["/", "/museum/"]
+        },
+        "en": {
+          "start_urls": ["https://play2020.jp/en/"],
+          "event_page_patterns": ["/en/", "/museum/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "pola-museum-annex",
+      "name": "Pola Museum Annex",
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "Pola Ginza Bldg. 3F, 1-7-7 Ginza, Chuo-ku, Tokyo 104-0061 Japan",
+      "directions_query": "Pola Museum Annex, Ginza, Tokyo",
+      "lat": 35.6742479,
+      "lng": 139.7679885,
+      "base_url": "http://www.polamuseum.or.jp/",
+      "start_urls": ["http://www.polamuseum.or.jp/"],
+      "allowed_domains": ["www.polamuseum.or.jp", "polamuseum.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/"],
+      "notes": "Official Pola Museum Annex site. Beta source; homepage usually exposes current exhibition.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["museum", "gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["http://www.polamuseum.or.jp/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "taro-nasu-gallery",
+      "name": "TARO NASU",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "Piramide Bldg. 4F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
+      "directions_query": "TARO NASU, 6-6-9 Roppongi, Minato-ku, Tokyo",
+      "lat": 35.66018,
+      "lng": 139.73139,
+      "base_url": "http://www.taronasugallery.com/en/",
+      "start_urls": ["http://www.taronasugallery.com/en/"],
+      "allowed_domains": ["www.taronasugallery.com", "taronasugallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/", "/exhibition/"],
+      "notes": "Official TARO NASU gallery site. Beta source; homepage links current and forthcoming exhibitions.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["http://www.taronasugallery.com/"],
+          "event_page_patterns": ["/", "/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["http://www.taronasugallery.com/en/"],
+          "event_page_patterns": ["/en/", "/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
       "slug": "issey-miyake-ginza-cube",
       "name": "ISSEY MIYAKE GINZA | CUBE",
       "source_type": "gallery",
@@ -829,6 +1168,7 @@
       "event_page_patterns": ["/blogs/cube"],
       "notes": "Official CUBE gallery page for ISSEY MIYAKE GINZA, listing design/art/craft exhibitions and events.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["design", "gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -861,6 +1201,7 @@
       "event_page_patterns": ["/blogs/shikaku"],
       "notes": "Official SHIKAKU gallery page for ISSEY MIYAKE SHINJUKU, listing special projects and gallery events.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["design", "gallery", "exhibition"],
       "map_visibility": true,
       "locales": {

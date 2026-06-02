@@ -1397,6 +1397,7 @@
       "event_page_patterns": ["/blogs/kyotokura"],
       "notes": "Official KURA gallery page for ISSEY MIYAKE KYOTO, listing gallery exhibitions and events in the renovated kura space.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["design", "craft", "gallery"],
       "map_visibility": true,
       "locales": {

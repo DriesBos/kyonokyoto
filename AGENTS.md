@@ -21,3 +21,4 @@ See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
 - No tool-managed agent skill folders are checked into this repo.
 - Keep repo documentation human-readable and lightweight.
 - Do not add `prefers-reduced-motion: reduce` overrides; animations are tuned directly in the design.
+- When changing source JSON or running test crawls, update `QA-todo.md` with sources that need JSON tuning, sources that look close, and any approval notes.

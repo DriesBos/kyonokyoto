@@ -386,6 +386,7 @@
       "event_page_patterns": ["/exhibition/"],
       "notes": "Official annual exhibition listing for the Hyogo Prefectural Museum of Art in Kobe.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -419,6 +420,7 @@
       "event_page_patterns": ["/", "/en/"],
       "notes": "Current and upcoming exhibitions are exposed in the homepage slider.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -452,6 +454,7 @@
       "event_page_patterns": ["/itsuo-museum/exhibition/"],
       "notes": "Official exhibition listing; museum has no permanent display and opens exhibition rooms during exhibition periods.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -483,6 +486,7 @@
       "event_page_patterns": ["/exhibition"],
       "notes": "Official exhibition page includes current, upcoming, and past sections.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -518,6 +522,7 @@
       "event_page_patterns": ["/whatsnew/"],
       "notes": "Only crawl items tagged `アート・展覧会`; source-specific detail URL extractor filters listing anchors by that tag.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["art", "exhibition", "university"],
       "map_visibility": true,
       "locales": {
@@ -549,6 +554,7 @@
       "event_page_patterns": ["/exhibition/"],
       "notes": "Official exhibition index for Gallery Nomart.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -584,6 +590,7 @@
       "event_page_patterns": ["/"],
       "notes": "Homepage functions as the exhibition/news listing for KAZE ART PLANNING.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -620,6 +627,7 @@
       "event_page_patterns": ["/program/"],
       "notes": "Program listing includes exhibitions and related art events.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["art-center", "exhibition", "event"],
       "map_visibility": true,
       "locales": {
@@ -653,6 +661,7 @@
       "event_page_patterns": ["/"],
       "notes": "Homepage lists upcoming exhibitions; site describes hitoto as an Osaka Tenjinbashi 5-chome gallery.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition", "photography"],
       "map_visibility": true,
       "locales": {
@@ -685,6 +694,7 @@
       "event_page_patterns": ["/exhibitions"],
       "notes": "Wix exhibition page with current and past sections.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -717,6 +727,7 @@
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "English homepage exposes current exhibition and exhibition archive links.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -745,6 +756,7 @@
       "event_page_patterns": ["/"],
       "notes": "Jimdo homepage lists next exhibition and archive links.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -777,6 +789,7 @@
       "event_page_patterns": ["/exhibition", "/exhibitions"],
       "notes": "Homepage exposes current/future exhibitions and art fair entries.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -805,6 +818,7 @@
       "event_page_patterns": ["/"],
       "notes": "Homepage links latest exhibition, calendar, and Instagram updates.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition", "photography"],
       "map_visibility": true,
       "locales": {
@@ -836,6 +850,7 @@
       "event_page_patterns": ["/exhibitions/", "/exhibition/"],
       "notes": "Homepage lists current exhibitions and links to exhibition detail pages.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -868,6 +883,7 @@
       "event_page_patterns": ["/blogs/sembacreationspace"],
       "notes": "Official gallery page lists ISSEY MIYAKE SEMBA creation-space exhibitions.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["design", "gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -904,6 +920,7 @@
       "event_page_patterns": ["/"],
       "notes": "Official museum site; exhibition information is linked from the homepage image navigation.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -935,6 +952,7 @@
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "TAKEO exhibition index includes MIHONCHO and Yodoyabashi MIHONCHO paper/design exhibitions plus TAKEO PAPER SHOW.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["design", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -968,6 +986,7 @@
       "event_page_patterns": ["/eventhall/", "/parcohall/"],
       "notes": "PARCO ART page for PARCO HALL SHINSAIBASHI.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["art", "design", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -1000,6 +1019,7 @@
       "event_page_patterns": ["/blog/", "/"],
       "notes": "Official site and linked blog entries list current exhibition details; supplied entry URL sits under /blog/.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -1032,6 +1052,7 @@
       "event_page_patterns": ["/"],
       "notes": "Official Osaka folk crafts museum site lists seasonal special exhibitions and related events.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["museum", "craft", "mingei", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -1068,6 +1089,7 @@
       "event_page_patterns": ["/exhibition.html", "/en/exhibition.html"],
       "notes": "Official exhibition page for the Osaka Ukiyo-e Museum in Shinsaibashi; homepage also summarizes the current special exhibition.",
       "is_active": true,
+      "beta": true,
       "source_categories": ["museum", "ukiyoe", "exhibition"],
       "map_visibility": true,
       "locales": {

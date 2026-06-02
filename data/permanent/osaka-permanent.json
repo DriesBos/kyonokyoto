@@ -17,6 +17,7 @@
       "lng": 135.49843,
       "source_categories": ["art", "gallery"],
       "is_active": true,
+      "beta": true,
       "description": {
         "en": "A Shinsaibashi gallery focused on crossover contemporary art, with shows and open days announced through its Instagram and gallery channels.",
         "ja": "心斎橋のコマーシャルギャラリー。クロスオーバーを軸に現代美術の展覧会を行い、営業日や展示情報はInstagramなどで告知されています。"
@@ -40,6 +41,7 @@
       "lng": 135.19682,
       "source_categories": ["craft", "museum", "design"],
       "is_active": true,
+      "beta": true,
       "description": {
         "en": "A specialist museum near Shin-Kobe dedicated to Japanese carpentry tools, craft techniques, and wood architecture, with permanent displays and occasional exhibitions.",
         "ja": "新神戸近くの大工道具専門ミュージアム。日本の木工技術、道具、木造建築文化を常設展示と企画展で紹介しています。"
