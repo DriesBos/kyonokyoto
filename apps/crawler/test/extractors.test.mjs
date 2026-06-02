@@ -36,7 +36,11 @@ import {
   withSourceLocaleConfig,
 } from '../src/run-once.mjs';
 import { buildCrawlQaReport } from '../src/crawl-qa.mjs';
-import { loadSourcesConfig, validateSourceConfig } from '../../../data/sources/source-config.mjs';
+import {
+  loadAllSourcesConfig,
+  loadSourcesConfig,
+  validateSourceConfig,
+} from '../../../data/sources/source-config.mjs';
 
 const fixturesRoot = resolve(import.meta.dirname, 'fixtures');
 
@@ -329,6 +333,27 @@ test('generic detail extraction can use configured listing link selectors', () =
   assert.deepEqual(
     extractGenericDetailUrls(listingHtml, 'https://example.test/events/', source, 4),
     ['https://example.test/events/selected/'],
+  );
+});
+
+test('Osaka Geidai detail extraction keeps art exhibition tagged links only', () => {
+  const listingHtml = `
+    <ul>
+      <li><a href="/whatsnew/art-a">アート・展覧会 2026.05.26 茂本ヒデキチ 墨絵個展</a></li>
+      <li><a href="/whatsnew/award-a">受賞 2026.05.18 ロゴマーク</a></li>
+      <li><a href="/whatsnew/art-b">アート・展覧会 2026.05.15 ONOCO個展</a></li>
+    </ul>
+  `;
+
+  assert.deepEqual(
+    detailUrlExtractors['osaka-geidai-whatsnew'](
+      listingHtml,
+      'https://www.osaka-geidai.ac.jp/whatsnew',
+    ),
+    [
+      'https://www.osaka-geidai.ac.jp/whatsnew/art-a',
+      'https://www.osaka-geidai.ac.jp/whatsnew/art-b',
+    ],
   );
 });
 
@@ -1914,13 +1939,8 @@ test('diagnostics and source outcome summarize crawl health', () => {
 });
 
 test('source-specific crawler registries only reference configured source slugs', async () => {
-  const payload = JSON.parse(
-    await readFile(
-      resolve(import.meta.dirname, '../../../data/sources/kyoto-sources.json'),
-      'utf8',
-    ),
-  );
-  const configuredSlugs = new Set(payload.sources.map((source) => source.slug));
+  const configuredSources = await loadAllSourcesConfig();
+  const configuredSlugs = new Set(configuredSources.map((source) => source.slug));
   const registryEntries = [
     ['detailUrlExtractors', Object.keys(detailUrlExtractors)],
     ['eventExtractors', Object.keys(eventExtractors)],

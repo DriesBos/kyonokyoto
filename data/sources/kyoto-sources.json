@@ -1380,6 +1380,38 @@
           "event_page_patterns": ["/en/exhibition/"]
         }
       }
+    },
+    {
+      "slug": "issey-miyake-kyoto-kura",
+      "name": "ISSEY MIYAKE KYOTO | KURA",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "89 Tsuchiya-cho, Yanaginobaba-dori Sanjo-sagaru, Nakagyo-ku, Kyoto 604-8112 Japan",
+      "directions_query": "ISSEY MIYAKE KYOTO KURA, Tsuchiya-cho, Nakagyo-ku, Kyoto",
+      "lat": 35.00864,
+      "lng": 135.76378,
+      "base_url": "https://www.isseymiyake.com/blogs/kyotokura",
+      "start_urls": ["https://www.isseymiyake.com/blogs/kyotokura"],
+      "allowed_domains": ["www.isseymiyake.com", "isseymiyake.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/blogs/kyotokura"],
+      "notes": "Official KURA gallery page for ISSEY MIYAKE KYOTO, listing gallery exhibitions and events in the renovated kura space.",
+      "is_active": true,
+      "source_categories": ["design", "craft", "gallery"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.isseymiyake.com/blogs/kyotokura"],
+          "event_page_patterns": ["/blogs/kyotokura"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 8
+      }
     }
   ]
 }

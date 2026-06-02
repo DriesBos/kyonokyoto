@@ -1,5 +1,53 @@
 {
   "version": 1,
   "description": "Osaka editorial venue highlights.",
-  "items": []
+  "items": [
+    {
+      "slug": "marco-gallery-osaka",
+      "cadence": "occasional",
+      "name": "Marco Gallery",
+      "names": {
+        "en": "Marco Gallery",
+        "ja": "Marco Gallery"
+      },
+      "base_url": "https://www.instagram.com/marco_gallery_osaka_japan/",
+      "address_text": "Takemoto Bldg. 1F/3F/4F, 4-12-25 Minamisemba, Chuo-ku, Osaka 542-0081 Japan",
+      "directions_query": "Marco Gallery, 4-12-25 Minamisemba, Chuo-ku, Osaka",
+      "lat": 34.67508,
+      "lng": 135.49843,
+      "source_categories": ["art", "gallery"],
+      "is_active": true,
+      "description": {
+        "en": "A Shinsaibashi gallery focused on crossover contemporary art, with shows and open days announced through its Instagram and gallery channels.",
+        "ja": "心斎橋のコマーシャルギャラリー。クロスオーバーを軸に現代美術の展覧会を行い、営業日や展示情報はInstagramなどで告知されています。"
+      },
+      "urls": {
+        "en": "https://www.instagram.com/marco_gallery_osaka_japan/",
+        "ja": "https://www.instagram.com/marco_gallery_osaka_japan/"
+      }
+    },
+    {
+      "slug": "takenaka-carpentry-tools-museum",
+      "name": "Takenaka Carpentry Tools Museum",
+      "names": {
+        "en": "Takenaka Carpentry Tools Museum",
+        "ja": "竹中大工道具館"
+      },
+      "base_url": "https://www.dougukan.jp/",
+      "address_text": "7-5-1 Kumochi-cho, Chuo-ku, Kobe 651-0056 Japan",
+      "directions_query": "Takenaka Carpentry Tools Museum, Kobe",
+      "lat": 34.71171,
+      "lng": 135.19682,
+      "source_categories": ["craft", "museum", "design"],
+      "is_active": true,
+      "description": {
+        "en": "A specialist museum near Shin-Kobe dedicated to Japanese carpentry tools, craft techniques, and wood architecture, with permanent displays and occasional exhibitions.",
+        "ja": "新神戸近くの大工道具専門ミュージアム。日本の木工技術、道具、木造建築文化を常設展示と企画展で紹介しています。"
+      },
+      "urls": {
+        "en": "https://en.dougukan.jp/",
+        "ja": "https://www.dougukan.jp/"
+      }
+    }
+  ]
 }

@@ -130,8 +130,8 @@
       "slug": "nakanoshima-museum-of-art-osaka",
       "name": "Nakanoshima Museum of Art",
       "names": {
-        "en": "Nakanoshima Museum of Art",
-        "ja": "Nakanoshima Museum of Art"
+        "en": "NAKKA",
+        "ja": "NAKKA"
       },
       "source_type": "museum",
       "language": "en",
@@ -214,8 +214,8 @@
       "slug": "national-museum-of-art-osaka",
       "name": "The National Museum of Art",
       "names": {
-        "en": "The National Museum of Art",
-        "ja": "The National Museum of Art"
+        "en": "NMOA",
+        "ja": "NMOA"
       },
       "source_type": "museum",
       "language": "en",
@@ -364,6 +364,724 @@
       "crawl_hints": {
         "skip_patterns": ["?mcat=", "?yr=", "/event/", ".pdf"],
         "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "hyogo-prefectural-museum-of-art",
+      "name": "Hyogo Prefectural Museum of Art",
+      "names": {
+        "en": "Hyogo Prefectural Museum of Art",
+        "ja": "兵庫県立美術館"
+      },
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "1-1-1 Wakinohama Kaigan-dori, Chuo-ku, Kobe 651-0073 Japan",
+      "directions_query": "Hyogo Prefectural Museum of Art, Kobe",
+      "lat": 34.6993412,
+      "lng": 135.2180803,
+      "base_url": "https://www.artm.pref.hyogo.jp/exhibition/",
+      "start_urls": ["https://www.artm.pref.hyogo.jp/exhibition/"],
+      "allowed_domains": ["www.artm.pref.hyogo.jp", "artm.pref.hyogo.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official annual exhibition listing for the Hyogo Prefectural Museum of Art in Kobe.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.artm.pref.hyogo.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://www.artm.pref.hyogo.jp/eng/exhibition/"],
+          "event_page_patterns": ["/eng/exhibition/", "/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": [".pdf"],
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "i-gallery-osaka",
+      "name": "i GALLERY OSAKA",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "AC N Shinsaibashi Garden 1F, 3-8-14 Minamisemba, Chuo-ku, Osaka 542-0081 Japan",
+      "directions_query": "i GALLERY OSAKA, 3-8-14 Minamisemba, Chuo-ku, Osaka",
+      "lat": 34.675506,
+      "lng": 135.503448,
+      "base_url": "https://www.igallery-osaka.com/",
+      "start_urls": ["https://www.igallery-osaka.com/"],
+      "allowed_domains": ["www.igallery-osaka.com", "igallery-osaka.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/", "/en/"],
+      "notes": "Current and upcoming exhibitions are exposed in the homepage slider.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "en": {
+          "start_urls": ["https://www.igallery-osaka.com/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "itsuo-art-museum",
+      "name": "Itsuo Art Museum",
+      "names": {
+        "en": "Itsuo Art Museum",
+        "ja": "逸翁美術館"
+      },
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "12-27 Sakaehonmachi, Ikeda, Osaka 563-0058 Japan",
+      "directions_query": "Itsuo Art Museum, Ikeda, Osaka",
+      "lat": 34.8248903,
+      "lng": 135.4264576,
+      "base_url": "https://www.hankyu-bunka.or.jp/itsuo-museum/exhibition/",
+      "start_urls": ["https://www.hankyu-bunka.or.jp/itsuo-museum/exhibition/"],
+      "allowed_domains": ["www.hankyu-bunka.or.jp", "hankyu-bunka.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/itsuo-museum/exhibition/"],
+      "notes": "Official exhibition listing; museum has no permanent display and opens exhibition rooms during exhibition periods.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.hankyu-bunka.or.jp/itsuo-museum/exhibition/"],
+          "event_page_patterns": ["/itsuo-museum/exhibition/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "new-pure-plus",
+      "name": "NEW PURE +",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "1-1-4 Awajimachi, Chuo-ku, Osaka 541-0047 Japan",
+      "directions_query": "NEW PURE +, 1-1-4 Awajimachi, Chuo-ku, Osaka",
+      "lat": 34.6868777,
+      "lng": 135.5106892,
+      "base_url": "https://newpureplus.com/exhibition",
+      "start_urls": ["https://newpureplus.com/exhibition"],
+      "allowed_domains": ["newpureplus.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition"],
+      "notes": "Official exhibition page includes current, upcoming, and past sections.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://newpureplus.com/exhibition"],
+          "event_page_patterns": ["/exhibition"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "osaka-geidai-whatsnew",
+      "name": "Osaka University of Arts",
+      "names": {
+        "en": "Osaka University of Arts",
+        "ja": "大阪芸術大学"
+      },
+      "source_type": "university",
+      "language": "ja",
+      "address_text": "469 Higashiyama, Kanan-cho, Minamikawachi-gun, Osaka 585-8555 Japan",
+      "directions_query": "Osaka University of Arts, Kanan, Osaka",
+      "lat": 34.5111993,
+      "lng": 135.631448,
+      "base_url": "https://www.osaka-geidai.ac.jp/whatsnew",
+      "start_urls": ["https://www.osaka-geidai.ac.jp/whatsnew"],
+      "allowed_domains": ["www.osaka-geidai.ac.jp", "osaka-geidai.ac.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/whatsnew/"],
+      "notes": "Only crawl items tagged `アート・展覧会`; source-specific detail URL extractor filters listing anchors by that tag.",
+      "is_active": true,
+      "source_categories": ["art", "exhibition", "university"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.osaka-geidai.ac.jp/whatsnew"],
+          "event_page_patterns": ["/whatsnew/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "gallery-nomart",
+      "name": "Gallery Nomart",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "3-5-22 Nagata, Joto-ku, Osaka 536-0022 Japan",
+      "directions_query": "Gallery Nomart, 3-5-22 Nagata, Joto-ku, Osaka",
+      "lat": 34.680214,
+      "lng": 135.557541,
+      "base_url": "https://www.nomart.co.jp/exhibition/index.php",
+      "start_urls": ["https://www.nomart.co.jp/exhibition/index.php"],
+      "allowed_domains": ["www.nomart.co.jp", "nomart.co.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official exhibition index for Gallery Nomart.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.nomart.co.jp/exhibition/index.php"],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "kaze-art-planning",
+      "name": "KAZE ART PLANNING",
+      "names": {
+        "en": "KAZE ART PLANNING",
+        "ja": "風アートプランニング"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "3-6-3 Tenma 2F, Kita-ku, Osaka 530-0043 Japan",
+      "directions_query": "KAZE ART PLANNING, Tenma, Kita-ku, Osaka",
+      "lat": 34.69857,
+      "lng": 135.51856,
+      "base_url": "https://web-gallerykaze.com/",
+      "start_urls": ["https://web-gallerykaze.com/"],
+      "allowed_domains": ["web-gallerykaze.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/"],
+      "notes": "Homepage functions as the exhibition/news listing for KAZE ART PLANNING.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://web-gallerykaze.com/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/artists", "/goods", "/access"],
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "artarea-b1",
+      "name": "Art Area B1",
+      "names": {
+        "en": "Art Area B1",
+        "ja": "アートエリア B1"
+      },
+      "source_type": "art-center",
+      "language": "ja",
+      "address_text": "Keihan Naniwabashi Station B1F, 1-1-1 Nakanoshima, Kita-ku, Osaka 530-0005 Japan",
+      "directions_query": "Art Area B1, Naniwabashi Station, Osaka",
+      "lat": 34.692862,
+      "lng": 135.50618,
+      "base_url": "https://artarea-b1.jp/program/",
+      "start_urls": ["https://artarea-b1.jp/program/"],
+      "allowed_domains": ["artarea-b1.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/program/"],
+      "notes": "Program listing includes exhibitions and related art events.",
+      "is_active": true,
+      "source_categories": ["art-center", "exhibition", "event"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://artarea-b1.jp/program/"],
+          "event_page_patterns": ["/program/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "skip_patterns": ["/program/category/", "/program/tag/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "hitoto",
+      "name": "hitoto",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "Tenjinbashi 5-chome, Kita-ku, Osaka Japan",
+      "directions_query": "hitoto gallery, Tenjinbashi 5-chome, Kita-ku, Osaka",
+      "lat": 34.70839,
+      "lng": 135.51102,
+      "base_url": "https://hitoto.info/",
+      "start_urls": ["https://hitoto.info/"],
+      "allowed_domains": ["hitoto.info"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/"],
+      "notes": "Homepage lists upcoming exhibitions; site describes hitoto as an Osaka Tenjinbashi 5-chome gallery.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition", "photography"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://hitoto.info/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/category/", "/about", "/access"],
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "jitsuzaisei",
+      "name": "JITSUZAISEI",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "4-14-18 Oimazato, Higashinari-ku, Osaka Japan",
+      "directions_query": "JITSUZAISEI, 4-14-18 Oimazato, Higashinari-ku, Osaka",
+      "lat": 34.67031,
+      "lng": 135.54575,
+      "base_url": "https://www.jitsuzaisei.com/exhibitions",
+      "start_urls": ["https://www.jitsuzaisei.com/exhibitions"],
+      "allowed_domains": ["www.jitsuzaisei.com", "jitsuzaisei.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions"],
+      "notes": "Wix exhibition page with current and past sections.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.jitsuzaisei.com/exhibitions"],
+          "event_page_patterns": ["/exhibitions"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "kouichi-fine-arts",
+      "name": "KOUICHI FINE ARTS",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "1-2-11 Edobori, Nishi-ku, Osaka 550-0002 Japan",
+      "directions_query": "KOUICHI FINE ARTS, 1-2-11 Edobori, Nishi-ku, Osaka",
+      "lat": 34.69176,
+      "lng": 135.4962,
+      "base_url": "https://kouichifinearts.com/en/front-page/",
+      "start_urls": ["https://kouichifinearts.com/en/front-page/"],
+      "allowed_domains": ["kouichifinearts.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "English homepage exposes current exhibition and exhibition archive links.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "en": {
+          "start_urls": ["https://kouichifinearts.com/en/front-page/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "plus-y-gallery",
+      "name": "+Y Gallery",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "Otemae Kensetsu Kaikan 306, 1-3-27 Tanimachi, Chuo-ku, Osaka 540-0012 Japan",
+      "directions_query": "+Y Gallery, 1-3-27 Tanimachi, Chuo-ku, Osaka",
+      "lat": 34.6841553,
+      "lng": 135.5155175,
+      "base_url": "https://www.plus-y-gallery.com/",
+      "start_urls": ["https://www.plus-y-gallery.com/"],
+      "allowed_domains": ["www.plus-y-gallery.com", "plus-y-gallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/"],
+      "notes": "Jimdo homepage lists next exhibition and archive links.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.plus-y-gallery.com/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/artists", "/book-shop", "/contact", "/membership"],
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "tezukayama-gallery",
+      "name": "Tezukayama Gallery",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "Yamazaki Bldg. 2F, 1-19-27 Minami-Horie, Nishi-ku, Osaka 550-0015 Japan",
+      "directions_query": "Tezukayama Gallery, Minami-Horie, Osaka",
+      "lat": 34.67178,
+      "lng": 135.49239,
+      "base_url": "https://www.tezukayama-g.com/",
+      "start_urls": ["https://www.tezukayama-g.com/"],
+      "allowed_domains": ["www.tezukayama-g.com", "tezukayama-g.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition", "/exhibitions"],
+      "notes": "Homepage exposes current/future exhibitions and art fair entries.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "en": {
+          "start_urls": ["https://www.tezukayama-g.com/"],
+          "event_page_patterns": ["/exhibition", "/exhibitions"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "hill-top-gallery",
+      "name": "HILL TOP GALLERY",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "Shinsaibashi Gallery Building 5F, 2-6-22 Minamisemba, Chuo-ku, Osaka 542-0081 Japan",
+      "directions_query": "HILL TOP GALLERY, 2-6-22 Minamisemba, Chuo-ku, Osaka",
+      "lat": 34.67686,
+      "lng": 135.50551,
+      "base_url": "https://www.hilltoposaka.com/",
+      "start_urls": ["https://www.hilltoposaka.com/"],
+      "allowed_domains": ["www.hilltoposaka.com", "hilltoposaka.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/"],
+      "notes": "Homepage links latest exhibition, calendar, and Instagram updates.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition", "photography"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.hilltoposaka.com/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "artcourt-gallery",
+      "name": "ARTCOURT Gallery",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "OAP Art Court 1F, 1-8-5 Tenmabashi, Kita-ku, Osaka 530-0042 Japan",
+      "directions_query": "ARTCOURT Gallery, 1-8-5 Tenmabashi, Kita-ku, Osaka",
+      "lat": 34.6954677,
+      "lng": 135.517976,
+      "base_url": "https://www.artcourtgallery.com/",
+      "start_urls": ["https://www.artcourtgallery.com/"],
+      "allowed_domains": ["www.artcourtgallery.com", "artcourtgallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/", "/exhibition/"],
+      "notes": "Homepage lists current exhibitions and links to exhibition detail pages.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.artcourtgallery.com/"],
+          "event_page_patterns": ["/exhibitions/", "/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://www.artcourtgallery.com/eng/"],
+          "event_page_patterns": ["/eng/exhibitions/", "/eng/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "issey-miyake-semba-creation-space",
+      "name": "ISSEY MIYAKE SEMBA | CREATION SPACE",
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "4-11-28 Minamisemba, Chuo-ku, Osaka 542-0081 Japan",
+      "directions_query": "ISSEY MIYAKE SEMBA, 4-11-28 Minamisemba, Chuo-ku, Osaka",
+      "lat": 34.67523,
+      "lng": 135.49887,
+      "base_url": "https://www.isseymiyake.com/blogs/sembacreationspace",
+      "start_urls": ["https://www.isseymiyake.com/blogs/sembacreationspace"],
+      "allowed_domains": ["www.isseymiyake.com", "isseymiyake.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/blogs/sembacreationspace"],
+      "notes": "Official gallery page lists ISSEY MIYAKE SEMBA creation-space exhibitions.",
+      "is_active": true,
+      "source_categories": ["design", "gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.isseymiyake.com/blogs/sembacreationspace"],
+          "event_page_patterns": ["/blogs/sembacreationspace"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "masaki-art-museum",
+      "name": "Masaki Art Museum",
+      "names": {
+        "en": "Masaki Art Museum",
+        "ja": "正木美術館"
+      },
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "2-9-26 Tadaokanaka, Tadaoka-cho, Osaka 595-0812 Japan",
+      "directions_query": "Masaki Art Museum, Tadaoka, Osaka",
+      "lat": 34.48973,
+      "lng": 135.40016,
+      "base_url": "https://masaki-art-museum.jp/",
+      "start_urls": ["https://masaki-art-museum.jp/"],
+      "allowed_domains": ["masaki-art-museum.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/"],
+      "notes": "Official museum site; exhibition information is linked from the homepage image navigation.",
+      "is_active": true,
+      "source_categories": ["museum", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://masaki-art-museum.jp/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "takeo-exhibitions",
+      "name": "TAKEO Exhibitions",
+      "source_type": "design",
+      "language": "en",
+      "address_text": "Yodoyabashi MIHONCHO, Chuo-ku, Osaka Japan",
+      "directions_query": "TAKEO Yodoyabashi MIHONCHO, Osaka",
+      "lat": 34.68964,
+      "lng": 135.50285,
+      "base_url": "https://www.takeo.co.jp/en/exhibition/",
+      "start_urls": ["https://www.takeo.co.jp/en/exhibition/"],
+      "allowed_domains": ["www.takeo.co.jp", "takeo.co.jp", "www.takeopapershow.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
+      "notes": "TAKEO exhibition index includes MIHONCHO and Yodoyabashi MIHONCHO paper/design exhibitions plus TAKEO PAPER SHOW.",
+      "is_active": true,
+      "source_categories": ["design", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.takeo.co.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://www.takeo.co.jp/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/news/", "/company/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "parco-hall-shinsaibashi",
+      "name": "PARCO HALL SHINSAIBASHI",
+      "source_type": "venue",
+      "language": "ja",
+      "address_text": "Shinsaibashi PARCO 14F, 1-8-3 Shinsaibashisuji, Chuo-ku, Osaka 542-0085 Japan",
+      "directions_query": "PARCO HALL SHINSAIBASHI, Osaka",
+      "lat": 34.6738654,
+      "lng": 135.5009718,
+      "base_url": "https://art.parco.jp/eventhall/",
+      "start_urls": ["https://art.parco.jp/eventhall/"],
+      "allowed_domains": ["art.parco.jp", "en.art.parco.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/eventhall/", "/parcohall/"],
+      "notes": "PARCO ART page for PARCO HALL SHINSAIBASHI.",
+      "is_active": true,
+      "source_categories": ["art", "design", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://art.parco.jp/eventhall/"],
+          "event_page_patterns": ["/eventhall/", "/parcohall/"]
+        },
+        "en": {
+          "start_urls": ["https://en.art.parco.jp/eventhall/"],
+          "event_page_patterns": ["/eventhall/", "/parcohall/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "suchsize",
+      "name": "SUCHSIZE",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "1-6-20 Sanno, Nishinari-ku, Osaka 557-0001 Japan",
+      "directions_query": "SUCHSIZE, 1-6-20 Sanno, Nishinari-ku, Osaka",
+      "lat": 34.64704,
+      "lng": 135.50449,
+      "base_url": "https://www.suchsize.com/",
+      "start_urls": ["https://www.suchsize.com/"],
+      "allowed_domains": ["www.suchsize.com", "suchsize.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/blog/", "/"],
+      "notes": "Official site and linked blog entries list current exhibition details; supplied entry URL sits under /blog/.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "en": {
+          "start_urls": ["https://www.suchsize.com/"],
+          "event_page_patterns": ["/blog/", "/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "osaka-nihon-mingeikan",
+      "name": "Osaka Nihon Mingeikan",
+      "names": {
+        "en": "The Japan Folk Crafts Museum, Osaka",
+        "ja": "大阪日本民芸館"
+      },
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "10-5 Senri Banpaku Koen, Suita, Osaka Japan",
+      "directions_query": "Osaka Nihon Mingeikan, Expo Commemoration Park, Suita",
+      "lat": 34.810204,
+      "lng": 135.5319896,
+      "base_url": "https://www.mingeikan-osaka.or.jp/",
+      "start_urls": ["https://www.mingeikan-osaka.or.jp/"],
+      "allowed_domains": ["www.mingeikan-osaka.or.jp", "mingeikan-osaka.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/"],
+      "notes": "Official Osaka folk crafts museum site lists seasonal special exhibitions and related events.",
+      "is_active": true,
+      "source_categories": ["museum", "craft", "mingei", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.mingeikan-osaka.or.jp/"],
+          "event_page_patterns": ["/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/shop", "/about", "/floor"],
+        "max_detail_pages": 6
+      }
+    },
+    {
+      "slug": "osaka-ukiyoe-museum",
+      "name": "Osaka Ukiyo-e Museum",
+      "names": {
+        "en": "Osaka Ukiyo-e Museum",
+        "ja": "大阪浮世絵美術館"
+      },
+      "source_type": "museum",
+      "language": "ja",
+      "address_text": "Fujiya Shinsaibashi Building 3F, 2-2-23 Shinsaibashisuji, Chuo-ku, Osaka 542-0085 Japan",
+      "directions_query": "Osaka Ukiyo-e Museum, 2-2-23 Shinsaibashisuji, Chuo-ku, Osaka",
+      "lat": 34.67046,
+      "lng": 135.50219,
+      "base_url": "https://osaka-ukiyoe-museum.com/exhibition.html",
+      "start_urls": ["https://osaka-ukiyoe-museum.com/exhibition.html"],
+      "allowed_domains": ["osaka-ukiyoe-museum.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition.html", "/en/exhibition.html"],
+      "notes": "Official exhibition page for the Osaka Ukiyo-e Museum in Shinsaibashi; homepage also summarizes the current special exhibition.",
+      "is_active": true,
+      "source_categories": ["museum", "ukiyoe", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://osaka-ukiyoe-museum.com/exhibition.html"],
+          "event_page_patterns": ["/exhibition.html"]
+        },
+        "en": {
+          "start_urls": ["https://osaka-ukiyoe-museum.com/en/exhibition.html"],
+          "event_page_patterns": ["/en/exhibition.html"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 2
       }
     }
   ]

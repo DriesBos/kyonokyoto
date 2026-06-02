@@ -1950,6 +1950,15 @@ function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
   return finalUrls.length ? finalUrls : [listingUrl];
 }
 
+function extractOsakaGeidaiDetailUrls(listingHtml, listingUrl) {
+  const urls = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
+    .filter((match) => stripTags(match[3]).includes('アート・展覧会'))
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean);
+
+  return [...new Set(urls)];
+}
+
 function extractFirstDateText(text) {
   const patterns = [
     /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2}(?:,\s*\d{4})?\s*[-–—～〜]\s*(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
@@ -4492,6 +4501,7 @@ const detailUrlExtractors = {
   'kyoto-national-museum': extractKyohakuDetailUrls,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraDetailUrls,
   momak: extractMomakDetailUrls,
+  'osaka-geidai-whatsnew': extractOsakaGeidaiDetailUrls,
   'raku-museum': extractRakuMuseumDetailUrls,
   'sen-oku-hakukokan': extractSenOkuDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,

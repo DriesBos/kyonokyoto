@@ -812,6 +812,70 @@
       "crawl_hints": {
         "max_detail_pages": 6
       }
+    },
+    {
+      "slug": "issey-miyake-ginza-cube",
+      "name": "ISSEY MIYAKE GINZA | CUBE",
+      "source_type": "gallery",
+      "language": "ja",
+      "directions_query": "ISSEY MIYAKE GINZA CUBE, Ginza, Tokyo",
+      "lat": 35.67235,
+      "lng": 139.76569,
+      "address_text": "4-4-5 Ginza, Chuo-ku, Tokyo 104-0061 Japan",
+      "base_url": "https://www.isseymiyake.com/blogs/cube",
+      "start_urls": ["https://www.isseymiyake.com/blogs/cube"],
+      "allowed_domains": ["www.isseymiyake.com", "isseymiyake.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/blogs/cube"],
+      "notes": "Official CUBE gallery page for ISSEY MIYAKE GINZA, listing design/art/craft exhibitions and events.",
+      "is_active": true,
+      "source_categories": ["design", "gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.isseymiyake.com/blogs/cube"],
+          "event_page_patterns": ["/blogs/cube"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "issey-miyake-shinjuku-shikaku",
+      "name": "ISSEY MIYAKE SHINJUKU | SHIKAKU",
+      "source_type": "gallery",
+      "language": "ja",
+      "directions_query": "ISSEY MIYAKE SHINJUKU SHIKAKU, Isetan Shinjuku, Tokyo",
+      "lat": 35.69174,
+      "lng": 139.77302,
+      "address_text": "Isetan Shinjuku Main Building 2F, 3-14-1 Shinjuku, Shinjuku-ku, Tokyo 160-0022 Japan",
+      "base_url": "https://www.isseymiyake.com/blogs/shikaku",
+      "start_urls": ["https://www.isseymiyake.com/blogs/shikaku"],
+      "allowed_domains": ["www.isseymiyake.com", "isseymiyake.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/blogs/shikaku"],
+      "notes": "Official SHIKAKU gallery page for ISSEY MIYAKE SHINJUKU, listing special projects and gallery events.",
+      "is_active": true,
+      "source_categories": ["design", "gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.isseymiyake.com/blogs/shikaku"],
+          "event_page_patterns": ["/blogs/shikaku"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 8
+      }
     }
   ]
 }
