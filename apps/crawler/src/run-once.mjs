@@ -3314,6 +3314,79 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractHakariContentHtml(detailHtml) {
+  const contentStart = detailHtml.search(/<div\b[^>]*class=["'][^"']*\bpost_content\b/i);
+  if (contentStart === -1) return detailHtml;
+
+  const scopedHtml = detailHtml.slice(contentStart);
+  const contentEnd = scopedHtml.search(/<footer\b|<div\b[^>]*\bid=["']comments["']/i);
+  return contentEnd === -1 ? scopedHtml : scopedHtml.slice(0, contentEnd);
+}
+
+function extractHakariImageUrls(detailHtml, detailUrl) {
+  const contentHtml = extractHakariContentHtml(detailHtml);
+  const imageUrls = [];
+
+  for (const match of contentHtml.matchAll(/<img\b[^>]*>/gi)) {
+    const attributes = parseTagAttributes(match[0]);
+    const { width, height } = getImageAttributeDimensions(attributes);
+    const candidateUrl =
+      attributes['data-src'] ??
+      attributes['data-original'] ??
+      attributes['data-lazy-src'] ??
+      attributes.src ??
+      null;
+    const url = candidateUrl ? normalizeUrl(candidateUrl, detailUrl) : null;
+    if (!url) continue;
+    if (looksLikeSocialOrUiImage(url)) continue;
+    if (isSmallImageCandidate({ url, width, height, source: 'img' }, url)) continue;
+    if (!imageUrls.includes(url)) imageUrls.push(url);
+  }
+
+  return imageUrls.slice(0, MAX_IMAGES_PER_EVENT);
+}
+
+function extractHakariDateText(detailHtml) {
+  const contentText = stripTags(extractHakariContentHtml(detailHtml));
+  const monthRange = contentText.match(
+    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?\s+\d{1,2}\s*[-–—]\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?\s+\d{1,2},\s*20\d{2}\b/i,
+  );
+
+  return monthRange?.[0].replace(/\b([A-Za-z]{3,4})\./g, '$1') ?? null;
+}
+
+function extractHakariEvent(detailHtml, source, detailUrl) {
+  let event = extractGenericEvent(detailHtml, source, detailUrl);
+  const dateText = extractHakariDateText(detailHtml);
+
+  if (dateText && (!event.start_date || /^\d{4}-\d{2}-\d{2}$/.test(event.date_text))) {
+    const parsedDates = parseGenericDateRange(dateText);
+    if (parsedDates.startDate) {
+      event = {
+        ...event,
+        date_text: dateText,
+        start_date: parsedDates.startDate,
+        end_date: parsedDates.endDate,
+        ...buildScheduleFields({
+          startDate: parsedDates.startDate,
+          endDate: parsedDates.endDate,
+        }),
+        calendar_starts_at: parsedDates.calendarStartsAt,
+        calendar_ends_at: parsedDates.calendarEndsAt,
+      };
+    }
+  }
+
+  const imageUrls = extractHakariImageUrls(detailHtml, detailUrl);
+
+  return {
+    ...event,
+    primary_image_url: imageUrls[0] ?? event.primary_image_url,
+    image_urls: imageUrls.length ? imageUrls : event.image_urls,
+    extraction_confidence: event.start_date ? 0.55 : event.extraction_confidence,
+  };
+}
+
 function inferBaikenYear(detailHtml) {
   const imageYear = detailHtml.match(/\/uploads\/(?:exhibition|post)\/(20\d{2})\//)?.[1];
   if (imageYear) return Number(imageYear);
@@ -4517,6 +4590,7 @@ const eventExtractors = {
   'fukuda-art-museum': extractFukudaEvent,
   'gallery-baiken': extractBaikenEvent,
   'gallery-yamahon': extractGalleryYamahonEvent,
+  'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
   'koen-kyoto': extractKoenEvent,
   'kyoto-art-center': extractKacEvent,

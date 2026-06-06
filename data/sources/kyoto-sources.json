@@ -175,6 +175,50 @@
       }
     },
     {
+      "slug": "hakari-contemporary",
+      "name": "hakari contemporary",
+      "names": {
+        "en": "hakari contemporary",
+        "ja": "hakari contemporary"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "Porte de Okazaki #103, 140 Okazakienshoji-cho, Sakyo-ku, Kyoto-shi, Kyoto 606-8344 Japan",
+      "directions_query": "hakari contemporary, Porte de Okazaki #103, 140 Okazakienshoji-cho, Sakyo-ku, Kyoto",
+      "lat": 35.01098,
+      "lng": 135.7823,
+      "base_url": "https://hakari.art/exhibitions/",
+      "start_urls": ["https://hakari.art/exhibitions/"],
+      "allowed_domains": ["hakari.art"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Use the exhibitions page cards. Current and upcoming sections may be empty; when that happens, the crawler should find detail pages and skip past events.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "selectors": {
+        "listing_links": "figure a"
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/archives/", "/news/", "/artist/", "/about/"]
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://hakari.art/exhibitions/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      }
+    },
+    {
       "slug": "gallery-yamahon",
       "name": "Gallery Yamahon",
       "source_type": "gallery",

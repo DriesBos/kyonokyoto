@@ -2,6 +2,16 @@
 
 Update this file whenever source JSON changes or test crawls run.
 
+## Kyoto Sources
+
+### `hakari-contemporary`
+
+- Added from issue #11.
+- Source page has empty current/upcoming sections as of 2026-06-06; latest visible exhibition ended 2026-05-17.
+- Local static crawl fallback found 6 detail URLs: `ateleology`, `poc`, `re-materiality`, `waterforest`, `sec`, `floating-island`.
+- Parsed all 6 with dates/images and all 6 are past as of 2026-06-06, so expected real crawl result is `events_saved: 0`, `skips.past: 6`.
+- Full `npm run crawl:once -- --city=kyoto --source=hakari-contemporary --render=never --limit=1` could not run in this workspace because `apps/crawler/.env` is missing.
+
 ## Osaka Sources
 
 These sources need more JSON tuning before approval. Keep `beta: true` until fixed and re-crawled cleanly.
