@@ -1132,6 +1132,30 @@ test('source config includes KyotoBa gallery events with Japanese default', asyn
   assert.match(source?.notes ?? '', /Gallery events are listed on \/gallery\//);
 });
 
+test('source config includes hakari contemporary exhibition cards', async () => {
+  const payload = JSON.parse(
+    await readFile(
+      resolve(import.meta.dirname, '../../../data/sources/kyoto-sources.json'),
+      'utf8',
+    ),
+  );
+  const source = payload.sources.find((item) => item.slug === 'hakari-contemporary');
+  const listingHtml = `
+    <figure><a href="https://hakari.art/exhibitions/ateleology/">Ateleology</a></figure>
+    <nav><a href="https://hakari.art/about/">About</a></nav>
+  `;
+
+  assert.equal(source?.name, 'hakari contemporary');
+  assert.equal(source?.language, 'ja');
+  assert.deepEqual(source?.start_urls, ['https://hakari.art/exhibitions/']);
+  assert.equal(source?.selectors?.listing_links, 'figure a');
+  assert.equal(source?.capabilities?.machine_translate_missing_locales, true);
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, 'https://hakari.art/exhibitions/', source, 6),
+    ['https://hakari.art/exhibitions/ateleology/'],
+  );
+});
+
 test('source config includes Sokyo Kyoto location exhibitions', async () => {
   const payload = JSON.parse(
     await readFile(
@@ -1229,6 +1253,39 @@ test('source config follows Kuramonzen detail pages for per-event fields', async
   assert.deepEqual(event.image_urls, [
     'https://kuramonzen.com/cdn/shop/articles/nomura.jpg?v=1776495202',
     'https://cdn.shopify.com/s/files/1/0658/7472/3063/files/work.jpg?v=1',
+  ]);
+});
+
+test('Hakari extraction keeps lazy-loaded hero image first', () => {
+  const event = eventExtractors['hakari-contemporary'](
+    `
+      <title>非道| Ateleology - hakari contemporary</title>
+      <div class="post_content">
+        <figure><img src="data:image/gif;base64,placeholder" data-src="https://hakari.art/wp-content/uploads/Ateleology_KV_1080_1920.jpg" width="1920" height="1080"></figure>
+        <p><strong>Floating Island</strong><br>Feb. 15 - Mar. 15, 2025<br>12:00 - 18:00</p>
+        <figure><img data-src="https://hakari.art/wp-content/uploads/Artwork_Ask-Anything.jpg" width="1600" height="1200"></figure>
+      </div>
+    `,
+    {
+      slug: 'hakari-contemporary',
+      name: 'hakari contemporary',
+      source_type: 'gallery',
+      address_text: 'Porte de Okazaki #103, Kyoto',
+    },
+    'https://hakari.art/exhibitions/floating-island/',
+  );
+
+  assert.equal(event.title, '非道| Ateleology');
+  assert.equal(event.date_text, 'Feb 15 - Mar 15, 2025');
+  assert.equal(event.start_date, '2025-02-15');
+  assert.equal(event.end_date, '2025-03-15');
+  assert.equal(
+    event.primary_image_url,
+    'https://hakari.art/wp-content/uploads/Ateleology_KV_1080_1920.jpg',
+  );
+  assert.deepEqual(event.image_urls, [
+    'https://hakari.art/wp-content/uploads/Ateleology_KV_1080_1920.jpg',
+    'https://hakari.art/wp-content/uploads/Artwork_Ask-Anything.jpg',
   ]);
 });
 
