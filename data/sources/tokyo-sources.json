@@ -1217,6 +1217,90 @@
         "render_mode": "auto",
         "max_detail_pages": 8
       }
+    },
+    {
+      "slug": "leica-gallery-omotesando",
+      "name": "Leica Gallery Omotesando",
+      "names": {
+        "en": "Leica Gallery Omotesando",
+        "ja": "ライカギャラリー表参道"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "5-16-15 Jingumae, Shibuya-ku, Tokyo 150-0001 Japan",
+      "directions_query": "Leica Gallery Omotesando, 5-16-15 Jingumae, Shibuya-ku, Tokyo",
+      "lat": 35.6662444,
+      "lng": 139.7065174,
+      "base_url": "https://leica-camera.com/ja-JP/leica-galleries/leica-gallery-omotesando/news-program",
+      "start_urls": [
+        "https://leica-camera.com/ja-JP/leica-galleries/leica-gallery-omotesando/news-program"
+      ],
+      "allowed_domains": ["leica-camera.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event/leica-gallery-omotesando/", "/event/gallery-omotesando-"],
+      "notes": "Official Leica Gallery Omotesando photo exhibition listing. Static listing exposes event detail links under `/event/leica-gallery-omotesando/`, plus occasional Omotesando program pages.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["photography", "gallery", "exhibition"],
+      "map_visibility": true,
+      "measure_image_dimensions": true,
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://leica-camera.com/ja-JP/leica-galleries/leica-gallery-omotesando/news-program"
+          ],
+          "event_page_patterns": ["/event/leica-gallery-omotesando/", "/event/gallery-omotesando-"]
+        },
+        "en": {
+          "start_urls": [
+            "https://leica-camera.com/en-US/leica-galleries/leica-gallery-omotesando/news-program"
+          ],
+          "event_page_patterns": ["/event/leica-gallery-omotesando/", "/event/gallery-omotesando-"]
+        }
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 16
+      }
+    },
+    {
+      "slug": "leica-gallery-tokyo",
+      "name": "Leica Gallery Tokyo",
+      "names": {
+        "en": "Leica Gallery Tokyo",
+        "ja": "ライカギャラリー東京"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "6-4-1 Ginza, Chuo-ku, Tokyo 104-0061 Japan",
+      "directions_query": "Leica Gallery Tokyo, 6-4-1 Ginza, Chuo-ku, Tokyo",
+      "lat": 35.6720135,
+      "lng": 139.7647202,
+      "base_url": "https://leica-camera.com/ja-JP/leica-gallery-tokyo-news-program",
+      "start_urls": ["https://leica-camera.com/ja-JP/leica-gallery-tokyo-news-program"],
+      "allowed_domains": ["leica-camera.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event/leica-gallery-tokyo/"],
+      "notes": "Official Leica Gallery Tokyo photo exhibition listing. Static listing exposes current and past event detail links under `/event/leica-gallery-tokyo/`.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["photography", "gallery", "exhibition"],
+      "map_visibility": true,
+      "measure_image_dimensions": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://leica-camera.com/ja-JP/leica-gallery-tokyo-news-program"],
+          "event_page_patterns": ["/event/leica-gallery-tokyo/"]
+        },
+        "en": {
+          "start_urls": ["https://leica-camera.com/en-US/leica-gallery-tokyo-news-program"],
+          "event_page_patterns": ["/event/leica-gallery-tokyo/"]
+        }
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 16
+      }
     }
   ]
 }

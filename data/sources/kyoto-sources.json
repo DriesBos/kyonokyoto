@@ -1457,6 +1457,45 @@
         "render_mode": "auto",
         "max_detail_pages": 8
       }
+    },
+    {
+      "slug": "leica-gallery-kyoto",
+      "name": "Leica Gallery Kyoto",
+      "names": {
+        "en": "Leica Gallery Kyoto",
+        "ja": "ライカギャラリー京都"
+      },
+      "source_type": "gallery",
+      "language": "ja",
+      "address_text": "570-120 Gionmachi Minamigawa, Higashiyama-ku, Kyoto 605-0074 Japan",
+      "directions_query": "Leica Gallery Kyoto, 570-120 Gionmachi Minamigawa, Higashiyama-ku, Kyoto",
+      "lat": 35.0015346,
+      "lng": 135.7745603,
+      "base_url": "https://leica-camera.com/ja-JP/leica-gallery-kyoto-news-program",
+      "start_urls": ["https://leica-camera.com/ja-JP/leica-gallery-kyoto-news-program"],
+      "allowed_domains": ["leica-camera.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event/leica-gallery-kyoto/"],
+      "notes": "Official Leica Gallery Kyoto photo exhibition listing. Static listing exposes current and past event detail links under `/event/leica-gallery-kyoto/`.",
+      "is_active": true,
+      "beta": true,
+      "source_categories": ["photography", "gallery", "exhibition"],
+      "map_visibility": true,
+      "measure_image_dimensions": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://leica-camera.com/ja-JP/leica-gallery-kyoto-news-program"],
+          "event_page_patterns": ["/event/leica-gallery-kyoto/"]
+        },
+        "en": {
+          "start_urls": ["https://leica-camera.com/en-US/leica-gallery-kyoto-news-program"],
+          "event_page_patterns": ["/event/leica-gallery-kyoto/"]
+        }
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_detail_pages": 16
+      }
     }
   ]
 }

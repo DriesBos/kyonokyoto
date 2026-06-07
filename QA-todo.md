@@ -12,6 +12,14 @@ Update this file whenever source JSON changes or test crawls run.
 - Parsed all 6 with dates/images and all 6 are past as of 2026-06-06, so expected real crawl result is `events_saved: 0`, `skips.past: 6`.
 - Full `npm run crawl:once -- --city=kyoto --source=hakari-contemporary --render=never --limit=1` could not run in this workspace because `apps/crawler/.env` is missing.
 
+### `leica-gallery-kyoto`
+
+- Added from issue #13.
+- Official listing page fetched with static HTML and generic detail extraction found 12 detail URLs under `/event/leica-gallery-kyoto/`.
+- Marked `beta: true` pending first crawl QA; `measure_image_dimensions: true` added because Leica pages carry logo/social metadata alongside event images.
+- Full `npm run crawl:once -- --city=kyoto --source=leica-gallery-kyoto --render=never --limit=1` could not run in this workspace because `apps/crawler/.env` is missing.
+- Needs crawl check for saved current events, date parsing, image selection, and native `ja`/`en` locale coverage.
+
 ## Osaka Sources
 
 These sources need more JSON tuning before approval. Keep `beta: true` until fixed and re-crawled cleanly.
@@ -109,3 +117,19 @@ After crawl, add each source under one of:
 - Needs JSON tuning
 - Looks close
 - Approved
+
+### `leica-gallery-omotesando`
+
+- Added from issue #13.
+- Official listing page fetched with static HTML and generic detail extraction found 8 detail URLs under `/event/leica-gallery-omotesando/`; one current/past program link also uses `/event/gallery-omotesando-`.
+- Marked `beta: true` pending first crawl QA; `measure_image_dimensions: true` added because Leica pages carry logo/social metadata alongside event images.
+- Full `npm run crawl:once -- --city=tokyo --source=leica-gallery-omotesando --render=never --limit=1` could not run in this workspace because `apps/crawler/.env` is missing.
+- Needs crawl check for saved current events, date parsing, image selection, and native `ja`/`en` locale coverage.
+
+### `leica-gallery-tokyo`
+
+- Added from issue #13.
+- Official listing page fetched with static HTML and generic detail extraction found 12 detail URLs under `/event/leica-gallery-tokyo/`.
+- Marked `beta: true` pending first crawl QA; `measure_image_dimensions: true` added because Leica pages carry logo/social metadata alongside event images.
+- Full `npm run crawl:once -- --city=tokyo --source=leica-gallery-tokyo --render=never --limit=1` could not run in this workspace because `apps/crawler/.env` is missing.
+- Needs crawl check for saved current events, date parsing, image selection, and native `ja`/`en` locale coverage.
