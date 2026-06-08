@@ -1,9 +1,9 @@
 ---
-import "../styles/reset.css";
-import "../styles/app.sass";
-import { CITY_COOKIE, CITY_STORAGE_KEY, type AppCity } from "../lib/cities";
-import type { AppLocale } from "../lib/i18n";
-import { uiText } from "../lib/i18n";
+import '../styles/reset.css';
+import '../styles/app.sass';
+import { CITY_COOKIE, CITY_STORAGE_KEY, type AppCity } from '../lib/cities';
+import type { AppLocale } from '../lib/i18n';
+import { uiText } from '../lib/i18n';
 
 type Props = {
   title?: string;
@@ -15,27 +15,27 @@ type Props = {
 };
 
 const {
-  city = "kyoto",
-  cityThemeColor = "#138e00",
-  locale = "en",
+  city = 'kyoto',
+  cityThemeColor = '#138e00',
+  locale = 'en',
   title = uiText.en.title,
   description = uiText.en.description,
   landingActive = false,
 } = Astro.props;
 
-const appName = "KyōNoKyōto";
-const ogImage = new URL("/og.png", Astro.url).href;
+const appName = 'KyōNoKyōto';
+const ogImage = new URL('/og.png', Astro.url).href;
 const shouldRegisterServiceWorker = import.meta.env.PROD;
-const themeColor = landingActive ? cityThemeColor : "#EFEFEF";
+const themeColor = landingActive ? cityThemeColor : '#EFEFEF';
 
-Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
 ---
 
 <html
   lang={uiText[locale].lang}
   data-city={city}
   data-locale={locale}
-  data-landing-active={landingActive ? "" : undefined}
+  data-landing-active={landingActive ? '' : undefined}
   style={`--color-green: ${cityThemeColor}`}
 >
   <head>
@@ -67,9 +67,12 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <meta name="generator" content={Astro.generator} />
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <script is:inline>
-      history.scrollRestoration = "manual";
+      history.scrollRestoration = 'manual';
     </script>
-    <script is:inline define:vars={{ city, cityCookie: CITY_COOKIE, cityStorageKey: CITY_STORAGE_KEY }}>
+    <script
+      is:inline
+      define:vars={{ city, cityCookie: CITY_COOKIE, cityStorageKey: CITY_STORAGE_KEY }}
+    >
       document.cookie = `${cityCookie}=${encodeURIComponent(city)}; Max-Age=31536000; Path=/; SameSite=Lax`;
       try {
         window.localStorage?.setItem(cityStorageKey, city);
@@ -77,33 +80,31 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
         // Cookie still carries preference when storage fails.
       }
     </script>
-    {
-      shouldRegisterServiceWorker ? (
-        <script is:inline>
-          if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-              navigator.serviceWorker.register("/sw.js").catch(() => {
-                // Ignore registration failures so the app still loads normally.
-              });
+    <script is:inline define:vars={{ shouldRegisterServiceWorker }}>
+      if (shouldRegisterServiceWorker) {
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(() => {
+              // Ignore registration failures so the app still loads normally.
             });
-          }
-        </script>
-      ) : (
-        <script is:inline>
-          if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.getRegistrations().then((registrations) => {
-              registrations.forEach((registration) => registration.unregister());
-            });
-          }
+          });
+        }
+      } else {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            registrations.forEach((registration) => registration.unregister());
+          });
+        }
 
-          if ("caches" in window) {
-            caches.keys().then((keys) => {
-              keys.filter((key) => key.startsWith("kyo-no-kyoto")).forEach((key) => caches.delete(key));
-            });
-          }
-        </script>
-      )
-    }
+        if ('caches' in window) {
+          caches.keys().then((keys) => {
+            keys
+              .filter((key) => key.startsWith('kyo-no-kyoto'))
+              .forEach((key) => caches.delete(key));
+          });
+        }
+      }
+    </script>
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
@@ -114,10 +115,16 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImage} />
-    <script is:inline type="text/partytown" src="https://www.googletagmanager.com/gtag/js?id=G-4EYJPD08Y4" async></script>
+    <script
+      is:inline
+      type="text/partytown"
+      src="https://www.googletagmanager.com/gtag/js?id=G-4EYJPD08Y4"
+      async></script>
     <script is:inline type="text/partytown">
       window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
+      function gtag() {
+        dataLayer.push(arguments);
+      }
       gtag('js', new Date());
       gtag('config', 'G-4EYJPD08Y4');
     </script>
@@ -126,26 +133,26 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     <slot />
     <script>
       if (!window.__siteCursorBound) {
-        const supportsSiteCursor = window.matchMedia("(hover: hover) and (pointer: fine)");
+        const supportsSiteCursor = window.matchMedia('(hover: hover) and (pointer: fine)');
         const activeCursorSelector = [
           ".general-button:not(.general-button--disabled):not([aria-disabled='true']):not([disabled])",
-          ".page-edge-strokes__scroll-top:not([disabled])",
-          "a[href]",
-          "button:not([disabled])",
-        ].join(",");
+          '.page-edge-strokes__scroll-top:not([disabled])',
+          'a[href]',
+          'button:not([disabled])',
+        ].join(',');
         const nativeCursorSelector = [
-          "[data-map-resizer]",
-          "[data-content-container][data-map-resizing]",
-        ].join(",");
+          '[data-map-resizer]',
+          '[data-content-container][data-map-resizing]',
+        ].join(',');
         let cursorDot = null;
         let cursorEnabled = false;
 
         const ensureCursorDot = () => {
           if (cursorDot) return cursorDot;
 
-          cursorDot = document.createElement("div");
-          cursorDot.className = "site-cursor-dot";
-          cursorDot.setAttribute("aria-hidden", "true");
+          cursorDot = document.createElement('div');
+          cursorDot.className = 'site-cursor-dot';
+          cursorDot.setAttribute('aria-hidden', 'true');
           document.body.append(cursorDot);
           return cursorDot;
         };
@@ -162,32 +169,32 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
             scale = target.closest(activeCursorSelector) ? 0.5 : 1;
           }
 
-          dot.style.setProperty("--cursor-dot-scale", String(scale));
+          dot.style.setProperty('--cursor-dot-scale', String(scale));
         };
 
         const syncNativeCursor = (target) => {
           const useNativeCursor = shouldUseNativeCursor(target);
-          document.body.toggleAttribute("data-site-native-cursor", useNativeCursor);
+          document.body.toggleAttribute('data-site-native-cursor', useNativeCursor);
           return useNativeCursor;
         };
 
         const handlePointerMove = (event) => {
           const dot = ensureCursorDot();
           const useNativeCursor = syncNativeCursor(event.target);
-          dot.style.setProperty("--cursor-dot-x", `${event.clientX}px`);
-          dot.style.setProperty("--cursor-dot-y", `${event.clientY}px`);
-          dot.style.opacity = useNativeCursor ? "0" : "1";
+          dot.style.setProperty('--cursor-dot-x', `${event.clientX}px`);
+          dot.style.setProperty('--cursor-dot-y', `${event.clientY}px`);
+          dot.style.opacity = useNativeCursor ? '0' : '1';
           setCursorScale(event.target);
         };
 
         const handlePointerLeave = () => {
-          if (cursorDot) cursorDot.style.opacity = "0";
-          document.body.removeAttribute("data-site-native-cursor");
+          if (cursorDot) cursorDot.style.opacity = '0';
+          document.body.removeAttribute('data-site-native-cursor');
         };
 
         const handlePointerOver = (event) => {
           const useNativeCursor = syncNativeCursor(event.target);
-          if (cursorDot) cursorDot.style.opacity = useNativeCursor ? "0" : "1";
+          if (cursorDot) cursorDot.style.opacity = useNativeCursor ? '0' : '1';
           setCursorScale(event.target);
         };
 
@@ -196,24 +203,24 @@ Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
             ensureCursorDot();
             if (cursorEnabled) return;
 
-            document.addEventListener("pointermove", handlePointerMove, { passive: true });
-            document.addEventListener("pointerover", handlePointerOver, { passive: true });
-            document.addEventListener("pointerleave", handlePointerLeave, { passive: true });
+            document.addEventListener('pointermove', handlePointerMove, { passive: true });
+            document.addEventListener('pointerover', handlePointerOver, { passive: true });
+            document.addEventListener('pointerleave', handlePointerLeave, { passive: true });
             cursorEnabled = true;
             return;
           }
 
           cursorDot?.remove();
           cursorDot = null;
-          document.body.removeAttribute("data-site-native-cursor");
-          document.removeEventListener("pointermove", handlePointerMove);
-          document.removeEventListener("pointerover", handlePointerOver);
-          document.removeEventListener("pointerleave", handlePointerLeave);
+          document.body.removeAttribute('data-site-native-cursor');
+          document.removeEventListener('pointermove', handlePointerMove);
+          document.removeEventListener('pointerover', handlePointerOver);
+          document.removeEventListener('pointerleave', handlePointerLeave);
           cursorEnabled = false;
         };
 
         syncSiteCursor();
-        supportsSiteCursor.addEventListener("change", syncSiteCursor);
+        supportsSiteCursor.addEventListener('change', syncSiteCursor);
         window.__siteCursorBound = true;
       }
     </script>

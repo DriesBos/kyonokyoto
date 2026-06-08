@@ -53,14 +53,16 @@ Source-owned fields:
 If source has separate language URLs:
 
 ```json
-"locales": {
-  "ja": {
-    "start_urls": ["https://example.jp/ja/exhibitions/"],
-    "event_page_patterns": ["/ja/exhibitions/"]
-  },
-  "en": {
-    "start_urls": ["https://example.jp/en/exhibitions/"],
-    "event_page_patterns": ["/en/exhibitions/"]
+{
+  "locales": {
+    "ja": {
+      "start_urls": ["https://example.jp/ja/exhibitions/"],
+      "event_page_patterns": ["/ja/exhibitions/"]
+    },
+    "en": {
+      "start_urls": ["https://example.jp/en/exhibitions/"],
+      "event_page_patterns": ["/en/exhibitions/"]
+    }
   }
 }
 ```
@@ -68,18 +70,22 @@ If source has separate language URLs:
 If source has one URL and a language toggle/menu:
 
 ```json
-"capabilities": {
-  "native_locales": ["ja", "en"],
-  "machine_translate_missing_locales": true
+{
+  "capabilities": {
+    "native_locales": ["ja", "en"],
+    "machine_translate_missing_locales": true
+  }
 }
 ```
 
 If source has Japanese only:
 
 ```json
-"capabilities": {
-  "native_locales": ["ja"],
-  "machine_translate_missing_locales": true
+{
+  "capabilities": {
+    "native_locales": ["ja"],
+    "machine_translate_missing_locales": true
+  }
 }
 ```
 
@@ -90,12 +96,14 @@ Only event `title` and `description` are localized. Dates, venue, address, image
 Use selectors when page structure is simple and stable:
 
 ```json
-"selectors": {
-  "listing_links": "#events a.event-link",
-  "title": "h1.event-title",
-  "description": ".event-body",
-  "date": ".event-date",
-  "images": ".event-body img"
+{
+  "selectors": {
+    "listing_links": "#events a.event-link",
+    "title": "h1.event-title",
+    "description": ".event-body",
+    "date": ".event-date",
+    "images": ".event-body img"
+  }
 }
 ```
 
@@ -108,10 +116,12 @@ If date parsing or page layout is weird, add source-specific extractor code and 
 Use hints for predictable crawl behavior:
 
 ```json
-"crawl_hints": {
-  "render_mode": "auto",
-  "max_detail_pages": 12,
-  "skip_patterns": ["/archive/", "/news/"]
+{
+  "crawl_hints": {
+    "render_mode": "auto",
+    "max_detail_pages": 12,
+    "skip_patterns": ["/archive/", "/news/"]
+  }
 }
 ```
 
@@ -122,15 +132,17 @@ Use `render_mode: "always"` only for JS-heavy sources. Static fetch is cheaper a
 Use `venue_locations` when one source hosts events at multiple map locations:
 
 ```json
-"venue_locations": [
-  {
-    "name": "The Triangle",
-    "match": ["The Triangle", "triangle"],
-    "address_text": "The Triangle, Kyoto City KYOCERA Museum of Art",
-    "lat": 35.0123,
-    "lng": 135.7834
-  }
-]
+{
+  "venue_locations": [
+    {
+      "name": "The Triangle",
+      "match": ["The Triangle", "triangle"],
+      "address_text": "The Triangle, Kyoto City KYOCERA Museum of Art",
+      "lat": 35.0123,
+      "lng": 135.7834
+    }
+  ]
+}
 ```
 
 First matching location wins. If nothing matches, source `lat`/`lng` are used.
