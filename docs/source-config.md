@@ -15,10 +15,12 @@ City-specific overrides live in `data/sources/overrides/<city>-overrides.json`.
 `names` is optional for locale-specific source names:
 
 ```json
-"name": "Kyoto Art Center",
-"names": {
-  "en": "Kyoto Art Center",
-  "ja": "京都芸術センター"
+{
+  "name": "Kyoto Art Center",
+  "names": {
+    "en": "Kyoto Art Center",
+    "ja": "京都芸術センター"
+  }
 }
 ```
 
@@ -44,15 +46,17 @@ Locale-specific event rows only localize title and description. Dates, venue/sou
 Optional. Use when one source has events at multiple venues or rooms and the map marker needs event-level coordinates.
 
 ```json
-"venue_locations": [
-  {
-    "name": "The Triangle",
-    "match": ["The Triangle", "Kyoto City KYOCERA Museum of Art"],
-    "address_text": "The Triangle, Kyoto City KYOCERA Museum of Art",
-    "lat": 35.0123,
-    "lng": 135.7834
-  }
-]
+{
+  "venue_locations": [
+    {
+      "name": "The Triangle",
+      "match": ["The Triangle", "Kyoto City KYOCERA Museum of Art"],
+      "address_text": "The Triangle, Kyoto City KYOCERA Museum of Art",
+      "lat": 35.0123,
+      "lng": 135.7834
+    }
+  ]
+}
 ```
 
 Crawler matches these strings against event venue, address, directions query, source URL, institution, and title. First matching location wins. If none match, source `lat`/`lng` are used.
@@ -62,9 +66,11 @@ Crawler matches these strings against event venue, address, directions query, so
 Optional. Use this for language exceptions and translation behavior.
 
 ```json
-"capabilities": {
-  "native_locales": ["ja"],
-  "machine_translate_missing_locales": true
+{
+  "capabilities": {
+    "native_locales": ["ja"],
+    "machine_translate_missing_locales": true
+  }
 }
 ```
 
@@ -85,12 +91,14 @@ Supported keys:
 - `images`
 
 ```json
-"selectors": {
-  "listing_links": "#events a.event-link",
-  "title": "h1.event-title",
-  "description": ".event-body",
-  "date": ".event-date",
-  "images": ".event-body img"
+{
+  "selectors": {
+    "listing_links": "#events a.event-link",
+    "title": "h1.event-title",
+    "description": ".event-body",
+    "date": ".event-date",
+    "images": ".event-body img"
+  }
 }
 ```
 
@@ -101,7 +109,9 @@ Selector support is intentionally small: IDs, classes, tags, and descendant sele
 Optional. Set `true` when a source's Open Graph image is a flyer, site card, logo, or otherwise not useful as event-card media.
 
 ```json
-"skip_og_image": true
+{
+  "skip_og_image": true
+}
 ```
 
 When enabled, generic extraction ignores `<meta property="og:image">` and uses real page images or configured `selectors.images` instead. If no usable image remains, the event is skipped by the normal missing-image rule.
@@ -111,11 +121,13 @@ When enabled, generic extraction ignores `<meta property="og:image">` and uses r
 Optional. Use for fetch/crawl behavior exceptions.
 
 ```json
-"crawl_hints": {
-  "requires_render": true,
-  "render_mode": "auto",
-  "max_detail_pages": 12,
-  "skip_patterns": ["/archive/", "/news/"]
+{
+  "crawl_hints": {
+    "requires_render": true,
+    "render_mode": "auto",
+    "max_detail_pages": 12,
+    "skip_patterns": ["/archive/", "/news/"]
+  }
 }
 ```
 
@@ -176,11 +188,15 @@ Current values:
 Format:
 
 ```json
-"source_categories": ["music", "exhibition"]
+{
+  "source_categories": ["music", "exhibition"]
+}
 ```
 
 Avoid:
 
 ```json
-"source_categories": ["music, exhibition"]
+{
+  "source_categories": ["music, exhibition"]
+}
 ```

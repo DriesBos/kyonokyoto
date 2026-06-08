@@ -7,8 +7,10 @@ Use this routine when adding or approving crawler sources.
 New sources should start as beta:
 
 ```json
-"is_active": true,
-"beta": true
+{
+  "is_active": true,
+  "beta": true
+}
 ```
 
 Beta sources are crawled and stored, but hidden from production. In dev they can show as beta/dimmed. When a source is approved, set `"beta": false` or remove the `beta` field.
@@ -110,13 +112,17 @@ For each crawled source, check:
 Keep source beta while any issue remains:
 
 ```json
-"beta": true
+{
+  "beta": true
+}
 ```
 
 Approve by changing to:
 
 ```json
-"beta": false
+{
+  "beta": false
+}
 ```
 
 or deleting the `beta` field.
