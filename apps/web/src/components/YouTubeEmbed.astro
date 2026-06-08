@@ -1,37 +1,34 @@
 ---
+import { buildYouTubeEmbedSrc } from '../lib/youtubeEmbed';
+
 type Props = {
   videoId: string;
   title: string;
+  eager?: boolean;
 };
 
-const { videoId, title } = Astro.props;
-const params = new URLSearchParams({
-  autoplay: '1',
-  mute: '1',
-  controls: '0',
-  loop: '1',
-  playlist: videoId,
-  playsinline: '1',
-  disablekb: '1',
-  fs: '0',
-  modestbranding: '1',
-  rel: '0',
-  iv_load_policy: '3',
-});
-const src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+const { videoId, title, eager = false } = Astro.props;
+const src = buildYouTubeEmbedSrc(videoId, { origin: Astro.url.origin });
 ---
 
-<span class="youtube-embed" data-youtube-embed>
+<span class="youtube-embed" data-youtube-embed data-youtube-ambient data-youtube-video-id={videoId}>
   <iframe
     class="youtube-embed__frame"
-    src={src}
+    src={eager ? src : undefined}
+    data-youtube-frame
+    data-youtube-src={src}
     title={title}
-    loading="lazy"
+    loading={eager ? 'eager' : 'lazy'}
     allow="autoplay; encrypted-media; picture-in-picture"
     referrerpolicy="strict-origin-when-cross-origin"
-    allowfullscreen="false"
     tabindex="-1"></iframe>
 </span>
+
+<script>
+  import { initAmbientYouTubeEmbeds } from '../scripts/youtubeAmbient';
+
+  initAmbientYouTubeEmbeds();
+</script>
 
 <style lang="sass">
   .youtube-embed
