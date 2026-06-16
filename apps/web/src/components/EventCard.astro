@@ -331,6 +331,11 @@ const showInstitutionMeta = event.timing !== 'permanent';
     &[data-active='true'] [data-event-card-fade]
       pointer-events: auto
 
+    &[data-active='true'] .event-card__title
+      display: block
+      -webkit-line-clamp: unset
+      overflow: visible
+
     &[data-active='false'] .event-card__body__actions,
     &[data-active='false'] .event-card__body__actions :global(.general-button)
       pointer-events: none
@@ -390,6 +395,12 @@ const showInstitutionMeta = event.timing !== 'permanent';
       width: auto
       height: var(--event-card-media-row-height-current)
       pointer-events: auto
+
+    &__title
+      display: -webkit-box
+      -webkit-box-orient: vertical
+      -webkit-line-clamp: 3
+      overflow: hidden
 
     &__body
       flex: 1 1 auto
