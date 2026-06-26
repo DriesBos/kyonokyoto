@@ -1,6 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import Logo from './Logo.astro';
+import type { LandingSlide } from '../lib/landingSlides';
 
 type Props = {
   cityLabel?: string;
@@ -10,13 +11,26 @@ type Props = {
   }[];
   ongoingCount: number;
   upcomingCount: number;
+  slides?: LandingSlide[];
 };
 
-const { cityLabel = 'Kyoto', categories, ongoingCount, upcomingCount } = Astro.props;
+const { cityLabel = 'Kyoto', categories, ongoingCount, upcomingCount, slides = [] } = Astro.props;
 const landingLabel = `What's on in ${cityLabel}`;
+const slidesJson = JSON.stringify(slides).replace(/</g, '\\u003c');
 ---
 
 <section class="landing" data-landing aria-label={`Kyō-no-Kyōto: ${landingLabel}`}>
+  {
+    slides.length > 0 ? (
+      <>
+        <span class="landing__background" data-landing-slider aria-hidden="true">
+          <span class="landing__slides" data-landing-slider-slides />
+          <span class="landing__shutters" data-landing-slider-shutters />
+        </span>
+        <script type="application/json" data-landing-slider-payload set:html={slidesJson} />
+      </>
+    ) : null
+  }
   <button
     class="landing__button"
     type="button"
@@ -44,8 +58,10 @@ const landingLabel = `What's on in ${cityLabel}`;
 
 <script>
   import { initLandingScroll } from '../scripts/landingScroll';
+  import { initLandingSlider } from '../scripts/landingSlider';
 
   initLandingScroll();
+  initLandingSlider();
 </script>
 
 <style lang="sass">
@@ -55,6 +71,8 @@ const landingLabel = `What's on in ${cityLabel}`;
     --landing-logo-height: 48px
     --landing-arrow-bottom: 2rem
     --landing-arrow-height: 50px
+    --landing-slider-row-height: 10rem
+    position: relative
     flex: 0 0 100lvh
     height: 100lvh
     min-height: 100lvh
@@ -63,9 +81,11 @@ const landingLabel = `What's on in ${cityLabel}`;
     color: var(--color-beige)
     overflow: hidden
     align-items: flex-start
+    isolation: isolate
 
   .landing__button
     position: relative
+    z-index: 2
     display: block
     width: 100%
     height: 100%
@@ -75,6 +95,63 @@ const landingLabel = `What's on in ${cityLabel}`;
     color: inherit
     appearance: none
     -webkit-tap-highlight-color: transparent
+
+  .landing__background
+    position: absolute
+    z-index: 0
+    inset: 0
+    display: block
+    overflow: hidden
+    pointer-events: none
+
+  .landing__slides,
+  .landing__shutters,
+  :global(.landing__slide),
+  :global(.landing__slide img)
+    position: absolute
+    inset: 0
+    display: block
+
+  .landing__slides
+    z-index: 0
+
+  :global(.landing__slide)
+    opacity: 0
+
+  :global(.landing__slide[data-active])
+    opacity: 1
+
+  :global(.landing__slide img)
+    width: 100%
+    height: 100%
+    object-fit: cover
+    object-position: center
+
+  .landing__shutters
+    z-index: 1
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    justify-content: flex-start
+
+  :global(.landing__shutter-row)
+    position: relative
+    flex: 0 0 var(--landing-slider-row-height)
+    width: 100%
+    overflow: hidden
+
+  :global(.landing__shutter-fill)
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 100%
+    background: var(--color-green)
+    will-change: height
+
+  :global(.landing__shutter-fill[data-fill-origin='bottom'])
+    top: auto
+    bottom: 0
 
   .landing__content
     position: relative
@@ -158,6 +235,9 @@ const landingLabel = `What's on in ${cityLabel}`;
       font-size: 1.25rem
 
   @media (max-width: $mobile-breakpoint)
+    .landing
+      --landing-slider-row-height: 6rem
+
     .landing__categories,
     .landing__counts
       display: none

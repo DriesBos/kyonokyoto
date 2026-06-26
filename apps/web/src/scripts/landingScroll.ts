@@ -11,6 +11,7 @@ const landingTriggerSelector = '[data-landing-trigger]';
 const mainContentSelector = '[data-main-content]';
 const launchedAttribute = 'data-landing-launched';
 const activeAttribute = 'data-landing-active';
+const landingExitEventName = 'kyo:landing-exit';
 const beigeTheme = '#EFEFEF';
 const wheelThreshold = 80;
 const touchThreshold = 48;
@@ -52,6 +53,7 @@ const scrollToMainContent = (mainContent: HTMLElement) => {
 
   cancelCurrentAnimation();
   document.documentElement.setAttribute(launchedAttribute, '');
+  window.dispatchEvent(new CustomEvent(landingExitEventName));
 
   landingWindow.__landingScrollAnimation = gsap.to(scrollState, {
     y: targetY,

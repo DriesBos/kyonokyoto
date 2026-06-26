@@ -46,6 +46,7 @@ import {
   sourceSlugForEvent,
   type SourceConfig,
 } from '../../../lib/sources';
+import { landingSlidesForEvents } from '../../../lib/landingSlides';
 
 export const prerender = false;
 
@@ -145,6 +146,11 @@ const mapLocationIdByEventId = new Map(
   ]),
 );
 const mapSources = mapSourcesForEvents(visibleCards, sourceSlugByEventId, configuredSources);
+const landingSlides = landingSlidesForEvents({
+  city,
+  events: displayEvents,
+  sourceSlugByEventId,
+});
 
 const mapsUrlForEvent = (event: (typeof displayEvents)[number]) => {
   const sourceSlug =
@@ -227,6 +233,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
       categories={categories}
       ongoingCount={ongoingEvents.length}
       upcomingCount={upcomingEvents.length}
+      slides={landingSlides}
     />
     <div class="content-container" data-content-container data-main-content>
       <section class="events-section" data-events-section>
