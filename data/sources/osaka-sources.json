@@ -571,81 +571,6 @@
       }
     },
     {
-      "slug": "kaze-art-planning",
-      "name": "KAZE ART PLANNING",
-      "names": {
-        "en": "KAZE ART PLANNING",
-        "ja": "風アートプランニング"
-      },
-      "source_type": "gallery",
-      "language": "ja",
-      "address_text": "3-6-3 Tenma 2F, Kita-ku, Osaka 530-0043 Japan",
-      "directions_query": "KAZE ART PLANNING, Tenma, Kita-ku, Osaka",
-      "lat": 34.69857,
-      "lng": 135.51856,
-      "base_url": "https://web-gallerykaze.com/",
-      "start_urls": ["https://web-gallerykaze.com/"],
-      "allowed_domains": ["web-gallerykaze.com"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/"],
-      "notes": "Homepage functions as the exhibition/news listing for KAZE ART PLANNING.",
-      "is_active": true,
-      "beta": true,
-      "source_categories": ["gallery", "exhibition"],
-      "map_visibility": true,
-      "locales": {
-        "ja": {
-          "start_urls": ["https://web-gallerykaze.com/"],
-          "event_page_patterns": ["/"]
-        }
-      },
-      "capabilities": {
-        "native_locales": ["ja"]
-      },
-      "crawl_hints": {
-        "skip_patterns": ["/artists", "/goods", "/access"],
-        "max_detail_pages": 6
-      }
-    },
-    {
-      "slug": "artarea-b1",
-      "name": "Art Area B1",
-      "names": {
-        "en": "Art Area B1",
-        "ja": "アートエリア B1"
-      },
-      "source_type": "art-center",
-      "language": "ja",
-      "address_text": "Keihan Naniwabashi Station B1F, 1-1-1 Nakanoshima, Kita-ku, Osaka 530-0005 Japan",
-      "directions_query": "Art Area B1, Naniwabashi Station, Osaka",
-      "lat": 34.692862,
-      "lng": 135.50618,
-      "base_url": "https://artarea-b1.jp/program/",
-      "start_urls": ["https://artarea-b1.jp/program/"],
-      "allowed_domains": ["artarea-b1.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/program/"],
-      "notes": "Program listing includes exhibitions and related art events.",
-      "is_active": true,
-      "beta": true,
-      "source_categories": ["art-center", "exhibition", "event"],
-      "map_visibility": true,
-      "locales": {
-        "ja": {
-          "start_urls": ["https://artarea-b1.jp/program/"],
-          "event_page_patterns": ["/program/"]
-        }
-      },
-      "capabilities": {
-        "native_locales": ["ja"]
-      },
-      "crawl_hints": {
-        "render_mode": "auto",
-        "skip_patterns": ["/program/category/", "/program/tag/"],
-        "max_detail_pages": 8
-      }
-    },
-    {
       "slug": "hitoto",
       "name": "hitoto",
       "source_type": "gallery",
@@ -986,7 +911,7 @@
       "event_page_patterns": ["/eventhall/", "/parcohall/"],
       "notes": "PARCO ART page for PARCO HALL SHINSAIBASHI.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["art", "design", "exhibition"],
       "map_visibility": true,
       "locales": {

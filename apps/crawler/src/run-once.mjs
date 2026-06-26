@@ -3394,6 +3394,17 @@ function extractStandingPineEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractParcoHallEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const firstImageUrl = event.image_urls?.[0] ?? null;
+
+  return {
+    ...event,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
 function extractTwentyOneDefinitionValue(detailHtml, labels) {
   for (const match of detailHtml.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
     const label = stripTags(match[1]).replace(/\s+/g, ' ').trim();
@@ -4868,6 +4879,7 @@ const eventExtractors = {
   kyotophonie: extractKyotophonieEvent,
   kankakari: extractKankakariEvent,
   kuramonzen: extractKuramonzenEvent,
+  'parco-hall-shinsaibashi': extractParcoHallEvent,
   'raku-museum': extractRakuMuseumEvent,
   momak: extractMomakEvent,
   mtk: extractMtkEvent,

@@ -20,5 +20,8 @@
     "node-gyp": "^12.3.0",
     "sass": "^1.99.0",
     "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
   }
 }

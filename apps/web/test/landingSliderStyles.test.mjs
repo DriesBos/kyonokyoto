@@ -100,6 +100,10 @@ test('mobile content uses page flow with safe-area only on header and footer', a
   assert.match(header, /padding-top: max\(0\.5rem, env\(safe-area-inset-top\)\)/);
   assert.match(footer, /padding-bottom: calc\(var\(--page-padding-y\) \+ env\(safe-area-inset-bottom\)\)/);
   assert.doesNotMatch(page, /100lvh/);
+  assert.match(
+    page,
+    /\.events-section\s*\n\s+flex: 0 0 auto\n\s+height: auto\n\s+overflow: visible\n\s+overscroll-behavior: auto/,
+  );
 });
 
 test('scroll helpers use page fallback when events section is not scrollable', async () => {

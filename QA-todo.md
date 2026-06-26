@@ -14,6 +14,12 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
+### Active source tuning
+
+- `parco-hall-shinsaibashi`: 2026-06-26 approved clean PARCO event pages and keeps only the first extracted image per event.
+- `artarea-b1`: 2026-06-26 removed from Osaka source JSON by request; no crawl run.
+- `kaze-art-planning`: 2026-06-26 removed from Osaka source JSON by request; no crawl run.
+
 These sources need more JSON tuning before approval. Keep `beta: true` until fixed and re-crawled cleanly.
 
 ### `hyogo-prefectural-museum-of-art`
@@ -39,12 +45,6 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 - Problem: saved category/index pages.
 - Crawl leak examples: `/exhibition/past`, generic `past exhibition`.
 - Likely fix: add skip for `/past`; tune selectors for current/upcoming detail content.
-
-### `artarea-b1`
-
-- Problem: saved calendar/list/archive pages.
-- Crawl leak examples: `イベント アーカイブ`, list/month routes, `?eventDisplay=past`.
-- Likely fix: skip list/month/archive paths and past query params; target concrete `/program/<id>/` pages only.
 
 ### `hitoto`
 
@@ -93,9 +93,7 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 Review manually, then remove `beta` when approved:
 
 - `osaka-geidai-whatsnew`: tag filter worked; 6 tagged items saved.
-- `kaze-art-planning`: multiple event pages saved.
 - `kouichi-fine-arts`: one clean exhibition saved.
-- `parco-hall-shinsaibashi`: clean PARCO event pages saved.
 - `suchsize`: mostly useful; inspect `Texts` leak before approval.
 - `artcourt-gallery`: real events plus one index leak; small skip-pattern fix likely enough.
 - `takeo-exhibitions`: one saved event; title generic, inspect before approval.

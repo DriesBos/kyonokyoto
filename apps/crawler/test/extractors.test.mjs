@@ -1614,6 +1614,28 @@ test('Tokyo Node source config keeps only the second event image', async () => {
   );
 });
 
+test('PARCO Hall Shinsaibashi extraction keeps only the first image', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const source = sources.find((candidate) => candidate.slug === 'parco-hall-shinsaibashi');
+  const detailHtml = `
+    <meta property="og:image" content="https://art.parco.jp/assets/eventhall/main.jpg">
+    <h1>PARCO Art Fair Osaka</h1>
+    <p>2026.7.1 - 2026.7.20</p>
+    <p>Useful exhibition copy for the PARCO event page.</p>
+    <img src="/assets/eventhall/detail-01.jpg" alt="">
+    <img src="/assets/eventhall/detail-02.jpg" alt="">
+  `;
+
+  const event = (eventExtractors[source.slug] ?? extractGenericEvent)(
+    detailHtml,
+    source,
+    'https://art.parco.jp/eventhall/detail/?id=2000',
+  );
+
+  assert.equal(event.primary_image_url, 'https://art.parco.jp/assets/eventhall/main.jpg');
+  assert.deepEqual(event.image_urls, ['https://art.parco.jp/assets/eventhall/main.jpg']);
+});
+
 test('Oyamazaki extraction uses article metadata and skips flyer image', () => {
   const detailHtml = `
     <div class="p-exhibitionArticle">
