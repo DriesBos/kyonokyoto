@@ -1,3 +1,5 @@
+import { scrollRootFor } from './scrollRoot';
+
 type YouTubePlayer = {
   mute: () => void;
   playVideo: () => void;
@@ -40,7 +42,6 @@ type AmbientEmbedState = {
 
 const embedSelector = '[data-youtube-ambient]';
 const frameSelector = '[data-youtube-frame]';
-const eventsSectionSelector = '[data-events-section]';
 const loadRootMargin = '900px 0px';
 const playThreshold = 0.5;
 const apiSrc = 'https://www.youtube.com/iframe_api';
@@ -54,10 +55,7 @@ const getEmbeds = () =>
     (embed): embed is HTMLElement => embed instanceof HTMLElement,
   );
 
-const getScrollRoot = (embed: HTMLElement) => {
-  const root = embed.closest(eventsSectionSelector);
-  return root instanceof HTMLElement ? root : null;
-};
+const getScrollRoot = (embed: HTMLElement) => scrollRootFor(embed);
 
 const loadYouTubeApi = () => {
   if (ambientWindow.YT?.Player) return Promise.resolve(ambientWindow.YT);

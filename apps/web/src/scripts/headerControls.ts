@@ -10,6 +10,7 @@ import {
   killHeightTransitionTweens,
   toHeight,
 } from '../lib/heightTransition';
+import { scrollRootFor } from './scrollRoot';
 
 const normalizeCategory = (value: string) =>
   value
@@ -48,7 +49,7 @@ export const initHeaderControls = () => {
   const filterButtons = buttons.filter(
     (button): button is HTMLElement => button instanceof HTMLElement,
   );
-  const getScrollRoot = () => (eventsSection instanceof HTMLElement ? eventsSection : window);
+  const getScrollRoot = () => scrollRootFor(eventsSection) ?? window;
   const getScrollTop = () => {
     const scrollRoot = getScrollRoot();
     return scrollRoot instanceof HTMLElement ? scrollRoot.scrollTop : window.scrollY;
@@ -393,8 +394,9 @@ export const initHeaderControls = () => {
 
   const syncStickyState = () => {
     if (!(mainHeader instanceof HTMLElement)) return;
+    const scrollRoot = getScrollRoot();
     const scrollRootTop =
-      eventsSection instanceof HTMLElement ? eventsSection.getBoundingClientRect().top : 0;
+      scrollRoot instanceof HTMLElement ? scrollRoot.getBoundingClientRect().top : 0;
     const isStuck = mainHeader.getBoundingClientRect().top <= scrollRootTop + stickyOffset() + 0.5;
     mainHeader.toggleAttribute('data-stuck', isStuck);
   };

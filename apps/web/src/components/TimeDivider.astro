@@ -118,13 +118,13 @@ const tracks = [
 </astro-time-divider>
 
 <script>
+  import { scrollRootFor } from '../scripts/scrollRoot';
   import { gsap } from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
   gsap.registerPlugin(ScrollTrigger);
 
   const trackSelector = '[data-time-divider-track]';
-  const eventsSectionSelector = '[data-events-section]';
   const scrollScrubSeconds = 0.33;
   const layoutSettledFrameCount = 3;
   let dividerInstanceCount = 0;
@@ -314,8 +314,7 @@ const tracks = [
     }
 
     getScrollRoot() {
-      const scrollRoot = this.closest(eventsSectionSelector);
-      return scrollRoot instanceof HTMLElement ? scrollRoot : null;
+      return scrollRootFor(this);
     }
 
     buildAnimations() {

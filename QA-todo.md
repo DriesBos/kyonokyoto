@@ -102,9 +102,69 @@ Review manually, then remove `beta` when approved:
 
 ## Tokyo Sources
 
+### Active source tuning
+
+- `artizon-museum`: 2026-06-26 source config now reads `img.objectFit--contain` so event cards use artwork-list images instead of the flyer/hero image. Local crawl saved 4 events, skipped 0, and reported 0 missing images.
+- `ginza-graphic-gallery`: 2026-06-26 source config now uses Tokyo GGG schedule CGI pages (`t=1`, English `l=2`, Japanese `l=1`) instead of old `/gallery/ggg_e/` landing page. Reuses DNP schedule extractor and stores only the first image. Local crawl saved 2 Tokyo GGG events, skipped 0, and reported 0 missing translations.
+- `mori-art-museum`: 2026-06-26 source config now uses `/en/exhibitions/index.html` and `/jp/exhibitions/index.html`, reads copy from `div.content-main`, and reads artwork from `div.content-img img, figure.content-img img` so flyer/banner images are skipped. Local crawl saved 6 events, skipped 0, and reported 0 missing images/translations.
+- `setagaya-art-museum`: 2026-06-26 source config now reads `#EXHB-WORKS-LIST img, ul.more img` so event cards use Works on Display images and skip flyer/Pickup thumbnails. Local crawl saved 7 events, skipped 1 missing-image row, and reported 0 missing translations.
+- `standing-pine-tokyo`: 2026-06-26 source config now uses English `/en/exhibitions`, follows `.split-block__item-link`, reads left-column title/date rows, reads right-column copy, and trims artist names after `|`. No-write live extraction of `/en/exhibitions/402` returned `Dear Summer`, `2026-07-04` to `2026-07-25`, and a cover image.
+- `tokyo-node`: 2026-06-26 source config now reads `.e-gallery_fv_thumbnail_mobile img.image-square`, which is the second event visual, and skips desktop hero plus related-event square thumbnails. Local crawl saved 3 events, skipped 0, and reported 0 missing images/translations.
+- `yutaka-kikutake-gallery`: 2026-06-26 source config now follows only `ul.ex-current a, ul.ex-upcoming a`, reads date/copy from `.ex-spec`/`.ex-description`, and reads ordered artwork from `div.artwork img[src*="/wp-content/uploads/"]`. Local crawl saved 2 current events, archived 6 older rows, skipped 0, and reported 0 missing images/translations.
+
 New Tokyo sources are `beta: true` and pending first Tokyo crawl QA.
 
-After crawl, add each source under one of:
+2026-06-26 local beta crawl QA after `node scripts/sync-sources.mjs --city=tokyo`.
+
+### 21_21 DESIGN SIGHT
+
+- 2026-06-26: app had no events because source JSON skipped `/en/program/`, omitted Gallery 3, and generic detail extraction followed archive/tour links.
+- Added Gallery 1 & 2 program listings plus Gallery 3 listings:
+  - English: `/en/program/`, `/en/gallery3/`.
+  - Japanese: `/program/`, `/gallery3/` (no `/en/` prefix).
+- Live linked events found:
+  - Gallery 1 & 2 current: `Soup as Life`, March 27-August 9, 2026.
+  - Gallery 1 & 2 upcoming: `Learning from 'Hojoki': Tiny Architecture Reweaves Life`, August 28, 2026-January 11, 2027.
+  - Gallery 3 current: `Gaudi: Windows on the Future`, May 16-July 12, 2026.
+- Image selector reads only `img[src*="topweb"]`; this skips the first widescreen museum/header image and stores the second exhibition photo only.
+- Upcoming `Theme: "Time"` is listed without a detail link; leave uncrawled until the site publishes a link.
+- Synced Tokyo source table and reran `21-21-design-sight` crawl: success, 3 detail URLs, 3 saved events, 0 skips, 0 missing translations.
+
+### SCAI split locations
+
+- 2026-06-26: split `scai-the-bathhouse`, `scai-piramide`, and `scai-park`.
+- Live homepage dropdown current/upcoming links found:
+  - `scai-the-bathhouse`: current `Natsuyuki Nakanishi "A Study of the Glaringly Bright"`; upcoming `Lee Ufan: Work on Paper / Sculpture`.
+  - `scai-piramide`: current `Daniel Buren "Situated Works 1966-2013"`; no upcoming link, only disabled Upcoming label.
+  - `scai-park`: current `#46 Daniel Buren, Yuji Takeoka, Reijiro Wada`; no upcoming link, only disabled Upcoming label.
+- Added source-specific dropdown extractor to avoid past archives and cross-location leakage.
+- `scai-park` current detail page publishes `Thu. 9 April -` without an end date; extractor uses a one-year review horizon so it stays visible until a future crawl sees the dropdown change.
+- Image handling now keeps only the first extracted image for all three SCAI sources; later images are often duplicate sizes, artist thumbnails, or posters. Live extractor probe confirms one image each. Reran crawls after source sync: Bathhouse 2 saved, Piramide 1 saved, Park 1 saved; all 0 missing images/translations.
+
+### Needs JSON tuning
+
+- `play-museum`: crawl saved 0; one detail URL skipped for missing image.
+- `pola-museum-annex`: crawl saved 2, but one visible row is a staff/job news item; tighten detail URL extraction or skip latest-news routes.
+- `kenji-taki-gallery`: crawl saved 1, but title/content includes Nagoya gallery copy; confirm Tokyo source scope before approval.
+
+### Looks close
+
+- `tokyo-photographic-art-museum`: saved 7; skipped 3 missing-image rows. Review movie/news rows before approval.
+- `take-ninagawa`: saved 6; review single-day dates before approval.
+- `ginza-graphic-gallery`: saved 2; first-image-only DNP schedule extraction.
+- `setagaya-art-museum`: saved 7; skipped 1 missing-image row; Works on Display image selector tuned.
+- `gyre-gallery`: saved 2; skipped 4 old rows.
+- `tokyo-node`: saved 3; second-image-only selector tuned.
+- `mitsubishi-ichigokan-museum`: saved 3; skipped 2 missing-image rows.
+- `snow-contemporary`: saved 2; skipped 1 missing-image row.
+- `taro-nasu-gallery`: saved 1; skipped 5 old rows.
+
+### No Current Events
+
+- `issey-miyake-ginza-cube`: saved 0; 8 old rows skipped.
+- `issey-miyake-shinjuku-shikaku`: saved 0; 8 old rows skipped.
+
+After future crawl, add each source under one of:
 
 - Needs JSON tuning
 - Looks close

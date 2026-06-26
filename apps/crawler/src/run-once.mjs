@@ -1023,7 +1023,7 @@ function parseEnglishMonthDateRangeWithOptionalStartYear(dateText) {
     .trim();
 
   const match = cleaned.match(
-    /([A-Za-z]+)\s+(\d{1,2})(?:,\s*(\d{4}))?\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})\s*,\s*(\d{4})/,
+    /([A-Za-z]+)\s+(\d{1,2})(?:\s*,\s*(\d{4}))?\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})\s*,\s*(\d{4})/,
   );
 
   if (!match) {
@@ -1156,13 +1156,16 @@ function parseEnglishDayMonthYearRange(dateText) {
 
   const cleaned = dateText
     .replace(/\([^)]*\)/g, '')
-    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, '')
+    .replace(
+      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Tues|Wed|Thu|Thur|Thurs|Fri|Sat|Sun)\.?,?\s+/gi,
+      '',
+    )
     .replace(/&#8211;|–|—/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
 
   const match = cleaned.match(
-    /(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?\s*-\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/,
+    /(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?\s*-\s*(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})/,
   );
 
   if (!match) {
@@ -1948,6 +1951,69 @@ function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
     .map((entry) => entry.url);
 
   return finalUrls.length ? finalUrls : [listingUrl];
+}
+
+function extractTwentyOneDetailUrls(listingHtml, listingUrl) {
+  const articleStart = listingHtml.search(/<article\b[^>]*class=(["'])[^"']*\bmainArea\b[^"']*\1/i);
+  const scopedHtml = articleStart === -1 ? listingHtml : listingHtml.slice(articleStart);
+  const cutoff = scopedHtml.search(
+    /<section\b[^>]*id=(["'])(?:About|PrevProgram)\1|PAST PROGRAM|これまでのプログラム/iu,
+  );
+  const currentHtml = cutoff === -1 ? scopedHtml : scopedHtml.slice(0, cutoff);
+
+  const urls = [...currentHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean)
+    .filter((url) => {
+      const parsed = new URL(url);
+      return (
+        (parsed.hostname === 'www.2121designsight.jp' ||
+          parsed.hostname === '2121designsight.jp') &&
+        /^\/(?:en\/)?(?:program|gallery3)\/[^/]+\/$/i.test(parsed.pathname)
+      );
+    });
+
+  return [...new Set(urls)];
+}
+
+const scaiLocationLabels = {
+  'scai-the-bathhouse': 'SCAI THE BATHHOUSE',
+  'scai-piramide': 'SCAI PIRAMIDE',
+  'scai-park': 'SCAI PARK',
+};
+
+function extractScaiDetailUrlsFor(slug) {
+  return (listingHtml, listingUrl) => {
+    const label = scaiLocationLabels[slug];
+    if (!label) return [];
+
+    const locationMenus = [
+      ...listingHtml.matchAll(
+        /<li\b[^>]*class=(["'])[^"']*\bdropdown-submenu\b[^"']*\1[^>]*>\s*<a\b[^>]*>([\s\S]*?)<\/a>\s*<ul\b[^>]*class=(["'])[^"']*\bdropdown-menu\b[^"']*\3[^>]*>([\s\S]*?)<\/ul>/gi,
+      ),
+    ];
+    const menu = locationMenus.find(
+      (match) => stripTags(match[2]).replace(/\s+/g, ' ').trim().toUpperCase() === label,
+    )?.[4];
+    if (!menu) return [];
+
+    const urls = [...menu.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+      .filter((match) => /(Current|Upcoming|現在の企画展|次回の企画展)/i.test(stripTags(match[1])))
+      .map((match) => match[1].match(/<a\b[^>]+href=(["'])(.*?)\1/i)?.[2] ?? null)
+      .filter(Boolean)
+      .map((href) => normalizeUrl(href, listingUrl))
+      .filter(Boolean)
+      .filter((url) => {
+        const parsed = new URL(url);
+        return (
+          (parsed.hostname === 'www.scaithebathhouse.com' ||
+            parsed.hostname === 'scaithebathhouse.com') &&
+          /\/(?:en|ja)\/exhibitions\/20\d{2}\//.test(parsed.pathname)
+        );
+      });
+
+    return [...new Set(urls)];
+  };
 }
 
 function extractOsakaGeidaiDetailUrls(listingHtml, listingUrl) {
@@ -3314,6 +3380,196 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractStandingPineEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const title = event.title.split('|')[0]?.trim();
+
+  return {
+    ...event,
+    title: title || event.title,
+  };
+}
+
+function extractTwentyOneDefinitionValue(detailHtml, labels) {
+  for (const match of detailHtml.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
+    const label = stripTags(match[1]).replace(/\s+/g, ' ').trim();
+    if (labels.includes(label)) {
+      return stripTags(match[2]).replace(/\s+/g, ' ').trim() || null;
+    }
+  }
+
+  return null;
+}
+
+function extractTwentyOneHeadingTitle(detailHtml) {
+  return (
+    stripTags(
+      detailHtml.match(
+        /<div\b[^>]*class=(["'])[^"']*\bcntTtl\b[^"']*\1[^>]*>\s*<h3\b[^>]*>([\s\S]*?)<\/h3>/i,
+      )?.[2] ?? '',
+    )
+      .replace(/\s+/g, ' ')
+      .trim() || null
+  );
+}
+
+function extractTwentyOneEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const title =
+    extractTwentyOneDefinitionValue(detailHtml, ['Title', 'タイトル']) ??
+    extractTwentyOneHeadingTitle(detailHtml) ??
+    event.title;
+  const dateText =
+    extractTwentyOneDefinitionValue(detailHtml, ['Date', '会期']) ?? event.date_text;
+  const parsedDates = parseGenericDateRange(dateText);
+
+  return {
+    ...event,
+    title,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    extraction_confidence: parsedDates.startDate ? 0.8 : event.extraction_confidence,
+  };
+}
+
+function parseScaiOpenEndedDateRange(dateText, detailUrl) {
+  const inferredYear = extractYearFromUrl(detailUrl);
+  const cleaned = decodeHtml(dateText)
+    .replace(/\([^)]*\)/g, '')
+    .replace(
+      /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Tues|Wed|Thu|Thur|Thurs|Fri|Sat|Sun)\.?,?\s+/gi,
+      '',
+    )
+    .replace(/&#8211;|–|—|－|ー/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const englishMatch = cleaned.match(/^(\d{1,2})\s+([A-Za-z]+)\s*-\s*$/);
+  const japaneseMatch = cleaned.match(/^(?:(20\d{2})年)?(\d{1,2})月(\d{1,2})日\s*-\s*$/u);
+  const parsedStart = englishMatch
+    ? parseEnglishSingleDate(`${englishMatch[1]} ${englishMatch[2]} ${inferredYear ?? ''}`)
+    : japaneseMatch
+      ? parseJapaneseSingleDate(
+          `${japaneseMatch[1] ?? inferredYear}年${japaneseMatch[2]}月${japaneseMatch[3]}日`,
+        )
+      : null;
+  const startDate = parsedStart?.startDate ?? null;
+  const endDate = startDate ? shiftDateOnlyByYears(startDate, 1) : null;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: startDate ? `${startDate}T12:00:00+09:00` : null,
+    // ponytail: SCAI Park publishes open-ended "Current"; one-year horizon keeps it visible until next crawl updates the dropdown.
+    calendarEndsAt: endDate ? `${endDate}T18:00:00+09:00` : null,
+  };
+}
+
+function parseScaiDateRange(dateText, detailUrl) {
+  const openEnded = parseScaiOpenEndedDateRange(dateText, detailUrl);
+  if (openEnded.startDate) return openEnded;
+
+  return parseGenericDateRange(dateText);
+}
+
+function extractScaiTitleInfo(detailHtml) {
+  const titleInfoStart = detailHtml.search(/class=(["'])[^"']*\btitle_info\b[^"']*\1/i);
+  const titleInfoHtml = titleInfoStart === -1 ? detailHtml : detailHtml.slice(titleInfoStart, titleInfoStart + 5000);
+  const title = stripTags(titleInfoHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const dateText = stripTags(
+    titleInfoHtml.match(
+      /<div\b[^>]*class=(["'])[^"']*\bduration\b[^"']*\1[^>]*>([\s\S]*?)<\/div>/i,
+    )?.[2] ?? '',
+  )
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return { title, dateText };
+}
+
+function extractScaiEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const titleInfo = extractScaiTitleInfo(detailHtml);
+  const title = titleInfo.title || event.title;
+  const dateText = titleInfo.dateText || event.date_text;
+  const parsedDates = parseScaiDateRange(dateText, detailUrl);
+  const firstImageUrl = event.image_urls?.[0] ?? event.primary_image_url ?? null;
+
+  return {
+    ...event,
+    title,
+    date_text: dateText,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    extraction_confidence: parsedDates.startDate ? 0.78 : event.extraction_confidence,
+  };
+}
+
+function extractSnowContentHtml(detailHtml) {
+  return (
+    detailHtml.match(/<div\b[^>]*id=(["'])boxEX1\1[^>]*>([\s\S]*?)<\/div>/i)?.[2] ??
+    detailHtml
+  );
+}
+
+function extractSnowContemporaryEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const contentHtml = extractSnowContentHtml(detailHtml);
+  const heading = stripTags(contentHtml.match(/<strong\b[^>]*>([\s\S]*?)<\/strong>/i)?.[1] ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const title = heading.match(/["“]([^"”]+)["”]/u)?.[1]?.trim() || event.title;
+  const dateText =
+    stripTags(contentHtml)
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .find((line) => /^session[：:]/i.test(line)) ?? event.date_text;
+  const parsedDates = parseGenericDateRange(dateText);
+  const [, startTime, endTime] =
+    dateText.match(/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/) ?? [];
+
+  return {
+    ...event,
+    title,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: startTime ?? event.start_time_text,
+    end_time_text: endTime ?? event.end_time_text,
+    is_all_day: startTime ? false : event.is_all_day,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at:
+      parsedDates.startDate && startTime
+        ? `${parsedDates.startDate}T${startTime}:00+09:00`
+        : parsedDates.calendarStartsAt,
+    calendar_ends_at:
+      parsedDates.endDate && endTime
+        ? `${parsedDates.endDate}T${endTime}:00+09:00`
+        : parsedDates.calendarEndsAt,
+    extraction_confidence: parsedDates.startDate ? 0.78 : event.extraction_confidence,
+  };
+}
+
 function extractHakariContentHtml(detailHtml) {
   const contentStart = detailHtml.search(/<div\b[^>]*class=["'][^"']*\bpost_content\b/i);
   if (contentStart === -1) return detailHtml;
@@ -4563,11 +4819,13 @@ function extractKuramonzenEvent(detailHtml, source, detailUrl) {
 }
 
 const detailUrlExtractors = {
+  '21-21-design-sight': extractTwentyOneDetailUrls,
   'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
   'chushin-bijutsu': extractChushinDetailUrls,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddDetailUrls,
   'fukuda-art-museum': extractFukudaDetailUrls,
   'gallery-yamahon': extractGalleryYamahonDetailUrls,
+  'ginza-graphic-gallery': extractDddDetailUrls,
   'hosoo-gallery': extractHosooDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
   'kyoto-art-center': extractKacDetailUrls,
@@ -4576,6 +4834,9 @@ const detailUrlExtractors = {
   momak: extractMomakDetailUrls,
   'osaka-geidai-whatsnew': extractOsakaGeidaiDetailUrls,
   'raku-museum': extractRakuMuseumDetailUrls,
+  'scai-the-bathhouse': extractScaiDetailUrlsFor('scai-the-bathhouse'),
+  'scai-piramide': extractScaiDetailUrlsFor('scai-piramide'),
+  'scai-park': extractScaiDetailUrlsFor('scai-park'),
   'sen-oku-hakukokan': extractSenOkuDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
   zenbi: extractZenbiDetailUrls,
@@ -4583,6 +4844,7 @@ const detailUrlExtractors = {
 };
 
 const eventExtractors = {
+  '21-21-design-sight': extractTwentyOneEvent,
   artro: extractArtroEvent,
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
   'chushin-bijutsu': extractChushinEvent,
@@ -4590,6 +4852,7 @@ const eventExtractors = {
   'fukuda-art-museum': extractFukudaEvent,
   'gallery-baiken': extractBaikenEvent,
   'gallery-yamahon': extractGalleryYamahonEvent,
+  'ginza-graphic-gallery': extractDddEvent,
   'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
   'koen-kyoto': extractKoenEvent,
@@ -4604,11 +4867,29 @@ const eventExtractors = {
   momak: extractMomakEvent,
   mtk: extractMtkEvent,
   'oyamazaki-villa-museum': extractOyamazakiEvent,
+  'scai-the-bathhouse': extractScaiEvent,
+  'scai-piramide': extractScaiEvent,
+  'scai-park': extractScaiEvent,
   'sen-oku-hakukokan': extractSenOkuEvent,
   sibasi: extractSibasiEvent,
+  'snow-contemporary': extractSnowContemporaryEvent,
+  'standing-pine-tokyo': extractStandingPineEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
   zenbi: extractZenbiEvent,
 };
+
+function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, source) {
+  if (!detailUrlExtractor || !listingPages.length) return [];
+
+  const pages =
+    source?.slug === '21-21-design-sight' ? listingPages : listingPages.slice(0, 1);
+
+  return [
+    ...new Set(
+      pages.flatMap((listingPage) => detailUrlExtractor(listingPage.html, listingPage.url)),
+    ),
+  ];
+}
 
 const sourceSpecificSkipMatchers = {
   kankakari(eventData) {
@@ -5715,7 +5996,7 @@ async function crawlSource({
       source.slug === 'sibasi'
         ? extractSibasiDetailUrls(listingPages, sourceDetailLimit)
         : detailUrlExtractor
-          ? detailUrlExtractor(listingPages[0].html, listingPages[0].url)
+          ? extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, crawlSourceConfig)
           : [
               ...new Set(
                 listingPages.flatMap((listingPage) =>
@@ -6187,6 +6468,7 @@ export {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractSourceSpecificDetailUrls,
   buildEventTranslationPayload,
   buildMachineTranslatedEvent,
   getSourceSpecificSkipReason,

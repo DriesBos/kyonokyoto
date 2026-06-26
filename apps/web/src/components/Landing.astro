@@ -5,6 +5,7 @@ import type { LandingSlide } from '../lib/landingSlides';
 
 type Props = {
   cityLabel?: string;
+  brandLabel?: string;
   categories: {
     label: string;
     slug: string;
@@ -14,12 +15,19 @@ type Props = {
   slides?: LandingSlide[];
 };
 
-const { cityLabel = 'Kyoto', categories, ongoingCount, upcomingCount, slides = [] } = Astro.props;
+const {
+  cityLabel = 'Kyōtō',
+  brandLabel = 'Kyō-no-Kyōto',
+  categories,
+  ongoingCount,
+  upcomingCount,
+  slides = [],
+} = Astro.props;
 const landingLabel = `What's on in ${cityLabel}`;
 const slidesJson = JSON.stringify(slides).replace(/</g, '\\u003c');
 ---
 
-<section class="landing" data-landing aria-label={`Kyō-no-Kyōto: ${landingLabel}`}>
+<section class="landing" data-landing aria-label={`${brandLabel}: ${landingLabel}`}>
   {
     slides.length > 0 ? (
       <>
@@ -39,7 +47,7 @@ const slidesJson = JSON.stringify(slides).replace(/</g, '\\u003c');
   >
     <span class="landing__content">
       <span class="landing__logo" aria-hidden="true">
-        <Logo />
+        <Logo label={brandLabel} />
       </span>
       <span class="landing__bottom landing__bottom--label">{landingLabel}</span>
       <span class="landing__bottom landing__bottom--arrow" aria-hidden="true">
@@ -72,10 +80,9 @@ const slidesJson = JSON.stringify(slides).replace(/</g, '\\u003c');
     --landing-arrow-bottom: 2rem
     --landing-arrow-height: 50px
     --landing-slider-row-height: 10rem
-    position: relative
-    flex: 0 0 100lvh
-    height: 100lvh
-    min-height: 100lvh
+    position: fixed
+    z-index: 800
+    inset: 0
     width: 100%
     background: var(--color-green)
     color: var(--color-beige)
@@ -157,22 +164,27 @@ const slidesJson = JSON.stringify(slides).replace(/</g, '\\u003c');
     position: relative
     display: block
     width: 100%
-    height: 100svh
-    min-height: 100svh
+    height: 100%
 
   .landing__logo
     position: absolute
     top: 50%
     left: 50%
-    width: 251px
+    width: max-content
     height: var(--landing-logo-height)
+    font-size: var(--landing-logo-height)
+    line-height: 1
     transform: translate(-50%, -50%)
     user-select: none
 
-    :global(svg)
+    :global(svg),
+    :global(.logo-wordmark)
       display: block
       width: 251px
       height: var(--landing-logo-height)
+
+    :global(.logo-wordmark)
+      width: auto
 
   .landing__bottom
     position: absolute
@@ -186,7 +198,7 @@ const slidesJson = JSON.stringify(slides).replace(/</g, '\\u003c');
   .landing__bottom--label
     left: 50%
     bottom: auto
-    top: calc((50svh + (var(--landing-logo-height) / 2) + (100svh - var(--landing-arrow-bottom) - var(--landing-arrow-height))) / 2)
+    top: calc((50% + (var(--landing-logo-height) / 2) + (100% - var(--landing-arrow-bottom) - var(--landing-arrow-height))) / 2)
     transform: translate(-50%, -50%)
     font-size: 1.125rem
     line-height: 1

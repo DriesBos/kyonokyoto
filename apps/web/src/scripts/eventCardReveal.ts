@@ -1,3 +1,5 @@
+import { scrollRootFor } from './scrollRoot';
+
 type EventCardRevealWindow = Window &
   typeof globalThis & {
     __eventCardRevealBound?: boolean;
@@ -62,7 +64,7 @@ const isInScrollRoot = (card: HTMLElement, scrollRoot: Element | null) => {
 
 const buildAnimations = () => {
   const cards = Array.from(document.querySelectorAll(cardSelector));
-  const eventsSection = getEventsSection();
+  const scrollRoot = scrollRootFor(getEventsSection());
 
   revealWindow.__eventCardRevealObserver?.disconnect();
   revealWindow.__eventCardRevealObserver = new IntersectionObserver(
@@ -73,7 +75,7 @@ const buildAnimations = () => {
       });
     },
     {
-      root: eventsSection instanceof HTMLElement ? eventsSection : null,
+      root: scrollRoot,
       threshold: 0,
     },
   );
@@ -83,7 +85,7 @@ const buildAnimations = () => {
 
     if (
       !isRendered(card) ||
-      isInScrollRoot(card, eventsSection) ||
+      isInScrollRoot(card, scrollRoot) ||
       card.dataset.revealState === 'visible'
     ) {
       revealCard(card, false);

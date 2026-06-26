@@ -1,3 +1,5 @@
+import { scrollRootFor } from './scrollRoot';
+
 type MapSource = {
   id: string;
   sourceSlug: string;
@@ -380,9 +382,22 @@ const initMap = async (element: Element) => {
       const targetCard = getFirstVisibleLocationCard(locationId);
       if (!(targetCard instanceof HTMLElement)) return;
 
-      const eventsSectionRect = eventsSection.getBoundingClientRect();
+      const scrollRoot = scrollRootFor(targetCard);
       const cardRect = targetCard.getBoundingClientRect();
       const mainHeader = eventsSection.querySelector('[data-main-header]');
+      if (!scrollRoot) {
+        const headerOffset =
+          mainHeader instanceof HTMLElement ? mainHeader.getBoundingClientRect().bottom : 0;
+        const strokeOffset = pxFromCssVar('--stroke-width');
+        const scrollPadding = Math.max(0, headerOffset - strokeOffset);
+        window.scrollTo({
+          top: Math.max(0, window.scrollY + cardRect.top - scrollPadding),
+          behavior: 'smooth',
+        });
+        return;
+      }
+
+      const eventsSectionRect = scrollRoot.getBoundingClientRect();
       const headerOffset =
         mainHeader instanceof HTMLElement
           ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
@@ -390,9 +405,9 @@ const initMap = async (element: Element) => {
       const strokeOffset = pxFromCssVar('--stroke-width');
       const scrollPadding = Math.max(0, headerOffset - strokeOffset);
       const nextScrollTop =
-        eventsSection.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
+        scrollRoot.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
 
-      eventsSection.scrollTo({
+      scrollRoot.scrollTo({
         top: Math.max(0, nextScrollTop),
         behavior: 'smooth',
       });

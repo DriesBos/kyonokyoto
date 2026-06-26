@@ -3,6 +3,7 @@ export type AppCity = 'kyoto' | 'osaka' | 'tokyo';
 export type CityConfig = {
   slug: AppCity;
   label: string;
+  brandLabel: string;
   themeColor: string;
   mapCenter: {
     lat: number;
@@ -18,7 +19,8 @@ export const CITY_STORAGE_KEY = 'kyo_city';
 export const cityConfigs: CityConfig[] = [
   {
     slug: 'kyoto',
-    label: 'Kyoto',
+    label: 'Kyōtō',
+    brandLabel: 'Kyō-no-Kyōto',
     themeColor: '#138e00',
     mapCenter: { lat: 35.0240977, lng: 135.7621436 },
     sourceFile: 'kyoto-sources.json',
@@ -27,6 +29,7 @@ export const cityConfigs: CityConfig[] = [
   {
     slug: 'osaka',
     label: 'Osaka',
+    brandLabel: 'Kyō-nō-Osaka',
     themeColor: '#7d4cff',
     mapCenter: { lat: 34.6937378, lng: 135.5021651 },
     sourceFile: 'osaka-sources.json',
@@ -34,7 +37,8 @@ export const cityConfigs: CityConfig[] = [
   },
   {
     slug: 'tokyo',
-    label: 'Tokyo',
+    label: 'Tōkiō',
+    brandLabel: 'Kyō-nō-Tōkiō',
     themeColor: '#006fd6',
     mapCenter: { lat: 35.6651, lng: 139.7125 },
     sourceFile: 'tokyo-sources.json',

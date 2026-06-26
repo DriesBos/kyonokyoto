@@ -15,6 +15,7 @@ import {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractSourceSpecificDetailUrls,
   extractLocaleUrlsFromHtml,
   extractRakuMuseumEvent,
   extractSenOkuEvent,
@@ -293,11 +294,32 @@ test('generic date parsers read en dash date ranges', () => {
     },
     'https://example.test/archives/2026/range-ja/',
   );
+  const weekdayDayMonthEvent = extractGenericEvent(
+    `
+      <h1 class="event-title">Weekday Day Month Range</h1>
+      <p class="event-date">Friday, 29 May – Saturday, 11 July, 2026</p>
+      <p class="event-description">Useful exhibition copy.</p>
+      <img src="/uploads/range-en.jpg" alt="">
+    `,
+    {
+      name: 'Example Gallery',
+      source_type: 'gallery',
+      source_categories: ['gallery'],
+      selectors: {
+        title: '.event-title',
+        date: '.event-date',
+        description: '.event-description',
+      },
+    },
+    'https://example.test/archives/2026/range-en/',
+  );
 
   assert.equal(dottedEvent.start_date, '2026-05-16');
   assert.equal(dottedEvent.end_date, '2026-07-12');
   assert.equal(japaneseEvent.start_date, '2026-05-16');
   assert.equal(japaneseEvent.end_date, '2026-07-12');
+  assert.equal(weekdayDayMonthEvent.start_date, '2026-05-29');
+  assert.equal(weekdayDayMonthEvent.end_date, '2026-07-11');
 });
 
 test('generic detail extraction prefers event and exhibition URLs', async () => {
@@ -384,6 +406,280 @@ test('generic listing selectors support common attribute filters', () => {
       'https://example.test/exhibitions/osaka-show/overview/',
     ],
   );
+});
+
+test('21_21 detail extraction keeps linked current and upcoming program pages', () => {
+  const programHtml = `
+    <section>
+      <div class="cntTtl">
+        <h3>CURRENT PROGRAM</h3>
+        <a href="/en/program/soup/">Soup as Life</a>
+      </div>
+      <section id="NextProgram">
+        <h3>UPCOMING PROGRAM</h3>
+        <a href="/en/program/hojoki/">Learning from Hojoki</a>
+        <p>Theme: "Time"</p>
+      </section>
+      <section id="About">
+        <a href="/en/program/leasing/">Facility leasing</a>
+      </section>
+      <section id="PrevProgram">
+        <a href="/en/program/2121/">Past program</a>
+      </section>
+    </section>
+  `;
+  const galleryHtml = `
+    <section>
+      <div class="cntTtl">
+        <h3>ギャラリー3</h3>
+        <a href="/gallery3/gaudi_window/">ガウディ：未来をひらく窓</a>
+      </div>
+      <section id="About">
+        <a href="/gallery3/leasing/">ギャラリー3について</a>
+      </section>
+      <section id="PrevProgram">
+        <a href="/gallery3/210825_kogei/">過去のプログラム</a>
+      </section>
+    </section>
+  `;
+
+  assert.deepEqual(
+    detailUrlExtractors['21-21-design-sight'](
+      programHtml,
+      'https://www.2121designsight.jp/en/program/',
+    ),
+    [
+      'https://www.2121designsight.jp/en/program/soup/',
+      'https://www.2121designsight.jp/en/program/hojoki/',
+    ],
+  );
+  assert.deepEqual(
+    detailUrlExtractors['21-21-design-sight'](
+      galleryHtml,
+      'https://www.2121designsight.jp/gallery3/',
+    ),
+    ['https://www.2121designsight.jp/gallery3/gaudi_window/'],
+  );
+});
+
+test('21_21 source-specific extraction reads all configured listing pages', () => {
+  const listingPages = [
+    {
+      url: 'https://www.2121designsight.jp/en/program/',
+      html: `
+        <article class="mainArea">
+          <a href="/en/program/soup/">Soup as Life</a>
+          <a href="/en/program/hojoki/">Learning from Hojoki</a>
+          <section id="PrevProgram"><a href="/en/program/2121/">Past</a></section>
+        </article>
+      `,
+    },
+    {
+      url: 'https://www.2121designsight.jp/en/gallery3/',
+      html: `
+        <article class="mainArea">
+          <a href="/en/gallery3/gaudi_window/">Gaudi</a>
+          <section id="About"><a href="/en/gallery3/leasing/">About</a></section>
+        </article>
+      `,
+    },
+  ];
+
+  assert.deepEqual(
+    extractSourceSpecificDetailUrls(
+      detailUrlExtractors['21-21-design-sight'],
+      listingPages,
+      { slug: '21-21-design-sight' },
+    ),
+    [
+      'https://www.2121designsight.jp/en/program/soup/',
+      'https://www.2121designsight.jp/en/program/hojoki/',
+      'https://www.2121designsight.jp/en/gallery3/gaudi_window/',
+    ],
+  );
+});
+
+test('21_21 event extraction reads definition-list title and date rows', () => {
+  const source = {
+    name: '21_21 DESIGN SIGHT',
+    source_type: 'museum',
+    source_categories: ['design', 'museum', 'exhibition'],
+    address_text: 'Tokyo Midtown, Tokyo',
+  };
+  const programEvent = eventExtractors['21-21-design-sight'](
+    `
+      <meta property="og:image" content="https://www.2121designsight.jp/en/program/soup/topweb.jpg">
+      <title>21_21 DESIGN SIGHT</title>
+      <dl>
+        <dt><span>Title</span></dt>
+        <dd><strong>Exhibition "Soup as Life"</strong></dd>
+        <dt><span>Date</span></dt>
+        <dd><strong>March 27 (Fri.) - August 9 (Sun.), 2026</strong></dd>
+      </dl>
+    `,
+    source,
+    'https://www.2121designsight.jp/en/program/soup/',
+  );
+  const upcomingProgramEvent = eventExtractors['21-21-design-sight'](
+    `
+      <title>21_21 DESIGN SIGHT</title>
+      <dl>
+        <dt><span>Title</span></dt>
+        <dd><strong>Learning from 'Hōjōki': Tiny Architecture Reweaves Life</strong></dd>
+        <dt><span>Date</span></dt>
+        <dd><strong>August 28 (Fri.), 2026 - January 11 (Mon.), 2027</strong></dd>
+      </dl>
+    `,
+    source,
+    'https://www.2121designsight.jp/en/program/hojoki/',
+  );
+  const galleryEvent = eventExtractors['21-21-design-sight'](
+    `
+      <meta property="og:image" content="https://www.2121designsight.jp/gallery3/gaudi_window/topweb.jpg">
+      <title>21_21 DESIGN SIGHT</title>
+      <div class="cntTtl"><h3>ガウディ：未来をひらく窓</h3></div>
+      <dl>
+        <dt><span>会期</span></dt>
+        <dd><strong>2026年5月16日（土） - 2026年7月12日（日）</strong></dd>
+      </dl>
+    `,
+    source,
+    'https://www.2121designsight.jp/gallery3/gaudi_window/',
+  );
+
+  assert.equal(programEvent.title, 'Exhibition "Soup as Life"');
+  assert.equal(programEvent.date_text, 'March 27 (Fri.) - August 9 (Sun.), 2026');
+  assert.equal(programEvent.start_date, '2026-03-27');
+  assert.equal(programEvent.end_date, '2026-08-09');
+  assert.equal(upcomingProgramEvent.start_date, '2026-08-28');
+  assert.equal(upcomingProgramEvent.end_date, '2027-01-11');
+  assert.equal(galleryEvent.title, 'ガウディ：未来をひらく窓');
+  assert.equal(galleryEvent.date_text, '2026年5月16日（土） - 2026年7月12日（日）');
+  assert.equal(galleryEvent.start_date, '2026-05-16');
+  assert.equal(galleryEvent.end_date, '2026-07-12');
+});
+
+test('21_21 source config uses only the second exhibition photo', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === '21-21-design-sight');
+  const event = eventExtractors[source.slug](
+    `
+      <meta property="og:image" content="https://www.2121designsight.jp/en/program/soup/header.jpg">
+      <title>21_21 DESIGN SIGHT</title>
+      <img src="/assets2017/common/imgs/img_symbol.png" alt="">
+      <img src="/en/program/soup/header.jpg" alt="museum exterior">
+      <img src="/en/program/soup/topweb.jpg" alt="Soup as Life">
+      <img src="/assets2017/common/imgs/icn_x.svg" alt="">
+      <dl>
+        <dt><span>Title</span></dt>
+        <dd><strong>Exhibition "Soup as Life"</strong></dd>
+        <dt><span>Date</span></dt>
+        <dd><strong>March 27 (Fri.) - August 9 (Sun.), 2026</strong></dd>
+      </dl>
+    `,
+    source,
+    'https://www.2121designsight.jp/en/program/soup/',
+  );
+
+  assert.equal(
+    event.primary_image_url,
+    'https://www.2121designsight.jp/en/program/soup/topweb.jpg',
+  );
+  assert.deepEqual(event.image_urls, [
+    'https://www.2121designsight.jp/en/program/soup/topweb.jpg',
+  ]);
+});
+
+test('SCAI detail extraction keeps each location current and upcoming links', () => {
+  const listingHtml = `
+    <li class="dropdown-submenu">
+      <a href="#" class="dropdown-toggle" data-toggle="dropdown">SCAI THE BATHHOUSE</a>
+      <ul class="dropdown-menu">
+        <li><a href="/data/exhibitions/../../en/exhibitions/2026/05/bathhouse-current/">Current</a></li>
+        <li><a href="/data/exhibitions/../../en/exhibitions/2026/08/bathhouse-upcoming/">Upcoming</a></li>
+        <li><a href="/en/exhibitions/past/">Past</a></li>
+      </ul>
+    </li>
+    <li class="dropdown-submenu">
+      <a href="#" class="dropdown-toggle" data-toggle="dropdown">SCAI PIRAMIDE</a>
+      <ul class="dropdown-menu">
+        <li><a href="/data/exhibitions/../../en/exhibitions/2026/05/piramide-current/">Current</a></li>
+        <li><span>Upcoming</span></li>
+        <li><a href="/en/exhibitions/piramide/">Past</a></li>
+      </ul>
+    </li>
+    <li class="dropdown-submenu">
+      <a href="#" class="dropdown-toggle" data-toggle="dropdown">SCAI PARK</a>
+      <ul class="dropdown-menu">
+        <li><a href="/data/exhibitions/../../ja/exhibitions/2026/04/park-current/">現在の企画展</a></li>
+        <li><span>次回の企画展</span></li>
+        <li><a href="/ja/exhibitions/park/">過去の企画展</a></li>
+      </ul>
+    </li>
+  `;
+
+  assert.deepEqual(
+    detailUrlExtractors['scai-the-bathhouse'](listingHtml, 'https://www.scaithebathhouse.com/en/'),
+    [
+      'https://www.scaithebathhouse.com/en/exhibitions/2026/05/bathhouse-current/',
+      'https://www.scaithebathhouse.com/en/exhibitions/2026/08/bathhouse-upcoming/',
+    ],
+  );
+  assert.deepEqual(
+    detailUrlExtractors['scai-piramide'](listingHtml, 'https://www.scaithebathhouse.com/en/'),
+    ['https://www.scaithebathhouse.com/en/exhibitions/2026/05/piramide-current/'],
+  );
+  assert.deepEqual(
+    detailUrlExtractors['scai-park'](listingHtml, 'https://www.scaithebathhouse.com/ja/'),
+    ['https://www.scaithebathhouse.com/ja/exhibitions/2026/04/park-current/'],
+  );
+});
+
+test('SCAI event extraction reads title dates and open-ended current shows', () => {
+  const source = {
+    name: 'SCAI Park',
+    source_type: 'gallery',
+    source_categories: ['gallery', 'exhibition'],
+    address_text: 'TERRADA Art Complex I 5F, Tokyo',
+  };
+  const standardEvent = eventExtractors['scai-the-bathhouse'](
+    `
+      <meta property="og:image" content="https://www.scaithebathhouse.com/data/exhibitions/show.jpg">
+      <img src="https://www.scaithebathhouse.com/data/exhibitions/show-duplicate.jpg" alt="">
+      <img src="https://www.scaithebathhouse.com/data/exhibitions/show-poster.jpg" alt="">
+      <div class="title_info">
+        <h1>Lee Ufan：Work on Paper / Sculpture</h1>
+        <div class="duration">Tuesday, 4 August – Saturday, 10 October, 2026</div>
+      </div>
+    `,
+    source,
+    'https://www.scaithebathhouse.com/en/exhibitions/2026/08/lee_ufan_work_on_paper_sculpture/',
+  );
+  const openEndedEvent = eventExtractors['scai-park'](
+    `
+      <meta property="og:image" content="https://www.scaithebathhouse.com/data/exhibitions/park.jpg">
+      <div class="title_info">
+        <h1>#46 Daniel Buren, Yuji Takeoka, Reijiro Wada</h1>
+        <div class="duration">Thu. 9 April -</div>
+      </div>
+    `,
+    source,
+    'https://www.scaithebathhouse.com/en/exhibitions/2026/04/46_daniel_buren_yuji_takeoka_reijiro_wada/',
+  );
+
+  assert.equal(standardEvent.title, 'Lee Ufan：Work on Paper / Sculpture');
+  assert.equal(standardEvent.start_date, '2026-08-04');
+  assert.equal(standardEvent.end_date, '2026-10-10');
+  assert.equal(
+    standardEvent.primary_image_url,
+    'https://www.scaithebathhouse.com/data/exhibitions/show.jpg',
+  );
+  assert.deepEqual(standardEvent.image_urls, [
+    'https://www.scaithebathhouse.com/data/exhibitions/show.jpg',
+  ]);
+  assert.equal(openEndedEvent.title, '#46 Daniel Buren, Yuji Takeoka, Reijiro Wada');
+  assert.equal(openEndedEvent.start_date, '2026-04-09');
+  assert.equal(openEndedEvent.end_date, '2027-04-09');
 });
 
 test('Kyocera detail extraction finds Japanese default URLs', () => {
@@ -929,6 +1225,394 @@ test('generic event extraction can use configured field selectors', () => {
   assert.equal(event.start_date, '2026-04-12');
   assert.equal(event.end_date, '2026-05-31');
   assert.equal(event.primary_image_url, 'https://example.test/images/configured.jpg');
+});
+
+test('Standing Pine Tokyo extraction reads left-column title and period', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'standing-pine-tokyo');
+  const listingHtml = `
+    <ul class="split-block__items">
+      <li class="split-block__item info_outside">
+        <a class="split-block__item-link" href="/en/exhibitions/402">
+          <ul class="split-block__item-descriptions">
+            <li class="split-block__item-description is_date">2026.07.04 Sat - 2026.07.25 Sat</li>
+            <li class="split-block__item-description is_title">Dear Summer | Youki Hirakawa、intext、Masayuki Arai</li>
+          </ul>
+        </a>
+      </li>
+    </ul>
+  `;
+  const detailHtml = `
+    <section class="content-detail">
+      <div class="content-detail__image">
+        <img class="content-detail__image-body" src="https://standingpine.storage.googleapis.com/exhibitions/402/cover_images/original/aIMG_4872.JPG?1782285446">
+      </div>
+      <div class="content-detail__description">
+        <li class="content-detail__description-item is_title">Dear Summer | Youki Hirakawa、intext、Masayuki Arai</li>
+        <li class="split-block__item-description-item is_date_in-detail">2026.07.04 Sat - 2026.07.25 Sat</li>
+      </div>
+      <div class="content-detail__content">
+        <p>STANDING PINE is pleased to present Dear Summer, a group exhibition featuring works by Youki Hirakawa, intext, and Masayuki Arai.</p>
+      </div>
+    </section>
+  `;
+
+  assert.equal(source.start_urls[0], 'https://standingpine.jp/en/exhibitions');
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, 'https://standingpine.jp/en/exhibitions', source, 8),
+    ['https://standingpine.jp/en/exhibitions/402'],
+  );
+
+  const event = eventExtractors[source.slug](
+    detailHtml,
+    source,
+    'https://standingpine.jp/en/exhibitions/402',
+  );
+
+  assert.equal(event.title, 'Dear Summer');
+  assert.equal(event.date_text, '2026.07.04 Sat - 2026.07.25 Sat');
+  assert.equal(event.start_date, '2026-07-04');
+  assert.equal(event.end_date, '2026-07-25');
+  assert.match(event.description, /^STANDING PINE is pleased to present Dear Summer/);
+  assert.equal(
+    event.primary_image_url,
+    'https://standingpine.storage.googleapis.com/exhibitions/402/cover_images/original/aIMG_4872.JPG?1782285446',
+  );
+});
+
+test('Artizon source config uses artwork list images instead of flyer image', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'artizon-museum');
+  const detailHtml = `
+    <h1>Ettore Sottsass: Design begins where magic begins</h1>
+    <p class="exhibitionPostDate">June 23 [Tue] - October 4 [Sun], 2026</p>
+    <div class="detail-img"><img src="https://atz-image.s3.ap-northeast-1.amazonaws.com/flyer.jpg" alt=""></div>
+    <section class="container">
+      <h2>Art works</h2>
+      <div class="container col4Box exhibitionGallery">
+        <div class="col"><div class="trimBox"><img class="objectFit objectFit--contain protect" src="https://atz-image.s3.ap-northeast-1.amazonaws.com/work-01.jpg" alt=""></div></div>
+        <div class="col"><div class="trimBox"><img class="objectFit objectFit--contain protect" src="https://atz-image.s3.ap-northeast-1.amazonaws.com/work-02.jpg" alt=""></div></div>
+      </div>
+    </section>
+  `;
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.artizon.museum/en/exhibition/detail/603',
+  );
+
+  assert.deepEqual(event.image_urls, [
+    'https://atz-image.s3.ap-northeast-1.amazonaws.com/work-01.jpg',
+    'https://atz-image.s3.ap-northeast-1.amazonaws.com/work-02.jpg',
+  ]);
+  assert.equal(
+    event.primary_image_url,
+    'https://atz-image.s3.ap-northeast-1.amazonaws.com/work-01.jpg',
+  );
+});
+
+test('Mori Art Museum source config uses content-main copy and images', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'mori-art-museum');
+  const detailHtml = `
+    <meta property="og:image" content="https://www.mori.art.museum/assets_c/2026/03/flyer-og.jpg">
+    <img src="../../common/img/mam_logo.svg" alt="MORI ART MUSEUM">
+    <img src="../../common/img/_blank.png" data-pcimg="/assets_c/2026/03/flyer.jpg">
+    <div class="module-grid content">
+      <div class="module-gridItem8 content-main">
+        <article>
+          <p>Ron Mueck sculptures challenge our perception of reality.</p>
+          <div class="pcOnly">
+            <div class="content-img content-imgW50">
+              <figure><img src="../../../files/exhibitions/2025/10/23/work-01.jpg" alt="Ron Mueck Mass"></figure>
+            </div>
+          </div>
+          <div class="spOnly">
+            <div class="content-img content-imgW100">
+              <figure><img src="../../../files/exhibitions/2025/10/23/work-01.jpg" alt="Ron Mueck Mass"></figure>
+            </div>
+          </div>
+          <div class="pcOnly">
+            <figure class="content-img content-imgW75">
+              <img src="../../../files/exhibitions/2025/10/23/work-02.jpg" alt="Second work">
+            </figure>
+          </div>
+          <div class="content-info mT50">
+            <h2 class="content-info_title">Ron Mueck</h2>
+            <table><tbody><tr><th>Exhibition Period</th><td>Wednesday, April 29, 2026 - Wednesday, September 23, 2026</td></tr></tbody></table>
+          </div>
+        </article>
+      </div>
+    </div>
+    <div class="relatedExhibition"><img src="../../../assets_c/2026/05/related.jpg"></div>
+  `;
+
+  assert.deepEqual(source?.start_urls, [
+    'https://www.mori.art.museum/en/exhibitions/index.html',
+  ]);
+  assert.deepEqual(source?.locales?.ja?.start_urls, [
+    'https://www.mori.art.museum/jp/exhibitions/index.html',
+  ]);
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.mori.art.museum/en/exhibitions/ronmueck/index.html',
+  );
+
+  assert.match(event.description, /Ron Mueck sculptures/);
+  assert.doesNotMatch(event.description, /relatedExhibition/);
+  assert.deepEqual(event.image_urls, [
+    'https://www.mori.art.museum/files/exhibitions/2025/10/23/work-01.jpg',
+    'https://www.mori.art.museum/files/exhibitions/2025/10/23/work-02.jpg',
+  ]);
+  assert.equal(
+    event.primary_image_url,
+    'https://www.mori.art.museum/files/exhibitions/2025/10/23/work-01.jpg',
+  );
+});
+
+test('Yutaka Kikutake Gallery source config keeps current/upcoming and artwork images', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'yutaka-kikutake-gallery');
+  const listingHtml = `
+    <div class="row ex-current-row">
+      <div class="ex-time-title"><p>CURRENT</p></div>
+      <ul class="ex-current">
+        <li><a href="https://www.yutakakikutakegallery.com/exhibitions/kako-shirahata-solo-show/">Kako Shirahata</a></li>
+      </ul>
+    </div>
+    <div class="row ex-upcoming-row">
+      <div class="ex-time-title"><p>UPCOMING</p></div>
+      <ul class="ex-upcoming">
+        <li><a href="https://www.yutakakikutakegallery.com/exhibitions/future-show/">Future Show</a></li>
+      </ul>
+    </div>
+    <div class="row ex-past-row">
+      <div class="ex-time-title"><p>PAST</p></div>
+      <a href="https://www.yutakakikutakegallery.com/exhibitions/old-show/">Old Show</a>
+    </div>
+  `;
+  const detailHtml = `
+    <h1 class="ex-artist">Kako Shirahata</h1>
+    <h2 class="ex-title">Breathing, trying to weep</h2>
+    <p class="ex-spec"><span>Current</span><br>Kyobashi<br>May 30 (Sat) - July 25 (Sat), 2026<br>11:00 - 19:00 Closed on Sun, Mon and National Holidays</p>
+    <div class="ex-description"><p>Kako Shirahata exhibition copy long enough to be useful in the card.</p></div>
+    <div class="artwork"><img src="https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/work-01-900x600.jpg" alt=""></div>
+    <div class="artwork"><img src="https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/work-02-900x600.jpg" alt=""></div>
+    <ul class="royalSlider"><li class="rsContent"><img class="rsImg" src="" srcset=" 1x, 2x" alt=""></li></ul>
+  `;
+
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      listingHtml,
+      'https://www.yutakakikutakegallery.com/exhibitions/',
+      source,
+      8,
+    ),
+    [
+      'https://www.yutakakikutakegallery.com/exhibitions/kako-shirahata-solo-show/',
+      'https://www.yutakakikutakegallery.com/exhibitions/future-show/',
+    ],
+  );
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.yutakakikutakegallery.com/exhibitions/kako-shirahata-solo-show/',
+  );
+
+  assert.equal(event.title, 'Breathing, trying to weep');
+  assert.equal(event.date_text, 'Current Kyobashi May 30 (Sat) - July 25 (Sat), 2026 11:00 - 19:00 Closed on Sun, Mon and National Holidays');
+  assert.equal(event.start_date, '2026-05-30');
+  assert.equal(event.end_date, '2026-07-25');
+  assert.deepEqual(event.image_urls, [
+    'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/work-01-900x600.jpg',
+    'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/work-02-900x600.jpg',
+  ]);
+});
+
+test('SNOW Contemporary source config reads current page title date and single image', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'snow-contemporary');
+  const listingHtml = `
+    <a href="http://snowcontemporary.com/exhibition/current.html">/Jp</a>
+    <a href="upcoming.html">upcoming</a>
+    <a href="past.html">past</a>
+    <div id="resizeimage">
+      <img src="../../img/exhibition/202605/top.jpg" alt="snow contemporary">
+    </div>
+    <div id="boxEX1">
+      <strong>Rintaro Fuse Solo exhibition “Exhibition for Time Travelers”</strong><br />
+      session：2026.5.22fri - 7.4sat 13:00 - 19:00<br />
+      *closed on Sun, Mon, Tue and public holidays.<br />
+      venue：SNOW Contemporary / 404 Hayano Bldg. 2-13-12 Nishiazabu, Minato-ku, Tokyo<br />
+      opening reception : 2026.5.22fri 17:00 - 19:00<br />
+      <br />
+      Intro copy for the exhibition.
+    </div>
+    <img src="../img/exhibition/202110/old.jpg" alt="old image">
+  `;
+
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      listingHtml,
+      'http://www.snowcontemporary.com/en/exhibition/current.html',
+      source,
+      8,
+    ),
+    ['http://www.snowcontemporary.com/en/exhibition/current.html'],
+  );
+
+  const event = (eventExtractors[source.slug] ?? extractGenericEvent)(
+    listingHtml,
+    source,
+    'http://www.snowcontemporary.com/en/exhibition/current.html',
+  );
+
+  assert.equal(event.title, 'Exhibition for Time Travelers');
+  assert.equal(event.date_text, 'session：2026.5.22fri - 7.4sat 13:00 - 19:00');
+  assert.equal(event.start_date, '2026-05-22');
+  assert.equal(event.end_date, '2026-07-04');
+  assert.equal(event.start_time_text, '13:00');
+  assert.equal(event.end_time_text, '19:00');
+  assert.deepEqual(event.image_urls, [
+    'http://www.snowcontemporary.com/img/exhibition/202605/top.jpg',
+  ]);
+});
+
+test('Ginza Graphic Gallery source config uses Tokyo schedule pages and first image only', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'ginza-graphic-gallery');
+  const listingHtml = `
+    <div class="ttl-cmn-exhibition-wrap s-border s-mt-20">
+      <h3 class="ttl-cmn-exhibition">
+        <a href="/CGI/gallery/schedule/detail.cgi?l=2&t=1&seq=00000855">
+          <span class="ttl01">The 414th ginza graphic gallery Exhibition</span>
+          <span class="ttl02">Kota Iguchi: Motion Graphics</span>
+        </a>
+      </h3>
+      <p class="date">May 26, 2026 - July 04, 2026</p>
+    </div><!-- /ttl-cmn-exhibition-wrap -->
+    <div class="ttl-cmn-exhibition-wrap s-border s-mt-20">
+      <h3 class="ttl-cmn-exhibition">
+        <a href="/CGI/gallery/schedule/detail.cgi?l=2&t=1&seq=00000860">
+          <span class="ttl01">The 415th ginza graphic gallery Exhibition</span>
+          <span class="ttl02">Dafi Kuhne: Constructing Posters</span>
+        </a>
+      </h3>
+      <p class="date">July 14, 2026 - August 26, 2026</p>
+    </div><!-- /ttl-cmn-exhibition-wrap -->
+  `;
+  const detailHtml = `
+    <meta property="og:image" content="https://www.dnpfcp.jp/gallery/schedule/schedule_images/IMG_1_00000855.jpg">
+    <span class="ttl01">The 414th ginza graphic gallery Exhibition</span>
+    <span class="ttl-cmn-01">Kota Iguchi: Motion Graphics</span>
+    <p class="date">May 26, 2026 - July 04, 2026</p>
+    <div class="txt"><p>Motion graphics exhibition description.</p></div>
+    <img src="schedule_images/IMG_2_00000855.jpg" alt="">
+  `;
+
+  assert.equal(
+    source.start_urls[0],
+    'https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2',
+  );
+  assert.deepEqual(source.locales.ja.start_urls, [
+    'https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=1',
+  ]);
+  assert.deepEqual(
+    detailUrlExtractors[source.slug](
+      listingHtml,
+      'https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2',
+    ),
+    [
+      'https://www.dnpfcp.jp/CGI/gallery/schedule/detail.cgi?l=2&t=1&seq=00000855',
+      'https://www.dnpfcp.jp/CGI/gallery/schedule/detail.cgi?l=2&t=1&seq=00000860',
+    ],
+  );
+
+  const event = eventExtractors[source.slug](
+    detailHtml,
+    source,
+    'https://www.dnpfcp.jp/CGI/gallery/schedule/detail.cgi?l=2&t=1&seq=00000855',
+  );
+
+  assert.equal(event.title, 'Kota Iguchi: Motion Graphics');
+  assert.equal(event.start_date, '2026-05-26');
+  assert.equal(event.end_date, '2026-07-04');
+  assert.deepEqual(event.image_urls, [
+    'https://www.dnpfcp.jp/gallery/schedule/schedule_images/IMG_1_00000855.jpg',
+  ]);
+});
+
+test('Setagaya source config uses Works on Display images only', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'setagaya-art-museum');
+  const detailHtml = `
+    <meta property="og:image" content="https://www.setagayaartmuseum.or.jp/assets/exhibition/images/flyer-og.jpg">
+    <h1>Textiles of Sweden</h1>
+    <p class="date">2026.06.28 - 09.15</p>
+    <p class="image"><img src="https://www.setagayaartmuseum.or.jp/assets/exhibition/images/flyer.jpg" alt=""></p>
+    <div class="exhb_unit01 works open">
+      <h2>Works on Display</h2>
+      <ul class="list02 cf" id="EXHB-WORKS-LIST">
+        <li><a href="/assets/exhibition/images/work-01-large.jpg" class="enlarge"><p class="image"><img src="/assets/exhibition/images/work-01.jpg" alt=""></p></a></li>
+      </ul>
+      <ul class="list02 cf more">
+        <li><a href="/assets/exhibition/images/work-02-large.jpg" class="enlarge"><p class="image"><img src="/assets/exhibition/images/work-02.jpg" alt=""></p></a></li>
+      </ul>
+    </div>
+    <div class="wrap exhibition_other_wrap">
+      <h2><span class="en">Pickup</span></h2>
+      <a href="/en/exhibition/special/detail.php?id=sp00228"><p class="image"><img src="/assets/exhibition/images/pickup.jpg" alt=""></p></a>
+    </div>
+  `;
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.setagayaartmuseum.or.jp/en/exhibition/special/detail.php?id=sp00230',
+  );
+
+  assert.deepEqual(event.image_urls, [
+    'https://www.setagayaartmuseum.or.jp/assets/exhibition/images/work-01.jpg',
+    'https://www.setagayaartmuseum.or.jp/assets/exhibition/images/work-02.jpg',
+  ]);
+});
+
+test('Tokyo Node source config keeps only the second event image', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'tokyo-node');
+  const detailHtml = `
+    <h1>ヨシロットン展 彼方との交信／BEYOND EARTH</h1>
+    <p>2026.5.23（土）- 2026.7.20（月・祝）</p>
+    <img src="/assets/images/logo/LogoTN-Small.svg" loading="lazy" alt="" class="logo_image">
+    <div class="e-gallery_fv_thumbnail_pc">
+      <img src="/assets/images/yoshirotten/tokyonode_kv_0525.jpg" loading="lazy" alt="" class="image-widescreen a-16-9">
+    </div>
+    <div class="e-gallery_fv_thumbnail_mobile">
+      <img src="/assets/images/yoshirotten/tokyonode_kv_0524_1x1.jpg" loading="lazy" alt="" class="image-square">
+    </div>
+    <img src="/assets/images/yoshirotten/yoshirotten-portrait.jpg" loading="lazy" alt="" class="image-widescreen a-16-9">
+    <section class="section_lab_whatson">
+      <img src="/assets/event/related-event.jpg" loading="lazy" alt="" class="image-square">
+    </section>
+  `;
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.tokyonode.jp/events/yoshirotten/index.html',
+  );
+
+  assert.deepEqual(event.image_urls, [
+    'https://www.tokyonode.jp/assets/images/yoshirotten/tokyonode_kv_0524_1x1.jpg',
+  ]);
+  assert.equal(
+    event.primary_image_url,
+    'https://www.tokyonode.jp/assets/images/yoshirotten/tokyonode_kv_0524_1x1.jpg',
+  );
 });
 
 test('Oyamazaki extraction uses article metadata and skips flyer image', () => {

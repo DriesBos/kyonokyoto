@@ -230,6 +230,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
   <main class="page-shell">
     <Landing
       cityLabel={cityConfig.label}
+      brandLabel={cityConfig.brandLabel}
       categories={categories}
       ongoingCount={ongoingEvents.length}
       upcomingCount={upcomingEvents.length}
@@ -387,7 +388,7 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
   $mobile-breakpoint: 768px
 
   :global(.page-shell)
-    min-height: 200svh
+    min-height: 100%
     width: 100%
     overflow-x: hidden
     overflow-x: clip
@@ -424,11 +425,11 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
     --default-events-panel-size: clamp(400px, 50%, 600px)
     --default-map-panel-size: min(45svh, 24.5rem)
     position: relative
-    flex: 0 0 100lvh
+    flex: 1 1 auto
     display: flex
     align-items: stretch
-    height: 100lvh
-    min-height: 100lvh
+    height: 100%
+    min-height: 100%
     width: 100%
     overflow: hidden
 
@@ -588,6 +589,9 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
   @media (max-width: $mobile-breakpoint)
     .content-container
       flex-direction: column
+      height: auto
+      min-height: 100%
+      overflow: visible
 
       &[data-map-visible] .map-section
         order: -2
@@ -600,6 +604,11 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
     .content-container[data-map-visible] .events-section
       flex: 1 1 auto
       min-height: 0
+
+    .events-section
+      height: auto
+      overflow: visible
+      overscroll-behavior: auto
 
     .content-container[data-map-resizing]
       cursor: row-resize

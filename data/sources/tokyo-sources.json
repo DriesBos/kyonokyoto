@@ -11,27 +11,39 @@
       "lat": 35.6675382,
       "lng": 139.7303015,
       "base_url": "https://www.2121designsight.jp/en/program/",
-      "start_urls": ["https://www.2121designsight.jp/en/program/"],
+      "start_urls": [
+        "https://www.2121designsight.jp/en/program/",
+        "https://www.2121designsight.jp/en/gallery3/"
+      ],
       "allowed_domains": ["www.2121designsight.jp", "2121designsight.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/program/", "/program/"],
-      "notes": "Purple art marker from Google My Maps. Temporarily suppress detail crawling until a source-specific extractor can read the Title/Date rows reliably.",
+      "event_page_patterns": ["/en/program/", "/en/gallery3/", "/program/", "/gallery3/"],
+      "notes": "Purple art marker from Google My Maps. Use Gallery 1 & 2 program and Gallery 3 listing pages; source-specific extractor reads current/upcoming links and detail Title/Date rows. Japanese site omits the /en/ prefix.",
       "is_active": true,
       "source_categories": ["design", "museum", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "images": "img[src*=\"topweb\"]"
+      },
       "locales": {
         "ja": {
-          "start_urls": ["https://www.2121designsight.jp/program/"],
-          "event_page_patterns": ["/program/"]
+          "start_urls": [
+            "https://www.2121designsight.jp/program/",
+            "https://www.2121designsight.jp/gallery3/"
+          ],
+          "event_page_patterns": ["/program/", "/gallery3/"]
         },
         "en": {
-          "start_urls": ["https://www.2121designsight.jp/en/program/"],
-          "event_page_patterns": ["/en/program/"]
+          "start_urls": [
+            "https://www.2121designsight.jp/en/program/",
+            "https://www.2121designsight.jp/en/gallery3/"
+          ],
+          "event_page_patterns": ["/en/program/", "/en/gallery3/"]
         }
       },
       "crawl_hints": {
-        "max_detail_pages": 8,
-        "skip_patterns": ["/en/program/"]
+        "max_detail_pages": 6,
+        "skip_patterns": ["/tour/", "/leasing/", "/documents/", "/information/"]
       }
     },
     {
@@ -51,6 +63,9 @@
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "images": "img.objectFit--contain"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.artizon.museum/exhibition/"],
@@ -100,24 +115,37 @@
       "directions_query": "ginza graphic gallery, Tokyo",
       "lat": 35.6697019,
       "lng": 139.7624842,
-      "base_url": "https://www.dnpfcp.jp/gallery/ggg_e/",
-      "start_urls": ["https://www.dnpfcp.jp/gallery/ggg_e/"],
+      "base_url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2",
+      "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2"],
       "allowed_domains": ["www.dnpfcp.jp", "dnpfcp.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/gallery/ggg_e/", "/gallery/ggg/"],
-      "notes": "Purple art marker from Google My Maps. English GGG page requested as beta source.",
+      "event_page_patterns": [
+        "/CGI/gallery/schedule/list.cgi",
+        "/CGI/gallery/schedule/detail.cgi",
+        "/gallery/ggg_e/",
+        "/gallery/ggg/"
+      ],
+      "notes": "Purple art marker from Google My Maps. Tokyo GGG uses schedule CGI pages with t=1; l=2 is English and l=1 is Japanese.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["design", "gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://www.dnpfcp.jp/gallery/ggg/"],
-          "event_page_patterns": ["/gallery/ggg/"]
+          "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=1"],
+          "event_page_patterns": [
+            "/CGI/gallery/schedule/list.cgi",
+            "/CGI/gallery/schedule/detail.cgi",
+            "/gallery/ggg/"
+          ]
         },
         "en": {
-          "start_urls": ["https://www.dnpfcp.jp/gallery/ggg_e/"],
-          "event_page_patterns": ["/gallery/ggg_e/"]
+          "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2"],
+          "event_page_patterns": [
+            "/CGI/gallery/schedule/list.cgi",
+            "/CGI/gallery/schedule/detail.cgi",
+            "/gallery/ggg_e/"
+          ]
         }
       },
       "capabilities": {
@@ -137,21 +165,25 @@
       "lat": 35.6604621,
       "lng": 139.7292785,
       "base_url": "https://www.mori.art.museum/en/exhibitions/",
-      "start_urls": ["https://www.mori.art.museum/en/exhibitions/"],
+      "start_urls": ["https://www.mori.art.museum/en/exhibitions/index.html"],
       "allowed_domains": ["www.mori.art.museum", "mori.art.museum"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/jp/exhibitions/"],
-      "notes": "Purple art marker from Google My Maps.",
+      "notes": "Purple art marker from Google My Maps. Exhibition pages keep body copy and artwork images in content-main; ignore the top flyer/banner image.",
       "is_active": true,
       "source_categories": ["museum", "exhibition"],
+      "selectors": {
+        "description": "div.content-main",
+        "images": "div.content-img img, figure.content-img img"
+      },
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://www.mori.art.museum/jp/exhibitions/"],
+          "start_urls": ["https://www.mori.art.museum/jp/exhibitions/index.html"],
           "event_page_patterns": ["/jp/exhibitions/"]
         },
         "en": {
-          "start_urls": ["https://www.mori.art.museum/en/exhibitions/"],
+          "start_urls": ["https://www.mori.art.museum/en/exhibitions/index.html"],
           "event_page_patterns": ["/en/exhibitions/"]
         }
       },
@@ -343,7 +375,7 @@
       "event_page_patterns": ["/current/", "/e/contents/exhibition/", "/contents/exhibition/"],
       "notes": "Purple art marker from Google My Maps. Current page requested as beta source.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["photography", "museum", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -428,6 +460,7 @@
       "source_type": "gallery",
       "language": "en",
       "directions_query": "SCAI The Bathhouse, Tokyo",
+      "address_text": "Kashiwayu-Ato, 6-1-23 Yanaka, Taito-ku, Tokyo 110-0001 Japan",
       "lat": 35.7218447,
       "lng": 139.7700608,
       "base_url": "https://www.scaithebathhouse.com/en/",
@@ -435,14 +468,14 @@
       "allowed_domains": ["www.scaithebathhouse.com", "scaithebathhouse.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
-      "notes": "Purple art marker from Google My Maps. Homepage links current exhibition detail pages.",
+      "notes": "Purple art marker from Google My Maps. Homepage exhibition dropdown links current/upcoming detail pages by location; source-specific extractor reads the SCAI THE BATHHOUSE submenu.",
       "is_active": true,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://www.scaithebathhouse.com/"],
-          "event_page_patterns": ["/exhibitions/"]
+          "start_urls": ["https://www.scaithebathhouse.com/ja/"],
+          "event_page_patterns": ["/ja/exhibitions/"]
         },
         "en": {
           "start_urls": ["https://www.scaithebathhouse.com/en/"],
@@ -450,8 +483,74 @@
         }
       },
       "crawl_hints": {
-        "skip_patterns": ["/news/", "/artists/", "/publications/"],
-        "max_detail_pages": 8
+        "skip_patterns": ["/news/", "/artists/", "/publications/", "/exhibitions/past/"],
+        "max_detail_pages": 4
+      }
+    },
+    {
+      "slug": "scai-piramide",
+      "name": "SCAI Piramide",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "SCAI Piramide, Piramide Bldg. 3F, 6-6-9 Roppongi, Minato-ku, Tokyo",
+      "address_text": "Piramide Bldg. 3F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032",
+      "lat": 35.6603048,
+      "lng": 139.7308226,
+      "base_url": "https://www.scaithebathhouse.com/en/",
+      "start_urls": ["https://www.scaithebathhouse.com/en/"],
+      "allowed_domains": ["www.scaithebathhouse.com", "scaithebathhouse.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Homepage exhibition dropdown links current/upcoming detail pages by location; source-specific extractor reads the SCAI PIRAMIDE submenu.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.scaithebathhouse.com/ja/"],
+          "event_page_patterns": ["/ja/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.scaithebathhouse.com/en/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/news/", "/artists/", "/publications/", "/exhibitions/piramide/"],
+        "max_detail_pages": 3
+      }
+    },
+    {
+      "slug": "scai-park",
+      "name": "SCAI Park",
+      "source_type": "gallery",
+      "language": "en",
+      "directions_query": "SCAI Park, TERRADA Art Complex I, Tokyo",
+      "address_text": "TERRADA Art Complex I 5F, 1-33-10 Higashi Shinagawa, Shinagawa-ku, Tokyo 140-0002 Japan",
+      "lat": 35.619167,
+      "lng": 139.7465845,
+      "base_url": "https://www.scaithebathhouse.com/en/",
+      "start_urls": ["https://www.scaithebathhouse.com/en/"],
+      "allowed_domains": ["www.scaithebathhouse.com", "scaithebathhouse.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Homepage exhibition dropdown links current/upcoming detail pages by location; source-specific extractor reads the SCAI PARK submenu.",
+      "is_active": true,
+      "source_categories": ["gallery", "exhibition"],
+      "map_visibility": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.scaithebathhouse.com/ja/"],
+          "event_page_patterns": ["/ja/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.scaithebathhouse.com/en/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["/news/", "/artists/", "/publications/", "/exhibitions/park/"],
+        "max_detail_pages": 3
       }
     },
     {
@@ -607,9 +706,12 @@
       "event_page_patterns": ["/en/exhibition/special/", "/exhibition/special/"],
       "notes": "Purple art marker from Google My Maps. Special exhibition page requested as beta source.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["museum", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "images": "#EXHB-WORKS-LIST img, ul.more img"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.setagayaartmuseum.or.jp/exhibition/special/"],
@@ -874,10 +976,17 @@
       "allowed_domains": ["www.yutakakikutakegallery.com", "yutakakikutakegallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
-      "notes": "Official Yutaka Kikutake Gallery exhibitions page. Beta source; gallery also has Kyobashi space.",
+      "notes": "Official Yutaka Kikutake Gallery exhibitions page. Beta source; gallery also has Kyobashi space. Listing selector reads CURRENT and UPCOMING only; PAST is ignored.",
       "is_active": true,
       "beta": true,
       "source_categories": ["gallery", "exhibition"],
+      "selectors": {
+        "listing_links": "ul.ex-current a, ul.ex-upcoming a",
+        "title": ".ex-title",
+        "date": ".ex-spec",
+        "description": ".ex-description",
+        "images": "div.artwork img[src*=\"/wp-content/uploads/\"]"
+      },
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -902,24 +1011,31 @@
       "directions_query": "STANDING PINE, TERRADA ART COMPLEX, Tokyo",
       "lat": 35.62166,
       "lng": 139.74969,
-      "base_url": "https://standingpine.jp/exhibitions",
-      "start_urls": ["https://standingpine.jp/exhibitions"],
+      "base_url": "https://standingpine.jp/en/exhibitions",
+      "start_urls": ["https://standingpine.jp/en/exhibitions"],
       "allowed_domains": ["standingpine.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions"],
-      "notes": "Official STANDING PINE exhibitions page. Beta source.",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Official STANDING PINE exhibitions page. English listing/detail pages; source-specific extractor reads left-column title/date rows and trims artist names after the pipe.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "listing_links": ".split-block__item-link",
+        "title": ".content-detail__description-item.is_title",
+        "date": ".split-block__item-description-item.is_date_in-detail",
+        "description": ".content-detail__content",
+        "images": ".content-detail__image-body, .content-detail__content img"
+      },
       "locales": {
         "en": {
-          "start_urls": ["https://standingpine.jp/exhibitions"],
-          "event_page_patterns": ["/exhibitions"]
+          "start_urls": ["https://standingpine.jp/en/exhibitions"],
+          "event_page_patterns": ["/en/exhibitions/"]
         },
         "ja": {
           "start_urls": ["https://standingpine.jp/exhibitions"],
-          "event_page_patterns": ["/exhibitions"]
+          "event_page_patterns": ["/exhibitions/"]
         }
       },
       "crawl_hints": {
@@ -945,6 +1061,9 @@
       "beta": true,
       "source_categories": ["art", "design", "event", "exhibition"],
       "map_visibility": true,
+      "selectors": {
+        "images": ".e-gallery_fv_thumbnail_mobile img.image-square"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.tokyonode.jp/events/index.html"],
@@ -957,38 +1076,6 @@
       "crawl_hints": {
         "render_mode": "auto",
         "skip_patterns": ["/news/", "/about/"],
-        "max_detail_pages": 8
-      }
-    },
-    {
-      "slug": "mitsubishi-ichigokan-museum",
-      "name": "Mitsubishi Ichigokan Museum",
-      "source_type": "museum",
-      "language": "ja",
-      "address_text": "2-6-2 Marunouchi, Chiyoda-ku, Tokyo 100-0005 Japan",
-      "directions_query": "Mitsubishi Ichigokan Museum, Tokyo",
-      "lat": 35.6785728,
-      "lng": 139.7633877,
-      "base_url": "https://mimt.jp/exhibition/",
-      "start_urls": ["https://mimt.jp/exhibition/"],
-      "allowed_domains": ["mimt.jp", "www.mimt.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition/"],
-      "notes": "Official Mitsubishi Ichigokan Museum exhibition page. Beta source.",
-      "is_active": true,
-      "beta": true,
-      "source_categories": ["museum", "exhibition"],
-      "map_visibility": true,
-      "locales": {
-        "ja": {
-          "start_urls": ["https://mimt.jp/exhibition/"],
-          "event_page_patterns": ["/exhibition/"]
-        }
-      },
-      "capabilities": {
-        "native_locales": ["ja"]
-      },
-      "crawl_hints": {
         "max_detail_pages": 8
       }
     },
@@ -1008,7 +1095,7 @@
       "event_page_patterns": ["/pages/", "/exhibition/"],
       "notes": "Official Kenji Taki Gallery info/exhibitions page. Beta source.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["gallery", "exhibition"],
       "map_visibility": true,
       "locales": {
@@ -1035,10 +1122,14 @@
       "allowed_domains": ["www.snowcontemporary.com", "snowcontemporary.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
-      "notes": "Official SNOW Contemporary current exhibition page. Beta source.",
+      "notes": "Official SNOW Contemporary current exhibition page. Beta source. The current page is also the detail page; skip nav links and use the single top image.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["gallery", "exhibition"],
+      "selectors": {
+        "description": "#boxEX1",
+        "images": "#resizeimage img"
+      },
       "map_visibility": true,
       "locales": {
         "ja": {
@@ -1051,7 +1142,13 @@
         }
       },
       "crawl_hints": {
-        "max_detail_pages": 3
+        "skip_patterns": [
+          "http://snowcontemporary.com/exhibition/current.html",
+          "/en/exhibition/upcoming.html",
+          "/en/exhibition/past.html",
+          "/en/exhibition/info/"
+        ],
+        "max_detail_pages": 1
       }
     },
     {
@@ -1103,7 +1200,7 @@
       "event_page_patterns": ["/"],
       "notes": "Official Pola Museum Annex site. Beta source; homepage usually exposes current exhibition.",
       "is_active": true,
-      "beta": true,
+      "beta": false,
       "source_categories": ["museum", "gallery", "exhibition"],
       "map_visibility": true,
       "locales": {

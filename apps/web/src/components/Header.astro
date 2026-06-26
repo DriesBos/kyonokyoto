@@ -37,7 +37,9 @@ const homeHref = routePathFor({ city, locale });
 const localePathFor = (targetLocale: AppLocale) => routePathFor({ city, locale: targetLocale });
 const nextLocale: AppLocale = locale === 'en' ? 'ja' : 'en';
 const nextCity = nextCityFor(city);
-const currentCityLabel = cityConfigFor(city)?.label ?? city;
+const currentCity = cityConfigFor(city);
+const currentCityLabel = currentCity?.label ?? city;
+const brandLabel = currentCity?.brandLabel ?? 'Kyō-no-Kyōto';
 const languageLabels: Record<AppLocale, string> = {
   en: 'eng',
   ja: 'jp',
@@ -62,8 +64,8 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
     data-main-header
     data-stuck={compact ? '' : undefined}
   >
-    <a class="mainHeader__logo" href={homeHref} aria-label={copy.homeAria}>
-      <Logo />
+    <a class="mainHeader__logo" href={homeHref} aria-label={`${brandLabel} home`}>
+      <Logo label={brandLabel} />
     </a>
 
     <div
@@ -185,6 +187,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
     align-items: flex-start
     gap: 0
     padding: 0.5rem 0
+    padding-top: max(0.5rem, env(safe-area-inset-top))
     background-color: var(--color-beige)
     overflow: visible
 
@@ -201,8 +204,10 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
       transition: opacity 165ms ease
 
     &[data-stuck]
-      :global(.mainHeader__logo svg)
+      :global(.mainHeader__logo svg),
+      :global(.mainHeader__logo .logo-wordmark)
         height: calc(var(--type-title-size) * 1.22)
+        font-size: var(--type-title-size)
 
       &::after
         opacity: 1
@@ -214,9 +219,12 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
       display: block
       padding-left: var(--page-padding-x)
 
-    &__logo :global(svg)
+    &__logo :global(svg),
+    &__logo :global(.logo-wordmark)
       width: auto
       height: calc(var(--type-logo-size) * 1.22)
+      font-size: var(--type-logo-size)
+      line-height: 1.22
       display: block
       transition: height 165ms ease
 
@@ -224,8 +232,10 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
     &::after
       opacity: 1
 
-    :global(.mainHeader__logo svg)
+    :global(.mainHeader__logo svg),
+    :global(.mainHeader__logo .logo-wordmark)
       height: calc(var(--type-title-size) * 1.22)
+      font-size: var(--type-title-size)
 
   .category-filter
     position: relative
@@ -266,8 +276,10 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
       flex-direction: row
       align-items: flex-start
 
-      &__logo :global(svg)
+      &__logo :global(svg),
+      &__logo :global(.logo-wordmark)
         height: calc(var(--type-logo-size) * 0.96)
+        font-size: calc(var(--type-logo-size) * 0.79)
 
     :global(.mainHeader__filter-toggle)
       display: inline-flex

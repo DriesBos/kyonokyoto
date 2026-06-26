@@ -1,3 +1,5 @@
+import { scrollRootFor } from './scrollRoot';
+
 const actionSelector = '.event-card__body__actions .general-button';
 const actionContainerSelector = '.event-card__body__actions';
 const starSelector = '[data-event-star-toggle]';
@@ -383,17 +385,28 @@ const scrollCardIntoEventsView = (card) => {
     return;
   }
 
-  const eventsSectionRect = eventsSection.getBoundingClientRect();
+  const scrollRoot = scrollRootFor(card);
   const cardRect = card.getBoundingClientRect();
   const mainHeader = eventsSection.querySelector('[data-main-header]');
+  if (!scrollRoot) {
+    const scrollPadding =
+      mainHeader instanceof HTMLElement ? mainHeader.getBoundingClientRect().bottom : 0;
+    window.scrollTo({
+      top: Math.max(0, window.scrollY + cardRect.top - scrollPadding),
+      behavior: 'smooth',
+    });
+    return;
+  }
+
+  const eventsSectionRect = scrollRoot.getBoundingClientRect();
   const scrollPadding =
     mainHeader instanceof HTMLElement
       ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
       : 0;
   const nextScrollTop =
-    eventsSection.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
+    scrollRoot.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
 
-  eventsSection.scrollTo({
+  scrollRoot.scrollTo({
     top: Math.max(0, nextScrollTop),
     behavior: 'smooth',
   });
