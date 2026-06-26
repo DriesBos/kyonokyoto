@@ -107,6 +107,7 @@ Review manually, then remove `beta` when approved:
 - `artizon-museum`: 2026-06-26 source config now reads `img.objectFit--contain` so event cards use artwork-list images instead of the flyer/hero image. Local crawl saved 4 events, skipped 0, and reported 0 missing images.
 - `ginza-graphic-gallery`: 2026-06-26 source config now uses Tokyo GGG schedule CGI pages (`t=1`, English `l=2`, Japanese `l=1`) instead of old `/gallery/ggg_e/` landing page. Reuses DNP schedule extractor and stores only the first image. Local crawl saved 2 Tokyo GGG events, skipped 0, and reported 0 missing translations.
 - `mori-art-museum`: 2026-06-26 source config now uses `/en/exhibitions/index.html` and `/jp/exhibitions/index.html`, reads copy from `div.content-main`, and reads artwork from `div.content-img img, figure.content-img img` so flyer/banner images are skipped. Local crawl saved 6 events, skipped 0, and reported 0 missing images/translations.
+- `snow-contemporary`: 2026-06-26 source config now treats `current.html` as the single detail page, extracts the quoted title from the top `<strong>`, reads the `session` line for date/time, and uses only `#resizeimage img`. Local crawl saved 1 current event, archived 2 stale rows, skipped 0, and reported 0 missing images/translations.
 - `setagaya-art-museum`: 2026-06-26 source config now reads `#EXHB-WORKS-LIST img, ul.more img` so event cards use Works on Display images and skip flyer/Pickup thumbnails. Local crawl saved 7 events, skipped 1 missing-image row, and reported 0 missing translations.
 - `standing-pine-tokyo`: 2026-06-26 source config now uses English `/en/exhibitions`, follows `.split-block__item-link`, reads left-column title/date rows, reads right-column copy, and trims artist names after `|`. No-write live extraction of `/en/exhibitions/402` returned `Dear Summer`, `2026-07-04` to `2026-07-25`, and a cover image.
 - `tokyo-node`: 2026-06-26 source config now reads `.e-gallery_fv_thumbnail_mobile img.image-square`, which is the second event visual, and skips desktop hero plus related-event square thumbnails. Local crawl saved 3 events, skipped 0, and reported 0 missing images/translations.
@@ -156,7 +157,6 @@ New Tokyo sources are `beta: true` and pending first Tokyo crawl QA.
 - `gyre-gallery`: saved 2; skipped 4 old rows.
 - `tokyo-node`: saved 3; second-image-only selector tuned.
 - `mitsubishi-ichigokan-museum`: saved 3; skipped 2 missing-image rows.
-- `snow-contemporary`: saved 2; skipped 1 missing-image row.
 - `taro-nasu-gallery`: saved 1; skipped 5 old rows.
 
 ### No Current Events

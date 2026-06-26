@@ -2025,6 +2025,10 @@ function extractOsakaGeidaiDetailUrls(listingHtml, listingUrl) {
   return [...new Set(urls)];
 }
 
+function extractSnowCurrentDetailUrls(_listingHtml, listingUrl) {
+  return [listingUrl];
+}
+
 function extractFirstDateText(text) {
   const patterns = [
     /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2}(?:,\s*\d{4})?\s*[-–—～〜]\s*(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
@@ -4838,6 +4842,7 @@ const detailUrlExtractors = {
   'scai-piramide': extractScaiDetailUrlsFor('scai-piramide'),
   'scai-park': extractScaiDetailUrlsFor('scai-park'),
   'sen-oku-hakukokan': extractSenOkuDetailUrls,
+  'snow-contemporary': extractSnowCurrentDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
   zenbi: extractZenbiDetailUrls,
   'gallery-unfold': extractGalleryUnfoldDetailUrls,

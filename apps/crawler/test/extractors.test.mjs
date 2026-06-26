@@ -1456,11 +1456,10 @@ test('SNOW Contemporary source config reads current page title date and single i
   `;
 
   assert.deepEqual(
-    extractGenericDetailUrls(
-      listingHtml,
-      'http://www.snowcontemporary.com/en/exhibition/current.html',
+    extractSourceSpecificDetailUrls(
+      detailUrlExtractors[source.slug],
+      [{ url: 'http://www.snowcontemporary.com/en/exhibition/current.html', html: listingHtml }],
       source,
-      8,
     ),
     ['http://www.snowcontemporary.com/en/exhibition/current.html'],
   );
