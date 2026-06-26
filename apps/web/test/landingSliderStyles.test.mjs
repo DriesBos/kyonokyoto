@@ -89,7 +89,7 @@ test('landing and header render city-specific brand titles', async () => {
   assert.match(logo, /logo-wordmark/);
 });
 
-test('mobile content uses page flow with safe-area only on header and footer', async () => {
+test('mobile content keeps events panel scrollable so map has room to grow', async () => {
   const page = await readFile(
     resolve(import.meta.dirname, '../src/pages/[city]/[locale]/index.astro'),
     'utf8',
@@ -100,10 +100,13 @@ test('mobile content uses page flow with safe-area only on header and footer', a
   assert.match(header, /padding-top: max\(0\.5rem, env\(safe-area-inset-top\)\)/);
   assert.match(footer, /padding-bottom: calc\(var\(--page-padding-y\) \+ env\(safe-area-inset-bottom\)\)/);
   assert.doesNotMatch(page, /100lvh/);
+  assert.doesNotMatch(page, /overflow-x: clip/);
   assert.match(
     page,
-    /\.events-section\s*\n\s+flex: 0 0 auto\n\s+height: auto\n\s+overflow: visible\n\s+overscroll-behavior: auto/,
+    /\.content-container\[data-map-visible\] \.events-section\s*\n\s+flex: 1 1 auto\n\s+min-height: 0/,
   );
+  assert.doesNotMatch(page, /\.content-container\s*\n(?:      .+\n)*?      height: auto/);
+  assert.doesNotMatch(page, /\.events-section\s*\n\s+flex: 0 0 auto\n\s+height: auto/);
 });
 
 test('scroll helpers use page fallback when events section is not scrollable', async () => {

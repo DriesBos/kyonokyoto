@@ -106,6 +106,9 @@ test('landingSlidesForEvents keeps configured city source order from events and 
   );
 });
 
-test('landing slider uses Mori Art Museum for Tokyo', () => {
-  assert.deepEqual(landingSliderSourceSlugsByCity.tokyo, ['mori-art-museum']);
+test('landing slider uses configured Tokyo museum sources', () => {
+  assert.deepEqual(landingSliderSourceSlugsByCity.tokyo, [
+    'mori-art-museum',
+    'tokyo-photographic-art-museum',
+  ]);
 });

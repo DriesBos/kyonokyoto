@@ -391,7 +391,6 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
     min-height: 100%
     width: 100%
     overflow-x: hidden
-    overflow-x: clip
 
   .section-heading
     display: flex
@@ -589,9 +588,6 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
   @media (max-width: $mobile-breakpoint)
     .content-container
       flex-direction: column
-      height: auto
-      min-height: 100%
-      overflow: visible
 
       &[data-map-visible] .map-section
         order: -2
@@ -604,12 +600,6 @@ const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c')
     .content-container[data-map-visible] .events-section
       flex: 1 1 auto
       min-height: 0
-
-    .events-section
-      flex: 0 0 auto
-      height: auto
-      overflow: visible
-      overscroll-behavior: auto
 
     .content-container[data-map-resizing]
       cursor: row-resize
