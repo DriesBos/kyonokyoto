@@ -89,6 +89,18 @@ test('landing and header render city-specific brand titles', async () => {
   assert.match(logo, /logo-wordmark/);
 });
 
+test('landing typography loads without fallback font swap', async () => {
+  const layout = await readFile(resolve(import.meta.dirname, '../src/layouts/BaseLayout.astro'), 'utf8');
+  const styles = await readFile(resolve(import.meta.dirname, '../src/styles/app.sass'), 'utf8');
+  const fontFace = styles.match(/@font-face\n(?<body>(?:  .+\n)+)/)?.groups?.body ?? '';
+  const headingRule = styles.match(/\nh1,\nh2,\nh3,\nh4\n(?<body>(?:  .+\n)+)/)?.groups?.body ?? '';
+
+  assert.match(layout, /rel="preload"[\s\S]*href="\/fonts\/GT-Walsheim-Regular\.woff2"/);
+  assert.match(fontFace, /font-weight: 400/);
+  assert.doesNotMatch(fontFace, /font-display: swap/);
+  assert.match(headingRule, /font-weight: 400/);
+});
+
 test('mobile content keeps events panel scrollable so map has room to grow', async () => {
   const page = await readFile(
     resolve(import.meta.dirname, '../src/pages/[city]/[locale]/index.astro'),
