@@ -181,31 +181,6 @@
         "en": "https://www.instagram.com/acgvillakyoto/",
         "ja": "https://www.instagram.com/acgvillakyoto/"
       }
-    },
-    {
-      "slug": "ocue-kyoto",
-      "cadence": "occasional",
-      "name": "( ocue . kyoto",
-      "names": {
-        "en": "( ocue . kyoto",
-        "ja": "( ocue . kyoto（オクキョウト）"
-      },
-      "base_url": "https://www.instagram.com/ocuekyoto/",
-      "address_text": "558 Honeyano-cho, Nakagyo-ku, Kyoto 604-8064 Japan",
-      "directions_query": "京都府京都市中京区骨屋之町558",
-      "lat": 35.006762,
-      "lng": 135.765058,
-      "source_categories": ["art", "gallery"],
-      "is_active": true,
-      "beta": true,
-      "description": {
-        "en": "A gallery and pop-up space in the innermost kura of a century-old Kyoto machiya in the Tominokoji area, conceived as a room for placing things and a cue to step into their deeper contexts.",
-        "ja": "富小路エリアの築100年以上の京町家の最奥にある蔵を活用したギャラリー／ポップアップスペース。「おく」とcueを起点に、ものごとの奥へ踏み込むきっかけとなる場として構想されています。"
-      },
-      "urls": {
-        "en": "https://www.instagram.com/ocuekyoto/",
-        "ja": "https://www.instagram.com/ocuekyoto/"
-      }
     }
   ]
 }

@@ -2178,6 +2178,17 @@ function extractGalleryYamahonDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
 
+function extractKcuaDetailUrls(listingHtml, listingUrl) {
+  return [
+    ...new Set(
+      [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
+        .filter((match) => /<img\b[^>]+(?:src|data-src)=(["'])[^"']+\1/i.test(match[3]))
+        .map((match) => normalizeUrl(match[2], listingUrl))
+        .filter((url) => url && /\/(?:en\/)?archives\/20\d{2}\/\d+\/?$/i.test(new URL(url).pathname)),
+    ),
+  ];
+}
+
 function extractHosooDetailUrls(listingHtml, listingUrl) {
   const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
     .map((match) => normalizeUrl(match[2], listingUrl))
@@ -3402,6 +3413,26 @@ function extractParcoHallEvent(detailHtml, source, detailUrl) {
     ...event,
     primary_image_url: firstImageUrl,
     image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
+function extractLeicaKyotoEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const parsedDates = parseGenericDateRange(
+    event.date_text.replace(/\s+to\s+/i, ' – ').replace(/[～〜]/g, ' – '),
+  );
+
+  return {
+    ...event,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    extraction_confidence: parsedDates.startDate ? 0.8 : event.extraction_confidence,
   };
 }
 
@@ -4843,6 +4874,7 @@ const detailUrlExtractors = {
   'ginza-graphic-gallery': extractDddDetailUrls,
   'hosoo-gallery': extractHosooDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
+  kcua: extractKcuaDetailUrls,
   'kyoto-art-center': extractKacDetailUrls,
   'kyoto-national-museum': extractKyohakuDetailUrls,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraDetailUrls,
@@ -4879,6 +4911,7 @@ const eventExtractors = {
   kyotophonie: extractKyotophonieEvent,
   kankakari: extractKankakariEvent,
   kuramonzen: extractKuramonzenEvent,
+  'leica-gallery-kyoto': extractLeicaKyotoEvent,
   'parco-hall-shinsaibashi': extractParcoHallEvent,
   'raku-museum': extractRakuMuseumEvent,
   momak: extractMomakEvent,

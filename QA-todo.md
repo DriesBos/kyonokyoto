@@ -4,6 +4,9 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Kyoto Sources
 
+2026-07-12: Added `leica-gallery-kyoto` from Leica's Japan-filtered events page. Discovery follows only `/event/leica-gallery-kyoto/` links, uses native EN/JA detail pages, and normalizes Leica's English and Japanese date-range separators. Live crawl saved current Teresa Freitas and upcoming Kisshomaru Shimamura exhibitions; 2 detail URLs, 2 saved, 0 skipped, 0 missing images/translations.
+2026-07-12: Renamed source to `kcua` / `KCUA`. Database source row migrated in place to preserve event IDs. Tuned discovery to follow every linked Current or Upcoming exhibition card that contains an image; image-less upcoming placeholders are ignored. Local extractor test added. Post-rename live crawl saved one current and one upcoming event with EN/JA translations; 2 detail URLs, 2 saved, 0 skipped, 0 missing images.
+
 ### `hakari-contemporary`
 
 - Added from issue #11.

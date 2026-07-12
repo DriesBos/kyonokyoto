@@ -804,8 +804,8 @@
       }
     },
     {
-      "slug": "kcua-gallery",
-      "name": "KCUA Gallery",
+      "slug": "kcua",
+      "name": "KCUA",
       "source_type": "gallery",
       "language": "en",
       "address_text": "57-1 Shimono-cho, Shimogyo-ku, Kyoto 600-8601 Japan",
@@ -837,6 +837,51 @@
           "start_urls": ["https://gallery.kcua.ac.jp/en/exhibitions-en/"],
           "event_page_patterns": ["/en/archives/"]
         }
+      }
+    },
+    {
+      "slug": "leica-gallery-kyoto",
+      "name": "Leica Gallery Kyoto",
+      "source_type": "gallery",
+      "language": "en",
+      "address_text": "570-120 Gionmachi Minamigawa, Higashiyama-ku, Kyoto 605-0074 Japan",
+      "lat": 35.0017371,
+      "lng": 135.7742225,
+      "base_url": "https://leica-camera.com/en-US/leica-events?field_event_category=242&field_event_country=247",
+      "start_urls": [
+        "https://leica-camera.com/en-US/leica-events?field_event_category=242&field_event_country=247"
+      ],
+      "allowed_domains": ["leica-camera.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": [
+        "/en-US/event/leica-gallery-kyoto/",
+        "/ja-JP/event/leica-gallery-kyoto/"
+      ],
+      "notes": "The filtered Leica events page includes galleries across Japan. Follow only Leica Gallery Kyoto event links.",
+      "source_categories": ["gallery"],
+      "selectors": {
+        "listing_links": "a[href*=\"/en-US/event/leica-gallery-kyoto/\"]",
+        "title": ".headline.h1",
+        "date": ".field--name-field-teaser-text",
+        "description": ".node--type-event .text-field",
+        "images": ".fancy-slider img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://leica-camera.com/ja-JP/leica-events?field_event_category=242&field_event_country=247"
+          ],
+          "event_page_patterns": ["/ja-JP/event/leica-gallery-kyoto/"]
+        },
+        "en": {
+          "start_urls": [
+            "https://leica-camera.com/en-US/leica-events?field_event_category=242&field_event_country=247"
+          ],
+          "event_page_patterns": ["/en-US/event/leica-gallery-kyoto/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
       }
     },
     {
