@@ -1,5 +1,6 @@
 import type { EventRow } from './events';
 import type { AppLocale } from './i18n';
+import { assertPublicCategories, PUBLIC_CATEGORIES } from '../../../../data/categories.mjs';
 
 export type SourceConfig = {
   slug: string;
@@ -69,23 +70,7 @@ export type EventSourceTruth = {
   lng: number | null;
 };
 
-export const preferredCategoryOrder = [
-  'exhibition',
-  'museum',
-  'gallery',
-  'art',
-  'photography',
-  'design',
-  'craft',
-  'event',
-  'music',
-  'performance',
-  'mingei',
-  'ceramics',
-  'workshop',
-  'festival',
-  'fair',
-];
+export const preferredCategoryOrder = PUBLIC_CATEGORIES;
 
 export const normalizeCategory = (value: string) =>
   value
@@ -113,7 +98,9 @@ export const allActiveSourcesFrom = (sources: SourceConfig[]) =>
     .filter((source) => source.is_active !== false)
     .map((source) => ({
       ...source,
-      source_categories: normalizeCategoryList(source.source_categories ?? []),
+      source_categories: normalizeCategoryList(
+        assertPublicCategories(source.source_categories ?? [], source.slug),
+      ),
     }));
 
 export const configuredSourcesFrom = (sources: SourceConfig[]) =>
@@ -122,7 +109,9 @@ export const configuredSourcesFrom = (sources: SourceConfig[]) =>
     .filter((source) => !source.beta || import.meta.env.DEV)
     .map((source) => ({
       ...source,
-      source_categories: normalizeCategoryList(source.source_categories ?? []),
+      source_categories: normalizeCategoryList(
+        assertPublicCategories(source.source_categories ?? [], source.slug),
+      ),
     }));
 
 export const normalizeUrl = (value: string | undefined) => {

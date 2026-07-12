@@ -1765,7 +1765,26 @@ test('source config validator reports missing source truth', () => {
         native_locales: ['ja'],
       },
     }),
-    ['draft-source: missing source_categories', 'draft-source: missing lat/lng'],
+    [
+      'draft-source: missing source_type',
+      'draft-source: missing source_categories',
+      'draft-source: missing lat/lng',
+    ],
+  );
+});
+
+test('source config validator rejects unregistered filter categories', () => {
+  assert.deepEqual(
+    validateSourceConfig({
+      slug: 'bad-category',
+      name: 'Bad Category',
+      source_type: 'fair',
+      source_categories: ['book fair'],
+      lat: 35,
+      lng: 135,
+      capabilities: { native_locales: ['ja'] },
+    }),
+    ['bad-category: unsupported source category "book fair"'],
   );
 });
 
@@ -1778,6 +1797,21 @@ test('city source configs are valid crawl inputs', async () => {
       assert.equal(source.city, city);
       assert.deepEqual(validateSourceConfig(source), []);
     }
+  }
+});
+
+test('CURATION FAIR sources use current-year English and Japanese pages', async () => {
+  const year = String(new Date().getFullYear());
+
+  for (const city of ['kyoto', 'tokyo']) {
+    const sources = await loadSourcesConfig({ city });
+    const source = sources.find((item) => item.slug === `curation-fair-${city}`);
+
+    assert.equal(source?.source_type, 'fair');
+    assert.deepEqual(source?.source_categories, ['fair']);
+    assert.equal(source?.beta, true);
+    assert.deepEqual(source?.start_urls, [`https://curation-fair.com/en/${city}${year}`]);
+    assert.deepEqual(source?.locales?.ja?.start_urls, [`https://curation-fair.com/${city}${year}`]);
   }
 });
 

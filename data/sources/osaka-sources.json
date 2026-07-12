@@ -294,7 +294,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/grandgreen/event/", "/2026/"],
       "notes": "Purple art marker from Google My Maps as GRAND GREEN OSAKA. The art/event source is the official Congres Square Grand Green Osaka venue page.",
-      "source_categories": ["art-fair", "exhibition"],
+      "source_categories": ["fair", "exhibition"],
       "selectors": {
         "listing_links": ".p-event_card"
       },
@@ -496,7 +496,7 @@
       "event_page_patterns": ["/whatsnew/"],
       "notes": "Only crawl items tagged `アート・展覧会`; source-specific detail URL extractor filters listing anchors by that tag.",
       "beta": true,
-      "source_categories": ["art", "exhibition", "university"],
+      "source_categories": ["art", "exhibition", "campus"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.osaka-geidai.ac.jp/whatsnew"],
@@ -936,7 +936,7 @@
       "event_page_patterns": ["/"],
       "notes": "Official Osaka folk crafts museum site lists seasonal special exhibitions and related events.",
       "beta": true,
-      "source_categories": ["museum", "craft", "mingei", "exhibition"],
+      "source_categories": ["museum", "craft", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.mingeikan-osaka.or.jp/"],

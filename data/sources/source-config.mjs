@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isPublicCategory, isSourceType } from '../categories.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const supportedCities = new Set(['kyoto', 'osaka', 'tokyo']);
@@ -117,6 +118,32 @@ function normalizeStringList(value = []) {
   if (!Array.isArray(value)) return [];
 
   return value.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim());
+}
+
+function resolveCurrentYearUrls(source) {
+  if (source?.url_year !== 'current') return source;
+
+  const currentYear = String(new Date().getFullYear());
+  const resolveUrl = (value) =>
+    typeof value === 'string' ? value.replace(/20\d{2}/g, currentYear) : value;
+  const resolveUrls = (values = []) => values.map(resolveUrl);
+
+  return {
+    ...source,
+    base_url: resolveUrl(source.base_url),
+    start_urls: resolveUrls(source.start_urls),
+    event_page_patterns: resolveUrls(source.event_page_patterns),
+    locales: Object.fromEntries(
+      Object.entries(source.locales ?? {}).map(([locale, config]) => [
+        locale,
+        {
+          ...config,
+          start_urls: resolveUrls(config.start_urls),
+          event_page_patterns: resolveUrls(config.event_page_patterns),
+        },
+      ]),
+    ),
+  };
 }
 
 function normalizeStringMap(value = {}) {
@@ -274,8 +301,19 @@ export function validateSourceConfig(source) {
   const slug = source?.slug ?? 'unknown-source';
 
   if (!source?.name) warnings.push(`${slug}: missing name`);
+  if (!source?.source_type) {
+    warnings.push(`${slug}: missing source_type`);
+  } else if (!isSourceType(source.source_type)) {
+    warnings.push(`${slug}: unsupported source_type "${source.source_type}"`);
+  }
   if (!Array.isArray(source?.source_categories) || !source.source_categories.length) {
     warnings.push(`${slug}: missing source_categories`);
+  } else {
+    for (const category of source.source_categories) {
+      if (!isPublicCategory(category)) {
+        warnings.push(`${slug}: unsupported source category "${category}"`);
+      }
+    }
   }
   if (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng))) {
     warnings.push(`${slug}: missing lat/lng`);
@@ -331,16 +369,18 @@ export async function loadSourcesConfig({ city = 'kyoto' } = {}) {
 
   const overrides = await loadSourceOverrides({ city: normalizedCity });
 
-  return payload.sources.map((source) => ({
-    ...applySourceOverride(
-      {
-        ...source,
-        city: normalizedCity,
-      },
-      overrides[source.slug],
-    ),
-    city: normalizedCity,
-  }));
+  return payload.sources.map((source) =>
+    resolveCurrentYearUrls({
+      ...applySourceOverride(
+        {
+          ...source,
+          city: normalizedCity,
+        },
+        overrides[source.slug],
+      ),
+      city: normalizedCity,
+    }),
+  );
 }
 
 export async function loadAllSourcesConfig() {

@@ -9,6 +9,7 @@ import {
   loadSourcesConfig,
   validateSourceConfig,
 } from '../../../data/sources/source-config.mjs';
+import { isPublicCategory } from '../../../data/categories.mjs';
 
 const projectRoot = resolve(import.meta.dirname, '../../..');
 
@@ -47,6 +48,25 @@ test('each city has source and permanent files', async () => {
     assert.ok(Array.isArray(sources.sources));
     assert.equal(permanent.version, 1);
     assert.ok(Array.isArray(permanent.items));
+  }
+});
+
+test('source and permanent categories use the public registry', async () => {
+  for (const city of cityConfigs) {
+    const files = [
+      [`data/sources/${city.sourceFile}`, 'sources'],
+      [`data/permanent/${city.permanentFile}`, 'items'],
+    ];
+
+    for (const [path, rowsKey] of files) {
+      const payload = await readJson(path);
+
+      for (const row of payload[rowsKey]) {
+        for (const category of row.source_categories ?? []) {
+          assert.equal(isPublicCategory(category), true, `${path}: ${row.slug}: ${category}`);
+        }
+      }
+    }
   }
 });
 

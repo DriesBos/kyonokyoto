@@ -178,10 +178,12 @@ Required single value. Broad identity of source venue/organization.
 Current values:
 
 - `art-center`
-- `art-fair`
+- `design`
+- `fair`
 - `festival`
 - `gallery`
 - `museum`
+- `university`
 - `venue`
 
 Used as fallback/category metadata. Not used to choose crawl behavior.
@@ -199,9 +201,12 @@ Currently metadata only. Crawler behavior is driven by URLs, patterns, and sourc
 
 ## Field Usage
 
+Set `url_year` to `"current"` for annual source URLs. Loader replaces any four-digit year in
+`base_url`, `start_urls`, `event_page_patterns`, and locale URL fields with runtime year.
+
 Keep these. They are runtime fields:
 
-- crawler scope: `start_urls`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `capabilities`
+- crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `capabilities`
 - web/map truth: `name`, `names`, `source_categories`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`
 
 Metadata-only today:
@@ -214,26 +219,32 @@ Do not remove `address_text`, `lat`, or `lng`; they are source-owned map truth. 
 
 ## `source_categories`
 
-Array of public filter/map categories. Use separate strings.
+Array of public filter/map categories. Use separate strings. Registry source of truth:
+`data/categories.mjs`. Unregistered values fail source validation and web tests.
 
 Current values:
 
-- `architecture`
-- `art-fair`
-- `ceramics`
-- `craft`
-- `design`
 - `exhibition`
-- `festival`
-- `gallery`
-- `illustration`
-- `new-media`
 - `museum`
-- `music`
+- `gallery`
+- `art`
 - `photography`
-- `product`
+- `design`
+- `craft`
+- `event`
+- `music`
+- `performance`
+- `ceramics`
+- `workshop`
+- `festival`
+- `fair`
+- `architecture`
+- `graphic`
+- `new-media`
 - `sculpture`
 - `textiles`
+- `ukiyoe`
+- `campus`
 
 Format:
 

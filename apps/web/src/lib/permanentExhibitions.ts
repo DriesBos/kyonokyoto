@@ -1,6 +1,7 @@
 import type { AppLocale } from './i18n';
 import type { ClassifiedEvent } from './events';
 import type { SourceConfig } from './sources';
+import { assertPublicCategories } from '../../../../data/categories.mjs';
 
 export type MediaEmbed = {
   type: 'youtube';
@@ -107,7 +108,10 @@ export const permanentEventsForLocale = ({
         id: `${cadence}:${highlight.slug}`,
         source_id: highlight.slug,
         title: institutionName,
-        categories: source?.source_categories ?? highlight.source_categories ?? [],
+        categories: assertPublicCategories(
+          source?.source_categories ?? highlight.source_categories ?? [],
+          highlight.slug,
+        ),
         date_text: cadenceDateText[activeLocale],
         institution_name: institutionName,
         venue_name: null,

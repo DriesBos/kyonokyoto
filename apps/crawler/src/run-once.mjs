@@ -4030,7 +4030,7 @@ function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
 
   return {
     title: `Art Collaboration Kyoto${year ? ` ${year}` : ''}`,
-    categories: ['art-fair', 'art'],
+    categories: ['fair', 'art'],
     description,
     institution_name: source.name,
     venue_name: venueName || 'Kyoto International Conference Center',

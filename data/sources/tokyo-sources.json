@@ -850,7 +850,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "craft", "mingei", "exhibition"],
+      "source_categories": ["museum", "craft", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://mingeikan.or.jp/exhibition/special/"],
@@ -1416,6 +1416,46 @@
       "crawl_hints": {
         "render_mode": "auto",
         "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "curation-fair-tokyo",
+      "name": "CURATION⇄FAIR Tokyo",
+      "names": {
+        "en": "CURATION⇄FAIR Tokyo",
+        "ja": "CURATION⇄FAIR Tokyo"
+      },
+      "source_type": "fair",
+      "language": "en",
+      "address_text": "1-15-9 Kudankita, Chiyoda-ku, Tokyo 102-0073 Japan",
+      "directions_query": "kudan house, Tokyo",
+      "lat": 35.6961773,
+      "lng": 139.7480816,
+      "base_url": "https://curation-fair.com/en/tokyo2026",
+      "start_urls": ["https://curation-fair.com/en/tokyo2026"],
+      "url_year": "current",
+      "allowed_domains": ["curation-fair.com"],
+      "crawl_strategy": "homepage-and-detail-pages",
+      "event_page_patterns": ["/en/tokyo2026", "/tokyo2026"],
+      "notes": "Annual CURATION⇄FAIR Tokyo page. The current-year page may temporarily contain only a coming-soon announcement or no event details.",
+      "beta": true,
+      "source_categories": ["fair"],
+      "locales": {
+        "ja": {
+          "start_urls": ["https://curation-fair.com/tokyo2026"],
+          "event_page_patterns": ["/tokyo2026"]
+        },
+        "en": {
+          "start_urls": ["https://curation-fair.com/en/tokyo2026"],
+          "event_page_patterns": ["/en/tokyo2026"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "requires_render": true,
+        "max_detail_pages": 1
       }
     }
   ]

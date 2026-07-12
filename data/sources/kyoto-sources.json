@@ -174,7 +174,7 @@
     {
       "slug": "art-collaboration-kyoto",
       "name": "Art Collaboration Kyoto",
-      "source_type": "art-fair",
+      "source_type": "fair",
       "language": "en",
       "address_text": "Kyoto International Conference Center, Takaragaike, Sakyo-ku, Kyoto 606-0001 Japan",
       "lat": 35.0610839,
@@ -185,7 +185,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/"],
       "notes": "Annual art fair. The homepage exposes the next edition dates and venue in the Visitor Information section; extract the homepage itself as the single yearly event.",
-      "source_categories": ["art-fair"],
+      "source_categories": ["fair"],
       "locales": {
         "ja": {
           "start_urls": ["https://a-c-k.jp/"],
@@ -195,6 +195,46 @@
           "start_urls": ["https://a-c-k.jp/en/"],
           "event_page_patterns": ["/en/"]
         }
+      }
+    },
+    {
+      "slug": "curation-fair-kyoto",
+      "name": "CURATION⇄FAIR Kyoto",
+      "names": {
+        "en": "CURATION⇄FAIR Kyoto",
+        "ja": "CURATION⇄FAIR Kyoto"
+      },
+      "source_type": "fair",
+      "language": "en",
+      "address_text": "514 Myokenjimae-cho, Kamigyo-ku, Kyoto 602-0005 Japan",
+      "directions_query": "Daihonzan Myokenji Temple, Kyoto",
+      "lat": 35.0345866,
+      "lng": 135.7546761,
+      "base_url": "https://curation-fair.com/en/kyoto2026",
+      "start_urls": ["https://curation-fair.com/en/kyoto2026"],
+      "url_year": "current",
+      "allowed_domains": ["curation-fair.com"],
+      "crawl_strategy": "homepage-and-detail-pages",
+      "event_page_patterns": ["/en/kyoto2026", "/kyoto2026"],
+      "notes": "Annual CURATION⇄FAIR Kyoto page. The current-year page may temporarily contain only a coming-soon announcement or no event details.",
+      "beta": true,
+      "source_categories": ["fair"],
+      "locales": {
+        "ja": {
+          "start_urls": ["https://curation-fair.com/kyoto2026"],
+          "event_page_patterns": ["/kyoto2026"]
+        },
+        "en": {
+          "start_urls": ["https://curation-fair.com/en/kyoto2026"],
+          "event_page_patterns": ["/en/kyoto2026"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "requires_render": true,
+        "max_detail_pages": 1
       }
     },
     {

@@ -2,11 +2,28 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  allActiveSourcesFrom,
   mapSourcesForEvents,
   sourceDisplayNameForEvent,
   sourceSlugForEvent,
   sourceTruthForEvent,
 } from '../src/lib/sources.ts';
+
+test('source normalization rejects unregistered filter categories', () => {
+  assert.throws(
+    () =>
+      allActiveSourcesFrom([
+        {
+          slug: 'bad-category',
+          name: 'Bad Category',
+          source_type: 'fair',
+          base_url: 'https://example.com',
+          source_categories: ['book fair'],
+        },
+      ]),
+    /bad-category: unsupported public categories: book fair/,
+  );
+});
 
 test('map sources include permanent events without source config rows', () => {
   const event = {
