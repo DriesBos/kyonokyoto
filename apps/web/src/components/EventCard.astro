@@ -76,12 +76,13 @@ const calendarDetails = calendarDetailsFor(event);
 const calendarLocation = calendarLocationFor(event);
 const showInstitutionMeta = event.timing !== 'permanent';
 const dateParts = formatEventDateParts(event.start_date, event.end_date, event.date_text, locale);
+const cardDetailsId = `event-card-details-${event.id}`;
+const cardTitleId = `event-card-title-${event.id}`;
 ---
 
 <article
   class="event-card"
   data-event-card
-  data-event-card-toggle
   data-reveal-state="pending"
   data-event-id={event.id}
   data-map-source-slug={mapSourceSlug ?? undefined}
@@ -92,10 +93,17 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
   data-hide-top-border={hideTopBorder ? '' : undefined}
   data-beta={beta ? '' : undefined}
   style={`--event-card-media-row-height-desktop: ${desktopImageHeightRem}rem; --event-card-media-row-height-mobile: ${mobileImageHeightRem}rem; --event-card-media-row-height-active-desktop: ${desktopImageHeightActiveRem}rem; --event-card-media-row-height-active-mobile: ${mobileImageHeightActiveRem}rem;`}
-  role="button"
-  tabindex="0"
-  aria-pressed="false"
+  aria-labelledby={cardTitleId}
 >
+  <button
+    class="event-card__disclosure"
+    type="button"
+    data-event-card-disclosure
+    aria-expanded="false"
+    aria-controls={cardDetailsId}
+    aria-labelledby={cardTitleId}
+  >
+  </button>
   <button
     class="event-card__star"
     type="button"
@@ -121,7 +129,7 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
   <div class="event-card__body">
     <div class="event-card__body__header">
       <div class="event-card__body__meta">
-        <span data-event-field="dateText">
+        <span>
           {
             dateParts.startDate ? (
               <>
@@ -138,19 +146,15 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
             )
           }
         </span>
-        {
-          showInstitutionMeta ? (
-            <span data-event-field="institutionName">{event.institution_name}</span>
-          ) : null
-        }
+        {showInstitutionMeta ? <span>{event.institution_name}</span> : null}
       </div>
       <div class="event-card__body__title">
-        <h2 class="event-card__title" data-event-field="title">{event.title}</h2>
+        <h2 class="event-card__title" id={cardTitleId}>{event.title}</h2>
       </div>
     </div>
 
-    <div class="event-card__body__content">
-      <p class="event-card__body__description" data-event-card-fade data-event-field="excerpt">
+    <div class="event-card__body__content" id={cardDetailsId} aria-hidden="true" inert>
+      <p class="event-card__body__description" data-event-card-fade>
         {excerpt}
       </p>
       <div class="event-card__body__actions" data-event-card-fade>
@@ -178,7 +182,6 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
               label={copy.google}
               icon="calendar"
               href={googleCalendarUrl}
-              data-event-href="googleCalendarUrl"
               target="_blank"
               rel="noreferrer"
             />
@@ -190,7 +193,6 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
           label={copy.directions}
           icon="map"
           href={mapsUrl}
-          data-event-href="mapsUrl"
           target="_blank"
           rel="noreferrer"
         />
@@ -200,7 +202,6 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
           label={copy.website}
           icon="exit"
           href={event.source_url}
-          data-event-href="sourceUrl"
           target="_blank"
           rel="noreferrer"
         />
@@ -219,7 +220,6 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
               class="event-card__image"
               src={imageUrl}
               alt={index === 0 ? event.title : ''}
-              data-event-image-alt={index === 0 ? '' : undefined}
               loading="lazy"
               decoding="async"
               aria-hidden={index === 0 ? undefined : 'true'}
@@ -267,6 +267,21 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
     &[data-hide-top-border]
       border-top: 0
 
+    &__disclosure
+      position: absolute
+      z-index: 1
+      inset: 0
+      padding: 0
+      border: 0
+      appearance: none
+      background: transparent
+      color: inherit
+      cursor: var(--dot-cursor)
+
+      &:focus-visible
+        outline: 2px solid currentColor
+        outline-offset: -2px
+
     @media (max-width: $mobile-breakpoint)
       flex-direction: column
 
@@ -287,9 +302,9 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
       cursor: var(--dot-cursor)
       pointer-events: auto
 
-      &:focus,
       &:focus-visible
-        outline: none
+        outline: 2px solid currentColor
+        outline-offset: -2px
 
       &[aria-pressed='true'] .event-card__star-shape
         fill: var(--color-pink)
@@ -326,12 +341,9 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
     > *
       pointer-events: none
 
+    > .event-card__disclosure,
     > .event-card__star
       pointer-events: auto
-
-    &:focus,
-    &:focus-visible
-      outline: none
 
     &:not([data-toggle-ready='true'])[data-active='false'] .event-card__body__content
       display: none
@@ -361,6 +373,8 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
       contain-intrinsic-size: auto 14rem
 
     &__media
+      position: relative
+      z-index: 2
       flex: 0 1 auto
       display: grid
       grid-auto-flow: column
@@ -415,6 +429,8 @@ const dateParts = formatEventDateParts(event.start_date, event.end_date, event.d
       overflow: hidden
 
     &__body
+      position: relative
+      z-index: 2
       flex: 1 1 auto
       display: flex
       flex-direction: column

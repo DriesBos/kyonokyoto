@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@astrojs/netlify": "^7.0.13",
@@ -29,6 +30,7 @@
     "@opentelemetry/core": "2.8.0",
     "@opentelemetry/resources": "2.8.0",
     "@opentelemetry/sdk-trace-base": "2.8.0",
-    "@opentelemetry/sdk-trace-node": "2.8.0"
+    "@opentelemetry/sdk-trace-node": "2.8.0",
+    "tmp": "0.2.7"
   }
 }

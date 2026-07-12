@@ -4,6 +4,7 @@ import {
   isEventWithinDisplayWindow,
 } from '../../../../packages/shared/event-schedule.mjs';
 import { supabase } from './supabase';
+import type { AppCity } from './cities';
 import type { AppLocale } from './i18n';
 import { formatEventDateRange } from './calendar';
 import type { SourceConfig } from './sources';
@@ -53,57 +54,23 @@ export type ClassifiedEvent = EventRow & {
 };
 
 export const eventSelect =
-  'id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, lat, lng, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at';
-
-const eventSelectWithoutCoordinates =
-  'id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at';
+  'id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, lat, lng, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at, schedule_type, occurrence_dates';
 
 export const eventTranslationSelect = 'event_translations(locale, title, description)';
-export const eventSourceSelect = 'sources(slug)';
 
-const fetchEvents = (select: string) =>
+const fetchEvents = ({ city, locale }: { city: AppCity; locale: AppLocale }) =>
   supabase
     .from('events')
-    .select(select)
+    .select(`${eventSelect}, ${eventTranslationSelect}`)
     .eq('status', 'published')
+    .eq('city', city)
+    .eq('event_translations.locale', locale)
     .order('start_date', { ascending: true, nullsFirst: false });
 
-const isRelationSelectError = (error: { code?: string } | null | undefined) =>
-  error?.code === 'PGRST200' || error?.code === 'PGRST205';
-
-const isMissingCoordinateError = (error: { code?: string; message?: string } | null | undefined) =>
-  error?.code === 'PGRST204' ||
-  (error?.code === '42703' &&
-    /events\.(lat|lng)|column events\.(lat|lng)/i.test(error.message ?? ''));
-
-export const fetchPublishedEvents = async () => {
-  const selectAttempts = [
-    `${eventSelect}, ${eventSourceSelect}, ${eventTranslationSelect}`,
-    `${eventSelectWithoutCoordinates}, ${eventSourceSelect}, ${eventTranslationSelect}`,
-    `${eventSelect}, ${eventSourceSelect}`,
-    `${eventSelectWithoutCoordinates}, ${eventSourceSelect}`,
-    `${eventSelect}, ${eventTranslationSelect}`,
-    `${eventSelectWithoutCoordinates}, ${eventTranslationSelect}`,
-    eventSelect,
-    eventSelectWithoutCoordinates,
-  ];
-  let lastError: unknown = null;
-
-  for (const select of selectAttempts) {
-    const { data, error } = await fetchEvents(select);
-
-    if (!error) {
-      return dedupeEvents((data ?? []) as EventRow[]);
-    }
-
-    lastError = error;
-
-    if (!isRelationSelectError(error) && !isMissingCoordinateError(error)) {
-      throw error;
-    }
-  }
-
-  throw lastError;
+export const fetchPublishedEvents = async (filters: { city: AppCity; locale: AppLocale }) => {
+  const { data, error } = await fetchEvents(filters);
+  if (error) throw error;
+  return dedupeEvents((data ?? []) as EventRow[]);
 };
 
 export const localizeEvent = (event: EventRow, activeLocale: AppLocale): EventRow => {
@@ -169,25 +136,17 @@ export const formatEventsForLocale = ({
     };
   });
 
-export const displayEventsByLocale = ({
+export const displayEventsForLocale = ({
   events,
   configuredSources,
-  supportedLocales,
+  activeLocale,
   today = toJapanDate(new Date()),
 }: {
   events: EventRow[];
   configuredSources: SourceConfig[];
-  supportedLocales: AppLocale[];
+  activeLocale: AppLocale;
   today?: string;
 }) =>
-  Object.fromEntries(
-    supportedLocales.map((supportedLocale) => [
-      supportedLocale,
-      formatEventsForLocale({
-        events,
-        activeLocale: supportedLocale,
-        configuredSources,
-        today,
-      }).filter((event) => event.timing !== 'past' && isEventWithinDisplayWindow(event, today)),
-    ]),
-  ) as Record<AppLocale, ClassifiedEvent[]>;
+  formatEventsForLocale({ events, activeLocale, configuredSources, today }).filter(
+    (event) => event.timing !== 'past' && isEventWithinDisplayWindow(event, today),
+  );

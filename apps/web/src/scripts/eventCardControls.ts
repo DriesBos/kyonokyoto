@@ -1,9 +1,9 @@
 import { scrollRootFor } from './scrollRoot';
 
 const actionSelector = '.event-card__body__actions .general-button';
-const actionContainerSelector = '.event-card__body__actions';
 const starSelector = '[data-event-star-toggle]';
-const cardSelector = '[data-event-card-toggle]';
+const cardSelector = '[data-event-card]';
+const disclosureSelector = '[data-event-card-disclosure]';
 const cardDotClass = 'event-card-dot';
 const contentSelector = '.event-card__body__content';
 const fadeSelector = '[data-event-card-fade]';
@@ -199,39 +199,16 @@ const measureCardHeight = (card, content, contentHeight, mediaHeight) => {
   return measuredHeight;
 };
 
-const syncActionInteractivity = (card, isActive) => {
-  const actionContainers = Array.from(card.querySelectorAll(actionContainerSelector));
-  if (!actionContainers.length) return;
+const syncDisclosureState = (card, isActive) => {
+  const disclosure = card.querySelector(disclosureSelector);
+  if (disclosure instanceof HTMLButtonElement) {
+    disclosure.setAttribute('aria-expanded', String(isActive));
+  }
 
-  actionContainers.forEach((actions) => {
-    if (!(actions instanceof HTMLElement)) return;
-
-    actions.toggleAttribute('inert', !isActive);
-    actions.setAttribute('aria-hidden', String(!isActive));
-
-    actions.querySelectorAll('a, button').forEach((control) => {
-      if (!(control instanceof HTMLElement)) return;
-
-      if (isActive) {
-        const storedTabIndex = control.dataset.eventCardInactiveTabindex;
-
-        if (storedTabIndex === '__none__') {
-          control.removeAttribute('tabindex');
-        } else if (typeof storedTabIndex === 'string') {
-          control.setAttribute('tabindex', storedTabIndex);
-        }
-
-        delete control.dataset.eventCardInactiveTabindex;
-        return;
-      }
-
-      if (control.dataset.eventCardInactiveTabindex === undefined) {
-        control.dataset.eventCardInactiveTabindex = control.getAttribute('tabindex') ?? '__none__';
-      }
-
-      control.setAttribute('tabindex', '-1');
-    });
-  });
+  const content = card.querySelector(contentSelector);
+  if (!(content instanceof HTMLElement)) return;
+  content.toggleAttribute('inert', !isActive);
+  content.setAttribute('aria-hidden', String(!isActive));
 };
 
 const emitCardActiveChange = (card, isActive) => {
@@ -255,7 +232,7 @@ const setContentState = (card, isActive) => {
   card.dataset.toggleReady = 'true';
 
   cancelAnimations([card, content, ...fadeTargets]);
-  syncActionInteractivity(card, isActive);
+  syncDisclosureState(card, isActive);
 
   if (isActive) {
     content.style.height = 'auto';
@@ -270,8 +247,7 @@ const setContentState = (card, isActive) => {
 
 const setCardActiveState = (card, isActive) => {
   card.setAttribute('data-active', String(isActive));
-  card.setAttribute('aria-pressed', String(isActive));
-  syncActionInteractivity(card, isActive);
+  syncDisclosureState(card, isActive);
 };
 
 const animateCardState = (card, isActive) => {
@@ -403,8 +379,7 @@ const scrollCardIntoEventsView = (card) => {
     mainHeader instanceof HTMLElement
       ? mainHeader.getBoundingClientRect().bottom - eventsSectionRect.top
       : 0;
-  const nextScrollTop =
-    scrollRoot.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
+  const nextScrollTop = scrollRoot.scrollTop + cardRect.top - eventsSectionRect.top - scrollPadding;
 
   scrollRoot.scrollTo({
     top: Math.max(0, nextScrollTop),
@@ -427,7 +402,8 @@ const activateAdjacentCard = (direction) => {
 
   activateCard(nextCard);
   scrollCardIntoEventsView(nextCard);
-  nextCard.focus({ preventScroll: true });
+  const disclosure = nextCard.querySelector(disclosureSelector);
+  if (disclosure instanceof HTMLElement) disclosure.focus({ preventScroll: true });
 };
 
 export const initEventCardControls = () => {
@@ -531,22 +507,25 @@ export const initEventCardControls = () => {
   document.addEventListener('keydown', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    if (!target.matches(cardSelector)) return;
+    if (!target.matches(disclosureSelector)) return;
     if (event.key !== 'Enter' && event.key !== ' ') return;
 
+    const card = target.closest(cardSelector);
+    if (!(card instanceof HTMLElement)) return;
+
     event.preventDefault();
-    if (target.getAttribute('data-active') === 'true') {
+    if (card.getAttribute('data-active') === 'true') {
       hideCardDot();
     } else {
-      const rect = target.getBoundingClientRect();
+      const rect = card.getBoundingClientRect();
       setCardDotPosition(
-        target,
+        card,
         rect.left + rect.width / 2,
         rect.top + rect.height / 2,
-        hasActiveCardBefore(target),
+        hasActiveCardBefore(card),
       );
     }
-    toggleCard(target);
+    toggleCard(card);
   });
 
   document.addEventListener('keydown', (event) => {
@@ -556,7 +535,8 @@ export const initEventCardControls = () => {
     const target = event.target;
     if (
       target instanceof HTMLElement &&
-      target.closest("input, textarea, select, button, a, [contenteditable='true']")
+      target.closest("input, textarea, select, button, a, [contenteditable='true']") &&
+      !target.matches(disclosureSelector)
     ) {
       return;
     }

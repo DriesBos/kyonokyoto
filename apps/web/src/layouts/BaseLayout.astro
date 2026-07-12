@@ -2,6 +2,7 @@
 import '../styles/reset.css';
 import '../styles/app.sass';
 import { CITY_COOKIE, CITY_STORAGE_KEY, type AppCity } from '../lib/cities';
+import { LOCALE_COOKIE } from '../lib/i18n';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
 
@@ -55,10 +56,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     <link rel="apple-touch-icon" sizes="512x512" href="/apple-touch-icon-512.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content={themeColor} />
     <meta name="application-name" content={appName} />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -73,9 +71,16 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     <script
       is:inline
       nonce={cspNonce}
-      define:vars={{ city, cityCookie: CITY_COOKIE, cityStorageKey: CITY_STORAGE_KEY }}
+      define:vars={{
+        city,
+        cityCookie: CITY_COOKIE,
+        cityStorageKey: CITY_STORAGE_KEY,
+        locale,
+        localeCookie: LOCALE_COOKIE,
+      }}
     >
       document.cookie = `${cityCookie}=${encodeURIComponent(city)}; Max-Age=31536000; Path=/; SameSite=Lax`;
+      document.cookie = `${localeCookie}=${encodeURIComponent(locale)}; Max-Age=31536000; Path=/; SameSite=Lax`;
       try {
         window.localStorage?.setItem(cityStorageKey, city);
       } catch {

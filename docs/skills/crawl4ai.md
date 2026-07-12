@@ -89,7 +89,7 @@ Current lazy-image policy:
 
 Current image filtering policy:
 
-- Event media is capped at four stored image URLs per event.
+- Event media is capped at five stored image URLs per event.
 - The shared image finalizer rejects known UI/social/logo images and images whose known width or height is under 100px.
 - If a source still leaks icons without useful HTML dimensions, set `measure_image_dimensions: true` on that source in the city source file or in `data/sources/overrides/<city>-overrides.json`. The crawler will download only the selected image candidates, measure their natural dimensions from the image bytes, and reject measured images under the same 100px threshold.
 

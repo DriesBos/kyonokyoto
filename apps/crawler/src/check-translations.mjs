@@ -1,31 +1,19 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseEnv } from 'node:util';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = resolve(__dirname, '..', '.env');
 const requiredLocales = ['en', 'ja'];
 
-function parseEnvFile(contents) {
-  const env = {};
-
-  for (const rawLine of contents.split('\n')) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-
-    const separatorIndex = line.indexOf('=');
-    if (separatorIndex === -1) continue;
-
-    const key = line.slice(0, separatorIndex).trim();
-    const value = line.slice(separatorIndex + 1).trim();
-    env[key] = value;
-  }
-
-  return env;
+function getEnvNumber(env, name, fallback) {
+  const parsed = Number(env[name]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 async function loadEnv() {
-  const fileEnv = parseEnvFile(await readFile(envPath, 'utf8'));
+  const fileEnv = parseEnv(await readFile(envPath, 'utf8'));
   return { ...fileEnv, ...process.env };
 }
 
@@ -35,6 +23,7 @@ async function supabaseRequest({ env, path }) {
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
     },
+    signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_API_TIMEOUT_MS', 30000)),
   });
 
   if (!response.ok) {

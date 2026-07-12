@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { parseEnv } from 'node:util';
 
 function getArg(name, fallback = null) {
   const prefix = `--${name}=`;
@@ -7,16 +8,7 @@ function getArg(name, fallback = null) {
   return match ? match.slice(prefix.length) : fallback;
 }
 
-const env = Object.fromEntries(
-  (await readFile(resolve(process.cwd(), 'apps/crawler/.env'), 'utf8'))
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#') && line.includes('='))
-    .map((line) => {
-      const separator = line.indexOf('=');
-      return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
-    }),
-);
+const env = parseEnv(await readFile(resolve(process.cwd(), 'apps/crawler/.env'), 'utf8'));
 const city = getArg('city', 'unknown');
 const webhookUrl = env.CRAWL_ALERT_WEBHOOK_URL;
 
@@ -34,6 +26,7 @@ const response = await fetch(webhookUrl, {
     unit: `kyo-no-kyoto-crawl@${city}.service`,
     timestamp: new Date().toISOString(),
   }),
+  signal: AbortSignal.timeout(10000),
 });
 
 if (!response.ok) throw new Error(`Crawler failure webhook failed (${response.status})`);

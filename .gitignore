@@ -52,6 +52,10 @@ pnpm-debug.log*
 .cache/
 tmp/
 temp/
+.agents/
+.playwright-mcp/
+test-results/
+/divider*.png
 
 # Deployment tooling
 .netlify/

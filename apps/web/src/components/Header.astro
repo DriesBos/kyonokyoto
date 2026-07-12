@@ -110,11 +110,10 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         <GeneralButton
           edge="last"
           verticalPadding="full"
+          href={localePathFor(nextLocale)}
           label={languageLabels[locale]}
-          aria-label={`${copy.languageAria}: ${languageLabels[locale]}`}
-          data-locale-toggle
-          data-locale-option={nextLocale}
-          data-locale-href={localePathFor(nextLocale)}
+          aria-label={`${copy.languageAria}: ${languageLabels[nextLocale]}`}
+          hreflang={nextLocale}
         />
       </div>
       {
@@ -321,9 +320,3 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         :global([data-filter-button])
           pointer-events: auto
 </style>
-
-<script>
-  import { initLocaleToggle } from '../scripts/localeToggle';
-
-  initLocaleToggle();
-</script>

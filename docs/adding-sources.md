@@ -181,12 +181,13 @@ First matching location wins. If nothing matches, source `lat`/`lng` are used.
 ## Test Flow
 
 1. Add source config.
-2. Run `cd apps/crawler && npm test`.
-3. Run one source crawl locally or on VPS with `--city=<city>`.
-4. Check crawl result:
+2. Run `node scripts/sync-sources.mjs --city=<city>`; review prune candidates without pruning.
+3. Run `npm --prefix apps/crawler test`.
+4. Run one source crawl locally or on VPS with `--city=<city>`.
+5. Check crawl result:
    - detail URLs found
    - title/description present
    - date parsed
    - image present
    - translations native or machine-filled
-5. Run `cd apps/web && npm run build`.
+6. Run `npm --prefix apps/web run build`.

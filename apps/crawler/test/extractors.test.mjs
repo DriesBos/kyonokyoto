@@ -4,10 +4,14 @@ import { resolve } from 'node:path';
 import { test } from 'node:test';
 import {
   assessEventTitle,
+  archiveStaleEvents,
   assertSafeRemoteUrl,
   assignEventCoordinates,
+  buildRendererEnv,
+  buildTranslationSourceContentHash,
   classifyFetchResult,
   classifySourceOutcome,
+  crawlRunStatusForOutcome,
   createCrawlDiagnostics,
   buildEventTranslationPayload,
   buildMachineTranslatedEvent,
@@ -24,6 +28,7 @@ import {
   extractRakuMuseumEvent,
   extractSenOkuEvent,
   getSourceSpecificSkipReason,
+  getRetryDelayMs,
   hasExtractedImage,
   hasValidEventTitle,
   hasVerifiedEventDate,
@@ -38,23 +43,34 @@ import {
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,
   recordFetchedPage,
+  reconcileUnavailableTargetTranslation,
+  recoverStaleCrawlRuns,
+  resolveRendererNavigationUrl,
   resolveEventDescription,
+  runJsonCommand,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
   sourceHasNativeLocale,
   shouldMachineTranslateMissingLocales,
+  shouldArchiveStaleEvents,
   sanitizePostgresJson,
   sanitizePostgresText,
   translateTextFields,
+  upsertEvent,
   withSourceLocaleConfig,
 } from '../src/run-once.mjs';
 import { buildCrawlQaReport } from '../src/crawl-qa.mjs';
 import {
   applySourceOverride,
+  currentYearInTokyo,
   loadAllSourcesConfig,
   loadSourcesConfig,
   validateSourceConfig,
 } from '../../../data/sources/source-config.mjs';
+import {
+  buildEventSemanticIdentityKey,
+  dedupeEvents,
+} from '../../../packages/shared/event-dedupe.mjs';
 
 const fixturesRoot = resolve(import.meta.dirname, 'fixtures');
 const testTaxonomy = (
@@ -62,6 +78,149 @@ const testTaxonomy = (
   display_category = [],
   event_category = [],
 ) => ({ venue_category, display_category, event_category });
+
+test('Tokyo year rollover ignores host timezone', () => {
+  assert.equal(currentYearInTokyo(new Date('2025-12-31T15:30:00Z')), '2026');
+});
+
+test('named crawler scripts use registered source slugs', async () => {
+  const packageConfig = JSON.parse(
+    await readFile(resolve(import.meta.dirname, '..', 'package.json'), 'utf8'),
+  );
+
+  assert.equal(packageConfig.scripts['crawl:momak'], 'node src/run-once.mjs --source=momak');
+  assert.equal(
+    packageConfig.scripts['crawl:sen-oku'],
+    'node src/run-once.mjs --source=sen-oku-hakukokan',
+  );
+});
+
+test('semantic dedupe preserves Japanese identity text', () => {
+  const first = {
+    source_url: 'https://museum.example/exhibitions/ja/',
+    title: '美術展',
+    start_date: '2026-07-01',
+    end_date: '2026-07-31',
+  };
+  const second = { ...first, source_url: 'https://museum.example/exhibitions/en/' };
+
+  assert.match(buildEventSemanticIdentityKey(first), /美術展/);
+  assert.equal(dedupeEvents([first, second]).length, 1);
+});
+
+test('crawl outcome gates stale archival and persisted status', () => {
+  assert.equal(crawlRunStatusForOutcome('source_ok'), 'success');
+  assert.equal(crawlRunStatusForOutcome('source_no_current_events'), 'success');
+  assert.equal(crawlRunStatusForOutcome('source_needs_review'), 'partial_success');
+  assert.equal(crawlRunStatusForOutcome('source_blocked'), 'partial_success');
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: ['https://example.test/event'],
+      savedEvents: [{ id: 'event-1' }],
+      diagnostics: { unhealthy_fetch_count: 1 },
+    }),
+    'source_degraded',
+  );
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: ['https://example.test/event'],
+      savedEvents: [{ id: 'event-1' }],
+      diagnostics: { missing_image_count: 1 },
+    }),
+    'source_needs_review',
+  );
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: [],
+      diagnostics: { bot_challenge_count: 1 },
+      sourceSlug: 'curation-fair-kyoto',
+    }),
+    'source_blocked',
+  );
+
+  assert.equal(shouldArchiveStaleEvents({ sourceOutcome: 'source_ok' }), true);
+  assert.equal(
+    shouldArchiveStaleEvents({
+      sourceOutcome: 'source_ok',
+      skippedEvents: [{ reason: 'past event' }],
+    }),
+    true,
+  );
+  assert.equal(
+    shouldArchiveStaleEvents({
+      sourceOutcome: 'source_no_current_events',
+      skippedEvents: [{ reason: 'missing verifiable event date' }],
+    }),
+    false,
+  );
+  assert.equal(
+    shouldArchiveStaleEvents({
+      sourceOutcome: 'source_ok',
+      discoveryComplete: false,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldArchiveStaleEvents({
+      sourceOutcome: 'source_ok',
+      diagnostics: { bot_challenge_count: 1 },
+    }),
+    false,
+  );
+});
+
+test('stale archival batches database updates', async () => {
+  const rows = Array.from({ length: 1205 }, (_, index) => ({
+    id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+    dedupe_key: `event-${index}`,
+  }));
+  const patches = [];
+  const offsets = [];
+  const archived = await archiveStaleEvents(
+    {},
+    'source-id',
+    new Set(['event-0']),
+    async (request) => {
+      if (request.method !== 'PATCH') {
+        const offset = Number(request.path.match(/offset=(\d+)/)?.[1] ?? 0);
+        offsets.push(offset);
+        return rows.slice(offset, offset + 1000);
+      }
+      patches.push(request.path);
+      const ids = request.path.match(/id=in\.\((.*?)\)/)?.[1].split(',') ?? [];
+      return ids.map((id) => ({ id }));
+    },
+  );
+
+  assert.equal(archived, 1204);
+  assert.deepEqual(offsets, [0, 1000, 1205]);
+  assert.equal(patches.length, 13);
+  assert.equal(patches[0].split(',').length, 100);
+});
+
+test('stale running crawl recovery is source-scoped and six hours old', async () => {
+  let capturedRequest = null;
+  const recovered = await recoverStaleCrawlRuns(
+    {},
+    'source-id',
+    async (request) => {
+      capturedRequest = request;
+      return [{ id: 'run-1' }, { id: 'run-2' }];
+    },
+    new Date('2026-07-12T12:00:00.000Z'),
+  );
+
+  assert.equal(recovered, 2);
+  assert.equal(capturedRequest.method, 'PATCH');
+  assert.match(capturedRequest.path, /source_id=eq\.source-id/);
+  assert.match(capturedRequest.path, /status=eq\.running/);
+  assert.match(capturedRequest.path, /started_at=lt\.2026-07-12T06%3A00%3A00\.000Z/);
+  assert.deepEqual(capturedRequest.body, {
+    status: 'failed',
+    finished_at: '2026-07-12T12:00:00.000Z',
+    error_message: 'Recovered stale crawl run before starting a new source crawl.',
+  });
+});
 
 test('generic date parser normalizes and validates common Japanese and English formats', () => {
   const cases = [
@@ -201,6 +360,116 @@ test('crawler URL guard blocks local and private network targets', async () => {
     ),
   );
   assert.equal(fetchCalls, 1);
+
+  await assert.rejects(
+    () =>
+      fetchRemote(
+        'https://museum.example/event',
+        {},
+        async () => [{ address: '203.0.114.8', family: 4 }],
+        async () =>
+          new Response(null, {
+            status: 302,
+            headers: { location: 'https://other.example/event' },
+          }),
+        async (redirectUrl) => {
+          throw new Error(`blocked redirect ${redirectUrl.hostname}`);
+        },
+      ),
+    /blocked redirect other\.example/,
+  );
+});
+
+test('renderer preflight checks redirect robots and delay before destination fetch', async () => {
+  const sequence = [];
+  const finalUrl = await resolveRendererNavigationUrl(
+    'https://museum.example/start',
+    'test-agent',
+    {},
+    { allowedDomains: ['museum.example'] },
+    {
+      lookup: async () => [{ address: '203.0.114.8', family: 4 }],
+      fetchImpl: async (url) => {
+        sequence.push(`fetch:${url.pathname}`);
+        return url.pathname === '/start'
+          ? new Response(null, { status: 302, headers: { location: '/final' } })
+          : new Response(null, { status: 200 });
+      },
+      assertRobotsAllowedFn: async (url) => {
+        sequence.push(`robots:${new URL(url).pathname}`);
+      },
+      waitForDomainDelayFn: async (url) => {
+        sequence.push(`delay:${new URL(url).pathname}`);
+      },
+    },
+  );
+
+  assert.equal(finalUrl, 'https://museum.example/final');
+  assert.deepEqual(sequence, [
+    'robots:/start',
+    'delay:/start',
+    'fetch:/start',
+    'robots:/final',
+    'delay:/final',
+    'fetch:/final',
+    'delay:/final',
+  ]);
+});
+
+test('renderer child gets bounded output, runtime, and scrubbed environment', async () => {
+  const rendererEnv = buildRendererEnv({
+    PATH: '/usr/bin',
+    HOME: '/tmp/home',
+    SUPABASE_SERVICE_ROLE_KEY: 'secret',
+    GOOGLE_APPLICATION_CREDENTIALS: '/secret.json',
+  });
+  assert.deepEqual(rendererEnv, { PATH: '/usr/bin', HOME: '/tmp/home' });
+
+  await assert.rejects(
+    () =>
+      runJsonCommand(process.execPath, ['-e', "process.stdout.write('x'.repeat(1000))"], {
+        maxOutputBytes: 100,
+      }),
+    /output exceeded 100 bytes/,
+  );
+  await assert.rejects(
+    () =>
+      runJsonCommand(process.execPath, ['-e', 'setTimeout(() => {}, 1000)'], {
+        timeoutMs: 25,
+      }),
+    /timed out after 25ms/,
+  );
+});
+
+test('retry delay caps external Retry-After values', () => {
+  const response = new Response(null, { headers: { 'retry-after': '86400' } });
+  assert.equal(
+    getRetryDelayMs({ attempt: 1, baseDelayMs: 1000, response, maxDelayMs: 60000 }),
+    60000,
+  );
+});
+
+test('event upsert fails fast on schema drift', async () => {
+  let calls = 0;
+  await assert.rejects(
+    () =>
+      upsertEvent(
+        {
+          SUPABASE_URL: 'https://database.example',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+        },
+        'source-id',
+        'raw-page-id',
+        { title: 'Event title', source_url: 'https://museum.example/event' },
+        'url:https://museum.example/event',
+        async () => {
+          calls += 1;
+          return new Response("Could not find the 'unexpected_field' column", { status: 400 });
+        },
+      ),
+    /Could not find the 'unexpected_field' column/,
+  );
+  assert.equal(calls, 1);
 });
 
 test('translation helper calls Google client with source and target locales', async () => {
@@ -295,24 +564,92 @@ test('machine translated event keeps source URL and required event fields', asyn
 });
 
 test('event translation payload stores only localized public fields', () => {
+  const sourceContentHash = buildTranslationSourceContentHash({
+    title: 'Title',
+    description: 'Description',
+  });
+
   assert.deepEqual(
-    buildEventTranslationPayload('event-1', 'en', {
-      title: 'Title',
-      description: 'Description',
-      institution_name: 'Institution',
-      venue_name: 'Venue',
-      address_text: 'Address',
-      date_text: 'Dates',
-      source_url: 'https://example.test/event',
-      primary_image_url: 'https://example.test/image.jpg',
-    }),
+    buildEventTranslationPayload(
+      'event-1',
+      'en',
+      {
+        title: 'Title',
+        description: 'Description',
+        institution_name: 'Institution',
+        venue_name: 'Venue',
+        address_text: 'Address',
+        date_text: 'Dates',
+        source_url: 'https://example.test/event',
+        primary_image_url: 'https://example.test/image.jpg',
+      },
+      sourceContentHash,
+    ),
     {
       event_id: 'event-1',
       locale: 'en',
       title: 'Title',
       description: 'Description',
+      source_content_hash: sourceContentHash,
     },
   );
+  assert.throws(
+    () => buildEventTranslationPayload('event-1', 'en', { title: 'Title' }),
+    /source content hash must be a lowercase SHA-256/,
+  );
+});
+
+test('translation source hash uses canonical source title and description', () => {
+  const canonicalHash = buildTranslationSourceContentHash({
+    title: 'Cafe\u0301 exhibition\r\n',
+    description: '  Source description  ',
+    source_url: 'https://example.test/one',
+  });
+
+  assert.match(canonicalHash, /^[0-9a-f]{64}$/);
+  assert.equal(
+    canonicalHash,
+    buildTranslationSourceContentHash({
+      title: 'Café exhibition\n',
+      description: 'Source description',
+      source_url: 'https://example.test/two',
+    }),
+  );
+  assert.notEqual(
+    canonicalHash,
+    buildTranslationSourceContentHash({
+      title: 'Café exhibition',
+      description: 'Changed description',
+    }),
+  );
+});
+
+test('unavailable target translation preserves current hash and deletes stale hashes', async () => {
+  const sourceContentHash = 'a'.repeat(64);
+
+  for (const [storedHash, expectedAction, expectedMethods] of [
+    [sourceContentHash, 'preserved', ['GET']],
+    [null, 'deleted', ['GET', 'DELETE']],
+    ['b'.repeat(64), 'deleted', ['GET', 'DELETE']],
+  ]) {
+    const requests = [];
+    const action = await reconcileUnavailableTargetTranslation(
+      {},
+      'event-1',
+      'en',
+      sourceContentHash,
+      async (request) => {
+        requests.push(request);
+        return request.method === 'DELETE' ? null : [{ source_content_hash: storedHash }];
+      },
+    );
+
+    assert.equal(action, expectedAction);
+    assert.deepEqual(
+      requests.map((request) => request.method ?? 'GET'),
+      expectedMethods,
+    );
+  }
 });
 
 test('event coordinates prefer configured venue locations', () => {
@@ -684,7 +1021,7 @@ test('Yoshimi Arts reads parenthesized-weekday dates after feature image', () =>
 });
 
 test('Hyogo annual schedule keeps ongoing and upcoming cards only', () => {
-  const year = new Date().getFullYear();
+  const year = Number(currentYearInTokyo());
   const html = `
     <h2>${year}年 年間スケジュール</h2>
     <div class="exhibition-item">
@@ -1388,6 +1725,13 @@ test('native locale URL validation rejects sitewide language roots for detail pa
     ),
     true,
   );
+  assert.equal(
+    isUsableNativeLocaleUrl(
+      'https://example.test/ja/exhibitions/quiet-forms/',
+      'https://attacker.test/en/exhibitions/quiet-forms/',
+    ),
+    false,
+  );
 });
 
 test('native locale event validation rejects conflicting parsed dates', () => {
@@ -1404,6 +1748,13 @@ test('native locale event validation rejects conflicting parsed dates', () => {
       { start_date: '2026-04-17', end_date: '2026-05-16' },
     ),
     true,
+  );
+  assert.equal(
+    nativeLocaleEventMatchesCanonical(
+      { start_date: '2026-04-17', end_date: '2026-05-16' },
+      { start_date: null, end_date: null },
+    ),
+    false,
   );
 });
 
@@ -2249,7 +2600,7 @@ test('city source configs are valid crawl inputs', async () => {
 });
 
 test('CURATION FAIR sources discover only current-year announcement news', async () => {
-  const year = String(new Date().getFullYear());
+  const year = currentYearInTokyo();
   const kyotoSources = await loadSourcesConfig({ city: 'kyoto' });
   const tokyoSources = await loadSourcesConfig({ city: 'tokyo' });
   const kyoto = kyotoSources.find((item) => item.slug === 'curation-fair-kyoto');

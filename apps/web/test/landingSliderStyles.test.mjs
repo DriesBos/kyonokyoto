@@ -32,10 +32,7 @@ test('landing shutter fill covers from bottom without moving its content coordin
   assert.doesNotMatch(component, /data-fill-origin|landing-shutter-content-bottom/);
   assert.match(script, /fill\.style\.clipPath = fillClipPath/);
   assert.match(script, /if \(fromClipPath\) gsap\.set\(targets, \{ clipPath: fromClipPath \}\)/);
-  assert.match(
-    script,
-    /animateFills\(coveredClipPath, coverSeconds, collapsedBottomClipPath\)/,
-  );
+  assert.match(script, /animateFills\(coveredClipPath, coverSeconds, collapsedBottomClipPath\)/);
 });
 
 test('landing uses an odd row count so no shutter boundary cuts the centered logo', async () => {
@@ -87,7 +84,10 @@ test('landing is a fixed overlay dismissed without layout scroll', async () => {
 });
 
 test('landing reappears swiftly after city cycling and only resets on page entry', async () => {
-  const script = await readFile(resolve(import.meta.dirname, '../src/scripts/landingScroll.ts'), 'utf8');
+  const script = await readFile(
+    resolve(import.meta.dirname, '../src/scripts/landingScroll.ts'),
+    'utf8',
+  );
 
   assert.match(script, /cityCycleLandingKey/);
   assert.match(script, /\[data-city-toggle\]/);
@@ -98,7 +98,10 @@ test('landing reappears swiftly after city cycling and only resets on page entry
 });
 
 test('city-cycle landing reveal blocks touch and click during animation', async () => {
-  const script = await readFile(resolve(import.meta.dirname, '../src/scripts/landingScroll.ts'), 'utf8');
+  const script = await readFile(
+    resolve(import.meta.dirname, '../src/scripts/landingScroll.ts'),
+    'utf8',
+  );
 
   assert.match(script, /lockLandingInteractions/);
   assert.match(script, /unlockLandingInteractions/);
@@ -113,7 +116,10 @@ test('city-cycle landing reveal blocks touch and click during animation', async 
 
 test('landing and header render city-specific brand titles', async () => {
   const landing = await readFile(componentPath, 'utf8');
-  const header = await readFile(resolve(import.meta.dirname, '../src/components/Header.astro'), 'utf8');
+  const header = await readFile(
+    resolve(import.meta.dirname, '../src/components/Header.astro'),
+    'utf8',
+  );
   const page = await readFile(
     resolve(import.meta.dirname, '../src/pages/[city]/[locale]/index.astro'),
     'utf8',
@@ -134,7 +140,7 @@ test('landing counts include beta source events only in development', async () =
     'utf8',
   );
   const betaFilter = page.indexOf('const events = import.meta.env.DEV');
-  const timingCounts = page.indexOf("const ongoingEvents = displayEvents.filter");
+  const timingCounts = page.indexOf('const ongoingEvents = displayEvents.filter');
   const landingProps = page.indexOf('ongoingCount={ongoingEvents.length}');
 
   assert.match(page, /betaSourceSlugsAll\.has\(slug\)/);
@@ -144,7 +150,10 @@ test('landing counts include beta source events only in development', async () =
 });
 
 test('landing typography loads without fallback font swap', async () => {
-  const layout = await readFile(resolve(import.meta.dirname, '../src/layouts/BaseLayout.astro'), 'utf8');
+  const layout = await readFile(
+    resolve(import.meta.dirname, '../src/layouts/BaseLayout.astro'),
+    'utf8',
+  );
   const styles = await readFile(resolve(import.meta.dirname, '../src/styles/app.sass'), 'utf8');
   const fontFace = styles.match(/@font-face\n(?<body>(?:  .+\n)+)/)?.groups?.body ?? '';
   const headingRule = styles.match(/\nh1,\nh2,\nh3,\nh4\n(?<body>(?:  .+\n)+)/)?.groups?.body ?? '';
@@ -160,11 +169,20 @@ test('mobile content keeps events panel scrollable so map has room to grow', asy
     resolve(import.meta.dirname, '../src/pages/[city]/[locale]/index.astro'),
     'utf8',
   );
-  const header = await readFile(resolve(import.meta.dirname, '../src/components/Header.astro'), 'utf8');
-  const footer = await readFile(resolve(import.meta.dirname, '../src/components/Footer.astro'), 'utf8');
+  const header = await readFile(
+    resolve(import.meta.dirname, '../src/components/Header.astro'),
+    'utf8',
+  );
+  const footer = await readFile(
+    resolve(import.meta.dirname, '../src/components/Footer.astro'),
+    'utf8',
+  );
 
   assert.match(header, /padding-top: max\(0\.5rem, env\(safe-area-inset-top\)\)/);
-  assert.match(footer, /padding-bottom: calc\(var\(--page-padding-y\) \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(
+    footer,
+    /padding-bottom: calc\(var\(--page-padding-y\) \+ env\(safe-area-inset-bottom\)\)/,
+  );
   assert.doesNotMatch(page, /100lvh/);
   assert.doesNotMatch(page, /overflow-x: clip/);
   assert.match(
@@ -176,7 +194,10 @@ test('mobile content keeps events panel scrollable so map has room to grow', asy
 });
 
 test('scroll helpers use page fallback when events section is not scrollable', async () => {
-  const helper = await readFile(resolve(import.meta.dirname, '../src/scripts/scrollRoot.ts'), 'utf8');
+  const helper = await readFile(
+    resolve(import.meta.dirname, '../src/scripts/scrollRoot.ts'),
+    'utf8',
+  );
   const files = await Promise.all(
     [
       '../src/components/Footer.astro',

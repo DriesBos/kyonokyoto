@@ -8,7 +8,7 @@ Status: active.
 
 - Keep `events` as canonical shared data table.
 - Keep `event_translations` as title/description-only at app/crawler level.
-- Leave legacy translation columns nullable until after successful recrawl.
+- Keep legacy translation metadata nullable; required identity/title fields are enforced.
 - Use source JSON as source truth for venue identity, categories, address, directions, and coordinates.
 - Add source config exceptions for predictable quirks:
   - `capabilities`
@@ -24,36 +24,11 @@ Exit criteria:
 - Web build succeeds.
 - Spot QA confirms dates, maps, images, and cards.
 
-VPS crawl command, when repo path is known:
+VPS crawl command:
 
 ```bash
-cd /home/ubuntu/kyo-no-kyoto/apps/crawler && \
-git pull && \
-npm install && \
-npm run crawl:all -- --city=kyoto && \
-npm run translations:check
-```
-
-If repo path is unknown, find `apps/crawler` first:
-
-```bash
-find /home/ubuntu -maxdepth 5 -type d -path "*/apps/crawler"
-```
-
-If nothing shows:
-
-```bash
-find / -type d -path "*/apps/crawler" 2>/dev/null | head -20
-```
-
-Then run the crawl from the returned path:
-
-```bash
-cd /returned/path/apps/crawler && \
-git pull && \
-npm install && \
-npm run crawl:all -- --city=kyoto && \
-npm run translations:check
+cd /srv/kyo-no-kyoto
+node scripts/run-crawl-cycle.mjs --city=kyoto
 ```
 
 For production-style city runs from the repo root, use:

@@ -2,48 +2,37 @@
 
 ## Product
 
-Build a Kyoto cultural events app that crawls museums, galleries, festival pages, and venue sites, then turns that data into a clean editorial cultural event calendar.
+Publish reliable current cultural events for Kyoto, Osaka, and Tokyo from venue-owned sources.
 
-## MVP Scope
+## Current Architecture
 
-- Start with 5-10 Kyoto source websites
-- Crawl only event-related pages
-- Extract: title, subtitle, date, venue, image, description, source URL
-- Store both raw page data and normalized event records
-- Publish directly after crawl, extraction, and deduplication
+- Source JSON owns venue identity, taxonomy, location, and crawl scope.
+- VPS systemd timers run city crawls through `scripts/run-crawl-cycle.mjs`.
+- Supabase stores sources, crawl evidence, normalized events, and translations.
+- Astro SSR queries published events by city and locale.
+- Netlify CDN caches SSR responses and revalidates them; crawls need no rebuild hook.
+- GitHub Actions verifies repository before restricted VPS fast-forward deploy.
 
-## Build Steps
+## Current Work
 
-1. Make a source list of Kyoto museums, galleries, and event sites.
-2. Define the event schema and give examples of source schemas.
-3. Set up the crawler locally and crawl a few seed sites.
-4. Add extraction rules for dates, venue names, titles, and images.
-5. Normalize and deduplicate events.
-6. Other crawler finetuning if needed.
-7. Save events into a small database and publish directly.
-8. Scaffold the frontend.
-9. Connect Figma through MCP and build a shared design system (style spacing, color, font constants) and reusable components.
-10. Build the public list UI from the Figma design.
-11. Add scheduled recrawls and basic crawl logs.
+1. Stabilize source extraction and translation provenance.
+2. Apply and verify first tracked Supabase migration.
+3. Tune sources listed in `QA-todo.md`.
+4. Run full city crawls and approve beta sources after visual QA.
+5. Monitor raw-page growth; call bounded retention RPC when needed.
 
-## Tech Stack
+## Release Gates
 
-- Frontend: Astro, hosted on Netlify
-- Database: Postgres via Supabase, hosted on a Supabase free tier
-- Crawler worker: Crawl4AI, running daily using CRON from a VPS and Python venv
-- VPS: AWS Lightsail
-- Git: GitHub
-- Design: Figma
-- Other: Fallow (codebase analysis)
+- source config validates
+- crawler tests pass
+- web tests and build pass
+- published events have machine-readable dates
+- no unexpected source prune candidates
+- city crawl failures return non-zero status
+- map, image, locale, and calendar spot checks pass
 
-## First Milestone
+## Later
 
-- Scaffold the tech stack
-
-## Learning
-
-For every project I try to learn something new. Please give explainers and context where relevant. My learning goals for this porject are:
-
-1. To learn more about crawlers, how they work, and how to set them up in a project.
-2. To learn about Astro, experience development with Astro and its speed and tradeoffs.
-3. To learn about using and implementing a simple postgres database.
+- split crawler internals only where repeated source work benefits
+- automate raw-page retention after observing safe production batches
+- add new cities only after current three stay healthy

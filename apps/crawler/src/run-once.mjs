@@ -5,8 +5,10 @@ import { lookup as lookupHost } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parseEnv } from 'node:util';
 import {
   applySourceOverride,
+  currentYearInTokyo,
   loadSourcesConfig,
   normalizeCity,
 } from '../../../data/sources/source-config.mjs';
@@ -35,24 +37,6 @@ const emptyDetailUrlsMeanNoCurrentEventSources = new Set([
   'curation-fair-kyoto',
   'curation-fair-tokyo',
 ]);
-
-function parseEnvFile(contents) {
-  const env = {};
-
-  for (const rawLine of contents.split('\n')) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-
-    const separatorIndex = line.indexOf('=');
-    if (separatorIndex === -1) continue;
-
-    const key = line.slice(0, separatorIndex).trim();
-    const value = line.slice(separatorIndex + 1).trim();
-    env[key] = value;
-  }
-
-  return env;
-}
 
 function applyEnvToProcess(env) {
   for (const [key, value] of Object.entries(env)) {
@@ -145,7 +129,13 @@ async function assertSafeRemoteUrl(value, lookup = lookupHost) {
 
 const redirectStatuses = new Set([301, 302, 303, 307, 308]);
 
-async function fetchRemote(value, options = {}, lookup = lookupHost, fetchImpl = fetch) {
+async function fetchRemote(
+  value,
+  options = {},
+  lookup = lookupHost,
+  fetchImpl = fetch,
+  onRedirect = null,
+) {
   let url = await assertSafeRemoteUrl(value, lookup);
 
   for (let redirects = 0; redirects <= 5; redirects += 1) {
@@ -156,6 +146,7 @@ async function fetchRemote(value, options = {}, lookup = lookupHost, fetchImpl =
 
     await response.body?.cancel().catch(() => {});
     url = await assertSafeRemoteUrl(new URL(location, url), lookup);
+    await onRedirect?.(url);
   }
 
   throw new Error(`Too many redirects for ${value}`);
@@ -247,10 +238,6 @@ function normalizeLocaleCode(value) {
 
 function getSourceLocale(source) {
   return normalizeLocaleCode(source?.language) ?? 'ja';
-}
-
-function getMissingLocale(locale) {
-  return locale === 'ja' ? 'en' : 'ja';
 }
 
 function getNativeLocales(source) {
@@ -387,21 +374,6 @@ function decodeHtml(value) {
       const codePoint = Number.parseInt(decimal, 10);
       return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : _;
     });
-}
-
-function normalizeCategoryList(values) {
-  return [
-    ...new Set(
-      values
-        .flatMap((value) => (Array.isArray(value) ? value : [value]))
-        .map((value) =>
-          String(value ?? '')
-            .trim()
-            .toLowerCase(),
-        )
-        .filter(Boolean),
-    ),
-  ];
 }
 
 function toFiniteNumber(value) {
@@ -858,9 +830,19 @@ function getUrlPathParts(url) {
   }
 }
 
-function isUsableNativeLocaleUrl(detailUrl, alternateUrl) {
+function isUsableNativeLocaleUrl(detailUrl, alternateUrl, source = null) {
   if (!alternateUrl || alternateUrl === canonicalizeUrlWithoutHash(detailUrl)) {
     return false;
+  }
+
+  if (source?.allowed_domains?.length) {
+    if (!sourceAllowsUrl(source, alternateUrl)) return false;
+  } else {
+    try {
+      if (new URL(detailUrl).hostname !== new URL(alternateUrl).hostname) return false;
+    } catch {
+      return false;
+    }
   }
 
   const detailParts = getUrlPathParts(detailUrl);
@@ -875,11 +857,7 @@ function isUsableNativeLocaleUrl(detailUrl, alternateUrl) {
 
 function nativeLocaleEventMatchesCanonical(canonicalEvent, nativeEvent) {
   for (const field of ['start_date', 'end_date']) {
-    if (
-      canonicalEvent?.[field] &&
-      nativeEvent?.[field] &&
-      canonicalEvent[field] !== nativeEvent[field]
-    ) {
+    if (canonicalEvent?.[field] && canonicalEvent[field] !== nativeEvent?.[field]) {
       return false;
     }
   }
@@ -1387,74 +1365,6 @@ function parseEnglishMonthDateRangeWithWeekdays(dateText) {
     .trim();
 
   return parseEnglishMonthDateRange(cleaned);
-}
-
-function parseEnglishMonthDayRangeWithYear(dateText, year) {
-  const months = {
-    january: '01',
-    jan: '01',
-    february: '02',
-    feb: '02',
-    march: '03',
-    mar: '03',
-    april: '04',
-    apr: '04',
-    may: '05',
-    june: '06',
-    jun: '06',
-    july: '07',
-    jul: '07',
-    august: '08',
-    aug: '08',
-    september: '09',
-    sep: '09',
-    sept: '09',
-    october: '10',
-    oct: '10',
-    november: '11',
-    nov: '11',
-    december: '12',
-    dec: '12',
-  };
-  const normalizedYear = String(year ?? '').match(/20\d{2}/)?.[0];
-  const cleaned = decodeHtml(dateText)
-    .replace(/\([^)]*\)/g, '')
-    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const match = cleaned.match(/([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/);
-
-  if (!normalizedYear || !match) {
-    return {
-      startDate: null,
-      endDate: null,
-      calendarStartsAt: null,
-      calendarEndsAt: null,
-    };
-  }
-
-  const [, startMonthName, startDay, endMonthName, endDay] = match;
-  const startMonth = months[startMonthName.toLowerCase()];
-  const endMonth = months[endMonthName.toLowerCase()];
-
-  if (!startMonth || !endMonth) {
-    return {
-      startDate: null,
-      endDate: null,
-      calendarStartsAt: null,
-      calendarEndsAt: null,
-    };
-  }
-
-  const startDate = `${normalizedYear}-${startMonth}-${String(startDay).padStart(2, '0')}`;
-  const endDate = `${normalizedYear}-${endMonth}-${String(endDay).padStart(2, '0')}`;
-
-  return {
-    startDate,
-    endDate,
-    calendarStartsAt: `${startDate}T10:00:00+09:00`,
-    calendarEndsAt: `${endDate}T18:00:00+09:00`,
-  };
 }
 
 function parseEnglishDayMonthYearRange(dateText) {
@@ -2671,17 +2581,13 @@ function extractSibasiDetailUrls(listingPages, genericDetailLimit = 8) {
   return [...new Set(detailUrls)].slice(0, genericDetailLimit * 2);
 }
 
-function extractEssenceDetailUrls(_listingHtml, listingUrl) {
-  return [listingUrl];
-}
-
 function extractArtCollaborationKyotoDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
 
 function extractCurationFairDetailUrls(listingHtml, listingUrl, source) {
   const city = source.slug.replace('curation-fair-', '');
-  const year = String(new Date().getFullYear());
+  const year = currentYearInTokyo();
   const announcementUrl = [
     ...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi),
   ]
@@ -2882,11 +2788,6 @@ function extractKyohakuDetailUrls(listingHtml, listingUrl) {
   return urls.slice(0, 2);
 }
 
-function toDetailUrlList(value) {
-  const values = Array.isArray(value) ? value : [value];
-  return [...new Set(values.filter(Boolean))];
-}
-
 function extractKacEvent(detailHtml, source, detailUrl) {
   const titleMatch = detailHtml.match(/<h1 class="sectionTitle">([\s\S]*?)<\/h1>/i);
   const title = titleMatch ? stripTags(titleMatch[1]) : null;
@@ -2993,89 +2894,6 @@ function extractSibasiEvent(detailHtml, source, detailUrl) {
     }),
     calendar_starts_at: parsedDates.startDate ? `${parsedDates.startDate}T00:00:00+09:00` : null,
     calendar_ends_at: parsedDates.endDate ? `${parsedDates.endDate}T23:59:00+09:00` : null,
-    primary_image_url: imageUrls[0] ?? null,
-    image_urls: imageUrls,
-    source_url: detailUrl,
-  };
-}
-
-function extractEssenceEvent(detailHtml, source, detailUrl) {
-  const featureRows = [
-    ...detailHtml.matchAll(
-      /<img class="feature-row__image lazyload"[\s\S]*?src="([^"]+)"[\s\S]*?<h2>([\s\S]*?)<\/h2>[\s\S]*?<div class="rte-setting featured-row__subtext">([\s\S]*?)<\/div>/gi,
-    ),
-  ]
-    .map((match) => ({
-      imageUrl: match[1],
-      title: stripTags(match[2]).replace(/\s+/g, ' ').trim(),
-      bodyHtml: match[3],
-      bodyText: stripTags(match[3]),
-    }))
-    .filter((row) => row.title && row.bodyText);
-
-  const topRows = featureRows.slice(0, 2);
-
-  if (!topRows.length) {
-    throw new Error('Could not extract homepage exhibition rows from Essence Kyoto');
-  }
-
-  const englishRow = topRows.find((row) => /exhib/i.test(row.title)) ?? topRows[0];
-  const bilingualTitle = topRows[0]?.title ?? englishRow.title;
-  const englishTitle = englishRow.title;
-  const dateTextMatch = englishRow.bodyText.match(/Dates[：:]\s*([^\n<]+)/i);
-  const dateText = dateTextMatch?.[1]?.trim() ?? 'See source page';
-  const detailYear = detailUrl.match(/20\d{2}/)?.[0];
-  const pageYear = englishRow.bodyText.match(/20\d{2}/)?.[0];
-  const currentJapanYear = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-  }).format(new Date());
-  const parsedDateRange = parseEnglishMonthDateRangeWithWeekdays(dateText).startDate
-    ? parseEnglishMonthDateRangeWithWeekdays(dateText)
-    : parseDottedDateRange(dateText).startDate
-      ? parseDottedDateRange(dateText)
-      : parseEnglishMonthDayRangeWithYear(dateText, detailYear ?? pageYear ?? currentJapanYear);
-  const parsedDates = parsedDateRange;
-  const openText = englishRow.bodyText.match(/Open:\s*([^\n]+)/i)?.[1]?.trim() ?? null;
-  const description = englishRow.bodyText
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .filter(
-      (line) => !/^Dates:/i.test(line) && !/^Open:/i.test(line) && !/^No reservations/i.test(line),
-    )
-    .slice(0, 3)
-    .join('\n\n');
-
-  const imageUrls = finalizeImageUrls(
-    topRows.map((row) => ({
-      url: row.imageUrl.startsWith('//') ? `https:${row.imageUrl}` : row.imageUrl,
-      source: 'img',
-    })),
-    detailUrl,
-  );
-
-  return {
-    title: englishTitle || bilingualTitle,
-    categories: ['exhibition', 'gallery'],
-    description: description || extractGenericDescription(detailHtml),
-    institution_name: source.name,
-    venue_name: source.name,
-    address_text: source.address_text ?? source.name,
-    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
-    date_text: dateText,
-    start_date: parsedDates.startDate,
-    end_date: parsedDates.endDate,
-    start_time_text: openText,
-    end_time_text: null,
-    is_all_day: !openText,
-    timezone: 'Asia/Tokyo',
-    ...buildScheduleFields({
-      startDate: parsedDates.startDate,
-      endDate: parsedDates.endDate,
-    }),
-    calendar_starts_at: parsedDates.calendarStartsAt,
-    calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     source_url: detailUrl,
@@ -4026,10 +3844,6 @@ function extractGenericTitleInfo(detailHtml, source) {
     origin: selected?.origin ?? 'source_fallback',
     warnings: selected?.warnings ?? titleQualityWarnings(title, source),
   };
-}
-
-function extractGenericTitle(detailHtml, source) {
-  return extractGenericTitleInfo(detailHtml, source).title;
 }
 
 function assessEventTitle(eventData, source, fallbackOrigin = 'source_specific_extractor') {
@@ -5248,7 +5062,7 @@ function extractGalleryYamahonEvent(detailHtml, source, detailUrl) {
   const yearHint =
     detailHtml.match(/(20\d{2})年/)?.[1] ??
     detailHtml.match(/datetime=["'](20\d{2})/)?.[1] ??
-    String(new Date().getFullYear());
+    currentYearInTokyo();
   const parseableDateText = `${dateText.replace(/\b([A-Za-z]{3})\./g, '$1')}, ${yearHint}`;
   const parsedDates = parseEnglishMonthDateRangeWithOptionalStartYear(parseableDateText);
   const timeText =
@@ -6373,25 +6187,78 @@ const sourceContextLoaders = {
   },
 };
 
+const rendererEnvKeys = [
+  'PATH',
+  'HOME',
+  'TMPDIR',
+  'TMP',
+  'TEMP',
+  'LANG',
+  'LC_ALL',
+  'LC_CTYPE',
+  'TZ',
+  'VIRTUAL_ENV',
+  'PYTHONHOME',
+  'PYTHONPATH',
+  'PLAYWRIGHT_BROWSERS_PATH',
+  'CRAWL4_AI_BASE_DIRECTORY',
+  'XDG_CACHE_HOME',
+  'SSL_CERT_FILE',
+  'SSL_CERT_DIR',
+];
+
+function buildRendererEnv(env = process.env) {
+  return Object.fromEntries(
+    rendererEnvKeys.filter((key) => env[key] !== undefined).map((key) => [key, env[key]]),
+  );
+}
+
 function runJsonCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
+    const { timeoutMs = 60000, maxOutputBytes = 20 * 1024 * 1024, ...spawnOptions } = options;
     const child = spawn(command, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
-      ...options,
+      timeout: timeoutMs,
+      killSignal: 'SIGKILL',
+      ...spawnOptions,
     });
     let stdout = '';
     let stderr = '';
+    let outputBytes = 0;
+    let settled = false;
+
+    const fail = (error) => {
+      if (settled) return;
+      settled = true;
+      child.kill('SIGKILL');
+      reject(error);
+    };
+
+    const appendOutput = (current, chunk) => {
+      outputBytes += Buffer.byteLength(chunk);
+      if (outputBytes > maxOutputBytes) {
+        fail(new Error(`${command} output exceeded ${maxOutputBytes} bytes`));
+        return current;
+      }
+      return `${current}${chunk}`;
+    };
 
     child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
     child.stdout.on('data', (chunk) => {
-      stdout += chunk;
+      stdout = appendOutput(stdout, chunk);
     });
     child.stderr.on('data', (chunk) => {
-      stderr += chunk;
+      stderr = appendOutput(stderr, chunk);
     });
-    child.on('error', reject);
-    child.on('close', (code) => {
+    child.on('error', fail);
+    child.on('close', (code, signal) => {
+      if (settled) return;
+      settled = true;
+      if (signal) {
+        reject(new Error(`${command} timed out after ${timeoutMs}ms`));
+        return;
+      }
       if (code !== 0) {
         reject(new Error(stderr.trim() || `${command} exited with status ${code}`));
         return;
@@ -6487,10 +6354,20 @@ async function fetchImageDimensions(url, userAgent, env, diagnostics = null) {
 
   try {
     await assertRobotsAllowed(url, userAgent, env, diagnostics);
-    const response = await fetchRemote(url, {
-      headers: buildImageProbeHeaders(userAgent),
-      signal: controller.signal,
-    });
+    await waitForDomainDelay(url, env);
+    const response = await fetchRemote(
+      url,
+      {
+        headers: buildImageProbeHeaders(userAgent),
+        signal: controller.signal,
+      },
+      lookupHost,
+      fetch,
+      async (redirectUrl) => {
+        await assertRobotsAllowed(redirectUrl, userAgent, env, diagnostics);
+        await waitForDomainDelay(redirectUrl, env);
+      },
+    );
 
     if (!response.ok && response.status !== 206) return null;
 
@@ -6581,13 +6458,13 @@ function getRetryAfterDelayMs(response) {
   return null;
 }
 
-function getRetryDelayMs({ attempt, baseDelayMs, response = null }) {
+function getRetryDelayMs({ attempt, baseDelayMs, response = null, maxDelayMs = 60000 }) {
   const retryAfterDelayMs = getRetryAfterDelayMs(response);
-  if (retryAfterDelayMs !== null) return retryAfterDelayMs;
-
-  const exponentialDelayMs = baseDelayMs * 2 ** Math.max(0, attempt - 1);
-  const jitterMs = Math.floor(Math.random() * Math.min(baseDelayMs, 1000));
-  return exponentialDelayMs + jitterMs;
+  const delayMs =
+    retryAfterDelayMs ??
+    baseDelayMs * 2 ** Math.max(0, attempt - 1) +
+      Math.floor(Math.random() * Math.min(baseDelayMs, 1000));
+  return Math.min(delayMs, maxDelayMs);
 }
 
 function getRandomDelayMs(minDelayMs, maxDelayMs) {
@@ -6618,6 +6495,7 @@ function createCrawlDiagnostics(env = {}) {
     image_dimension_probe_failed_count: 0,
     robots_checked_count: 0,
     robots_blocked_count: 0,
+    unhealthy_fetch_count: 0,
     date_extractions: [],
     title_extractions: [],
     title_render_retry_count: 0,
@@ -6641,6 +6519,12 @@ function recordFetchedPage(diagnostics, fetched) {
   if (classification === 'bot_challenge') diagnostics.bot_challenge_count += 1;
   if (classification === 'js_shell') diagnostics.js_shell_count += 1;
   if (classification === 'empty_or_suspicious') diagnostics.empty_or_suspicious_count += 1;
+  if (
+    classification &&
+    !['ok', 'js_shell', 'empty_or_suspicious', 'bot_challenge'].includes(classification)
+  ) {
+    diagnostics.unhealthy_fetch_count += 1;
+  }
 
   const attempts = Number(fetched.metadata.fetch_attempts ?? 1);
   if (Number.isFinite(attempts) && attempts > 1) {
@@ -6715,22 +6599,35 @@ function classifySourceOutcome({
   usedGenericExtractor = false,
   sourceSlug = null,
 }) {
+  const hasFetchHealthIssue =
+    diagnostics.bot_challenge_count > 0 ||
+    diagnostics.js_shell_count > 0 ||
+    diagnostics.empty_or_suspicious_count > 0 ||
+    diagnostics.crawl4ai_render_skipped_count > 0 ||
+    diagnostics.robots_blocked_count > 0 ||
+    diagnostics.unhealthy_fetch_count > 0;
+
   if (!detailUrls.length) {
+    if (hasFetchHealthIssue) return 'source_blocked';
     return emptyDetailUrlsMeanNoCurrentEventSources.has(sourceSlug)
       ? 'source_no_current_events'
       : 'source_empty';
   }
-  if (savedEvents.length > 0 && diagnostics.bot_challenge_count > 0) return 'source_degraded';
+
   if (
     usedGenericExtractor ||
     diagnostics.skipped_invalid_title_count > 0 ||
     diagnostics.description_rejected_count > 0 ||
-    diagnostics.description_missing_count > 0
+    diagnostics.description_missing_count > 0 ||
+    (savedEvents.length > 0 &&
+      (diagnostics.missing_image_count > 0 || diagnostics.skipped_missing_date_count > 0))
   ) {
     return 'source_needs_review';
   }
+
+  if (savedEvents.length > 0 && hasFetchHealthIssue) return 'source_degraded';
   if (savedEvents.length > 0) return 'source_ok';
-  if (diagnostics.bot_challenge_count > 0) return 'source_blocked';
+  if (hasFetchHealthIssue) return 'source_blocked';
   if (
     skippedEvents.length &&
     skippedEvents.every((event) => /past event|older than/.test(event.reason ?? ''))
@@ -6754,6 +6651,38 @@ function classifySourceOutcome({
     return 'source_needs_review';
   }
   return 'source_empty';
+}
+
+function crawlRunStatusForOutcome(sourceOutcome) {
+  return ['source_ok', 'source_no_current_events'].includes(sourceOutcome)
+    ? 'success'
+    : sourceOutcome === 'source_failed'
+      ? 'failed'
+      : 'partial_success';
+}
+
+function shouldArchiveStaleEvents({
+  sourceOutcome,
+  diagnostics = {},
+  skippedEvents = [],
+  discoveryComplete = true,
+}) {
+  if (!discoveryComplete || !['source_ok', 'source_no_current_events'].includes(sourceOutcome)) {
+    return false;
+  }
+
+  if (
+    diagnostics.bot_challenge_count > 0 ||
+    diagnostics.js_shell_count > 0 ||
+    diagnostics.empty_or_suspicious_count > 0 ||
+    diagnostics.crawl4ai_render_skipped_count > 0 ||
+    diagnostics.robots_blocked_count > 0 ||
+    diagnostics.unhealthy_fetch_count > 0
+  ) {
+    return false;
+  }
+
+  return skippedEvents.every((event) => /past event|older than/.test(event.reason ?? ''));
 }
 
 async function waitForDomainDelay(url, env) {
@@ -6790,10 +6719,18 @@ async function assertRobotsAllowed(url, userAgent, env, diagnostics = null) {
     const robotsUrl = new URL('/robots.txt', target).toString();
     try {
       await waitForDomainDelay(robotsUrl, env);
-      const response = await fetchRemote(robotsUrl, {
-        headers: buildStaticFetchHeaders(userAgent),
-        signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_ROBOTS_TIMEOUT_MS', 10000)),
-      });
+      const response = await fetchRemote(
+        robotsUrl,
+        {
+          headers: buildStaticFetchHeaders(userAgent),
+          signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_ROBOTS_TIMEOUT_MS', 10000)),
+        },
+        lookupHost,
+        fetch,
+        async (redirectUrl) => {
+          await waitForDomainDelay(redirectUrl, env);
+        },
+      );
       robotsText = response.ok
         ? (await response.text()).slice(0, 512 * 1024)
         : response.status >= 400 && response.status < 500
@@ -6811,6 +6748,56 @@ async function assertRobotsAllowed(url, userAgent, env, diagnostics = null) {
     if (diagnostics) diagnostics.robots_blocked_count += 1;
     throw new Error(`robots.txt disallows crawler URL: ${url}`);
   }
+}
+
+async function resolveRendererNavigationUrl(
+  url,
+  userAgent,
+  env,
+  context = null,
+  {
+    lookup = lookupHost,
+    fetchImpl = fetch,
+    assertRobotsAllowedFn = assertRobotsAllowed,
+    waitForDomainDelayFn = waitForDomainDelay,
+  } = {},
+) {
+  const allowedDomains = context?.allowedDomains ?? [];
+  const assertAllowedDomain = (candidateUrl) => {
+    if (
+      allowedDomains.length &&
+      !sourceAllowsUrl({ allowed_domains: allowedDomains }, candidateUrl)
+    ) {
+      throw new Error(`Blocked crawler URL outside allowed domains: ${candidateUrl}`);
+    }
+  };
+  let finalUrl = (await assertSafeRemoteUrl(url, lookup)).toString();
+
+  assertAllowedDomain(finalUrl);
+  await assertRobotsAllowedFn(finalUrl, userAgent, env, context?.diagnostics);
+  await waitForDomainDelayFn(finalUrl, env);
+
+  const response = await fetchRemote(
+    finalUrl,
+    {
+      headers: buildStaticFetchHeaders(userAgent),
+      signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_FETCH_TIMEOUT_MS', 30000)),
+    },
+    lookup,
+    fetchImpl,
+    async (redirectUrl) => {
+      const destinationUrl = redirectUrl.toString();
+      assertAllowedDomain(destinationUrl);
+      await assertRobotsAllowedFn(destinationUrl, userAgent, env, context?.diagnostics);
+      await waitForDomainDelayFn(destinationUrl, env);
+      finalUrl = destinationUrl;
+    },
+  );
+  await response.body?.cancel().catch(() => {});
+
+  // Browser starts at resolved URL. Extra delay accounts for second network request.
+  await waitForDomainDelayFn(finalUrl, env);
+  return finalUrl;
 }
 
 async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
@@ -6831,41 +6818,50 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
   }
 
   const pythonBinary = env.CRAWL4AI_PYTHON ?? 'python3';
-  const args = [
-    crawl4AiFetchPath,
-    url,
-    '--user-agent',
-    userAgent,
-    '--timeout-ms',
-    env.CRAWL4AI_PAGE_TIMEOUT_MS ?? '45000',
-    '--scroll-delay',
-    env.CRAWL4AI_SCROLL_DELAY ?? '0.5',
-  ];
-
-  if (context?.waitFor) args.push('--wait-for', context.waitFor);
-  for (const targetElement of context?.targetElements ?? []) {
-    args.push('--target-element', targetElement);
-  }
-  if (context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true)) {
-    args.push('--wait-for-images');
-  }
-  if (context?.scanFullPage ?? envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', false)) {
-    args.push('--scan-full-page');
-  }
-  if (envFlag(env, 'CRAWL4AI_BYPASS_CACHE', true)) args.push('--bypass-cache');
 
   try {
-    // ponytail: renderer gets pre/post checks; add browser request interception if sources become user-controlled.
-    await assertSafeRemoteUrl(url);
-    await waitForDomainDelay(url, env);
+    const rendererUrl = await resolveRendererNavigationUrl(url, userAgent, env, context);
+    const args = [
+      crawl4AiFetchPath,
+      rendererUrl,
+      '--user-agent',
+      userAgent,
+      '--timeout-ms',
+      env.CRAWL4AI_PAGE_TIMEOUT_MS ?? '45000',
+      '--scroll-delay',
+      env.CRAWL4AI_SCROLL_DELAY ?? '0.5',
+    ];
+
+    if (context?.waitFor) args.push('--wait-for', context.waitFor);
+    for (const targetElement of context?.targetElements ?? []) {
+      args.push('--target-element', targetElement);
+    }
+    if (context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true)) {
+      args.push('--wait-for-images');
+    }
+    if (context?.scanFullPage ?? envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', false)) {
+      args.push('--scan-full-page');
+    }
+    if (envFlag(env, 'CRAWL4AI_BYPASS_CACHE', true)) args.push('--bypass-cache');
+    for (const domain of context?.allowedDomains ?? []) {
+      args.push('--allowed-domain', domain);
+    }
+
     const result = await runJsonCommand(pythonBinary, args, {
       env: {
-        ...process.env,
+        ...buildRendererEnv(process.env),
         PYTHONUNBUFFERED: '1',
       },
+      timeoutMs: getEnvNumber(
+        env,
+        'CRAWL4AI_COMMAND_TIMEOUT_MS',
+        getEnvNumber(env, 'CRAWL4AI_PAGE_TIMEOUT_MS', 45000) + 30000,
+      ),
+      maxOutputBytes: getEnvNumber(env, 'CRAWL4AI_MAX_OUTPUT_BYTES', 20 * 1024 * 1024),
     });
 
     if (!result.success) {
+      if (diagnostics) diagnostics.unhealthy_fetch_count += 1;
       const message = result.error_message ?? 'Crawl4AI render failed';
       if (/No module named|ModuleNotFoundError|ImportError|not found/i.test(message)) {
         crawl4AiDisabled = true;
@@ -6876,13 +6872,22 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
       return null;
     }
 
-    await assertSafeRemoteUrl(result.url ?? url);
+    const finalUrl = (await assertSafeRemoteUrl(result.url ?? rendererUrl)).toString();
+    if (
+      context?.allowedDomains?.length &&
+      !sourceAllowsUrl({ allowed_domains: context.allowedDomains }, finalUrl)
+    ) {
+      throw new Error(`Blocked crawler redirect outside allowed domains: ${finalUrl}`);
+    }
+    if (canonicalizeComparableUrl(finalUrl) !== canonicalizeComparableUrl(rendererUrl)) {
+      await assertRobotsAllowed(finalUrl, userAgent, env, diagnostics);
+    }
 
     const html = appendCrawl4AiMediaHtml(result.html ?? '', result.media?.images ?? []);
     return {
       url,
       response: {
-        url: result.url ?? url,
+        url: result.url ?? rendererUrl,
         status: result.status_code ?? 200,
       },
       html,
@@ -6897,6 +6902,7 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
       metadata: {
         fetched_via: 'crawl4ai',
         crawl4ai_images_count: result.media?.images?.length ?? 0,
+        crawl4ai_blocked_request_count: result.blocked_request_count ?? 0,
         crawl4ai_version: result.crawl4ai_version ?? null,
         crawl4ai_duration_ms: result.duration_ms ?? null,
         crawl4ai_cleaned_html_length: result.cleaned_html?.length ?? 0,
@@ -6905,13 +6911,17 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
       },
     };
   } catch (error) {
-    crawl4AiDisabled = true;
-    console.warn(`Crawl4AI render unavailable; continuing with static fetches. ${error.message}`);
+    if (diagnostics) diagnostics.unhealthy_fetch_count += 1;
+    const message = error instanceof Error ? error.message : String(error);
+    if (/No module named|ModuleNotFoundError|ImportError|ENOENT|not found/i.test(message)) {
+      crawl4AiDisabled = true;
+    }
+    console.warn(`Crawl4AI render unavailable; continuing with static fetches. ${message}`);
     return null;
   }
 }
 
-async function fetchStaticHtml(url, userAgent, env = {}) {
+async function fetchStaticHtml(url, userAgent, env = {}, context = null) {
   const timeoutMs = getEnvNumber(env, 'CRAWLER_FETCH_TIMEOUT_MS', 30000);
   const maxRetries = getEnvNumber(env, 'CRAWLER_FETCH_RETRIES', 2);
   const baseDelayMs = getEnvNumber(env, 'CRAWLER_RETRY_BASE_DELAY_MS', 1000);
@@ -6925,10 +6935,25 @@ async function fetchStaticHtml(url, userAgent, env = {}) {
 
     try {
       await waitForDomainDelay(url, env);
-      response = await fetchRemote(url, {
-        headers: buildStaticFetchHeaders(userAgent),
-        signal: AbortSignal.timeout(timeoutMs),
-      });
+      response = await fetchRemote(
+        url,
+        {
+          headers: buildStaticFetchHeaders(userAgent),
+          signal: AbortSignal.timeout(timeoutMs),
+        },
+        lookupHost,
+        fetch,
+        async (redirectUrl) => {
+          if (
+            context?.allowedDomains?.length &&
+            !sourceAllowsUrl({ allowed_domains: context.allowedDomains }, redirectUrl)
+          ) {
+            throw new Error(`Blocked crawler redirect outside allowed domains: ${redirectUrl}`);
+          }
+          await assertRobotsAllowed(redirectUrl, userAgent, env, context?.diagnostics);
+          await waitForDomainDelay(redirectUrl, env);
+        },
+      );
       html = await response.text();
       classification = classifyFetchResult({ response, html });
       lastError = null;
@@ -6967,7 +6992,12 @@ async function fetchStaticHtml(url, userAgent, env = {}) {
       };
     }
 
-    const delayMs = getRetryDelayMs({ attempt, baseDelayMs, response });
+    const delayMs = getRetryDelayMs({
+      attempt,
+      baseDelayMs,
+      response,
+      maxDelayMs: getEnvNumber(env, 'CRAWLER_MAX_RETRY_DELAY_MS', 60000),
+    });
     await sleep(delayMs);
   }
 
@@ -6982,7 +7012,7 @@ async function fetchHtml(url, userAgent, env = {}, options = {}) {
     if (rendered) return rendered;
   }
 
-  const staticPage = await fetchStaticHtml(url, userAgent, env);
+  const staticPage = await fetchStaticHtml(url, userAgent, env, options.context);
 
   if (options.renderMode === 'auto' && shouldTryRenderFallback(staticPage)) {
     const rendered = await fetchHtmlWithCrawl4Ai(url, userAgent, env, options.context);
@@ -7010,6 +7040,7 @@ async function supabaseRequest({ env, path, method = 'GET', body = null }) {
       Prefer: 'return=representation,resolution=merge-duplicates',
     },
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_API_TIMEOUT_MS', 30000)),
   });
 
   if (!response.ok) {
@@ -7049,6 +7080,25 @@ async function createCrawlRun(env, sourceId) {
   });
 
   return rows[0];
+}
+
+async function recoverStaleCrawlRuns(env, sourceId, request = supabaseRequest, now = new Date()) {
+  const finishedAt = now.toISOString();
+  const staleBefore = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString();
+  const rows = await request({
+    env,
+    path: `crawl_runs?source_id=eq.${encodeURIComponent(
+      sourceId,
+    )}&status=eq.running&started_at=lt.${encodeURIComponent(staleBefore)}`,
+    method: 'PATCH',
+    body: {
+      status: 'failed',
+      finished_at: finishedAt,
+      error_message: 'Recovered stale crawl run before starting a new source crawl.',
+    },
+  });
+
+  return rows?.length ?? 0;
 }
 
 async function updateCrawlRun(env, crawlRunId, patch) {
@@ -7094,7 +7144,7 @@ async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
   return rows[0];
 }
 
-async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
+async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey, fetchImpl = fetch) {
   const persistedEventData = Object.fromEntries(
     Object.entries(eventData).filter(([key]) => !key.startsWith('_')),
   );
@@ -7108,51 +7158,63 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
     ...persistedEventData,
   };
 
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/events?on_conflict=dedupe_key`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        Prefer: 'return=representation,resolution=merge-duplicates',
-      },
-      body: JSON.stringify([eventPayload]),
-    });
+  const response = await fetchImpl(`${env.SUPABASE_URL}/rest/v1/events?on_conflict=dedupe_key`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      Prefer: 'return=representation,resolution=merge-duplicates',
+    },
+    body: JSON.stringify([eventPayload]),
+    signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_API_TIMEOUT_MS', 30000)),
+  });
 
-    if (response.ok) {
-      const rows = await response.json();
-      return rows[0];
-    }
-
+  if (!response.ok) {
     const errorText = await response.text();
-    const missingColumn = errorText.match(/Could not find the '([^']+)' column/)?.[1];
-
-    if (response.status === 400 && missingColumn && missingColumn in eventPayload) {
-      delete eventPayload[missingColumn];
-      continue;
-    }
-
     throw new Error(
       `Supabase request failed (${response.status}) for events?on_conflict=dedupe_key: ${errorText}`,
     );
   }
 
-  throw new Error(
-    'Supabase request failed for events?on_conflict=dedupe_key after stripping unknown columns',
-  );
+  const rows = await response.json();
+  return rows[0];
 }
 
-function buildEventTranslationPayload(eventId, locale, eventData) {
+function normalizeTranslationSourceField(value) {
+  if (value == null) return null;
+
+  return String(value).normalize('NFC').replace(/\r\n?/g, '\n').trim();
+}
+
+function buildTranslationSourceContentHash(eventData) {
+  const canonicalSourceContent = localizedEventFields.map((field) => [
+    field,
+    normalizeTranslationSourceField(eventData?.[field]),
+  ]);
+
+  return createHash('sha256').update(JSON.stringify(canonicalSourceContent)).digest('hex');
+}
+
+function assertTranslationSourceContentHash(sourceContentHash) {
+  if (!/^[0-9a-f]{64}$/.test(sourceContentHash ?? '')) {
+    throw new Error('Translation source content hash must be a lowercase SHA-256 hex digest');
+  }
+}
+
+function buildEventTranslationPayload(eventId, locale, eventData, sourceContentHash) {
+  assertTranslationSourceContentHash(sourceContentHash);
+
   return {
     event_id: eventId,
     locale,
     title: eventData.title,
     description: eventData.description ?? null,
+    source_content_hash: sourceContentHash,
   };
 }
 
-async function upsertEventTranslation(env, eventId, locale, eventData) {
+async function upsertEventTranslation(env, eventId, locale, eventData, sourceContentHash) {
   const normalizedLocale = normalizeLocaleCode(locale);
   if (!normalizedLocale) return null;
 
@@ -7160,10 +7222,41 @@ async function upsertEventTranslation(env, eventId, locale, eventData) {
     env,
     path: 'event_translations?on_conflict=event_id,locale',
     method: 'POST',
-    body: [buildEventTranslationPayload(eventId, normalizedLocale, eventData)],
+    body: [buildEventTranslationPayload(eventId, normalizedLocale, eventData, sourceContentHash)],
   });
 
   return rows?.[0] ?? null;
+}
+
+async function reconcileUnavailableTargetTranslation(
+  env,
+  eventId,
+  locale,
+  sourceContentHash,
+  request = supabaseRequest,
+) {
+  const normalizedLocale = normalizeLocaleCode(locale);
+  if (!normalizedLocale) throw new Error(`Unsupported translation locale: ${locale}`);
+  assertTranslationSourceContentHash(sourceContentHash);
+
+  const filterPath = `event_translations?event_id=eq.${encodeURIComponent(
+    eventId,
+  )}&locale=eq.${encodeURIComponent(normalizedLocale)}`;
+  const rows = await request({
+    env,
+    path: `${filterPath}&select=source_content_hash&limit=1`,
+  });
+  const existing = rows?.[0] ?? null;
+
+  if (!existing) return 'missing';
+  if (existing.source_content_hash === sourceContentHash) return 'preserved';
+
+  await request({
+    env,
+    path: filterPath,
+    method: 'DELETE',
+  });
+  return 'deleted';
 }
 
 function getGoogleTranslateProjectId(env) {
@@ -7210,13 +7303,16 @@ async function translateTextFields(env, fields, sourceLocale, targetLocale) {
 
   const location = env.GOOGLE_TRANSLATE_LOCATION ?? 'global';
   const client = env.__translationClient ?? (await getGoogleTranslationClient());
-  const [response] = await client.translateText({
-    parent: `projects/${projectId}/locations/${location}`,
-    contents: entries.map(([, value]) => value),
-    mimeType: 'text/plain',
-    sourceLanguageCode: sourceLocale,
-    targetLanguageCode: targetLocale,
-  });
+  const [response] = await client.translateText(
+    {
+      parent: `projects/${projectId}/locations/${location}`,
+      contents: entries.map(([, value]) => value),
+      mimeType: 'text/plain',
+      sourceLanguageCode: sourceLocale,
+      targetLanguageCode: targetLocale,
+    },
+    { timeout: getEnvNumber(env, 'CRAWLER_API_TIMEOUT_MS', 30000) },
+  );
   const translations = response?.translations ?? [];
 
   return Object.fromEntries(
@@ -7261,11 +7357,11 @@ async function fetchNativeLocaleEvent({
     discoveredLocaleUrls[targetLocale] ??
     inferAlternateLocaleUrlFromConfig(detailUrl, source, sourceLocale, targetLocale);
 
-  if (!isUsableNativeLocaleUrl(detailUrl, alternateUrl)) {
+  const nativeSource = withSourceLocaleConfig(source, targetLocale);
+
+  if (!isUsableNativeLocaleUrl(detailUrl, alternateUrl, nativeSource)) {
     return null;
   }
-
-  const nativeSource = withSourceLocaleConfig(source, targetLocale);
 
   try {
     const nativePage = await fetchHtml(alternateUrl, userAgent, env, {
@@ -7334,62 +7430,103 @@ async function upsertEventTranslations(
   nativeTranslations = {},
 ) {
   const sourceLocale = getSourceLocale(source);
+  const sourceContentHash = buildTranslationSourceContentHash(eventData);
   const savedTranslations = [sourceLocale];
 
-  await upsertEventTranslation(env, savedEvent.id, sourceLocale, eventData);
+  await upsertEventTranslation(env, savedEvent.id, sourceLocale, eventData, sourceContentHash);
 
   for (const targetLocale of supportedTranslationLocales) {
     if (targetLocale === sourceLocale) continue;
 
     const nativeTranslation = nativeTranslations[targetLocale];
     if (nativeTranslation) {
-      await upsertEventTranslation(env, savedEvent.id, targetLocale, nativeTranslation);
-      savedTranslations.push(targetLocale);
-      continue;
+      try {
+        await upsertEventTranslation(
+          env,
+          savedEvent.id,
+          targetLocale,
+          nativeTranslation,
+          sourceContentHash,
+        );
+        savedTranslations.push(targetLocale);
+        continue;
+      } catch (error) {
+        console.warn(
+          `Native ${targetLocale} translation upsert failed for ${savedEvent.id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    } else if (shouldMachineTranslateMissingLocales(source)) {
+      try {
+        const translatedEvent = await buildMachineTranslatedEvent(
+          env,
+          eventData,
+          sourceLocale,
+          targetLocale,
+        );
+
+        if (translatedEvent) {
+          await upsertEventTranslation(
+            env,
+            savedEvent.id,
+            targetLocale,
+            translatedEvent,
+            sourceContentHash,
+          );
+          savedTranslations.push(targetLocale);
+          continue;
+        }
+      } catch (error) {
+        console.warn(
+          `Machine translation skipped for ${savedEvent.id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
     }
 
-    if (!shouldMachineTranslateMissingLocales(source)) continue;
-
-    try {
-      const translatedEvent = await buildMachineTranslatedEvent(
-        env,
-        eventData,
-        sourceLocale,
-        targetLocale,
-      );
-
-      if (translatedEvent) {
-        await upsertEventTranslation(env, savedEvent.id, targetLocale, translatedEvent);
-        savedTranslations.push(targetLocale);
-      }
-    } catch (error) {
-      console.warn(
-        `Machine translation skipped for ${savedEvent.id}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
+    const reconciliation = await reconcileUnavailableTargetTranslation(
+      env,
+      savedEvent.id,
+      targetLocale,
+      sourceContentHash,
+    );
+    if (reconciliation === 'preserved') {
+      savedTranslations.push(targetLocale);
     }
   }
 
   return savedTranslations;
 }
 
-async function archiveStaleEvents(env, sourceId, activeDedupeKeys) {
-  const rows = await supabaseRequest({
-    env,
-    path: `events?source_id=eq.${sourceId}&status=eq.published&select=id,dedupe_key`,
-  });
+async function archiveStaleEvents(env, sourceId, activeDedupeKeys, request = supabaseRequest) {
+  const rows = [];
+  let offset = 0;
 
-  const staleIds = (rows ?? [])
-    .filter((row) => !activeDedupeKeys.has(row.dedupe_key))
-    .map((row) => row.id);
+  while (true) {
+    const page =
+      (await request({
+        env,
+        path: `events?source_id=eq.${encodeURIComponent(
+          sourceId,
+        )}&status=eq.published&select=id,dedupe_key&order=id.asc&limit=1000&offset=${offset}`,
+      })) ?? [];
+    if (!page.length) break;
+
+    rows.push(...page);
+    offset += page.length;
+  }
+
+  const staleIds = rows.filter((row) => !activeDedupeKeys.has(row.dedupe_key)).map((row) => row.id);
 
   let archivedCount = 0;
 
-  for (const staleId of staleIds) {
-    const archivedRows = await supabaseRequest({
+  for (let index = 0; index < staleIds.length; index += 100) {
+    const staleIdBatch = staleIds.slice(index, index + 100);
+    const archivedRows = await request({
       env,
-      path: `events?id=eq.${staleId}`,
+      path: `events?id=in.(${staleIdBatch.join(',')})`,
       method: 'PATCH',
       body: {
         status: 'archived',
@@ -7481,24 +7618,41 @@ async function crawlSource({
   genericDetailLimit,
   renderMode,
 }) {
-  const source = applySourceOverride(
-    await getSourceBySlug(env, sourceSlug),
-    sourceOverrides[sourceSlug],
-  );
-  const sourceLocale = getSourceLocale(source);
-  const crawlSourceConfig = withSourceLocaleConfig(source, sourceLocale);
-  const sourceRenderMode = getSourceRenderMode(crawlSourceConfig, renderMode);
-  const sourceDetailLimit = getSourceDetailLimit(crawlSourceConfig, genericDetailLimit);
-  const crawlRun = await createCrawlRun(env, source.id);
+  let source = null;
+  let crawlRun = null;
   const diagnostics = createCrawlDiagnostics(env);
-  const crawlContext = {
-    diagnostics,
-    waitFor: crawlSourceConfig.crawl_hints?.wait_for ?? null,
-    waitForImages: crawlSourceConfig.crawl_hints?.wait_for_images,
-    scanFullPage: crawlSourceConfig.crawl_hints?.scan_full_page,
-  };
 
   try {
+    source = applySourceOverride(
+      await getSourceBySlug(env, sourceSlug),
+      sourceOverrides[sourceSlug],
+    );
+    const sourceLocale = getSourceLocale(source);
+    const crawlSourceConfig = withSourceLocaleConfig(source, sourceLocale);
+    const sourceRenderMode = getSourceRenderMode(crawlSourceConfig, renderMode);
+    const sourceDetailLimit = getSourceDetailLimit(crawlSourceConfig, genericDetailLimit);
+    try {
+      const recoveredRuns = await recoverStaleCrawlRuns(env, source.id);
+      if (recoveredRuns > 0) {
+        console.warn(
+          `Recovered ${recoveredRuns} stale crawl run${recoveredRuns === 1 ? '' : 's'} for ${source.slug}.`,
+        );
+      }
+    } catch (error) {
+      console.warn(
+        `Could not recover stale crawl runs for ${source.slug}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+    crawlRun = await createCrawlRun(env, source.id);
+    const crawlContext = {
+      diagnostics,
+      allowedDomains: crawlSourceConfig.allowed_domains ?? [],
+      waitFor: crawlSourceConfig.crawl_hints?.wait_for ?? null,
+      waitForImages: crawlSourceConfig.crawl_hints?.wait_for_images,
+      scanFullPage: crawlSourceConfig.crawl_hints?.scan_full_page,
+    };
     const listingUrls = [...new Set(crawlSourceConfig.start_urls?.filter(Boolean) ?? [])];
     if (!listingUrls.length) {
       throw new Error(`Source "${source.slug}" does not have a start URL`);
@@ -7519,9 +7673,10 @@ async function crawlSource({
     }
 
     const detailUrlExtractor = detailUrlExtractors[source.slug];
+    const discoveryLimit = sourceDetailLimit + 1;
     let detailUrls =
       source.slug === 'sibasi'
-        ? extractSibasiDetailUrls(listingPages, sourceDetailLimit)
+        ? extractSibasiDetailUrls(listingPages, discoveryLimit)
         : detailUrlExtractor
           ? extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, crawlSourceConfig)
           : [
@@ -7531,7 +7686,7 @@ async function crawlSource({
                     listingPage.html,
                     listingPage.url,
                     crawlSourceConfig,
-                    sourceDetailLimit,
+                    discoveryLimit,
                   ),
                 ),
               ),
@@ -7548,6 +7703,8 @@ async function crawlSource({
         sourceAllowsUrl(crawlSourceConfig, detailUrl) &&
         !sourceSkipsUrl(crawlSourceConfig, detailUrl),
     );
+    const detailDiscoveryComplete =
+      !shouldLimitDetailUrls || detailUrls.length <= sourceDetailLimit;
 
     if (shouldLimitDetailUrls) {
       detailUrls = detailUrls.slice(0, sourceDetailLimit);
@@ -7559,10 +7716,14 @@ async function crawlSource({
         diagnostics,
         sourceSlug: source.slug,
       });
-      const archivedEvents =
-        sourceOutcome === 'source_no_current_events'
-          ? await archiveStaleEvents(env, source.id, new Set())
-          : 0;
+      const runStatus = crawlRunStatusForOutcome(sourceOutcome);
+      const archivedEvents = shouldArchiveStaleEvents({
+        sourceOutcome,
+        diagnostics,
+        discoveryComplete: detailDiscoveryComplete,
+      })
+        ? await archiveStaleEvents(env, source.id, new Set())
+        : 0;
       const qaReport = buildCrawlQaReport({
         source,
         sourceOutcome,
@@ -7570,7 +7731,7 @@ async function crawlSource({
         diagnostics,
       });
       await updateCrawlRun(env, crawlRun.id, {
-        status: 'success',
+        status: runStatus,
         finished_at: new Date().toISOString(),
         pages_queued: listingPages.length,
         pages_fetched: pagesFetched,
@@ -7602,7 +7763,7 @@ async function crawlSource({
       return {
         crawlRunId: crawlRun.id,
         source: source.slug,
-        status: 'success',
+        status: runStatus,
         sourceOutcome,
         usedGenericExtractor: !detailUrlExtractor,
         renderMode: sourceRenderMode,
@@ -7838,7 +7999,6 @@ async function crawlSource({
       });
     }
 
-    const archivedEvents = await archiveStaleEvents(env, source.id, activeDedupeKeys);
     const usedGenericExtractor = !eventExtractors[source.slug];
     const sourceOutcome = classifySourceOutcome({
       detailUrls,
@@ -7848,6 +8008,15 @@ async function crawlSource({
       usedGenericExtractor,
       sourceSlug: source.slug,
     });
+    const runStatus = crawlRunStatusForOutcome(sourceOutcome);
+    const archivedEvents = shouldArchiveStaleEvents({
+      sourceOutcome,
+      diagnostics,
+      skippedEvents,
+      discoveryComplete: detailDiscoveryComplete,
+    })
+      ? await archiveStaleEvents(env, source.id, activeDedupeKeys)
+      : 0;
     const qaReport = buildCrawlQaReport({
       source,
       sourceOutcome,
@@ -7858,7 +8027,7 @@ async function crawlSource({
     });
 
     await updateCrawlRun(env, crawlRun.id, {
-      status: 'success',
+      status: runStatus,
       finished_at: new Date().toISOString(),
       pages_queued: detailUrls.length + listingPages.length,
       pages_fetched: pagesFetched,
@@ -7915,7 +8084,7 @@ async function crawlSource({
     return {
       crawlRunId: crawlRun.id,
       source: source.slug,
-      status: 'success',
+      status: runStatus,
       sourceOutcome,
       usedGenericExtractor,
       renderMode: sourceRenderMode,
@@ -7926,26 +8095,36 @@ async function crawlSource({
       archivedEvents,
     };
   } catch (error) {
-    await updateCrawlRun(env, crawlRun.id, {
-      status: 'failed',
-      finished_at: new Date().toISOString(),
-      error_message: error instanceof Error ? error.message : String(error),
-      logs: [
-        {
-          level: 'error',
-          message: `Source outcome: source_failed`,
-        },
-        {
-          level: 'info',
-          message: 'Crawl diagnostics',
-          diagnostics,
-        },
-      ],
-    });
+    if (crawlRun?.id) {
+      try {
+        await updateCrawlRun(env, crawlRun.id, {
+          status: 'failed',
+          finished_at: new Date().toISOString(),
+          error_message: error instanceof Error ? error.message : String(error),
+          logs: [
+            {
+              level: 'error',
+              message: `Source outcome: source_failed`,
+            },
+            {
+              level: 'info',
+              message: 'Crawl diagnostics',
+              diagnostics,
+            },
+          ],
+        });
+      } catch (updateError) {
+        console.warn(
+          `Could not mark failed crawl run ${crawlRun.id}: ${
+            updateError instanceof Error ? updateError.message : String(updateError)
+          }`,
+        );
+      }
+    }
 
     return {
-      crawlRunId: crawlRun.id,
-      source: source.slug,
+      crawlRunId: crawlRun?.id ?? null,
+      source: source?.slug ?? sourceSlug,
       status: 'failed',
       sourceOutcome: 'source_failed',
       diagnostics,
@@ -7956,7 +8135,7 @@ async function crawlSource({
 
 async function main() {
   const envContents = await readFile(envPath, 'utf8');
-  const fileEnv = parseEnvFile(envContents);
+  const fileEnv = parseEnv(envContents);
   applyEnvToProcess(fileEnv);
   const env = { ...fileEnv, ...process.env };
   const city = normalizeCity(getArg('city', 'kyoto'));
@@ -8000,18 +8179,28 @@ async function main() {
     if (result.status === 'failed' && sourceSlug !== 'all') {
       throw new Error(result.error);
     }
+    if (result.status !== 'success' && sourceSlug !== 'all') process.exitCode = 2;
   }
 
   if (sourceSlug === 'all') {
+    const healthy = results.filter((result) => result.status === 'success');
+    const degraded = results.filter((result) => result.status === 'partial_success');
     const failed = results.filter((result) => result.status === 'failed');
+    const unhealthy = [...degraded, ...failed];
     console.log(
       JSON.stringify(
         {
-          status: failed.length ? 'partial_success' : 'success',
+          status: unhealthy.length ? 'partial_success' : 'success',
           city,
           sources_total: results.length,
-          sources_succeeded: results.length - failed.length,
+          sources_succeeded: healthy.length,
+          sources_degraded: degraded.length,
           sources_failed: failed.length,
+          unhealthy_sources: unhealthy.map((result) => ({
+            source: result.source,
+            outcome: result.sourceOutcome,
+            error: result.error,
+          })),
           failed_sources: failed.map((result) => ({
             source: result.source,
             error: result.error,
@@ -8021,15 +8210,19 @@ async function main() {
         2,
       ),
     );
-    if (failed.length) process.exitCode = 2;
+    if (unhealthy.length) process.exitCode = 2;
   }
 }
 
 export {
   assessEventTitle,
+  archiveStaleEvents,
   assertSafeRemoteUrl,
+  buildRendererEnv,
+  buildTranslationSourceContentHash,
   classifyFetchResult,
   classifySourceOutcome,
+  crawlRunStatusForOutcome,
   assignEventCoordinates,
   createCrawlDiagnostics,
   detailUrlExtractors,
@@ -8043,6 +8236,7 @@ export {
   fetchRemote,
   buildEventTranslationPayload,
   buildMachineTranslatedEvent,
+  getRetryDelayMs,
   getSourceSpecificSkipReason,
   hasExtractedImage,
   hasValidEventTitle,
@@ -8059,7 +8253,11 @@ export {
   parseKyoceraDateRange,
   extractBestDateText,
   recordFetchedPage,
+  reconcileUnavailableTargetTranslation,
+  recoverStaleCrawlRuns,
+  resolveRendererNavigationUrl,
   resolveEventDescription,
+  runJsonCommand,
   sanitizePostgresJson,
   sanitizePostgresText,
   extractRakuMuseumEvent,
@@ -8068,7 +8266,9 @@ export {
   sourceSpecificSkipMatchers,
   sourceHasNativeLocale,
   shouldMachineTranslateMissingLocales,
+  shouldArchiveStaleEvents,
   translateTextFields,
+  upsertEvent,
   upsertEventTranslation,
   withSourceLocaleConfig,
 };

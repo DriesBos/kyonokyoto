@@ -236,7 +236,9 @@ export const initLandingScroll = () => {
   window.addEventListener('wheel', handleWheel, { passive: false });
   window.addEventListener('touchstart', handleTouchStart, { passive: true });
   window.addEventListener('touchmove', handleTouchMove, { passive: false });
-  window.addEventListener('pageshow', () => resetLanding(elements.landing, consumeCityCycleLanding()));
+  window.addEventListener('pageshow', () =>
+    resetLanding(elements.landing, consumeCityCycleLanding()),
+  );
   document.addEventListener('astro:page-load', () =>
     resetLanding(elements.landing, consumeCityCycleLanding()),
   );

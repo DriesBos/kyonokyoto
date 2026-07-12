@@ -82,6 +82,8 @@ Sync city sources before crawling new source rows:
 node scripts/sync-sources.mjs --city=osaka
 ```
 
+Sync only upserts by default. Review `prune_candidates`; never add `--prune` unless source removal is intentional and count-confirmed.
+
 Crawl one source:
 
 ```bash
@@ -94,10 +96,10 @@ Crawl all Osaka sources:
 npm --prefix apps/crawler run crawl:osaka
 ```
 
-Production-style cycle without deploy:
+Production-style cycle:
 
 ```bash
-node scripts/run-crawl-cycle.mjs --city=osaka --skip-deploy
+node scripts/run-crawl-cycle.mjs --city=osaka
 ```
 
 ## What To Inspect
