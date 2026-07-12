@@ -37,7 +37,7 @@
       "lng": 135.7955184,
       "taxonomy": {
         "venue_category": ["gallery"],
-        "display_category": ["craft"],
+        "display_category": [],
         "event_category": []
       },
       "is_active": true,
@@ -70,7 +70,7 @@
       "lng": 135.780533,
       "taxonomy": {
         "venue_category": ["gallery"],
-        "display_category": ["design", "craft"],
+        "display_category": ["design"],
         "event_category": []
       },
       "is_active": true,
@@ -129,7 +129,7 @@
       "lng": 135.7982482797623,
       "taxonomy": {
         "venue_category": ["gallery"],
-        "display_category": ["design", "craft"],
+        "display_category": ["design"],
         "event_category": []
       },
       "is_active": true,
@@ -161,7 +161,7 @@
       "lng": 135.7962923,
       "taxonomy": {
         "venue_category": ["gallery"],
-        "display_category": ["craft"],
+        "display_category": [],
         "event_category": []
       },
       "is_active": true,

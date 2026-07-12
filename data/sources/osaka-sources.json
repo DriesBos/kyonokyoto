@@ -1006,7 +1006,7 @@
       },
       "taxonomy": {
         "venue_category": ["museum"],
-        "display_category": ["craft"],
+        "display_category": [],
         "event_category": ["exhibition"]
       },
       "language": "ja",

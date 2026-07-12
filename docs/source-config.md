@@ -196,6 +196,7 @@ source validation and the web build.
 - `gallery`
 - `institute`
 - `theatre`
+- `cafe`
 
 ### `display_category`
 
@@ -208,7 +209,6 @@ source validation and the web build.
 - `design`
 - `graphic`
 - `ceramics`
-- `craft`
 - `new-media`
 - `sculpture`
 - `music`

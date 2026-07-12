@@ -45,7 +45,7 @@
       "lng": 135.19682,
       "taxonomy": {
         "venue_category": ["museum"],
-        "display_category": ["design", "craft"],
+        "display_category": ["design"],
         "event_category": []
       },
       "is_active": true,

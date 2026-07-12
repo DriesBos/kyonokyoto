@@ -7,6 +7,7 @@ export const CATEGORY_REGISTRY = Object.freeze({
     'gallery',
     'institute',
     'theatre',
+    'cafe',
   ]),
   display_category: Object.freeze([
     'photography',
@@ -18,7 +19,6 @@ export const CATEGORY_REGISTRY = Object.freeze({
     'design',
     'graphic',
     'ceramics',
-    'craft',
     'new-media',
     'sculpture',
     'music',

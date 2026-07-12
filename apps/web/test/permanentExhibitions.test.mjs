@@ -68,7 +68,7 @@ test('permanent highlights use embedded venue metadata when no source row exists
       address_text: '15-1 Nyakuoji-cho, Sakyo-ku, Kyoto 606-8444 Japan',
       lat: 35.0155614,
       lng: 135.7955184,
-      taxonomy: testTaxonomy(['gallery'], ['craft']),
+      taxonomy: testTaxonomy(['gallery']),
       media_embeds: [
         {
           type: 'youtube',
@@ -87,7 +87,7 @@ test('permanent highlights use embedded venue metadata when no source row exists
   assert.equal(event.id, 'permanent:sayuu');
   assert.equal(event.title, '若王子倶楽部 左右');
   assert.equal(event.institution_name, '若王子倶楽部 左右');
-  assert.deepEqual(event.categories, ['venue_category:gallery', 'display_category:craft']);
+  assert.deepEqual(event.categories, ['venue_category:gallery']);
   assert.equal(event.address_text, '15-1 Nyakuoji-cho, Sakyo-ku, Kyoto 606-8444 Japan');
   assert.equal(event.lat, 35.0155614);
   assert.equal(event.lng, 135.7955184);
@@ -113,7 +113,7 @@ test('occasional highlights use localized cadence text', () => {
       address_text: '10 Jodoji Minamidacho, Sakyo-ku, Kyoto 606-8403 Japan',
       lat: 35.0261106,
       lng: 135.7962923,
-      taxonomy: testTaxonomy(['gallery'], ['craft']),
+      taxonomy: testTaxonomy(['gallery']),
     },
   ];
 

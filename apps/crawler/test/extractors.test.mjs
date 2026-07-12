@@ -1834,7 +1834,10 @@ test('CURATION FAIR sources use current-year English and Japanese pages', async 
     const sources = await loadSourcesConfig({ city });
     const source = sources.find((item) => item.slug === `curation-fair-${city}`);
 
-    assert.deepEqual(source?.taxonomy, testTaxonomy(['fair'], [], ['fair']));
+    assert.deepEqual(
+      source?.taxonomy,
+      testTaxonomy(['fair'], city === 'kyoto' ? ['contemporary'] : [], ['fair']),
+    );
     assert.equal(source?.beta, true);
     assert.deepEqual(source?.start_urls, [`https://curation-fair.com/en/${city}${year}`]);
     assert.deepEqual(source?.locales?.ja?.start_urls, [`https://curation-fair.com/${city}${year}`]);
@@ -2304,7 +2307,7 @@ test('source-specific skip rule drops Kyocera Collection Room pages', () => {
 test('Kankakari extraction parses exhibition periods and cleans title dates', () => {
   const source = {
     name: 'Kankakari',
-    taxonomy: testTaxonomy(['gallery'], ['craft']),
+    taxonomy: testTaxonomy(['gallery'], ['ceramics']),
     address_text: '15 Murasakino Shimotsukiyama-cho, Kita-ku, Kyoto Japan',
   };
   const gakuEvent = eventExtractors.kankakari(
@@ -2447,7 +2450,7 @@ test('Raku Museum English exhibition extraction reads tab content date', () => {
   `;
   const source = {
     name: 'Raku Museum',
-    taxonomy: testTaxonomy(['museum'], ['ceramics', 'craft']),
+    taxonomy: testTaxonomy(['museum'], ['ceramics']),
     language: 'en',
   };
 
@@ -2484,7 +2487,7 @@ test('Raku Museum Japanese homepage extraction reads info row', () => {
   `;
   const source = {
     name: 'Raku Museum',
-    taxonomy: testTaxonomy(['museum'], ['ceramics', 'craft']),
+    taxonomy: testTaxonomy(['museum'], ['ceramics']),
     language: 'ja',
   };
 
@@ -2926,6 +2929,25 @@ test('Issey Kura discovery keeps only ON VIEW cards', () => {
   );
 
   assert.deepEqual(urls, ['https://www.isseymiyake.com/blogs/kyotokura/1']);
+
+  const event = eventExtractors['issey-miyake-kyoto-kura'](
+    `<h2>2026.07.01 | ISSEY MIYAKE KYOTO | KURA 「WALL WHITE HEM」</h2>
+     <img src="https://cdn.shopify.com/KURA_2026jul01_01.jpg">
+     <img src="https://cdn.shopify.com/KURA_2026jul01_02.jpg">`,
+    {
+      name: 'ISSEY MIYAKE KYOTO | KURA',
+      taxonomy: testTaxonomy(['gallery'], ['textile'], ['exhibition']),
+    },
+    urls[0],
+  );
+
+  assert.equal(event.title, '「WALL WHITE HEM」');
+  assert.equal(event.start_date, '2026-07-01');
+  assert.equal(event.end_date, '2027-07-01');
+  assert.deepEqual(event.image_urls, [
+    'https://cdn.shopify.com/KURA_2026jul01_01.jpg',
+    'https://cdn.shopify.com/KURA_2026jul01_02.jpg',
+  ]);
 });
 
 test('Sokyo discovery excludes Past cards', () => {
