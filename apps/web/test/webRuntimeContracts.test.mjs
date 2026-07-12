@@ -26,6 +26,18 @@ test('locale switch uses route navigation and viewport keeps browser zoom', asyn
   assert.doesNotMatch(layout, /maximum-scale|user-scalable/);
 });
 
+test('nonce CSP permits the custom cursor and keeps processed scripts external', async () => {
+  const { preventJavaScriptInlining } = await import('../astro.config.mjs');
+  const config = await readWebFile('astro.config.mjs');
+  const layout = await readWebFile('src/layouts/BaseLayout.astro');
+
+  assert.equal(preventJavaScriptInlining('_astro/cursor.js'), false);
+  assert.equal(preventJavaScriptInlining('_astro/cursor.mjs'), false);
+  assert.equal(preventJavaScriptInlining('_astro/icon.svg'), undefined);
+  assert.match(config, /assetsInlineLimit: preventJavaScriptInlining/);
+  assert.match(layout, /<script>\s+if \(!window\.__siteCursorBound\)/);
+});
+
 test('time divider repeats native text without inline SVG nodes', async () => {
   const divider = await readWebFile('src/components/TimeDivider.astro');
 
@@ -39,6 +51,8 @@ test('map marker inserts source names as text', async () => {
   const map = await readWebFile('src/scripts/googleMap.ts');
 
   assert.match(map, /label\.textContent = source\.name/);
+  assert.match(map, /marker\.addEventListener\?\.\('gmp-click'/);
+  assert.doesNotMatch(map, /marker\.addListener\?\.\('click'/);
   assert.doesNotMatch(map, /map-marker__label[^\n]*\$\{source\.name\}/);
 });
 

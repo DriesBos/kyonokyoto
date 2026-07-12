@@ -21,7 +21,6 @@ type AdvancedMarkerInstance = {
   position?: { lat: number; lng: number };
   zIndex?: number | null;
   addEventListener?: (eventName: string, callback: () => void) => void;
-  addListener?: (eventName: string, callback: () => void) => unknown;
 };
 
 type AdvancedMarkerConstructor = new (options: {
@@ -468,13 +467,7 @@ const initMap = async (element: Element) => {
       });
       marker.zIndex = 0;
 
-      content.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        activateMarkerLocation(source.id);
-      });
       marker.addEventListener?.('gmp-click', () => activateMarkerLocation(source.id));
-      marker.addListener?.('click', () => activateMarkerLocation(source.id));
 
       return { marker, source, content };
     });
