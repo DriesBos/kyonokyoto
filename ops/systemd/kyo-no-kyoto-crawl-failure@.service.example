@@ -1,0 +1,10 @@
+[Unit]
+Description=Report failed Kyo no Kyoto crawl cycle for %i
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/kyo-no-kyoto
+Environment=PATH=/home/ubuntu/.nvm/versions/node/v22.22.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/env node scripts/report-crawl-failure.mjs --city=%i

@@ -24,13 +24,32 @@ test('landing slider styles target JS-created elements globally', async () => {
   }
 });
 
-test('landing shutter fill can cover from bottom to top', async () => {
+test('landing shutter fill covers from bottom without moving its content coordinates', async () => {
   const component = await readFile(componentPath, 'utf8');
   const script = await readFile(scriptPath, 'utf8');
 
-  assert.match(component, /:global\(\.landing__shutter-fill\[data-fill-origin='bottom'\]\)/);
-  assert.match(component, /bottom: 0/);
-  assert.match(script, /animateFills\('100%', coverSeconds, 'bottom'\)/);
+  assert.match(component, /will-change: clip-path/);
+  assert.doesNotMatch(component, /data-fill-origin|landing-shutter-content-bottom/);
+  assert.match(script, /fill\.style\.clipPath = fillClipPath/);
+  assert.match(script, /if \(fromClipPath\) gsap\.set\(targets, \{ clipPath: fromClipPath \}\)/);
+  assert.match(
+    script,
+    /animateFills\(coveredClipPath, coverSeconds, collapsedBottomClipPath\)/,
+  );
+});
+
+test('landing text blends over images and stays white over animated shutters', async () => {
+  const component = await readFile(componentPath, 'utf8');
+  const script = await readFile(scriptPath, 'utf8');
+
+  assert.match(component, /\.landing__button--blend\s*\n\s+mix-blend-mode: difference/);
+  assert.match(component, /:global\(\.landing__content--shutter\)/);
+  assert.match(component, /mix-blend-mode: normal/);
+  assert.match(component, /color: #fff/);
+  assert.match(component, /\.landing__shutters\s*\n\s+z-index: 3/);
+  assert.match(script, /content\.cloneNode\(true\)/);
+  assert.match(script, /fill\.append\(whiteContent\)/);
+  assert.doesNotMatch(script, /mixBlendMode/);
 });
 
 test('landing is a fixed overlay dismissed without layout scroll', async () => {

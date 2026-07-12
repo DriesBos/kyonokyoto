@@ -4282,7 +4282,8 @@ function extractArtCollaborationKyotoEvent(detailHtml, source, detailUrl) {
   const venueName = venueLines[0] ?? 'Kyoto International Conference Center';
   const addressText =
     venueLines.find((line) => /Kyoto\s+\d{3}-\d{4}\s+Japan/i.test(line)) ?? venueName;
-  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl).slice(0, 2);
+  const ogImage = extractMeta(detailHtml, 'og:image');
+  const imageUrls = ogImage ? [normalizeUrl(ogImage, detailUrl)].filter(Boolean) : [];
   const year = parsedDates.startDate?.slice(0, 4) ?? dateText.match(/20\d{2}/)?.[0] ?? '';
 
   return {
@@ -6771,6 +6772,7 @@ async function main() {
         2,
       ),
     );
+    if (failed.length) process.exitCode = 2;
   }
 }
 

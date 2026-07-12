@@ -17,7 +17,10 @@ const solidHoldSeconds = 1;
 const revealSeconds = 0.75;
 const imageHoldSeconds = 1.5;
 const coverSeconds = 0.75;
-const rowStaggerSeconds = 0;
+const rowStaggerSeconds = 0.02;
+const coveredClipPath = 'inset(0% 0 0 0)';
+const collapsedTopClipPath = 'inset(0 0 100% 0)';
+const collapsedBottomClipPath = 'inset(100% 0 0 0)';
 
 const sliderWindow = window as LandingSliderWindow;
 
@@ -84,18 +87,31 @@ const createSlideElements = (container: HTMLElement, slides: LandingSlide[]) => 
   container.replaceChildren(fragment);
 };
 
-const createRows = (root: HTMLElement, container: HTMLElement, fillHeight: string) => {
+const createRows = (
+  root: HTMLElement,
+  container: HTMLElement,
+  content: HTMLElement,
+  fillClipPath: string,
+) => {
   const rowHeight = rowHeightFor(root);
-  const rowCount = Math.ceil(root.getBoundingClientRect().height / rowHeight) + 1;
+  const { width, height } = root.getBoundingClientRect();
+  const rowCount = Math.ceil(height / rowHeight) + 1;
   const fragment = document.createDocumentFragment();
 
   for (let index = 0; index < rowCount; index += 1) {
     const row = document.createElement('span');
     const fill = document.createElement('span');
+    const whiteContent = content.cloneNode(true) as HTMLElement;
 
     row.className = 'landing__shutter-row';
     fill.className = 'landing__shutter-fill';
-    fill.style.height = fillHeight;
+    fill.style.clipPath = fillClipPath;
+    whiteContent.classList.add('landing__content--shutter');
+    whiteContent.setAttribute('aria-hidden', 'true');
+    whiteContent.style.width = `${width}px`;
+    whiteContent.style.height = `${height}px`;
+    whiteContent.style.setProperty('--landing-shutter-content-top', `${index * rowHeight}px`);
+    fill.append(whiteContent);
     row.append(fill);
     fragment.append(row);
   }
@@ -110,6 +126,7 @@ export const initLandingSlider = () => {
   const slider = document.querySelector(sliderSelector);
   const slidesContainer = document.querySelector(slidesSelector);
   const shuttersContainer = document.querySelector(shuttersSelector);
+  const content = root instanceof HTMLElement ? root.querySelector('.landing__content') : null;
   const slides = parseSlides(document.querySelector(payloadSelector));
 
   if (
@@ -117,6 +134,7 @@ export const initLandingSlider = () => {
     !(slider instanceof HTMLElement) ||
     !(slidesContainer instanceof HTMLElement) ||
     !(shuttersContainer instanceof HTMLElement) ||
+    !(content instanceof HTMLElement) ||
     slides.length === 0
   ) {
     sliderWindow.__landingSliderCleanup = undefined;
@@ -127,15 +145,10 @@ export const initLandingSlider = () => {
   let visible = true;
   let activeTween: gsap.core.Tween | null = null;
   let activeIndex = 0;
-  let fillHeight = '100%';
+  let fillClipPath = coveredClipPath;
   const failedIndexes = new Set<number>();
 
   const fills = () => gsap.utils.toArray<HTMLElement>('.landing__shutter-fill', shuttersContainer);
-  const setFillOrigin = (origin: 'top' | 'bottom') => {
-    fills().forEach((fill) => {
-      fill.dataset.fillOrigin = origin;
-    });
-  };
 
   const pauseOrResume = () => {
     if (!activeTween) return;
@@ -152,16 +165,17 @@ export const initLandingSlider = () => {
       pauseOrResume();
     });
 
-  const animateFills = (height: string, duration: number, origin: 'top' | 'bottom') =>
+  const animateFills = (clipPath: string, duration: number, fromClipPath?: string) =>
     new Promise<void>((resolve) => {
-      setFillOrigin(origin);
-      activeTween = gsap.to(fills(), {
-        height,
+      const targets = fills();
+      if (fromClipPath) gsap.set(targets, { clipPath: fromClipPath });
+      activeTween = gsap.to(targets, {
+        clipPath,
         duration,
         ease: 'power2.inOut',
         stagger: rowStaggerSeconds,
         onComplete: () => {
-          fillHeight = height;
+          fillClipPath = clipPath;
           activeTween = null;
           resolve();
         },
@@ -198,7 +212,7 @@ export const initLandingSlider = () => {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
       if (stopped) return;
-      createRows(root, shuttersContainer, fillHeight);
+      createRows(root, shuttersContainer, content, fillClipPath);
     }, 120);
   };
 
@@ -217,19 +231,19 @@ export const initLandingSlider = () => {
       await wait(solidHoldSeconds);
       if (stopped) return;
 
-      await animateFills('0%', revealSeconds, 'top');
+      await animateFills(collapsedTopClipPath, revealSeconds);
       if (stopped) return;
 
       await wait(imageHoldSeconds);
       if (stopped) return;
 
-      await animateFills('100%', coverSeconds, 'bottom');
+      await animateFills(coveredClipPath, coverSeconds, collapsedBottomClipPath);
       activeIndex = (activeIndex + 1) % slides.length;
     }
   };
 
   createSlideElements(slidesContainer, slides);
-  createRows(root, shuttersContainer, fillHeight);
+  createRows(root, shuttersContainer, content, fillClipPath);
   observer?.observe(root);
   window.addEventListener('resize', handleResize);
   window.addEventListener(exitEventName, stop);

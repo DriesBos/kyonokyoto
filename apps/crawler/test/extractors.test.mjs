@@ -401,6 +401,23 @@ test('generic detail extraction can use configured listing link selectors', () =
   );
 });
 
+test('Art Collaboration Kyoto keeps its theme-hosted OG image', () => {
+  const event = eventExtractors['art-collaboration-kyoto'](
+    `
+      <meta property="og:image" content="/en/wp-content/themes/Art-Collaboration-Kyoto/assets/images/ogimg.png">
+      <h2 class="m-item_heading">Dates</h2>
+      <div class="m-item_body"><p>Sat. November 7−Mon. 9, 2026</p></div>
+    `,
+    { name: 'Art Collaboration Kyoto' },
+    'https://a-c-k.jp/en/',
+  );
+
+  assert.equal(
+    event.primary_image_url,
+    'https://a-c-k.jp/en/wp-content/themes/Art-Collaboration-Kyoto/assets/images/ogimg.png',
+  );
+});
+
 test('Osaka Geidai detail extraction keeps art exhibition tagged links only', () => {
   const listingHtml = `
     <ul>

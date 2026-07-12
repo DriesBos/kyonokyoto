@@ -166,6 +166,7 @@ Useful flags:
 
 ```bash
 node scripts/run-crawl-cycle.mjs --skip-deploy
+node scripts/run-crawl-cycle.mjs --skip-update
 node scripts/run-crawl-cycle.mjs --city=osaka --skip-sync
 node scripts/run-crawl-cycle.mjs --city=tokyo --generic-limit=8
 node scripts/run-crawl-cycle.mjs --strict-translations
@@ -216,12 +217,15 @@ Recommended production path:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `NETLIFY_BUILD_HOOK_URL`
+   - `CRAWL_HEARTBEAT_URL` for a 48-hour dead-man monitor
+   - `CRAWL_ALERT_WEBHOOK_URL` for degraded and failed cycle alerts
 3. Prefer the systemd instance templates in `ops/systemd/`.
 4. Adjust the repo path and Node path.
 5. Enable the city timers:
 
 ```bash
 sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@.service.example /etc/systemd/system/kyo-no-kyoto-crawl@.service
+sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl-failure@.service.example /etc/systemd/system/kyo-no-kyoto-crawl-failure@.service
 sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@kyoto.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@kyoto.timer
 sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@osaka.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@osaka.timer
 sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@tokyo.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@tokyo.timer
@@ -237,6 +241,8 @@ Important:
 
 - Supabase does not trigger a rebuild by itself here.
 - The rebuild happens because `scripts/run-crawl-cycle.mjs` calls the Netlify build hook after a successful crawl.
-- A shared lock in `scripts/run-crawl-cycle.mjs` prevents overlapping city crawl cycles on small VPS instances.
-- Translation checks report missing translations during crawl cycles. Add `--strict-translations` only when missing translations should block deployment.
+- Native `flock` prevents overlapping city crawl cycles and releases automatically when a process dies.
+- Production cycles require a clean `main` branch and verify it exactly matches `origin/main` before source sync.
+- A source failure marks the cycle degraded after the rebuild and returns a non-zero exit code. Translation gaps report degraded status; add `--strict-translations` when they should also return non-zero.
+- Configure the heartbeat monitor to alert after 48 hours without success. `OnFailure` sends immediate systemd failures through the alert webhook.
 - If you want Japan-local timing on a Europe-based VPS, either set the VPS timezone to JST or shift the cron time accordingly.
