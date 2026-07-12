@@ -353,6 +353,9 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
       "notes": "Purple art marker from Google My Maps.",
+      "selectors": {
+        "description": "#section-01 p"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.momat.go.jp/exhibitions"],
@@ -900,6 +903,9 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exh/"],
       "notes": "Purple art marker from Google My Maps.",
+      "selectors": {
+        "description": [".l-exhibition-intro__text", ".l-exhibition-intro__content p"]
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.yamatane-museum.jp/exh/"],

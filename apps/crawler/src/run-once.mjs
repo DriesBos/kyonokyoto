@@ -4051,6 +4051,279 @@ function hasValidEventTitle(eventData) {
   return eventData?._title_valid !== false && titleQualityWarnings(eventData?.title).length === 0;
 }
 
+function normalizeDescriptionComparison(value) {
+  return String(value ?? '')
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replace(/[\p{P}\p{S}\s]+/gu, '');
+}
+
+function cleanDescriptionCandidate(value) {
+  return decodeHtml(String(value ?? ''))
+    .replace(/\r/g, '')
+    .replace(/\n\s*\n/g, '\uE000')
+    .replace(/\s+/g, ' ')
+    .replaceAll('\uE000', '\n\n')
+    .trim()
+    .slice(0, 1200);
+}
+
+function descriptionQualityWarnings(value, eventData = {}, source = {}) {
+  const description = cleanDescriptionCandidate(value);
+  if (!description) return ['missing'];
+
+  const warnings = [];
+  const normalized = normalizeDescriptionComparison(description);
+  if (normalized.length < 6) warnings.push('too_short');
+  if (/(?:copyright|all rights reserved|privacy policy|cookie policy)/iu.test(description)) {
+    warnings.push('site_boilerplate');
+  }
+  if (
+    description.length <= 200 &&
+    /(?:掲載作品|\d+(?:\.\d+)?\s*(?:cm|mm)?\s*[×x]\s*\d+(?:\.\d+)?)/iu.test(description)
+  ) {
+    warnings.push('image_caption');
+  }
+  const structuredValues = [
+    eventData.title,
+    eventData.date_text,
+    eventData.venue_name,
+    eventData.institution_name,
+    eventData.address_text,
+    source.name,
+    ...Object.values(source.names ?? {}),
+  ]
+    .map(normalizeDescriptionComparison)
+    .filter((item) => item.length >= 3)
+    .sort((a, b) => b.length - a.length);
+
+  if (structuredValues.includes(normalized)) warnings.push('matches_structured_field');
+  if (
+    /^(?:current|upcoming|past|future|coming soon|exhibitions?|events?|schedule|program|archive|hours?(?:\s*&\s*admissions?)?|admissions?|access|location|展覧会(?:情報)?|展示(?:情報)?|イベント(?:情報)?|開催中|開催予定|会期|会場|開館時間)$/iu.test(
+      description,
+    )
+  ) {
+    warnings.push('generic_label');
+  }
+
+  const structuredLabels =
+    description.match(
+      /(?:会期|開催期間|日時|時間|場所|会場|休廊|休館|入場|備考|助成金|exhibition|venue|dates?|period|hours?|location|admission|schedule)\s*[|｜:：]?/giu,
+    ) ?? [];
+  if (
+    description.length <= 500 &&
+    structuredLabels.length >= 2 &&
+    !/[。.!?！？]/u.test(description)
+  ) {
+    warnings.push('structured_fields_only');
+  }
+
+  let remainder = normalized;
+  for (const structuredValue of structuredValues) {
+    remainder = remainder.replaceAll(structuredValue, '');
+  }
+  remainder = remainder.replace(
+    /(?:会期|開催期間|日時|時間|場所|会場|休廊|休館|入場無料?|備考|助成金|exhibition|venue|dates?|period|hours?|location|open|closed|admission|schedule)/giu,
+    '',
+  );
+  if (
+    description.length <= 500 &&
+    remainder.length <= Math.max(4, Math.floor(normalized.length * 0.08)) &&
+    structuredValues.some((item) => normalized.includes(item))
+  ) {
+    warnings.push('structured_fields_only');
+  }
+
+  const dateText = extractFirstDateText(description);
+  if (dateText !== 'See source page') {
+    const dateRemainder = description
+      .replace(dateText, '')
+      .replace(
+        /\b(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/giu,
+        '',
+      )
+      .replace(/(?:会期|開催期間|日時|時間|休廊|休館|年月日|曜日?)/gu, '')
+      .replace(/[\d\s\p{P}\p{S}年月日時分日月火水木金土曜祝]/gu, '');
+    if (normalizeDescriptionComparison(dateRemainder).length < 6) warnings.push('date_only');
+  }
+
+  if (/\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b|\d{1,2}:\d{2}/iu.test(description)) {
+    const hoursRemainder = description
+      .replace(/\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/giu, '')
+      .replace(/\d{1,2}:\d{2}/gu, '')
+      .replace(
+        /(?:hours?|open|closed|last entry|fridays?|saturdays?|sundays?|weekdays?|時間|開館|閉館|入館|最終)/giu,
+        '',
+      )
+      .replace(/[\d\s\p{P}\p{S}年月日時分日月火水木金土曜祝]/gu, '');
+    if (normalizeDescriptionComparison(hoursRemainder).length < 10) warnings.push('hours_only');
+  }
+
+  if (
+    description.length <= 300 &&
+    /(?:official (?:web)?site|公式(?:ウェブ)?サイト|(?:サイト|ページ)です[。.]?$)/iu.test(
+      description,
+    )
+  ) {
+    warnings.push('site_boilerplate');
+  }
+
+  return [...new Set(warnings)];
+}
+
+function extractJsonLdEventDescriptions(detailHtml) {
+  const descriptions = [];
+  const visit = (value) => {
+    if (Array.isArray(value)) return value.forEach(visit);
+    if (!value || typeof value !== 'object') return;
+
+    const types = Array.isArray(value['@type']) ? value['@type'] : [value['@type']];
+    if (
+      types.some((type) => typeof type === 'string' && /(?:Event|Exhibition)$/i.test(type)) &&
+      typeof value.description === 'string'
+    ) {
+      descriptions.push(value.description);
+    }
+    Object.values(value).forEach(visit);
+  };
+
+  for (const match of String(detailHtml ?? '').matchAll(
+    /<script\b[^>]*type=(['"])application\/ld\+json\1[^>]*>([\s\S]*?)<\/script>/gi,
+  )) {
+    try {
+      visit(JSON.parse(match[2]));
+    } catch {
+      // Invalid third-party JSON-LD. Continue with visible page content.
+    }
+  }
+
+  return descriptions;
+}
+
+function descriptionMatchesTitle(value, eventData, source) {
+  const description = String(value ?? '')
+    .normalize('NFKC')
+    .toLocaleLowerCase();
+  const ignoredTerms = new Set([
+    'art',
+    'event',
+    'exhibition',
+    'gallery',
+    'museum',
+    'special',
+    'title',
+    '展覧会',
+    '展示',
+    ...String(source?.name ?? '')
+      .normalize('NFKC')
+      .toLocaleLowerCase()
+      .split(/[^\p{L}\p{N}]+/u),
+  ]);
+  const terms = String(eventData?.title ?? '')
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((term) => term.length >= 3 && !/^\d+$/u.test(term) && !ignoredTerms.has(term));
+
+  return terms.some((term) => description.includes(term));
+}
+
+function looksLikeDescriptionProse(value) {
+  return (
+    /\b(?:is|are|was|were|will|presents?|features?|explores?|brings?|gathers?|introduces?|showcases?|examines?|includes?|focuses?|traces?|continues?)\b/iu.test(
+      value,
+    ) || /(?:です|ます|ました|します|されます|紹介します|開催します|展示します|展覧会)/u.test(value)
+  );
+}
+
+function extractBodyDescription(html, eventData, source) {
+  if (!html) return null;
+
+  const scopedHtml = selectElements(html, 'main, article');
+  const fragments = scopedHtml.length ? scopedHtml : [html];
+  const paragraphs = fragments
+    .flatMap((fragment) => [...fragment.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)])
+    .map((match) => cleanDescriptionCandidate(stripTags(match[1])))
+    .filter((value) => normalizeDescriptionComparison(value).length >= 20)
+    .filter((value, index, all) => all.indexOf(value) === index)
+    .filter((value) => descriptionQualityWarnings(value, eventData, source).length === 0)
+    .filter(
+      (value) =>
+        descriptionMatchesTitle(value, eventData, source) || looksLikeDescriptionProse(value),
+    )
+    .map((value, index) => ({
+      value,
+      index,
+      score:
+        Math.min(normalizeDescriptionComparison(value).length, 200) +
+        (descriptionMatchesTitle(value, eventData, source) ? 300 : 0) +
+        (/[。.!?！？]/u.test(value) ? 50 : 0),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 2)
+    .sort((a, b) => a.index - b.index)
+    .map((paragraph) => paragraph.value);
+
+  return paragraphs.slice(0, 2).join('\n\n') || null;
+}
+
+function resolveEventDescription(eventData, source, page = {}) {
+  const html = page.html ?? '';
+  const configuredDescription = selectorTextValues(html, selectorsFor(source, 'description'))
+    .slice(0, 2)
+    .join('\n\n');
+  const existingOrigin = eventData?._description_origin ?? 'source_specific_extractor';
+  const existingCandidate = { value: eventData?.description, origin: existingOrigin };
+  const candidates = [
+    { value: configuredDescription, origin: 'configured_selector' },
+    ...(existingOrigin === 'source_specific_extractor' ? [existingCandidate] : []),
+    { value: extractBodyDescription(page.fitHtml, eventData, source), origin: 'crawl4ai_fit' },
+    {
+      value: extractBodyDescription(page.cleanedHtml, eventData, source),
+      origin: 'crawl4ai_cleaned',
+    },
+    { value: extractBodyDescription(html, eventData, source), origin: 'page_body' },
+    ...extractJsonLdEventDescriptions(html).map((value) => ({ value, origin: 'json_ld' })),
+    { value: extractMeta(html, 'og:description'), origin: 'og_description' },
+    { value: extractMeta(html, 'description'), origin: 'meta_description' },
+    ...(existingOrigin === 'source_specific_extractor' ? [] : [existingCandidate]),
+  ]
+    .map((candidate) => ({
+      ...candidate,
+      value: cleanDescriptionCandidate(candidate.value),
+    }))
+    .filter((candidate, index, all) => {
+      if (!candidate.value) return false;
+      const normalized = normalizeDescriptionComparison(candidate.value);
+      return (
+        all.findIndex(
+          (item) => item.value && normalizeDescriptionComparison(item.value) === normalized,
+        ) === index
+      );
+    })
+    .map((candidate) => ({
+      ...candidate,
+      warnings: descriptionQualityWarnings(candidate.value, eventData, source),
+    }));
+  const selected = candidates.find((candidate) => candidate.warnings.length === 0);
+  const rejected = candidates.filter((candidate) => candidate.warnings.length > 0);
+  const initialWarnings = descriptionQualityWarnings(eventData?.description, eventData, source);
+
+  return {
+    ...eventData,
+    description: selected?.value ?? null,
+    _description_origin: selected?.origin ?? 'missing',
+    _description_warnings: selected ? [] : initialWarnings,
+    _description_valid: Boolean(selected),
+    _description_recovered:
+      Boolean(selected) && Boolean(eventData?.description) && initialWarnings.length > 0,
+    _description_rejections: rejected.slice(0, 5).map((candidate) => ({
+      origin: candidate.origin,
+      warnings: candidate.warnings,
+    })),
+  };
+}
+
 function extractGenericDescription(detailHtml) {
   const metaDescription =
     extractMeta(detailHtml, 'og:description') ?? extractMeta(detailHtml, 'description');
@@ -4099,7 +4372,7 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
       });
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
 
-  return {
+  const event = {
     title: titleInfo.title,
     categories: flattenTaxonomy(source.taxonomy),
     description: configuredDescription || extractGenericDescription(detailHtml),
@@ -4127,7 +4400,10 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
     _title_origin: titleInfo.origin,
     _title_warnings: titleInfo.warnings,
     _title_valid: titleInfo.warnings.length === 0,
+    _description_origin: configuredDescription ? 'configured_selector' : 'generic_fallback',
   };
+
+  return resolveEventDescription(event, source, { html: detailHtml });
 }
 
 function extractKitanoEvent(detailHtml, source, detailUrl) {
@@ -6345,6 +6621,10 @@ function createCrawlDiagnostics(env = {}) {
     date_extractions: [],
     title_extractions: [],
     title_render_retry_count: 0,
+    description_extractions: [],
+    description_recovered_count: 0,
+    description_rejected_count: 0,
+    description_missing_count: 0,
   };
 }
 
@@ -6403,6 +6683,25 @@ function recordTitleExtraction(diagnostics, event) {
   });
 }
 
+function recordDescriptionExtraction(diagnostics, event) {
+  if (!diagnostics) return;
+
+  if (event?._description_recovered) diagnostics.description_recovered_count += 1;
+  if (!event?._description_valid && event?._description_rejections?.length) {
+    diagnostics.description_rejected_count += 1;
+  }
+  if (!event?.description) diagnostics.description_missing_count += 1;
+  if (diagnostics.description_extractions.length >= 20) return;
+
+  diagnostics.description_extractions.push({
+    url: event?.source_url ?? null,
+    origin: event?._description_origin ?? 'unknown',
+    valid: event?._description_valid !== false && Boolean(event?.description),
+    recovered: Boolean(event?._description_recovered),
+    rejections: event?._description_rejections ?? [],
+  });
+}
+
 function pushSkippedEvent(skippedEvents, diagnostics, skippedEvent) {
   skippedEvents.push(skippedEvent);
   recordSkippedEvent(diagnostics, skippedEvent.reason);
@@ -6422,7 +6721,12 @@ function classifySourceOutcome({
       : 'source_empty';
   }
   if (savedEvents.length > 0 && diagnostics.bot_challenge_count > 0) return 'source_degraded';
-  if (usedGenericExtractor || diagnostics.skipped_invalid_title_count > 0) {
+  if (
+    usedGenericExtractor ||
+    diagnostics.skipped_invalid_title_count > 0 ||
+    diagnostics.description_rejected_count > 0 ||
+    diagnostics.description_missing_count > 0
+  ) {
     return 'source_needs_review';
   }
   if (savedEvents.length > 0) return 'source_ok';
@@ -6539,6 +6843,9 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
   ];
 
   if (context?.waitFor) args.push('--wait-for', context.waitFor);
+  for (const targetElement of context?.targetElements ?? []) {
+    args.push('--target-element', targetElement);
+  }
   if (context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true)) {
     args.push('--wait-for-images');
   }
@@ -6579,6 +6886,8 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
         status: result.status_code ?? 200,
       },
       html,
+      cleanedHtml: result.cleaned_html ?? '',
+      fitHtml: result.fit_html ?? '',
       title:
         result.metadata?.title ??
         result.title ??
@@ -6590,6 +6899,8 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
         crawl4ai_images_count: result.media?.images?.length ?? 0,
         crawl4ai_version: result.crawl4ai_version ?? null,
         crawl4ai_duration_ms: result.duration_ms ?? null,
+        crawl4ai_cleaned_html_length: result.cleaned_html?.length ?? 0,
+        crawl4ai_fit_html_length: result.fit_html?.length ?? 0,
         redirected_status_code: result.redirected_status_code ?? null,
       },
     };
@@ -6959,7 +7270,10 @@ async function fetchNativeLocaleEvent({
   try {
     const nativePage = await fetchHtml(alternateUrl, userAgent, env, {
       renderMode,
-      context: crawlContext,
+      context: {
+        ...crawlContext,
+        targetElements: selectorsFor(nativeSource, 'description'),
+      },
     });
     recordFetchedPage(diagnostics, nativePage);
 
@@ -6968,13 +7282,17 @@ async function fetchNativeLocaleEvent({
       throw new Error(`alternate URL redirected to ${finalUrl}`);
     }
 
-    const nativeEvent = assessEventTitle(
-      normalizeEventSourceTruth(
-        eventExtractor(nativePage.html, nativeSource, alternateUrl, sourceContext),
+    const nativeEvent = resolveEventDescription(
+      assessEventTitle(
+        normalizeEventSourceTruth(
+          eventExtractor(nativePage.html, nativeSource, alternateUrl, sourceContext),
+          nativeSource,
+        ),
         nativeSource,
+        eventExtractor === extractGenericEvent ? 'generic_fallback' : 'source_specific_extractor',
       ),
       nativeSource,
-      eventExtractor === extractGenericEvent ? 'generic_fallback' : 'source_specific_extractor',
+      nativePage,
     );
 
     if (
@@ -7319,11 +7637,15 @@ async function crawlSource({
     const savedEvents = [];
     const skippedEvents = [];
     const activeDedupeKeys = new Set();
+    const detailCrawlContext = {
+      ...crawlContext,
+      targetElements: selectorsFor(crawlSourceConfig, 'description'),
+    };
 
     for (const detailUrl of detailUrls) {
       let detailPage = await fetchHtml(detailUrl, userAgent, env, {
         renderMode: sourceRenderMode,
-        context: crawlContext,
+        context: detailCrawlContext,
       });
       pagesFetched += 1;
       recordFetchedPage(diagnostics, detailPage);
@@ -7335,6 +7657,7 @@ async function crawlSource({
         crawlSourceConfig,
         eventExtractor === extractGenericEvent ? 'generic_fallback' : 'source_specific_extractor',
       );
+      extractedEvent = resolveEventDescription(extractedEvent, crawlSourceConfig, detailPage);
       extractedEvent = normalizeEventDatePrecision(extractedEvent);
 
       if (
@@ -7347,7 +7670,7 @@ async function crawlSource({
           detailUrl,
           userAgent,
           env,
-          crawlContext,
+          detailCrawlContext,
         );
         if (renderedDetailPage) {
           pagesFetched += 1;
@@ -7363,7 +7686,9 @@ async function crawlSource({
               : 'source_specific_extractor',
           );
           detailPage = renderedDetailPage;
-          extractedEvent = normalizeEventDatePrecision(renderedEvent);
+          extractedEvent = normalizeEventDatePrecision(
+            resolveEventDescription(renderedEvent, crawlSourceConfig, renderedDetailPage),
+          );
         }
       }
 
@@ -7378,6 +7703,7 @@ async function crawlSource({
         usedGenericExtractor,
       );
       recordTitleExtraction(diagnostics, extractedEvent);
+      recordDescriptionExtraction(diagnostics, extractedEvent);
 
       if (!hasValidEventTitle(extractedEvent)) {
         pushSkippedEvent(skippedEvents, diagnostics, {
@@ -7733,6 +8059,7 @@ export {
   parseKyoceraDateRange,
   extractBestDateText,
   recordFetchedPage,
+  resolveEventDescription,
   sanitizePostgresJson,
   sanitizePostgresText,
   extractRakuMuseumEvent,

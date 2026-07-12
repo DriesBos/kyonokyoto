@@ -32,6 +32,16 @@ fi
 
 npm --prefix apps/crawler ci
 
+requirements_hash=$(sha256sum apps/crawler/requirements.txt | cut -d' ' -f1)
+requirements_stamp=apps/crawler/.venv/.requirements.sha256
+if [[ ! -f "$requirements_stamp" ]] || [[ "$(<"$requirements_stamp")" != "$requirements_hash" ]]; then
+  python3.12 -m venv apps/crawler/.venv
+  apps/crawler/.venv/bin/pip install --disable-pip-version-check -r apps/crawler/requirements.txt
+  CRAWL4_AI_BASE_DIRECTORY="$repo/apps/crawler/.cache" \
+    apps/crawler/.venv/bin/crawl4ai-setup
+  printf '%s\n' "$requirements_hash" >"$requirements_stamp"
+fi
+
 sudo -n install -m 0644 \
   ops/systemd/kyo-no-kyoto-crawl@.service.example \
   /etc/systemd/system/kyo-no-kyoto-crawl@.service

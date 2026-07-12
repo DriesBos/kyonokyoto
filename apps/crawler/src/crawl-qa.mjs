@@ -41,6 +41,12 @@ export function buildCrawlQaReport({
       render_retries: diagnostics.title_render_retry_count ?? 0,
       extractions: diagnostics.title_extractions ?? [],
     },
+    descriptions: {
+      recovered: diagnostics.description_recovered_count ?? 0,
+      rejected: diagnostics.description_rejected_count ?? 0,
+      missing: diagnostics.description_missing_count ?? 0,
+      extractions: diagnostics.description_extractions ?? [],
+    },
     crawl4ai: {
       render_count: diagnostics.crawl4ai_render_count ?? 0,
       render_limit: diagnostics.crawl4ai_render_limit ?? 0,

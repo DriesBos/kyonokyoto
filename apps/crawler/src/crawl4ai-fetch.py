@@ -26,6 +26,7 @@ def build_parser():
     parser.add_argument("--user-agent", default="kyo-no-kyoto-bot/0.1")
     parser.add_argument("--timeout-ms", type=int, default=45000)
     parser.add_argument("--scroll-delay", type=float, default=0.5)
+    parser.add_argument("--target-element", action="append", default=[])
     parser.add_argument("--wait-for")
     parser.add_argument("--wait-for-images", action="store_true")
     parser.add_argument("--scan-full-page", action="store_true")
@@ -46,6 +47,8 @@ async def render(args):
         raise RuntimeError("Crawl4AI requires Python 3.10 or newer")
 
     from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
+    from crawl4ai.content_filter_strategy import PruningContentFilter
+    from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
     browser_config = BrowserConfig(
         headless=True,
@@ -57,6 +60,15 @@ async def render(args):
     crawler_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS if args.bypass_cache else CacheMode.ENABLED,
         check_robots_txt=True,
+        excluded_tags=["nav", "footer", "aside", "form"],
+        target_elements=args.target_element or None,
+        markdown_generator=DefaultMarkdownGenerator(
+            content_filter=PruningContentFilter(
+                threshold=0.45,
+                threshold_type="dynamic",
+                min_word_threshold=0,
+            )
+        ),
         page_timeout=args.timeout_ms,
         remove_overlay_elements=True,
         wait_for_images=args.wait_for_images,
@@ -71,10 +83,13 @@ async def render(args):
 
     media = getattr(result, "media", {}) or {}
     metadata = getattr(result, "metadata", {}) or {}
+    markdown = getattr(result, "markdown", None)
     payload = {
         "success": bool(getattr(result, "success", False)),
         "url": getattr(result, "url", args.url),
         "html": getattr(result, "html", "") or "",
+        "cleaned_html": getattr(result, "cleaned_html", "") or "",
+        "fit_html": getattr(markdown, "fit_html", "") or "",
         "media": safe_json(media),
         "metadata": safe_json(metadata),
         "status_code": getattr(result, "status_code", None),
@@ -96,6 +111,8 @@ async def main():
             "success": False,
             "url": args.url,
             "html": "",
+            "cleaned_html": "",
+            "fit_html": "",
             "media": {},
             "metadata": {},
             "error_message": str(error),

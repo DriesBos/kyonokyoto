@@ -82,6 +82,8 @@ Current lazy-image policy:
 - With `CRAWL4AI_RENDER_MODE=auto`, detail pages that extract no image or valid title are retried through `apps/crawler/src/crawl4ai-fetch.py`.
 - With `CRAWL4AI_RENDER_MODE=auto`, listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried through Crawl4AI before extraction continues.
 - Crawl4AI retry supports source-specific `wait_for`, `wait_for_images`, and `scan_full_page`. Full-page scanning stays off by default; rendered media still feeds existing deterministic image selection.
+- Renderer preserves raw HTML and also returns `cleaned_html` plus pruning-filtered `fit_html`. Processed HTML may recover description prose, but never replaces raw extraction evidence.
+- Known `selectors.description` values become Crawl4AI `target_elements` on rendered detail pages. Generic pages still use the shared deterministic description resolver.
 - Use `--render=always` or `CRAWL4AI_RENDER_MODE=always` only when discovery itself needs browser rendering, such as JavaScript-built listing pages.
 - Use `CRAWL4AI_RENDER_MODE=never` for local static-only tuning or when Crawl4AI is not installed.
 
@@ -103,6 +105,7 @@ Current static fetch resilience policy:
 - Each source run records structured diagnostics in `crawl_runs.logs`, including static fetch count, Crawl4AI fetch count, retry count, challenge/shell counts, skip counts, and Crawl4AI budget usage.
 - `CRAWL4AI_MAX_RENDERS_PER_SOURCE` caps browser renders so one broken source cannot dominate a scheduled crawl.
 - `apps/crawler/requirements.txt` pins renderer version; Python 3.10+ is required. Raw-page metadata records installed Crawl4AI version and render duration.
+- VPS deploy installs pinned Python requirements and runs `crawl4ai-setup`, keeping runtime behavior aligned with repository code.
 - Renderer defaults `CRAWL4_AI_BASE_DIRECTORY` to ignored `apps/crawler/.cache` so constrained runtimes do not require writable home directories.
 - Each completed run gets a source outcome such as `source_ok`, `source_degraded`, `source_blocked`, `source_empty`, `source_no_current_events`, `source_needs_review`, or `source_failed`.
 

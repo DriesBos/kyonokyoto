@@ -712,6 +712,9 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "English homepage exposes current exhibition and exhibition archive links.",
+      "selectors": {
+        "description": ".HTML__Container-sc-1im40xc-0 p"
+      },
       "beta": true,
       "locales": {
         "en": {

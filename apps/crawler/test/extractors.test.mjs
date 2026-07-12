@@ -38,6 +38,7 @@ import {
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,
   recordFetchedPage,
+  resolveEventDescription,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
   sourceHasNativeLocale,
@@ -1422,6 +1423,11 @@ test('generic event extraction returns title, dates, and images', async () => {
   assert.equal(event.title, 'Quiet Forms');
   assert.equal(event.start_date, '2026-04-12');
   assert.equal(event.end_date, '2026-05-31');
+  assert.equal(
+    event.description,
+    'This exhibition gathers quiet sculptural forms, hand-built vessels, and works on paper from artists working in Kyoto.',
+  );
+  assert.equal(event._description_origin, 'page_body');
   assert.equal(event.primary_image_url, 'https://example.test/images/install-view.jpg');
   assert.equal(event.image_urls.includes('https://example.test/media/quiet-forms.jpg'), true);
   assert.equal(event.image_urls.includes('https://example.test/images/venue-mark.jpg'), false);
@@ -1435,6 +1441,52 @@ test('generic event extraction returns title, dates, and images', async () => {
   );
   assert.equal(event.image_urls.includes('https://example.test/images/program-thumb.jpg'), false);
   assert.equal(hasExtractedImage(event), true);
+});
+
+test('description resolver recovers prose and rejects structured-field copy', () => {
+  const source = {
+    name: 'Example Gallery',
+    address_text: '1 Example Street, Kyoto',
+  };
+  const event = {
+    title: 'Quiet Forms',
+    date_text: 'April 12, 2026 - May 31, 2026',
+    venue_name: 'Example Gallery',
+    institution_name: 'Example Gallery',
+    address_text: source.address_text,
+    description: 'April 12, 2026 - May 31, 2026',
+  };
+  const recovered = resolveEventDescription(event, source, {
+    html: '<main><p>April 12, 2026 - May 31, 2026</p></main>',
+    fitHtml:
+      '<main><p>Quiet Forms brings recent sculpture and works on paper to Example Gallery.</p></main>',
+  });
+  const rejected = resolveEventDescription(event, source, {
+    html: '<main><p>Quiet Forms</p><p>Example Gallery</p><p>April 12, 2026 - May 31, 2026</p></main>',
+  });
+  const retained = resolveEventDescription(
+    {
+      ...event,
+      description:
+        'Quiet Forms brings recent sculpture and works on paper to Example Gallery for the first time.',
+    },
+    source,
+    { html: '' },
+  );
+
+  assert.equal(
+    recovered.description,
+    'Quiet Forms brings recent sculpture and works on paper to Example Gallery.',
+  );
+  assert.equal(recovered._description_origin, 'crawl4ai_fit');
+  assert.equal(recovered._description_recovered, true);
+  assert.equal(rejected.description, null);
+  assert.equal(rejected._description_valid, false);
+  assert.equal(
+    retained.description,
+    'Quiet Forms brings recent sculpture and works on paper to Example Gallery for the first time.',
+  );
+  assert.equal(retained._description_valid, true);
 });
 
 test('generic event extraction ignores common site chrome images', () => {
@@ -2597,6 +2649,9 @@ test('noisy generic sources pin event title and discovery fields', async () => {
   const artcourt = sources.find((source) => source.slug === 'artcourt-gallery');
   const tobikan = sources.find((source) => source.slug === 'tokyo-metropolitan-art-museum');
   const opera = sources.find((source) => source.slug === 'tokyo-opera-city-art-gallery');
+  const momat = sources.find((source) => source.slug === 'national-museum-of-modern-art-tokyo');
+  const yamatane = sources.find((source) => source.slug === 'yamatane-museum-of-art');
+  const kouichi = sources.find((source) => source.slug === 'kouichi-fine-arts');
 
   const plusYEvent = extractGenericEvent(
     `<main id="content_area"><div class="j-text"><p>Past</p><p>北辻 良央 展</p><p>会期 ｜ 2026年7月19日ー8月12日</p></div><img src="/show.jpg"></main>`,
@@ -2611,6 +2666,12 @@ test('noisy generic sources pin event title and discovery fields', async () => {
   assert.equal(tobikan?.selectors?.title, '.exhibition-header-title');
   assert.equal(opera?.selectors?.listing_links, "main a[href*='/ag/exh/']");
   assert.ok(opera?.crawl_hints?.skip_patterns.includes('/ag/exh/current_exhibitions'));
+  assert.equal(momat?.selectors?.description, '#section-01 p');
+  assert.deepEqual(yamatane?.selectors?.description, [
+    '.l-exhibition-intro__text',
+    '.l-exhibition-intro__content p',
+  ]);
+  assert.equal(kouichi?.selectors?.description, '.HTML__Container-sc-1im40xc-0 p');
 });
 
 test('crawl QA report summarizes saved events, missing translations, and diagnostics', () => {
@@ -2635,6 +2696,18 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
         crawl4ai_render_count: 1,
         crawl4ai_render_limit: 5,
         crawl4ai_render_skipped_count: 0,
+        description_recovered_count: 1,
+        description_rejected_count: 0,
+        description_missing_count: 0,
+        description_extractions: [
+          {
+            url: 'https://example.test/one',
+            origin: 'page_body',
+            valid: true,
+            recovered: true,
+            rejections: [],
+          },
+        ],
       },
     }),
     {
@@ -2662,6 +2735,20 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
       titles: {
         render_retries: 0,
         extractions: [],
+      },
+      descriptions: {
+        recovered: 1,
+        rejected: 0,
+        missing: 0,
+        extractions: [
+          {
+            url: 'https://example.test/one',
+            origin: 'page_body',
+            valid: true,
+            recovered: true,
+            rejections: [],
+          },
+        ],
       },
       crawl4ai: {
         render_count: 1,

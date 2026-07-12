@@ -201,6 +201,8 @@ How to tune effectively:
 - Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
 - When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
 - With `CRAWL4AI_RENDER_MODE=auto`, crawler keeps static fetch first, then asks Crawl4AI to render detail pages whose extracted event has no image or valid title.
+- Rendered pages keep raw HTML for deterministic extraction and raw-page evidence. Crawl4AI cleaned and pruned HTML are additional description candidates only.
+- Description extraction prefers configured selectors and source-specific copy, then relevant body prose, JSON-LD, and metadata. Title/date/location-only candidates are rejected and reported in crawl QA logs.
 - If a source leaks logo, social, or navigation images without useful HTML dimensions, add `"measure_image_dimensions": true` to that source in the city source file or to its slug in `data/sources/overrides/<city>-overrides.json`.
 - JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
