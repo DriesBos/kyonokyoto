@@ -104,8 +104,8 @@ const slidesJson = serializeInlineJson(slides);
     appearance: none
     -webkit-tap-highlight-color: transparent
 
-  .landing__button--blend
-    mix-blend-mode: overlay
+  .landing[data-landing-slider-ready] .landing__button--blend
+    mix-blend-mode: difference
 
   .landing__background
     position: absolute

@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo=/srv/kyo-no-kyoto
+lock=/run/lock/kyo-no-kyoto-crawl.lock
+export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH"
+
+exec 9>"$lock"
+flock -w 3600 9
+
+cd "$repo"
+
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "VPS checkout is dirty; refusing deploy" >&2
+  exit 1
+fi
+
+git fetch origin main
+read -r ahead behind < <(git rev-list --left-right --count HEAD...origin/main)
+
+if ((ahead > 0)); then
+  echo "VPS main diverged from origin/main: ahead $ahead, behind $behind" >&2
+  exit 1
+fi
+
+git merge --ff-only origin/main
+
+if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
+  echo "VPS checkout does not match origin/main after deploy" >&2
+  exit 1
+fi
+
+npm --prefix apps/crawler ci
+
+sudo -n install -m 0644 \
+  ops/systemd/kyo-no-kyoto-crawl@.service.example \
+  /etc/systemd/system/kyo-no-kyoto-crawl@.service
+sudo -n install -m 0644 \
+  ops/systemd/kyo-no-kyoto-crawl-failure@.service.example \
+  /etc/systemd/system/kyo-no-kyoto-crawl-failure@.service
+sudo -n systemctl daemon-reload
+
+echo "VPS deployed $(git rev-parse --short HEAD)"

@@ -210,6 +210,18 @@ Rule of thumb:
 
 ## Scheduler
 
+### VPS deployment
+
+`.github/workflows/deploy-vps.yml` fast-forwards the crawler VPS after every push to `main`.
+Configure these repository values:
+
+- Actions variables: `VPS_HOST`, `VPS_USER`
+- Actions secrets: `VPS_DEPLOY_KEY`, `VPS_KNOWN_HOSTS`
+
+The deploy key should be restricted in `~/.ssh/authorized_keys` to the root-owned
+`/usr/local/bin/kyo-vps-deploy` command. Install `ops/deploy-vps.sh` there during bootstrap.
+The deploy and crawler share one `flock`, so code cannot change during a crawl.
+
 Recommended production path:
 
 1. Put the repo on the VPS.

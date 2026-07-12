@@ -38,17 +38,37 @@ test('landing shutter fill covers from bottom without moving its content coordin
   );
 });
 
+test('landing uses an odd row count so no shutter boundary cuts the centered logo', async () => {
+  const script = await readFile(scriptPath, 'utf8');
+
+  assert.match(script, /const minimumRowCount = Math\.ceil\(height \/ preferredRowHeight\)/);
+  assert.match(
+    script,
+    /const rowCount = minimumRowCount \+ \(minimumRowCount % 2 === 0 \? 1 : 0\)/,
+  );
+  assert.match(script, /const rowHeight = height \/ rowCount/);
+  assert.match(script, /row\.style\.flexBasis = `\$\{rowHeight\}px`/);
+});
+
 test('landing text blends over images and stays white over animated shutters', async () => {
   const component = await readFile(componentPath, 'utf8');
   const script = await readFile(scriptPath, 'utf8');
 
-  assert.match(component, /\.landing__button--blend\s*\n\s+mix-blend-mode: difference/);
+  assert.match(
+    component,
+    /\.landing\[data-landing-slider-ready\] \.landing__button--blend\s*\n\s+mix-blend-mode: (?!normal\b)[a-z-]+/,
+  );
   assert.match(component, /:global\(\.landing__content--shutter\)/);
   assert.match(component, /mix-blend-mode: normal/);
   assert.match(component, /color: #fff/);
   assert.match(component, /\.landing__shutters\s*\n\s+z-index: 3/);
   assert.match(script, /content\.cloneNode\(true\)/);
   assert.match(script, /fill\.append\(whiteContent\)/);
+  assert.match(
+    script,
+    /createRows\(root, shuttersContainer, content, fillClipPath\);\s+root\.toggleAttribute\('data-landing-slider-ready', true\)/,
+  );
+  assert.match(script, /root\.removeAttribute\('data-landing-slider-ready'\)/);
   assert.doesNotMatch(script, /mixBlendMode/);
 });
 

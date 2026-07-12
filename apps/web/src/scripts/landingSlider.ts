@@ -93,9 +93,11 @@ const createRows = (
   content: HTMLElement,
   fillClipPath: string,
 ) => {
-  const rowHeight = rowHeightFor(root);
+  const preferredRowHeight = rowHeightFor(root);
   const { width, height } = root.getBoundingClientRect();
-  const rowCount = Math.ceil(height / rowHeight) + 1;
+  const minimumRowCount = Math.ceil(height / preferredRowHeight);
+  const rowCount = minimumRowCount + (minimumRowCount % 2 === 0 ? 1 : 0);
+  const rowHeight = height / rowCount;
   const fragment = document.createDocumentFragment();
 
   for (let index = 0; index < rowCount; index += 1) {
@@ -104,6 +106,7 @@ const createRows = (
     const whiteContent = content.cloneNode(true) as HTMLElement;
 
     row.className = 'landing__shutter-row';
+    row.style.flexBasis = `${rowHeight}px`;
     fill.className = 'landing__shutter-fill';
     fill.style.clipPath = fillClipPath;
     whiteContent.classList.add('landing__content--shutter');
@@ -244,6 +247,7 @@ export const initLandingSlider = () => {
 
   createSlideElements(slidesContainer, slides);
   createRows(root, shuttersContainer, content, fillClipPath);
+  root.toggleAttribute('data-landing-slider-ready', true);
   observer?.observe(root);
   window.addEventListener('resize', handleResize);
   window.addEventListener(exitEventName, stop);
@@ -255,6 +259,7 @@ export const initLandingSlider = () => {
     window.removeEventListener('resize', handleResize);
     window.removeEventListener(exitEventName, stop);
     window.clearTimeout(resizeTimer);
+    root.removeAttribute('data-landing-slider-ready');
     sliderWindow.__landingSliderCleanup = undefined;
   };
 };

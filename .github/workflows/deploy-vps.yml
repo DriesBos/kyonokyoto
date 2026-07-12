@@ -1,0 +1,42 @@
+name: Deploy crawler VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-crawler-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Fast-forward VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Configure restricted SSH key
+        env:
+          VPS_DEPLOY_KEY: ${{ secrets.VPS_DEPLOY_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 0700 -d ~/.ssh
+          printf '%s\n' "$VPS_DEPLOY_KEY" > ~/.ssh/vps_deploy
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/vps_deploy ~/.ssh/known_hosts
+
+      - name: Deploy current main
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_USER: ${{ vars.VPS_USER }}
+        run: |
+          ssh \
+            -T \
+            -i ~/.ssh/vps_deploy \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            "$VPS_USER@$VPS_HOST"
