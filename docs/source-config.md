@@ -160,6 +160,9 @@ Optional. Use for fetch/crawl behavior exceptions.
   "crawl_hints": {
     "requires_render": true,
     "render_mode": "auto",
+    "wait_for": "css:main .event-title",
+    "wait_for_images": true,
+    "scan_full_page": false,
     "max_detail_pages": 12,
     "skip_patterns": ["/archive/", "/news/"]
   }
@@ -168,6 +171,9 @@ Optional. Use for fetch/crawl behavior exceptions.
 
 - `requires_render: true` forces Crawl4AI rendering for that source.
 - `render_mode` can be `auto`, `always`, or `never`; it overrides global crawler render mode for this source.
+- `wait_for` waits for a Crawl4AI CSS (`css:...`) or JavaScript (`js:...`) condition before capture.
+- `wait_for_images` overrides global image waiting for this source.
+- `scan_full_page` scrolls whole rendered page. Enable only for proven lazy-loaded media.
 - `max_detail_pages` caps detail URLs for this source.
 - `skip_patterns` drops matching URLs before detail fetch.
 

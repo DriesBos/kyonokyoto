@@ -737,23 +737,37 @@
       "lat": 34.6841553,
       "lng": 135.5155175,
       "base_url": "https://www.plus-y-gallery.com/",
+      "url_year": "current",
       "start_urls": ["https://www.plus-y-gallery.com/"],
       "allowed_domains": ["www.plus-y-gallery.com", "plus-y-gallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/"],
-      "notes": "Jimdo homepage lists next exhibition and archive links.",
+      "event_page_patterns": ["/2026"],
+      "notes": "Jimdo homepage lists current-year exhibition pages. Detail titles live in the first meaningful content paragraph; Jimdo page metadata is generic.",
       "beta": true,
       "locales": {
         "ja": {
           "start_urls": ["https://www.plus-y-gallery.com/"],
-          "event_page_patterns": ["/"]
+          "event_page_patterns": ["/2026"]
         }
       },
       "capabilities": {
         "native_locales": ["ja"]
       },
+      "selectors": {
+        "title": ".j-text p"
+      },
       "crawl_hints": {
-        "skip_patterns": ["/artists", "/book-shop", "/contact", "/membership"],
+        "skip_patterns": [
+          "/artists",
+          "/book-shop",
+          "/y-book-shop",
+          "/schedule",
+          "/exhibition-archive",
+          "/news",
+          "/blog",
+          "/contact",
+          "/membership"
+        ],
         "max_detail_pages": 6
       }
     },
@@ -881,6 +895,10 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/", "/exhibition/"],
       "notes": "Homepage lists current exhibitions and links to exhibition detail pages.",
+      "selectors": {
+        "title": ".ex-header-text h1",
+        "date": ".ex-header-text p"
+      },
       "beta": true,
       "locales": {
         "ja": {

@@ -147,6 +147,8 @@ Use hints for predictable crawl behavior:
 {
   "crawl_hints": {
     "render_mode": "auto",
+    "wait_for": "css:main .event-title",
+    "scan_full_page": false,
     "max_detail_pages": 12,
     "skip_patterns": ["/archive/", "/news/"]
   }
@@ -154,6 +156,7 @@ Use hints for predictable crawl behavior:
 ```
 
 Use `render_mode: "always"` only for JS-heavy sources. Static fetch is cheaper and more stable.
+Use `wait_for` for known dynamic content. Enable `scan_full_page` only when required media loads on scroll.
 
 ## Multiple Venues
 

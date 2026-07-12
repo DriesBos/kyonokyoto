@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
 import {
+  assessEventTitle,
   assertSafeRemoteUrl,
   assignEventCoordinates,
   classifyFetchResult,
@@ -24,6 +25,7 @@ import {
   extractSenOkuEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  hasValidEventTitle,
   hasVerifiedEventDate,
   isPublicIpAddress,
   isUrlAllowedByRobotsText,
@@ -47,6 +49,7 @@ import {
 } from '../src/run-once.mjs';
 import { buildCrawlQaReport } from '../src/crawl-qa.mjs';
 import {
+  applySourceOverride,
   loadAllSourcesConfig,
   loadSourcesConfig,
   validateSourceConfig,
@@ -471,6 +474,88 @@ test('generic date parsers read en dash date ranges', () => {
   assert.equal(japaneseEvent.end_date, '2026-07-12');
   assert.equal(weekdayDayMonthEvent.start_date, '2026-05-29');
   assert.equal(weekdayDayMonthEvent.end_date, '2026-07-11');
+});
+
+test('generic title extraction skips section metadata and keeps semantic heading provenance', () => {
+  const event = extractGenericEvent(
+    `
+      <meta property="og:title" content="Current Exhibitions">
+      <main><article><h1>Quiet Forms</h1></article></main>
+      <p class="date">July 11 – August 1, 2026</p>
+      <img src="/quiet-forms.jpg" alt="">
+    `,
+    { name: 'Example Gallery', taxonomy: testTaxonomy(['gallery']) },
+    'https://example.test/exhibitions/quiet-forms/',
+  );
+
+  assert.equal(event.title, 'Quiet Forms');
+  assert.equal(event._title_origin, 'scoped_heading');
+  assert.equal(event._title_valid, true);
+  assert.deepEqual(event._title_warnings, []);
+});
+
+test('generic title extraction prefers structured Event names', () => {
+  const event = extractGenericEvent(
+    `
+      <script type="application/ld+json">
+        {"@context":"https://schema.org","@type":"ExhibitionEvent","name":"Structured Show"}
+      </script>
+      <main><h1>Exhibitions</h1></main>
+      <p class="date">July 11 – August 1, 2026</p>
+      <img src="/structured-show.jpg" alt="">
+    `,
+    { name: 'Example Gallery', taxonomy: testTaxonomy(['gallery']) },
+    'https://example.test/exhibitions/structured-show/',
+  );
+
+  assert.equal(event.title, 'Structured Show');
+  assert.equal(event._title_origin, 'json_ld');
+  assert.equal(hasValidEventTitle(event), true);
+});
+
+test('source crawl hints preserve focused Crawl4AI wait and scrolling controls', () => {
+  const source = applySourceOverride({
+    slug: 'rendered-gallery',
+    name: 'Rendered Gallery',
+    taxonomy: testTaxonomy(['gallery']),
+    crawl_hints: {
+      render_mode: 'auto',
+      wait_for: 'css:main .event-title',
+      wait_for_images: false,
+      scan_full_page: true,
+    },
+  });
+
+  assert.deepEqual(source.crawl_hints, {
+    render_mode: 'auto',
+    wait_for: 'css:main .event-title',
+    wait_for_images: false,
+    scan_full_page: true,
+  });
+});
+
+test('title quality rejects generic, source-name, and date-only values conservatively', () => {
+  const source = { name: 'Example Gallery' };
+
+  assert.equal(
+    hasValidEventTitle(assessEventTitle({ title: 'Current Exhibitions' }, source)),
+    false,
+  );
+  assert.equal(hasValidEventTitle(assessEventTitle({ title: 'Example Gallery' }, source)), false);
+  assert.equal(
+    hasValidEventTitle(assessEventTitle({ title: 'July 11 – August 1, 2026' }, source)),
+    false,
+  );
+  assert.equal(
+    hasValidEventTitle(
+      assessEventTitle({ title: 'Current Exhibition | Tokyo | July 11 – August 1, 2026' }, source),
+    ),
+    false,
+  );
+  assert.equal(
+    hasValidEventTitle(assessEventTitle({ title: 'TOKYO ART BOOK FAIR 2026' }, source)),
+    true,
+  );
 });
 
 test('generic detail extraction prefers event and exhibition URLs', async () => {
@@ -2506,6 +2591,28 @@ test('source config keeps MTK exhibition links in listing order', async () => {
   );
 });
 
+test('noisy generic sources pin event title and discovery fields', async () => {
+  const sources = await loadAllSourcesConfig();
+  const plusY = sources.find((source) => source.slug === 'plus-y-gallery');
+  const artcourt = sources.find((source) => source.slug === 'artcourt-gallery');
+  const tobikan = sources.find((source) => source.slug === 'tokyo-metropolitan-art-museum');
+  const opera = sources.find((source) => source.slug === 'tokyo-opera-city-art-gallery');
+
+  const plusYEvent = extractGenericEvent(
+    `<main id="content_area"><div class="j-text"><p>Past</p><p>北辻 良央 展</p><p>会期 ｜ 2026年7月19日ー8月12日</p></div><img src="/show.jpg"></main>`,
+    plusY,
+    'https://www.plus-y-gallery.com/2026-example/',
+  );
+
+  assert.equal(plusYEvent.title, '北辻 良央 展');
+  assert.equal(plusYEvent._title_origin, 'configured_selector');
+  assert.equal(artcourt?.selectors?.title, '.ex-header-text h1');
+  assert.equal(tobikan?.selectors?.listing_links, '.exhibition-item');
+  assert.equal(tobikan?.selectors?.title, '.exhibition-header-title');
+  assert.equal(opera?.selectors?.listing_links, "main a[href*='/ag/exh/']");
+  assert.ok(opera?.crawl_hints?.skip_patterns.includes('/ag/exh/current_exhibitions'));
+});
+
 test('crawl QA report summarizes saved events, missing translations, and diagnostics', () => {
   assert.deepEqual(
     buildCrawlQaReport({
@@ -2547,9 +2654,14 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
       skips: {
         missing_image: 1,
         missing_date: 0,
+        invalid_title: 0,
         past: 0,
         old: 0,
         other: 0,
+      },
+      titles: {
+        render_retries: 0,
+        extractions: [],
       },
       crawl4ai: {
         render_count: 1,
@@ -3215,11 +3327,29 @@ test('diagnostics and source outcome summarize crawl health', () => {
 
   assert.equal(
     classifySourceOutcome({
+      detailUrls: ['https://example.test/events/a/'],
+      savedEvents: [{ title: 'Good title' }],
+      diagnostics,
+      usedGenericExtractor: true,
+    }),
+    'source_needs_review',
+  );
+
+  assert.equal(
+    classifySourceOutcome({
       detailUrls: ['https://sibasi.jp/event/a/', 'https://sibasi.jp/event/b/'],
       savedEvents: [],
       skippedEvents: [{ reason: 'past event' }, { reason: 'missing verifiable event date' }],
       diagnostics: { skipped_past_count: 1, skipped_missing_date_count: 1 },
       sourceSlug: 'sibasi',
+    }),
+    'source_no_current_events',
+  );
+
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: [],
+      sourceSlug: 'curation-fair-tokyo',
     }),
     'source_no_current_events',
   );

@@ -31,6 +31,10 @@ const robotsPolicyCache = new Map();
 const supportedTranslationLocales = ['en', 'ja'];
 const localizedEventFields = ['title', 'description'];
 const missingDateCanMeanNoCurrentEventSources = new Set(['sibasi']);
+const emptyDetailUrlsMeanNoCurrentEventSources = new Set([
+  'curation-fair-kyoto',
+  'curation-fair-tokyo',
+]);
 
 function parseEnvFile(contents) {
   const env = {};
@@ -3896,24 +3900,155 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
   };
 }
 
-function extractGenericTitle(detailHtml, source) {
-  const candidates = [
-    decodeHtml(extractMeta(detailHtml, 'og:title') ?? ''),
-    stripTags(detailHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ''),
-    stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
-  ].filter(Boolean);
+function cleanTitleCandidate(value, source) {
   const escapedSourceName = String(source?.name ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  const title = candidates[0]
-    ?.replace(/\s*[|｜\-–—]\s*KYOTOGRAPHIE 京都国際写真祭$/i, '')
+  return stripTags(String(value ?? ''))
+    .replace(/\s*[|｜\-–—]\s*KYOTOGRAPHIE 京都国際写真祭$/i, '')
     .replace(
       escapedSourceName ? new RegExp(`\\s*[|｜\\-–—]\\s*${escapedSourceName}$`, 'i') : /a^/,
       '',
     )
     .replace(/\s+/g, ' ')
     .trim();
+}
 
-  return title || source.name;
+function extractJsonLdEventTitles(detailHtml) {
+  const titles = [];
+  const visit = (value) => {
+    if (Array.isArray(value)) return value.forEach(visit);
+    if (!value || typeof value !== 'object') return;
+
+    const types = Array.isArray(value['@type']) ? value['@type'] : [value['@type']];
+    if (
+      types.some((type) => typeof type === 'string' && /(?:Event|Exhibition)$/i.test(type)) &&
+      typeof value.name === 'string'
+    ) {
+      titles.push(value.name);
+    }
+    Object.values(value).forEach(visit);
+  };
+
+  for (const match of detailHtml.matchAll(
+    /<script\b[^>]*type=(['"])application\/ld\+json\1[^>]*>([\s\S]*?)<\/script>/gi,
+  )) {
+    try {
+      visit(JSON.parse(match[2]));
+    } catch {
+      // Invalid third-party JSON-LD. Continue with visible page content.
+    }
+  }
+
+  return titles;
+}
+
+function titleQualityWarnings(value, source) {
+  const title = String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!title) return ['missing'];
+
+  const warnings = [];
+  if (
+    /^(?:(?:current|upcoming|past|special)\s+)?(?:exhibitions?|events?|event information|news|information|schedule|program|archive|展覧会(?:情報)?|展示(?:情報)?|イベント(?:情報)?|開催中|開催予定)$|^(?:current|upcoming|past|coming soon|top\s*\/\s*coming soon(?:\s*-\s*top)?)$/iu.test(
+      title,
+    )
+  ) {
+    warnings.push('generic_label');
+  }
+
+  const normalizedTitle = title.normalize('NFKC').toLocaleLowerCase();
+  const sourceNames = [source?.name, ...Object.values(source?.names ?? {})]
+    .filter((name) => typeof name === 'string' && name.trim())
+    .map((name) => name.normalize('NFKC').toLocaleLowerCase());
+  if (sourceNames.includes(normalizedTitle)) warnings.push('matches_source_name');
+
+  const parsedDate = parseGenericDateRange(extractFirstDateText(title));
+  const nonDateText = title
+    .normalize('NFKC')
+    .replace(
+      /(?:current|upcoming|past|special|exhibitions?|events?|event information|schedule|program|archive|展覧会(?:情報)?|展示(?:情報)?|イベント(?:情報)?|開催中|開催予定)/giu,
+      '',
+    )
+    .replace(
+      /\b(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/giu,
+      '',
+    )
+    .replace(/(?:京都|大阪|東京|kyoto|osaka|tokyo|ginza|roppongi|shinjuku|shibuya)/giu, '')
+    .replace(/[0-9年月日時分日月火水木金土曜祝〜~～–—.,/\\:\-|｜\s()[\]（）]+/gu, '');
+  if (parsedDate.startDate && !nonDateText) warnings.push('date_or_location_only');
+  if (/^(?:京都|大阪|東京|kyoto|osaka|tokyo|ginza|roppongi|shinjuku|shibuya)$/iu.test(title)) {
+    warnings.push('location_only');
+  }
+
+  return [...new Set(warnings)];
+}
+
+function extractGenericTitleInfo(detailHtml, source) {
+  const candidates = [
+    ...selectorTextValues(detailHtml, selectorsFor(source, 'title')).map((value) => ({
+      value,
+      origin: 'configured_selector',
+    })),
+    ...extractJsonLdEventTitles(detailHtml).map((value) => ({ value, origin: 'json_ld' })),
+    ...selectorTextValues(detailHtml, ['main h1', 'article h1']).map((value) => ({
+      value,
+      origin: 'scoped_heading',
+    })),
+    ...selectorTextValues(detailHtml, ['h1']).map((value) => ({
+      value,
+      origin: 'page_heading',
+    })),
+    { value: decodeHtml(extractMeta(detailHtml, 'og:title') ?? ''), origin: 'og_title' },
+    {
+      value: stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
+      origin: 'document_title',
+    },
+  ]
+    .map((candidate) => ({
+      ...candidate,
+      title: cleanTitleCandidate(candidate.value, source),
+    }))
+    .filter((candidate, index, all) => {
+      if (!candidate.title) return false;
+      return all.findIndex((item) => item.title === candidate.title) === index;
+    })
+    .map((candidate) => ({
+      ...candidate,
+      warnings: titleQualityWarnings(candidate.title, source),
+    }));
+
+  const selected = candidates.find((candidate) => !candidate.warnings.length) ?? candidates[0];
+  const title = selected?.title || source.name;
+
+  return {
+    title,
+    origin: selected?.origin ?? 'source_fallback',
+    warnings: selected?.warnings ?? titleQualityWarnings(title, source),
+  };
+}
+
+function extractGenericTitle(detailHtml, source) {
+  return extractGenericTitleInfo(detailHtml, source).title;
+}
+
+function assessEventTitle(eventData, source, fallbackOrigin = 'source_specific_extractor') {
+  const title = String(eventData?.title ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const warnings = titleQualityWarnings(title, source);
+
+  return {
+    ...eventData,
+    title,
+    _title_origin: eventData?._title_origin ?? fallbackOrigin,
+    _title_warnings: warnings,
+    _title_valid: warnings.length === 0,
+  };
+}
+
+function hasValidEventTitle(eventData) {
+  return eventData?._title_valid !== false && titleQualityWarnings(eventData?.title).length === 0;
 }
 
 function extractGenericDescription(detailHtml) {
@@ -3949,13 +4084,12 @@ function extractConfiguredImageUrls(detailHtml, detailUrl, source) {
 }
 
 function extractGenericEvent(detailHtml, source, detailUrl) {
-  const configuredTitle = selectorTextValues(detailHtml, selectorsFor(source, 'title'))[0];
+  const titleInfo = extractGenericTitleInfo(detailHtml, source);
   const configuredDescription = selectorTextValues(detailHtml, selectorsFor(source, 'description'))
     .slice(0, 2)
     .join('\n\n');
   const configuredDateText = selectorTextValues(detailHtml, selectorsFor(source, 'date'))[0];
   const configuredImageUrls = extractConfiguredImageUrls(detailHtml, detailUrl, source);
-  const title = configuredTitle || extractGenericTitle(detailHtml, source);
   const dateText = configuredDateText || extractBestDateText(detailHtml);
   const parsedDates = parseGenericDateRange(dateText);
   const imageUrls = configuredImageUrls.length
@@ -3966,7 +4100,7 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
 
   return {
-    title,
+    title: titleInfo.title,
     categories: flattenTaxonomy(source.taxonomy),
     description: configuredDescription || extractGenericDescription(detailHtml),
     institution_name: source.name,
@@ -3990,6 +4124,9 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
     image_urls: imageUrls,
     source_url: detailUrl,
     extraction_confidence: 0.25,
+    _title_origin: titleInfo.origin,
+    _title_warnings: titleInfo.warnings,
+    _title_valid: titleInfo.warnings.length === 0,
   };
 }
 
@@ -6195,6 +6332,7 @@ function createCrawlDiagnostics(env = {}) {
     skipped_past_count: 0,
     skipped_old_count: 0,
     skipped_missing_date_count: 0,
+    skipped_invalid_title_count: 0,
     skipped_other_count: 0,
     crawl4ai_render_count: 0,
     crawl4ai_render_limit: getEnvNumber(env, 'CRAWL4AI_MAX_RENDERS_PER_SOURCE', 5),
@@ -6205,6 +6343,8 @@ function createCrawlDiagnostics(env = {}) {
     robots_checked_count: 0,
     robots_blocked_count: 0,
     date_extractions: [],
+    title_extractions: [],
+    title_render_retry_count: 0,
   };
 }
 
@@ -6244,9 +6384,23 @@ function recordSkippedEvent(diagnostics, reason) {
     diagnostics.skipped_old_count += 1;
   } else if (reason === 'missing verifiable event date') {
     diagnostics.skipped_missing_date_count += 1;
+  } else if (/^invalid event title/.test(reason ?? '')) {
+    diagnostics.skipped_invalid_title_count += 1;
   } else {
     diagnostics.skipped_other_count += 1;
   }
+}
+
+function recordTitleExtraction(diagnostics, event) {
+  if (!diagnostics || diagnostics.title_extractions.length >= 20) return;
+
+  diagnostics.title_extractions.push({
+    url: event?.source_url ?? null,
+    title: event?.title ?? null,
+    origin: event?._title_origin ?? 'unknown',
+    valid: hasValidEventTitle(event),
+    warnings: event?._title_warnings ?? [],
+  });
 }
 
 function pushSkippedEvent(skippedEvents, diagnostics, skippedEvent) {
@@ -6262,9 +6416,16 @@ function classifySourceOutcome({
   usedGenericExtractor = false,
   sourceSlug = null,
 }) {
-  if (!detailUrls.length) return 'source_empty';
-  if (savedEvents.length > 0)
-    return diagnostics.bot_challenge_count > 0 ? 'source_degraded' : 'source_ok';
+  if (!detailUrls.length) {
+    return emptyDetailUrlsMeanNoCurrentEventSources.has(sourceSlug)
+      ? 'source_no_current_events'
+      : 'source_empty';
+  }
+  if (savedEvents.length > 0 && diagnostics.bot_challenge_count > 0) return 'source_degraded';
+  if (usedGenericExtractor || diagnostics.skipped_invalid_title_count > 0) {
+    return 'source_needs_review';
+  }
+  if (savedEvents.length > 0) return 'source_ok';
   if (diagnostics.bot_challenge_count > 0) return 'source_blocked';
   if (
     skippedEvents.length &&
@@ -6377,8 +6538,13 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
     env.CRAWL4AI_SCROLL_DELAY ?? '0.5',
   ];
 
-  if (envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true)) args.push('--wait-for-images');
-  if (envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', true)) args.push('--scan-full-page');
+  if (context?.waitFor) args.push('--wait-for', context.waitFor);
+  if (context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true)) {
+    args.push('--wait-for-images');
+  }
+  if (context?.scanFullPage ?? envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', false)) {
+    args.push('--scan-full-page');
+  }
   if (envFlag(env, 'CRAWL4AI_BYPASS_CACHE', true)) args.push('--bypass-cache');
 
   try {
@@ -6410,7 +6576,7 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
       url,
       response: {
         url: result.url ?? url,
-        status: 200,
+        status: result.status_code ?? 200,
       },
       html,
       title:
@@ -6422,6 +6588,9 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
       metadata: {
         fetched_via: 'crawl4ai',
         crawl4ai_images_count: result.media?.images?.length ?? 0,
+        crawl4ai_version: result.crawl4ai_version ?? null,
+        crawl4ai_duration_ms: result.duration_ms ?? null,
+        redirected_status_code: result.redirected_status_code ?? null,
       },
     };
   } catch (error) {
@@ -6615,6 +6784,9 @@ async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
 }
 
 async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
+  const persistedEventData = Object.fromEntries(
+    Object.entries(eventData).filter(([key]) => !key.startsWith('_')),
+  );
   const eventPayload = {
     source_id: sourceId,
     raw_page_id: rawPageId,
@@ -6622,7 +6794,7 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey) {
     status: 'published',
     extraction_confidence: 0.6,
     last_seen_at: new Date().toISOString(),
-    ...eventData,
+    ...persistedEventData,
   };
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -6796,9 +6968,13 @@ async function fetchNativeLocaleEvent({
       throw new Error(`alternate URL redirected to ${finalUrl}`);
     }
 
-    const nativeEvent = normalizeEventSourceTruth(
-      eventExtractor(nativePage.html, nativeSource, alternateUrl, sourceContext),
+    const nativeEvent = assessEventTitle(
+      normalizeEventSourceTruth(
+        eventExtractor(nativePage.html, nativeSource, alternateUrl, sourceContext),
+        nativeSource,
+      ),
       nativeSource,
+      eventExtractor === extractGenericEvent ? 'generic_fallback' : 'source_specific_extractor',
     );
 
     if (
@@ -6808,12 +6984,8 @@ async function fetchNativeLocaleEvent({
       throw new Error(`alternate page extracted source URL ${nativeEvent.source_url}`);
     }
 
-    if (
-      nativeEvent.title &&
-      nativeSource.name &&
-      nativeEvent.title.trim().toLowerCase() === nativeSource.name.trim().toLowerCase()
-    ) {
-      throw new Error(`alternate page title matched source name`);
+    if (!hasValidEventTitle(nativeEvent)) {
+      throw new Error(`alternate page title invalid: ${nativeEvent._title_warnings.join(', ')}`);
     }
 
     if (!nativeLocaleEventMatchesCanonical(canonicalEvent, nativeEvent)) {
@@ -7001,7 +7173,12 @@ async function crawlSource({
   const sourceDetailLimit = getSourceDetailLimit(crawlSourceConfig, genericDetailLimit);
   const crawlRun = await createCrawlRun(env, source.id);
   const diagnostics = createCrawlDiagnostics(env);
-  const crawlContext = { diagnostics };
+  const crawlContext = {
+    diagnostics,
+    waitFor: crawlSourceConfig.crawl_hints?.wait_for ?? null,
+    waitForImages: crawlSourceConfig.crawl_hints?.wait_for_images,
+    scanFullPage: crawlSourceConfig.crawl_hints?.scan_full_page,
+  };
 
   try {
     const listingUrls = [...new Set(crawlSourceConfig.start_urls?.filter(Boolean) ?? [])];
@@ -7064,6 +7241,10 @@ async function crawlSource({
         diagnostics,
         sourceSlug: source.slug,
       });
+      const archivedEvents =
+        sourceOutcome === 'source_no_current_events'
+          ? await archiveStaleEvents(env, source.id, new Set())
+          : 0;
       const qaReport = buildCrawlQaReport({
         source,
         sourceOutcome,
@@ -7077,7 +7258,7 @@ async function crawlSource({
         pages_fetched: pagesFetched,
         pages_parsed: 0,
         events_created: 0,
-        events_updated: 0,
+        events_updated: archivedEvents,
         logs: [
           {
             level: 'warn',
@@ -7111,7 +7292,7 @@ async function crawlSource({
         qa: qaReport,
         detailUrls,
         events: [],
-        archivedEvents: 0,
+        archivedEvents,
       };
     }
 
@@ -7146,17 +7327,22 @@ async function crawlSource({
       });
       pagesFetched += 1;
       recordFetchedPage(diagnostics, detailPage);
-      let extractedEvent = normalizeEventSourceTruth(
-        eventExtractor(detailPage.html, crawlSourceConfig, detailUrl, sourceContext),
+      let extractedEvent = assessEventTitle(
+        normalizeEventSourceTruth(
+          eventExtractor(detailPage.html, crawlSourceConfig, detailUrl, sourceContext),
+          crawlSourceConfig,
+        ),
         crawlSourceConfig,
+        eventExtractor === extractGenericEvent ? 'generic_fallback' : 'source_specific_extractor',
       );
       extractedEvent = normalizeEventDatePrecision(extractedEvent);
 
       if (
         sourceRenderMode === 'auto' &&
         detailPage.metadata?.fetched_via !== 'crawl4ai' &&
-        !hasExtractedImage(extractedEvent)
+        (!hasExtractedImage(extractedEvent) || !hasValidEventTitle(extractedEvent))
       ) {
+        if (!hasValidEventTitle(extractedEvent)) diagnostics.title_render_retry_count += 1;
         const renderedDetailPage = await fetchHtmlWithCrawl4Ai(
           detailUrl,
           userAgent,
@@ -7166,9 +7352,15 @@ async function crawlSource({
         if (renderedDetailPage) {
           pagesFetched += 1;
           recordFetchedPage(diagnostics, renderedDetailPage);
-          const renderedEvent = normalizeEventSourceTruth(
-            eventExtractor(renderedDetailPage.html, crawlSourceConfig, detailUrl, sourceContext),
+          const renderedEvent = assessEventTitle(
+            normalizeEventSourceTruth(
+              eventExtractor(renderedDetailPage.html, crawlSourceConfig, detailUrl, sourceContext),
+              crawlSourceConfig,
+            ),
             crawlSourceConfig,
+            eventExtractor === extractGenericEvent
+              ? 'generic_fallback'
+              : 'source_specific_extractor',
           );
           detailPage = renderedDetailPage;
           extractedEvent = normalizeEventDatePrecision(renderedEvent);
@@ -7185,6 +7377,16 @@ async function crawlSource({
         extractedEvent,
         usedGenericExtractor,
       );
+      recordTitleExtraction(diagnostics, extractedEvent);
+
+      if (!hasValidEventTitle(extractedEvent)) {
+        pushSkippedEvent(skippedEvents, diagnostics, {
+          detailUrl,
+          title: extractedEvent.title,
+          reason: `invalid event title: ${extractedEvent._title_warnings.join(', ')}`,
+        });
+        continue;
+      }
 
       if (!hasVerifiedEventDate(extractedEvent)) {
         pushSkippedEvent(skippedEvents, diagnostics, {
@@ -7304,6 +7506,8 @@ async function crawlSource({
         detailUrl,
         eventId: savedEvent.id,
         title: savedEvent.title,
+        titleOrigin: extractedEvent._title_origin,
+        titleWarnings: extractedEvent._title_warnings,
         translations: savedTranslations,
       });
     }
@@ -7496,6 +7700,7 @@ async function main() {
 }
 
 export {
+  assessEventTitle,
   assertSafeRemoteUrl,
   classifyFetchResult,
   classifySourceOutcome,
@@ -7514,6 +7719,7 @@ export {
   buildMachineTranslatedEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  hasValidEventTitle,
   hasVerifiedEventDate,
   isPublicIpAddress,
   isUrlAllowedByRobotsText,

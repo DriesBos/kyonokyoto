@@ -202,6 +202,15 @@ function normalizeCrawlHints(value = {}) {
   ) {
     output.render_mode = hints.render_mode.trim().toLowerCase();
   }
+  if (typeof hints.wait_for === 'string' && hints.wait_for.trim()) {
+    output.wait_for = hints.wait_for.trim();
+  }
+  if (typeof hints.wait_for_images === 'boolean') {
+    output.wait_for_images = hints.wait_for_images;
+  }
+  if (typeof hints.scan_full_page === 'boolean') {
+    output.scan_full_page = hints.scan_full_page;
+  }
 
   const maxDetailPages = Number(hints.max_detail_pages);
   if (Number.isInteger(maxDetailPages) && maxDetailPages > 0)

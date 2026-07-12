@@ -180,6 +180,16 @@ Run crawler tests without touching live sites:
 node --test apps/crawler/test/*.test.mjs
 ```
 
+Install pinned Crawl4AI renderer when browser rendering is needed:
+
+```bash
+python3.12 -m venv apps/crawler/.venv
+apps/crawler/.venv/bin/pip install -r apps/crawler/requirements.txt
+CRAWL4_AI_BASE_DIRECTORY="$PWD/apps/crawler/.cache" apps/crawler/.venv/bin/crawl4ai-setup
+```
+
+Python 3.10+ required. Then set `CRAWL4AI_PYTHON` to `apps/crawler/.venv/bin/python`. Bridge defaults Crawl4AI cache to ignored `apps/crawler/.cache`; set `CRAWL4_AI_BASE_DIRECTORY` when runtime needs another writable location.
+
 How to tune effectively:
 
 - Start with the city source file, such as `data/sources/kyoto-sources.json`, `data/sources/osaka-sources.json`, or `data/sources/tokyo-sources.json`:
@@ -190,11 +200,13 @@ How to tune effectively:
 - For simple source quirks, prefer source config first. See `docs/adding-sources.md` and `docs/source-config.md` for `capabilities`, `selectors`, `crawl_hints`, and `venue_locations`.
 - Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
 - When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
-- Lazy-loaded images are handled as a second pass when `CRAWL4AI_RENDER_MODE=auto`: the crawler keeps the normal static fetch first, then asks Crawl4AI to render and scroll detail pages whose extracted event has no image.
+- With `CRAWL4AI_RENDER_MODE=auto`, crawler keeps static fetch first, then asks Crawl4AI to render detail pages whose extracted event has no image or valid title.
 - If a source leaks logo, social, or navigation images without useful HTML dimensions, add `"measure_image_dimensions": true` to that source in the city source file or to its slug in `data/sources/overrides/<city>-overrides.json`.
 - JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
 - Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
 - Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
+- Use `crawl_hints.wait_for`, `wait_for_images`, and `scan_full_page` for proven source-specific rendering needs. Keep full-page scanning off globally.
+- Generic title extraction records provenance and rejects generic section labels, source-name titles, and date/location-only values before publication.
 - Missing English/Japanese event titles and descriptions are machine-translated during crawl only when `GOOGLE_CLOUD_PROJECT` or `GOOGLE_TRANSLATE_PROJECT_ID` is set and Google credentials are available, for example with `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-service-account.json`.
 - When a source has `locales.en`/`locales.ja` or `capabilities.native_locales`, the crawler uses the configured source locale as the canonical crawl, then looks for native alternate-locale event URLs in `<link rel="alternate" hreflang>` and header/nav/menu anchors such as `English` or `日本語`. Native alternate pages save only title and description into `event_translations` before Google Translate is used as a fallback.
 - Locale toggles work best when they expose real `href` URLs. Toggles that only change JavaScript state, cookies, or localStorage need source-specific browser automation.

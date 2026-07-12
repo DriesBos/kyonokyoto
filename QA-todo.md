@@ -2,6 +2,8 @@
 
 Update this file whenever source JSON changes or test crawls run.
 
+2026-07-12: Added structural title quality guardrails. Generic extraction now prefers configured selectors, JSON-LD Event names, and scoped headings before OG/document titles; generic labels, source-name titles, and date/location-only titles are skipped. Title provenance and render retries now appear in crawl QA. Tuned +Y Gallery, ARTCOURT Gallery, Tokyo Metropolitan Art Museum, and Tokyo Opera City Art Gallery title/discovery config from current official HTML. Focused tests added; no crawl run.
+
 2026-07-12: Shared date hardening now skips every event without a machine-verifiable start/occurrence date, records raw/normalized date provenance and parser IDs in crawl diagnostics, and stores all-day exhibitions as date-only instead of invented timestamps. Frontend hides legacy unknown-date rows, removes date reparsing, formats ISO ranges for English/Japanese, and renders semantic `<time datetime>` endpoints. Static and Crawl4AI requests now respect cached robots rules. Schema blocks future invalid published writes without deleting existing rows. Focused tests added; no crawl or live schema deployment run.
 
 2026-07-12: Generic date extraction now normalizes full-width Japanese text, Japanese/English weekdays, era years, and common range separators; parses validated Japanese, English, and numeric ranges through one shared path; and prefers JSON-LD or semantic event-date blocks over publication dates and whole-page text. Existing source-specific parsers remain as fallbacks. Focused regression coverage added; no crawl run.

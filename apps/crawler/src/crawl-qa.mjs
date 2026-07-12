@@ -32,9 +32,14 @@ export function buildCrawlQaReport({
     skips: {
       missing_image: diagnostics.missing_image_count ?? 0,
       missing_date: diagnostics.skipped_missing_date_count ?? 0,
+      invalid_title: diagnostics.skipped_invalid_title_count ?? 0,
       past: diagnostics.skipped_past_count ?? 0,
       old: diagnostics.skipped_old_count ?? 0,
       other: diagnostics.skipped_other_count ?? 0,
+    },
+    titles: {
+      render_retries: diagnostics.title_render_retry_count ?? 0,
+      extractions: diagnostics.title_extractions ?? [],
     },
     crawl4ai: {
       render_count: diagnostics.crawl4ai_render_count ?? 0,

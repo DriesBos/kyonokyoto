@@ -385,7 +385,11 @@
       "allowed_domains": ["www.tobikan.jp", "tobikan.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
-      "notes": "Purple art marker from Google My Maps.",
+      "notes": "Official exhibition index. Follow exhibition cards only; detail pages expose localized exhibition-header titles.",
+      "selectors": {
+        "listing_links": ".exhibition-item",
+        "title": ".exhibition-header-title"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.tobikan.jp/exhibition/"],
@@ -421,12 +425,21 @@
       "allowed_domains": ["www.operacity.jp", "operacity.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/ag/exh/"],
-      "notes": "Purple art marker from Google My Maps. Japanese-first source.",
+      "notes": "Japanese-first source. Current/upcoming index pages may be empty; never save those section pages as events.",
+      "selectors": {
+        "listing_links": "main a[href*='/ag/exh/']",
+        "title": "main h1"
+      },
       "capabilities": {
         "native_locales": ["ja"],
         "machine_translate_missing_locales": true
       },
       "crawl_hints": {
+        "skip_patterns": [
+          "/ag/exh/current_exhibitions",
+          "/ag/exh/upcoming_exhibitions",
+          "/ag/exh/past_exhibitions"
+        ],
         "max_detail_pages": 8
       },
       "beta": true
