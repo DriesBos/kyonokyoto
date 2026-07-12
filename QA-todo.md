@@ -6,6 +6,24 @@ Update this file whenever source JSON changes or test crawls run.
 
 2026-07-12: Added `leica-gallery-kyoto` from Leica's Japan-filtered events page. Discovery follows only `/event/leica-gallery-kyoto/` links, uses native EN/JA detail pages, and normalizes Leica's English and Japanese date-range separators. Live crawl saved current Teresa Freitas and upcoming Kisshomaru Shimamura exhibitions; 2 detail URLs, 2 saved, 0 skipped, 0 missing images/translations.
 2026-07-12: Renamed source to `kcua` / `KCUA`. Database source row migrated in place to preserve event IDs. Tuned discovery to follow every linked Current or Upcoming exhibition card that contains an image; image-less upcoming placeholders are ignored. Local extractor test added. Post-rename live crawl saved one current and one upcoming event with EN/JA translations; 2 detail URLs, 2 saved, 0 skipped, 0 missing images.
+2026-07-07: Added `museum-of-kyoto` from Bunpaku special exhibition listings. English listing is `https://www.bunpaku.or.jp/en/exhi_special/`; Japanese listing is `https://www.bunpaku.or.jp/exhi_special/`. Config follows only special exhibition cards and reads title/date/copy/first poster image from `#single_main`. Source test added; no full crawl run yet.
+2026-07-07: Added `hosomi-museum` from Hosomi current exhibition pages. English current exhibition page is `https://www.emuseum.or.jp/eng/exhibition_eng/index.html`; Japanese current exhibition page is `https://www.emuseum.or.jp/exhibition/index.html`. The current page is also the detail page. Source test added; no full crawl run yet.
+2026-06-27: Added reusable `qa` metadata to selected QA-heavy Kyoto/Osaka/Tokyo source rows for listing URLs, language URL behavior, field locations, date formats, and image rules. Metadata-only change; no crawl run.
+2026-06-27: Removed `is_active` and `map_visibility` from city source JSON. Sources that were `is_active: false` are now `beta: true`; no crawl run.
+
+### `hosomi-museum`
+
+- Added from Hosomi Museum current exhibition pages.
+- Live English page on 2026-07-07 showed current `Water Sceneries： An Invitation to Cool Serenity`, 2026-06-13 to 2026-08-02.
+- Local source test covers detail-url fallback to the current page, configured title/date fields, English date parsing, and main banner image selection.
+- Full crawl not run yet.
+
+### `museum-of-kyoto`
+
+- Added from Bunpaku special exhibition pages.
+- Live English listing on 2026-07-07 showed current `Marimekko: Art of Printmaking-Beauty,Dream,Love`, 2026-07-04 to 2026-09-06.
+- Local source test covers listing selector, configured detail fields, dotted date parsing, and first poster image selection.
+- Full crawl not run yet.
 
 ### `hakari-contemporary`
 

@@ -27,7 +27,21 @@ Add these first:
   "directions_query": "Example Gallery, Kyoto",
   "lat": 35.0,
   "lng": 135.0,
-  "is_active": true
+  "qa": {
+    "listing_urls": {
+      "ja": ["https://example.jp/exhibitions/"],
+      "en": ["https://example.jp/en/exhibitions/"]
+    },
+    "language_url_pattern": "English adds /en/; Japanese has no locale prefix.",
+    "field_sources": {
+      "listing_links": "current/upcoming cards",
+      "title": "detail h1",
+      "date": ".event-date",
+      "images": ".event-body img"
+    },
+    "date_format": "YYYY.MM.DD - YYYY.MM.DD",
+    "image_rules": "Keep artwork images only; skip logo/header images."
+  }
 }
 ```
 
@@ -46,7 +60,6 @@ Source-owned fields:
 - address
 - directions query
 - coordinates
-- map visibility
 
 ## Languages
 
@@ -110,6 +123,18 @@ Use selectors when page structure is simple and stable:
 Supported selector style: `#id`, `.class`, `tag`, `tag.class`, and descendants like `#events a.event-link`.
 
 If date parsing or page layout is weird, add source-specific extractor code and tests instead.
+
+## QA Metadata
+
+Use `qa` for facts you keep repeating during review:
+
+- listing or exhibition URLs
+- language URL behavior
+- where title/date/description/images live
+- date format
+- image keep/skip rule
+
+Keep `QA-todo.md` for unresolved crawl problems, approval notes, and crawl results.
 
 ## Crawl Hints
 

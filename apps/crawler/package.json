@@ -21,6 +21,6 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@google-cloud/translate": "^9.4.1"
+    "@google-cloud/translate": "^9.4.2"
   }
 }

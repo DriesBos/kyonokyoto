@@ -8,7 +8,6 @@ New sources should start as beta:
 
 ```json
 {
-  "is_active": true,
   "beta": true
 }
 ```
@@ -31,9 +30,15 @@ Safe manual edits:
 - `event_page_patterns`
 - `crawl_hints.skip_patterns`
 - `crawl_hints.max_detail_pages`
+- `qa.listing_urls`
+- `qa.language_url_pattern`
+- `qa.field_sources`
+- `qa.date_format`
+- `qa.image_rules`
 - `beta`
 
 Use these first for routine source cleanup: venue name, map location, language URLs, current/future listing pages, archive/news/shop filters.
+Put repeated review facts in `qa`; keep this file for unresolved issues and crawl results.
 
 Ask Codex for more complex tuning:
 
@@ -106,6 +111,14 @@ For each crawled source, check:
 - no old archive events
 - no category, language, shop, news, schedule, or index pages saved as events
 - Japanese/English behavior is sane
+
+If one of these checks produces reusable facts, move it into the source row:
+
+- listing/exhibition URLs -> `qa.listing_urls`
+- language URL behavior -> `qa.language_url_pattern`
+- title/date/body/image locations -> `qa.field_sources`
+- observed date shape -> `qa.date_format`
+- first/second/skip image rule -> `qa.image_rules`
 
 ## Approval
 

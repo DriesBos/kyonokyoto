@@ -1819,6 +1819,107 @@ test('source config includes Purple Purple with Japanese default', async () => {
   assert.match(source?.notes ?? '', /English top link is https:\/\/purple-purple\.com\/en\//);
 });
 
+test('source config includes Museum of Kyoto special exhibitions', async () => {
+  const payload = JSON.parse(
+    await readFile(
+      resolve(import.meta.dirname, '../../../data/sources/kyoto-sources.json'),
+      'utf8',
+    ),
+  );
+  const source = payload.sources.find((item) => item.slug === 'museum-of-kyoto');
+  const listingHtml = `
+    <a href="https://www.bunpaku.or.jp/exhi_special_post_en/20260704-0906/" class="look-item">
+      <figure class="poster_img">
+        <img src="https://www.bunpaku.or.jp/wp-content/uploads/2026/03/20260704-0906_marimekko_poster-2.webp" alt="">
+      </figure>
+    </a>
+    <a href="https://www.bunpaku.or.jp/en/general_exhibition/">General Exhibition</a>
+  `;
+  const detailHtml = `
+    <section id="single_main">
+      <div class="title_box"><span>Title</span><p>Marimekko: Art of Printmaking-Beauty,Dream,Love</p></div>
+      <div class="date_box"><span>Date</span><p>2026.7.4(Sat) 〜 9.6(Sun)</p></div>
+      <div class="outline"><p>Marimekko special exhibition copy.</p></div>
+      <figure class="right poster_img">
+        <img src="https://www.bunpaku.or.jp/wp-content/uploads/2026/03/20260704-0906_marimekko_poster-2.webp" alt="">
+      </figure>
+      <div class="poster_img">
+        <img src="https://www.bunpaku.or.jp/wp-content/uploads/2026/03/related-poster.webp" alt="">
+      </div>
+    </section>
+  `;
+
+  assert.equal(source?.name, 'The Museum of Kyoto');
+  assert.equal(source?.language, 'en');
+  assert.deepEqual(source?.start_urls, ['https://www.bunpaku.or.jp/en/exhi_special/']);
+  assert.equal(source?.selectors?.listing_links, 'a.look-item[href*="/exhi_special_post_en/"]');
+  assert.equal(source?.selectors?.images, '#single_main .right.poster_img img');
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, 'https://www.bunpaku.or.jp/en/exhi_special/', source, 6),
+    ['https://www.bunpaku.or.jp/exhi_special_post_en/20260704-0906/'],
+  );
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.bunpaku.or.jp/exhi_special_post_en/20260704-0906/',
+  );
+
+  assert.equal(event.title, 'Marimekko: Art of Printmaking-Beauty,Dream,Love');
+  assert.equal(event.date_text, '2026.7.4(Sat) 〜 9.6(Sun)');
+  assert.equal(event.start_date, '2026-07-04');
+  assert.equal(event.end_date, '2026-09-06');
+  assert.equal(
+    event.primary_image_url,
+    'https://www.bunpaku.or.jp/wp-content/uploads/2026/03/20260704-0906_marimekko_poster-2.webp',
+  );
+  assert.deepEqual(event.image_urls, [
+    'https://www.bunpaku.or.jp/wp-content/uploads/2026/03/20260704-0906_marimekko_poster-2.webp',
+  ]);
+});
+
+test('source config includes Hosomi Museum current exhibition', async () => {
+  const payload = JSON.parse(
+    await readFile(
+      resolve(import.meta.dirname, '../../../data/sources/kyoto-sources.json'),
+      'utf8',
+    ),
+  );
+  const source = payload.sources.find((item) => item.slug === 'hosomi-museum');
+  const detailHtml = `
+    <div id="exhi_waku" class="exhibition">
+      <h2>Water Sceneries： An Invitation to Cool Serenity</h2>
+      <div class="opening" id="time">
+        <h4>June 13 (Sat) – August 2 (Sun), 2026</h4>
+      </div>
+      <img src="../../img_exhi/ex093/main_ban-pc.jpg" alt="Water Sceneries" width="650" />
+      <ul class="exhi_credit"><li>Opening Hours<h3><b>10:00 am to 5:00 pm</b></h3></li></ul>
+    </div>
+    <a href="collection.html">Collection</a>
+    <img src="../../hosomi_images/back_eng.gif" alt="" />
+  `;
+
+  assert.equal(source?.name, 'Hosomi Museum');
+  assert.equal(source?.language, 'en');
+  assert.deepEqual(source?.start_urls, [
+    'https://www.emuseum.or.jp/eng/exhibition_eng/index.html',
+  ]);
+  assert.deepEqual(
+    detailUrlExtractors['hosomi-museum'](detailHtml, source.start_urls[0]),
+    ['https://www.emuseum.or.jp/eng/exhibition_eng/index.html'],
+  );
+
+  const event = extractGenericEvent(detailHtml, source, source.start_urls[0]);
+
+  assert.equal(event.title, 'Water Sceneries： An Invitation to Cool Serenity');
+  assert.equal(event.date_text, 'June 13 (Sat) – August 2 (Sun), 2026');
+  assert.equal(event.start_date, '2026-06-13');
+  assert.equal(event.end_date, '2026-08-02');
+  assert.deepEqual(event.image_urls, [
+    'https://www.emuseum.or.jp/img_exhi/ex093/main_ban-pc.jpg',
+  ]);
+});
+
 test('source config includes KyotoBa gallery events with Japanese default', async () => {
   const payload = JSON.parse(
     await readFile(

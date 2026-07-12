@@ -2189,6 +2189,10 @@ function extractKcuaDetailUrls(listingHtml, listingUrl) {
   ];
 }
 
+function extractHosomiMuseumDetailUrls(_listingHtml, listingUrl) {
+  return [listingUrl];
+}
+
 function extractHosooDetailUrls(listingHtml, listingUrl) {
   const matches = [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
     .map((match) => normalizeUrl(match[2], listingUrl))
@@ -4872,6 +4876,7 @@ const detailUrlExtractors = {
   'fukuda-art-museum': extractFukudaDetailUrls,
   'gallery-yamahon': extractGalleryYamahonDetailUrls,
   'ginza-graphic-gallery': extractDddDetailUrls,
+  'hosomi-museum': extractHosomiMuseumDetailUrls,
   'hosoo-gallery': extractHosooDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
   kcua: extractKcuaDetailUrls,

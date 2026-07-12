@@ -104,6 +104,41 @@ Supported keys:
 
 Selector support is intentionally small: IDs, classes, tags, and descendant selectors such as `#events a.event-link`. Complex pseudo-selectors need source-specific extractor code.
 
+## `qa`
+
+Optional. Human QA metadata for source rows. Use this when you would otherwise repeat the same QA note in `QA-todo.md`.
+
+```json
+{
+  "qa": {
+    "listing_urls": {
+      "ja": ["https://example.jp/exhibitions/"],
+      "en": ["https://example.jp/en/exhibitions/"]
+    },
+    "language_url_pattern": "English adds /en/; Japanese has no locale prefix.",
+    "field_sources": {
+      "listing_links": "current/upcoming cards",
+      "title": "detail h1",
+      "date": ".event-date",
+      "description": ".event-body",
+      "images": ".event-body img"
+    },
+    "date_format": "YYYY.MM.DD - YYYY.MM.DD",
+    "image_rules": "Keep the second image onward; first image is a venue logo."
+  }
+}
+```
+
+Allowed keys:
+
+- `listing_urls` - locale-keyed URLs where event/exhibition lists live.
+- `language_url_pattern` - how language switches show up in URLs.
+- `field_sources` - where title/date/description/images/listing links are found.
+- `date_format` - observed source date format.
+- `image_rules` - which images to keep/skip.
+
+Crawler and web do not use `qa` for extraction yet. It is local source truth for faster review.
+
 ## `skip_og_image`
 
 Optional. Set `true` when a source's Open Graph image is a flyer, site card, logo, or otherwise not useful as event-card media.
@@ -161,6 +196,21 @@ Current values:
 - `homepage-and-detail-pages` - homepage is the listing or main entry point.
 
 Currently metadata only. Crawler behavior is driven by URLs, patterns, and source-specific extractors.
+
+## Field Usage
+
+Keep these. They are runtime fields:
+
+- crawler scope: `start_urls`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `capabilities`
+- web/map truth: `name`, `names`, `source_categories`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`
+
+Metadata-only today:
+
+- `crawl_strategy` - useful docs, no crawler branching.
+- `notes` - synced to Supabase source rows, not used for extraction.
+- `qa` - local review hints, not synced to Supabase.
+
+Do not remove `address_text`, `lat`, or `lng`; they are source-owned map truth. If `locales` has full start URLs, root `start_urls`/`event_page_patterns` are still fallback/default crawler scope.
 
 ## `source_categories`
 

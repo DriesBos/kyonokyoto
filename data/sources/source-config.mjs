@@ -119,6 +119,51 @@ function normalizeStringList(value = []) {
   return value.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim());
 }
 
+function normalizeStringMap(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, item]) => typeof item === 'string' && item.trim())
+      .map(([key, item]) => [key, item.trim()]),
+  );
+}
+
+function normalizeLocaleStringListMap(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+
+  const output = {};
+
+  for (const [rawLocale, rawList] of Object.entries(value)) {
+    const locale = normalizeLocale(rawLocale);
+    const list = normalizeStringList(rawList);
+    if (locale && list.length) output[locale] = list;
+  }
+
+  return output;
+}
+
+function normalizeQaConfig(value = {}) {
+  const qa = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const output = {};
+  const listingUrls = normalizeLocaleStringListMap(qa.listing_urls);
+  const fieldSources = normalizeStringMap(qa.field_sources);
+
+  if (Object.keys(listingUrls).length) output.listing_urls = listingUrls;
+  if (typeof qa.language_url_pattern === 'string' && qa.language_url_pattern.trim()) {
+    output.language_url_pattern = qa.language_url_pattern.trim();
+  }
+  if (Object.keys(fieldSources).length) output.field_sources = fieldSources;
+  if (typeof qa.date_format === 'string' && qa.date_format.trim()) {
+    output.date_format = qa.date_format.trim();
+  }
+  if (typeof qa.image_rules === 'string' && qa.image_rules.trim()) {
+    output.image_rules = qa.image_rules.trim();
+  }
+
+  return output;
+}
+
 function normalizeCrawlHints(value = {}) {
   const hints = value && typeof value === 'object' ? value : {};
   const output = {};
@@ -184,6 +229,13 @@ export function applySourceOverride(source, override = {}) {
   const overrideSelectors = normalizeSelectors(override.selectors);
   const sourceCrawlHints = normalizeCrawlHints(source.crawl_hints);
   const overrideCrawlHints = normalizeCrawlHints(override.crawl_hints);
+  const sourceQa = normalizeQaConfig(source.qa);
+  const overrideQa = normalizeQaConfig(override.qa);
+  const hasQaConfig = source.qa !== undefined || override.qa !== undefined;
+  const qa = {
+    ...sourceQa,
+    ...overrideQa,
+  };
 
   return {
     ...source,
@@ -212,6 +264,7 @@ export function applySourceOverride(source, override = {}) {
       ...sourceCrawlHints,
       ...overrideCrawlHints,
     },
+    ...(hasQaConfig ? { qa } : {}),
     venue_locations: override.venue_locations ? overrideVenueLocations : sourceVenueLocations,
   };
 }
