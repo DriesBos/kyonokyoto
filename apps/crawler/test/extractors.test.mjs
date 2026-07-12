@@ -68,6 +68,7 @@ import {
   validateSourceConfig,
 } from '../../../data/sources/source-config.mjs';
 import {
+  buildEventDedupeKey,
   buildEventSemanticIdentityKey,
   dedupeEvents,
 } from '../../../packages/shared/event-dedupe.mjs';
@@ -1051,7 +1052,13 @@ test('Hyogo annual schedule keeps ongoing and upcoming cards only', () => {
 
   assert.deepEqual(urls, [`${listingUrl}#exhibition-1`, `${listingUrl}#exhibition-2`]);
 
-  const event = eventExtractors[source.slug](html, source, urls[1]);
+  const events = urls.map((url) => eventExtractors[source.slug](html, source, url));
+  const event = events[1];
+  assert.deepEqual(
+    events.map((candidate) => candidate.external_id),
+    ['exhibition-1', 'exhibition-2'],
+  );
+  assert.equal(new Set(events.map(buildEventDedupeKey)).size, 2);
   assert.equal(event.title, '次回展');
   assert.equal(event.start_date, `${year}-12-17`);
   assert.equal(event.end_date, `${year + 1}-02-23`);
@@ -3674,15 +3681,18 @@ test('Chushin extraction treats exh sections as individual events', () => {
     'https://www.chushin.co.jp/bijyutu/exhibition/images/img_bijyutu_exhibition_73.jpg',
   );
   assert.equal(event.source_url, urls[0]);
+  assert.equal(event.external_id, 'exh073');
 
   const rubyEvent = extractChushinEvent(listingHtml, source, urls[1]);
   assert.equal(rubyEvent.title, '西野康造 空・宙');
+  assert.equal(rubyEvent.external_id, 'exh072');
 
   const fullWidthDateEvent = extractChushinEvent(listingHtml, source, urls[2]);
   assert.equal(fullWidthDateEvent.start_date, '2024-02-07');
   assert.equal(fullWidthDateEvent.end_date, '2024-03-15');
   assert.equal(fullWidthDateEvent.calendar_starts_at, '2024-02-07T10:00:00+09:00');
   assert.equal(fullWidthDateEvent.calendar_ends_at, '2024-03-15T17:00:00+09:00');
+  assert.equal(new Set([event, rubyEvent, fullWidthDateEvent].map(buildEventDedupeKey)).size, 3);
 });
 
 test('fetch classification distinguishes bot challenges from renderable JS shells', () => {
@@ -3811,15 +3821,19 @@ test('Kitano inline exhibitions become separate one-image events', () => {
     html,
     'https://www.gallery-kitano.com/exhibition.aspx',
   );
-  const event = eventExtractors['art-gallery-kitano'](html, source, urls[0]);
+  const events = urls.map((url) => eventExtractors['art-gallery-kitano'](html, source, url));
+  const event = events[0];
 
   assert.deepEqual(urls, [
     'https://www.gallery-kitano.com/exhibition.aspx#202607081',
     'https://www.gallery-kitano.com/exhibition.aspx#202607151',
   ]);
   assert.equal(event.title, 'First Show');
+  assert.equal(event.external_id, '202607081');
   assert.equal(event.start_date, '2026-07-08');
   assert.deepEqual(event.image_urls, ['https://www.gallery-kitano.com/images/first.png']);
+  assert.notEqual(buildEventDedupeKey(events[0]), buildEventDedupeKey(events[1]));
+  assert.equal(dedupeEvents(events).length, 2);
 });
 
 test('Gallery Take Two drops coming-soon placeholders and keeps one image', () => {
@@ -3864,8 +3878,34 @@ test('Gallery Take Two drops coming-soon placeholders and keeps one image', () =
 
   assert.deepEqual(urls, ['https://www.gallery-taketwo.com/schedule#real-event']);
   assert.equal(event.title, 'Real Exhibition');
+  assert.equal(event.external_id, 'real-event');
   assert.equal(event.end_date, '2026-07-15');
   assert.deepEqual(event.image_urls, ['https://static.wixstatic.com/media/real.jpg']);
+});
+
+test('Pola Museum Annex stays on the Ginza one-page exhibition', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((item) => item.slug === 'pola-museum-annex');
+  const listingUrl = 'https://www.po-holdings.co.jp/m-annex/exhibition/index.html';
+  const html = `
+    <div class="article dataBox"><div class="inBox"><dl>
+      <dt class="ttl">「束芋画 国宝」<!--<br><span>old subtitle</span>--></dt>
+      <dt class="day">前期：2026年7月17日(金)–8月9日(日)<br>後期：2026年8月11日(火・祝)–8月30日(日)</dt>
+      <dd class="right"><img src="../images/exhibition/archive/2026/detail_202607/img01.jpg"></dd>
+      <dd class="txt"><p>『国宝』のために制作した挿絵を前後期に分けて展示します。</p></dd>
+    </dl></div></div>`;
+
+  assert.equal(source.base_url, listingUrl);
+  assert.deepEqual(source.allowed_domains, ['www.po-holdings.co.jp', 'po-holdings.co.jp']);
+  assert.deepEqual(detailUrlExtractors[source.slug](html, listingUrl), [listingUrl]);
+
+  const event = eventExtractors[source.slug](html, source, listingUrl);
+  assert.equal(event.title, '「束芋画 国宝」');
+  assert.equal(event.start_date, '2026-07-17');
+  assert.equal(event.end_date, '2026-08-30');
+  assert.deepEqual(event.image_urls, [
+    'https://www.po-holdings.co.jp/m-annex/images/exhibition/archive/2026/detail_202607/img01.jpg',
+  ]);
 });
 
 test('Issey Kura discovery keeps only ON VIEW cards', () => {

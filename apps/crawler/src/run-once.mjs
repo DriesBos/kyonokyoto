@@ -479,6 +479,7 @@ function stripTags(value) {
 
   return decodeHtml(
     decoded
+      .replace(/<!--[\s\S]*?-->/g, ' ')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n\n')
       .replace(/<[^>]+>/g, ' ')
@@ -3441,6 +3442,7 @@ function extractDddEvent(detailHtml, source, detailUrl) {
     const parsedDates = parseGenericDateRange(entry.dateText);
 
     return {
+      external_id: `ddd-schedule-${index + 1}`,
       title: entry.title,
       categories: ['exhibition', 'gallery', 'design'],
       description: entry.seriesTitle || 'Upcoming exhibition listed on the DDD schedule page.',
@@ -4247,6 +4249,7 @@ function extractKitanoEvent(detailHtml, source, detailUrl) {
 
   return {
     ...extractGenericEvent(eventHtml, source, detailUrl),
+    external_id: eventId,
     title,
     description,
     date_text: dateText,
@@ -4274,6 +4277,7 @@ function extractGalleryTakeTwoEvent(detailHtml, source, detailUrl) {
 
   return {
     ...extractGenericEvent('', source, detailUrl),
+    external_id: eventId,
     title,
     description,
     date_text: dateText,
@@ -4285,6 +4289,20 @@ function extractGalleryTakeTwoEvent(detailHtml, source, detailUrl) {
     primary_image_url: imageUrl,
     image_urls: imageUrl ? [imageUrl] : [],
     extraction_confidence: 0.95,
+  };
+}
+
+function extractPolaMuseumAnnexEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const finalRange = parseGenericDateRange(event.date_text.split(/後期[：:]/u).at(-1));
+  const endDate = finalRange.endDate ?? event.end_date;
+
+  return {
+    ...event,
+    end_date: endDate,
+    ...buildScheduleFields({ startDate: event.start_date, endDate }),
+    calendar_ends_at: finalRange.calendarEndsAt ?? event.calendar_ends_at,
+    extraction_confidence: event.start_date && endDate ? 0.95 : 0.5,
   };
 }
 
@@ -5308,7 +5326,8 @@ function extractKusakabeEvent(detailHtml, source, detailUrl) {
 }
 
 function extractHyogoEvent(detailHtml, source, detailUrl) {
-  const index = Number(new URL(detailUrl).hash.match(/^#exhibition-(\d+)$/)?.[1]);
+  const externalId = new URL(detailUrl).hash.slice(1);
+  const index = Number(externalId.match(/^exhibition-(\d+)$/)?.[1]);
   const itemHtml = extractHyogoExhibitionItems(detailHtml)[index];
   if (!itemHtml) throw new Error(`Could not find Hyogo exhibition ${index}`);
 
@@ -5329,6 +5348,7 @@ function extractHyogoEvent(detailHtml, source, detailUrl) {
   const imageUrls = extractGenericImageUrls(itemHtml, detailUrl, { includeOgImage: false });
 
   return {
+    external_id: externalId,
     title,
     categories: flattenTaxonomy(source.taxonomy),
     description,
@@ -5877,6 +5897,7 @@ function extractChushinEvent(detailHtml, source, detailUrl) {
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
 
   return {
+    external_id: sectionId,
     title,
     categories: flattenTaxonomy(source.taxonomy),
     description,
@@ -6034,6 +6055,7 @@ const detailUrlExtractors = {
   'kyoto-city-kyocera-museum-of-art': extractKyoceraDetailUrls,
   momak: extractMomakDetailUrls,
   'osaka-geidai-whatsnew': extractOsakaGeidaiDetailUrls,
+  'pola-museum-annex': extractHosomiMuseumDetailUrls,
   'raku-museum': extractRakuMuseumDetailUrls,
   'scai-the-bathhouse': extractScaiDetailUrlsFor('scai-the-bathhouse'),
   'scai-piramide': extractScaiDetailUrlsFor('scai-piramide'),
@@ -6077,6 +6099,7 @@ const eventExtractors = {
   'nakanoshima-museum-of-art-osaka': extractSamacEvent,
   'osaka-geidai-whatsnew': extractSamacEvent,
   'parco-hall-shinsaibashi': extractParcoHallEvent,
+  'pola-museum-annex': extractPolaMuseumAnnexEvent,
   'raku-museum': extractRakuMuseumEvent,
   samac: extractSamacEvent,
   momak: extractMomakEvent,

@@ -62,7 +62,10 @@ function getEventHost(event) {
 
 export function buildEventUrlIdentityKey(event) {
   const canonicalUrl = canonicalizeEventUrl(event?.source_url);
-  return canonicalUrl ? `url:${canonicalUrl}` : null;
+  if (!canonicalUrl) return null;
+
+  const externalId = normalizeIdentityPart(event?.external_id);
+  return `url:${canonicalUrl}${externalId ? `#${externalId}` : ''}`;
 }
 
 export function buildEventSemanticIdentityKey(event) {

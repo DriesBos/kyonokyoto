@@ -1432,24 +1432,32 @@
       "directions_query": "Pola Museum Annex, Ginza, Tokyo",
       "lat": 35.6742479,
       "lng": 139.7679885,
-      "base_url": "https://www.polamuseum.or.jp/",
-      "start_urls": ["https://www.polamuseum.or.jp/"],
-      "allowed_domains": ["www.polamuseum.or.jp", "polamuseum.or.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/"],
-      "notes": "Official Pola Museum Annex site. Beta source; homepage usually exposes current exhibition.",
+      "base_url": "https://www.po-holdings.co.jp/m-annex/exhibition/index.html",
+      "start_urls": ["https://www.po-holdings.co.jp/m-annex/exhibition/index.html"],
+      "allowed_domains": ["www.po-holdings.co.jp", "po-holdings.co.jp"],
+      "crawl_strategy": "homepage-and-detail-pages",
+      "event_page_patterns": ["/m-annex/exhibition/"],
+      "notes": "Official Ginza current-exhibition page. The listing is also the detail page; past and general corporate news are excluded.",
+      "skip_og_image": true,
+      "selectors": {
+        "title": ".article.dataBox .ttl",
+        "date": ".article.dataBox .day",
+        "description": ".article.dataBox dd.txt p",
+        "images": ".article.dataBox dd.right img[src*=\"/detail_\"]"
+      },
       "beta": false,
       "locales": {
         "ja": {
-          "start_urls": ["https://www.polamuseum.or.jp/"],
-          "event_page_patterns": ["/"]
+          "start_urls": ["https://www.po-holdings.co.jp/m-annex/exhibition/index.html"],
+          "event_page_patterns": ["/m-annex/exhibition/"]
         }
       },
       "capabilities": {
-        "native_locales": ["ja"]
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
       },
       "crawl_hints": {
-        "max_detail_pages": 4
+        "max_detail_pages": 1
       }
     },
     {
