@@ -123,6 +123,8 @@ Review manually, then remove `beta` when approved:
 
 ## Tokyo Sources
 
+2026-07-12: Security pass upgraded `pola-museum-annex` and `taro-nasu-gallery` source URLs to verified HTTPS endpoints; no crawl run. `snow-contemporary` remains HTTP because its HTTPS certificate does not match the hostname. Kyoto `hakusasonso` also remains HTTP because its server offers obsolete TLS parameters; both need source-owner fixes or replacement endpoints before HTTPS-only crawling is possible.
+
 ### Active source tuning
 
 - `artizon-museum`: 2026-06-26 source config now reads `img.objectFit--contain` so event cards use artwork-list images instead of the flyer/hero image. Local crawl saved 4 events, skipped 0, and reported 0 missing images.

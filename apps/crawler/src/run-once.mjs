@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { lookup as lookupHost } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
@@ -69,6 +71,88 @@ function getNumberArg(name, fallback) {
 function getEnvNumber(env, name, fallback) {
   const parsed = Number(env[name]);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function isPublicIpAddress(address) {
+  const normalized = address.toLowerCase().split('%')[0];
+
+  if (isIP(normalized) === 4) {
+    const [a, b, c] = normalized.split('.').map(Number);
+    return !(
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 0 && c === 0) ||
+      (a === 192 && b === 0 && c === 2) ||
+      (a === 192 && b === 168) ||
+      (a === 198 && (b === 18 || b === 19 || (b === 51 && c === 100))) ||
+      (a === 203 && b === 0 && c === 113) ||
+      a >= 224
+    );
+  }
+
+  if (isIP(normalized) === 6) {
+    const mappedIpv4 = normalized.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)?.[1];
+    if (mappedIpv4) return isPublicIpAddress(mappedIpv4);
+
+    return !(
+      normalized.startsWith('::') ||
+      /^f[cd]/.test(normalized) ||
+      /^fe[89ab]/.test(normalized) ||
+      normalized.startsWith('ff') ||
+      normalized.startsWith('2001:db8:')
+    );
+  }
+
+  return false;
+}
+
+async function assertSafeRemoteUrl(value, lookup = lookupHost) {
+  const url = new URL(value);
+  const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
+
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error(`Blocked non-HTTP crawler URL: ${url.protocol}`);
+  }
+  if (url.username || url.password) throw new Error('Blocked crawler URL with credentials');
+  if (
+    !hostname.includes('.') ||
+    hostname === 'localhost' ||
+    /\.(?:localhost|local|internal|home\.arpa)$/.test(hostname)
+  ) {
+    throw new Error(`Blocked private crawler hostname: ${hostname}`);
+  }
+
+  // ponytail: DNS is checked immediately before fetch; pin resolved addresses if sources become user-controlled.
+  const addresses = isIP(hostname)
+    ? [{ address: hostname }]
+    : await lookup(hostname, { all: true });
+  if (!addresses.length || addresses.some(({ address }) => !isPublicIpAddress(address))) {
+    throw new Error(`Blocked non-public crawler address for ${hostname}`);
+  }
+
+  return url;
+}
+
+const redirectStatuses = new Set([301, 302, 303, 307, 308]);
+
+async function fetchRemote(value, options = {}, lookup = lookupHost, fetchImpl = fetch) {
+  let url = await assertSafeRemoteUrl(value, lookup);
+
+  for (let redirects = 0; redirects <= 5; redirects += 1) {
+    const response = await fetchImpl(url, { ...options, redirect: 'manual' });
+    const location = response.headers.get('location');
+    if (!redirectStatuses.has(response.status) || !location) return response;
+    if (redirects === 5) throw new Error(`Too many redirects for ${value}`);
+
+    await response.body?.cancel().catch(() => {});
+    url = await assertSafeRemoteUrl(new URL(location, url), lookup);
+  }
+
+  throw new Error(`Too many redirects for ${value}`);
 }
 
 function getCrawl4AiRenderMode(env) {
@@ -1799,10 +1883,14 @@ function sourceShouldSkipOgImages(source) {
 }
 
 function sourceAllowsUrl(source, url) {
-  const host = new URL(url).hostname;
-  return (source.allowed_domains ?? []).some(
-    (domain) => host === domain || host.endsWith(`.${domain}`),
-  );
+  try {
+    const host = new URL(url).hostname;
+    return (source.allowed_domains ?? []).some(
+      (domain) => host === domain || host.endsWith(`.${domain}`),
+    );
+  } catch {
+    return false;
+  }
 }
 
 function pathnameMatchesPattern(pathname, pattern) {
@@ -5140,7 +5228,7 @@ async function fetchImageDimensions(url, userAgent, env) {
   );
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchRemote(url, {
       headers: buildImageProbeHeaders(userAgent),
       signal: controller.signal,
     });
@@ -5411,6 +5499,8 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
   if (envFlag(env, 'CRAWL4AI_BYPASS_CACHE', true)) args.push('--bypass-cache');
 
   try {
+    // ponytail: renderer gets pre/post checks; add browser request interception if sources become user-controlled.
+    await assertSafeRemoteUrl(url);
     await waitForDomainDelay(url, env);
     const result = await runJsonCommand(pythonBinary, args, {
       env: {
@@ -5429,6 +5519,8 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
       }
       return null;
     }
+
+    await assertSafeRemoteUrl(result.url ?? url);
 
     const html = appendCrawl4AiMediaHtml(result.html ?? '', result.media?.images ?? []);
     return {
@@ -5470,7 +5562,7 @@ async function fetchStaticHtml(url, userAgent, env = {}) {
 
     try {
       await waitForDomainDelay(url, env);
-      response = await fetch(url, {
+      response = await fetchRemote(url, {
         headers: buildStaticFetchHeaders(userAgent),
         signal: AbortSignal.timeout(timeoutMs),
       });
@@ -6072,7 +6164,9 @@ async function crawlSource({
       !detailUrlExtractor || source.slug === 'sibasi' || hasConfiguredDetailLimit;
 
     detailUrls = [...new Set(detailUrls)].filter(
-      (detailUrl) => !sourceSkipsUrl(crawlSourceConfig, detailUrl),
+      (detailUrl) =>
+        sourceAllowsUrl(crawlSourceConfig, detailUrl) &&
+        !sourceSkipsUrl(crawlSourceConfig, detailUrl),
     );
 
     if (shouldLimitDetailUrls) {
@@ -6512,6 +6606,7 @@ async function main() {
 }
 
 export {
+  assertSafeRemoteUrl,
   classifyFetchResult,
   classifySourceOutcome,
   assignEventCoordinates,
@@ -6524,10 +6619,12 @@ export {
   extractGenericDetailUrls,
   extractGenericEvent,
   extractSourceSpecificDetailUrls,
+  fetchRemote,
   buildEventTranslationPayload,
   buildMachineTranslatedEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  isPublicIpAddress,
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,

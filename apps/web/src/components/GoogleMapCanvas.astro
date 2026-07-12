@@ -1,4 +1,6 @@
 ---
+import { serializeInlineJson } from '../../../../packages/shared/inline-json.mjs';
+
 type MapSource = {
   id: string;
   sourceSlug: string;
@@ -24,7 +26,7 @@ const {
 } = Astro.props;
 const mapsApiKey = import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 const mapsMapId = import.meta.env.PUBLIC_GOOGLE_MAPS_MAP_ID ?? '';
-const sourcesJson = JSON.stringify(sources);
+const sourcesJson = serializeInlineJson(sources);
 ---
 
 <div

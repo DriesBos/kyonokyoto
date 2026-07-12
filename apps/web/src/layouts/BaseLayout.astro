@@ -27,6 +27,7 @@ const appName = 'KyōNoKyōto';
 const ogImage = new URL('/og.png', Astro.url).href;
 const shouldRegisterServiceWorker = import.meta.env.PROD;
 const themeColor = landingActive ? cityThemeColor : '#EFEFEF';
+const cspNonce = Astro.locals.cspNonce;
 
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
 ---
@@ -66,11 +67,12 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="generator" content={Astro.generator} />
     <meta name="robots" content="noindex, nofollow, noarchive" />
-    <script is:inline>
+    <script is:inline nonce={cspNonce}>
       history.scrollRestoration = 'manual';
     </script>
     <script
       is:inline
+      nonce={cspNonce}
       define:vars={{ city, cityCookie: CITY_COOKIE, cityStorageKey: CITY_STORAGE_KEY }}
     >
       document.cookie = `${cityCookie}=${encodeURIComponent(city)}; Max-Age=31536000; Path=/; SameSite=Lax`;
@@ -80,7 +82,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
         // Cookie still carries preference when storage fails.
       }
     </script>
-    <script is:inline define:vars={{ shouldRegisterServiceWorker }}>
+    <script is:inline nonce={cspNonce} define:vars={{ shouldRegisterServiceWorker }}>
       if (shouldRegisterServiceWorker) {
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
@@ -117,10 +119,11 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     <meta name="twitter:image" content={ogImage} />
     <script
       is:inline
+      nonce={cspNonce}
       type="text/partytown"
       src="https://www.googletagmanager.com/gtag/js?id=G-4EYJPD08Y4"
       async></script>
-    <script is:inline type="text/partytown">
+    <script is:inline nonce={cspNonce} type="text/partytown">
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);

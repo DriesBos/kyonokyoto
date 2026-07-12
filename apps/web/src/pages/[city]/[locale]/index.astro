@@ -47,6 +47,7 @@ import {
   type SourceConfig,
 } from '../../../lib/sources';
 import { landingSlidesForEvents } from '../../../lib/landingSlides';
+import { serializeInlineJson } from '../../../../../../packages/shared/inline-json.mjs';
 
 export const prerender = false;
 
@@ -216,7 +217,7 @@ const localePayload = {
     ]),
   ),
 };
-const localePayloadJson = JSON.stringify(localePayload).replace(/</g, '\\u003c');
+const localePayloadJson = serializeInlineJson(localePayload);
 ---
 
 <BaseLayout

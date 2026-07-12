@@ -1304,8 +1304,8 @@
       "directions_query": "Pola Museum Annex, Ginza, Tokyo",
       "lat": 35.6742479,
       "lng": 139.7679885,
-      "base_url": "http://www.polamuseum.or.jp/",
-      "start_urls": ["http://www.polamuseum.or.jp/"],
+      "base_url": "https://www.polamuseum.or.jp/",
+      "start_urls": ["https://www.polamuseum.or.jp/"],
       "allowed_domains": ["www.polamuseum.or.jp", "polamuseum.or.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/"],
@@ -1314,7 +1314,7 @@
       "source_categories": ["museum", "gallery", "exhibition"],
       "locales": {
         "ja": {
-          "start_urls": ["http://www.polamuseum.or.jp/"],
+          "start_urls": ["https://www.polamuseum.or.jp/"],
           "event_page_patterns": ["/"]
         }
       },
@@ -1334,8 +1334,8 @@
       "directions_query": "TARO NASU, 6-6-9 Roppongi, Minato-ku, Tokyo",
       "lat": 35.66018,
       "lng": 139.73139,
-      "base_url": "http://www.taronasugallery.com/en/",
-      "start_urls": ["http://www.taronasugallery.com/en/"],
+      "base_url": "https://www.taronasugallery.com/en/",
+      "start_urls": ["https://www.taronasugallery.com/en/"],
       "allowed_domains": ["www.taronasugallery.com", "taronasugallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/", "/exhibition/"],
@@ -1344,11 +1344,11 @@
       "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
-          "start_urls": ["http://www.taronasugallery.com/"],
+          "start_urls": ["https://www.taronasugallery.com/"],
           "event_page_patterns": ["/", "/exhibition/"]
         },
         "en": {
-          "start_urls": ["http://www.taronasugallery.com/en/"],
+          "start_urls": ["https://www.taronasugallery.com/en/"],
           "event_page_patterns": ["/en/", "/exhibition/"]
         }
       },

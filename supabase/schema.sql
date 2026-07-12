@@ -263,8 +263,14 @@ before update on public.event_translations
 for each row
 execute function public.set_updated_at();
 
+alter table public.sources enable row level security;
+alter table public.crawl_runs enable row level security;
+alter table public.raw_pages enable row level security;
 alter table public.events enable row level security;
 alter table public.event_translations enable row level security;
+
+-- Internal crawler tables intentionally have no anon/authenticated policies.
+-- The crawler uses the service role, which bypasses RLS.
 
 drop policy if exists "Public can read published events" on public.events;
 create policy "Public can read published events"

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
 import {
+  assertSafeRemoteUrl,
   assignEventCoordinates,
   classifyFetchResult,
   classifySourceOutcome,
@@ -16,11 +17,13 @@ import {
   extractGenericDetailUrls,
   extractGenericEvent,
   extractSourceSpecificDetailUrls,
+  fetchRemote,
   extractLocaleUrlsFromHtml,
   extractRakuMuseumEvent,
   extractSenOkuEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  isPublicIpAddress,
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,
@@ -44,6 +47,44 @@ import {
 } from '../../../data/sources/source-config.mjs';
 
 const fixturesRoot = resolve(import.meta.dirname, 'fixtures');
+
+test('crawler URL guard blocks local and private network targets', async () => {
+  assert.equal(isPublicIpAddress('8.8.8.8'), true);
+  assert.equal(isPublicIpAddress('127.0.0.1'), false);
+  assert.equal(isPublicIpAddress('169.254.169.254'), false);
+  assert.equal(isPublicIpAddress('::1'), false);
+  assert.equal(isPublicIpAddress('::ffff:7f00:1'), false);
+  assert.equal(isPublicIpAddress('2606:4700:4700::1111'), true);
+
+  await assert.rejects(() => assertSafeRemoteUrl('http://localhost/admin'));
+  await assert.rejects(() =>
+    assertSafeRemoteUrl('https://museum.example/event', async () => [
+      { address: '10.0.0.8', family: 4 },
+    ]),
+  );
+  await assert.doesNotReject(() =>
+    assertSafeRemoteUrl('https://museum.example/event', async () => [
+      { address: '203.0.114.8', family: 4 },
+    ]),
+  );
+
+  let fetchCalls = 0;
+  await assert.rejects(() =>
+    fetchRemote(
+      'https://museum.example/event',
+      {},
+      async () => [{ address: '203.0.114.8', family: 4 }],
+      async () => {
+        fetchCalls += 1;
+        return new Response(null, {
+          status: 302,
+          headers: { location: 'http://127.0.0.1/admin' },
+        });
+      },
+    ),
+  );
+  assert.equal(fetchCalls, 1);
+});
 
 test('translation helper calls Google client with source and target locales', async () => {
   const calls = [];

@@ -8,3 +8,13 @@
 
 [build.environment]
   NODE_VERSION = "22.22.0"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.youtube.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://maps.googleapis.com https://maps.gstatic.com https://www.google.com https://www.youtube.com; frame-src https://www.youtube.com; worker-src 'self' blob:; manifest-src 'self'"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self)"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"

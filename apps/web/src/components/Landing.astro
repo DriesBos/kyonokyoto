@@ -2,6 +2,7 @@
 import Icon from './Icon.astro';
 import Logo from './Logo.astro';
 import type { LandingSlide } from '../lib/landingSlides';
+import { serializeInlineJson } from '../../../../packages/shared/inline-json.mjs';
 
 type Props = {
   cityLabel?: string;
@@ -24,7 +25,7 @@ const {
   slides = [],
 } = Astro.props;
 const landingLabel = `What's on in ${cityLabel}`;
-const slidesJson = JSON.stringify(slides).replace(/</g, '\\u003c');
+const slidesJson = serializeInlineJson(slides);
 ---
 
 <section class="landing" data-landing aria-label={`${brandLabel}: ${landingLabel}`}>
