@@ -49,7 +49,8 @@ export function isEventWithinDisplayWindow(event, todayDateOnly, { monthsAhead =
   const start = eventStartDateOnly(event);
   const cutoff = addMonthsDateOnly(todayDateOnly, monthsAhead);
 
-  if (!start || !cutoff) return true;
+  if (!start) return false;
+  if (!cutoff) return true;
   return start <= cutoff;
 }
 

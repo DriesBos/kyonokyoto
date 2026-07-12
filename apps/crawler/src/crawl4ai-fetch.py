@@ -44,6 +44,7 @@ async def render(args):
 
     crawler_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS if args.bypass_cache else CacheMode.ENABLED,
+        check_robots_txt=True,
         page_timeout=args.timeout_ms,
         remove_overlay_elements=True,
         wait_for_images=args.wait_for_images,

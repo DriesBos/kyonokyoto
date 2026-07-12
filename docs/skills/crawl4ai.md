@@ -99,6 +99,7 @@ Current static fetch resilience policy:
 - Only transient classifications are retried: `timeout`, `network_error`, `rate_limited`, and `transient_error`.
 - Retries use exponential backoff with jitter and honor `Retry-After` when a server provides it.
 - Source-page requests are spaced per domain with a random delay between `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`; Supabase and Netlify API calls are not part of this delay path.
+- Static and rendered requests check cached `robots.txt` rules by default. Keep `CRAWLER_RESPECT_ROBOTS_TXT=true` in production and identify the crawler with a contact URL in `CRAWLER_USER_AGENT`.
 - Each source run records structured diagnostics in `crawl_runs.logs`, including static fetch count, Crawl4AI fetch count, retry count, challenge/shell counts, skip counts, and Crawl4AI budget usage.
 - `CRAWL4AI_MAX_RENDERS_PER_SOURCE` caps browser renders so one broken source cannot dominate a scheduled crawl.
 - Each completed run gets a source outcome such as `source_ok`, `source_degraded`, `source_blocked`, `source_empty`, `source_no_current_events`, `source_needs_review`, or `source_failed`.

@@ -19,6 +19,18 @@ test('internal Supabase tables enable RLS without public policies', async () => 
   }
 });
 
+test('published events require a machine-verifiable start date', async () => {
+  const schema = await readFile(new URL('../../../supabase/schema.sql', import.meta.url), 'utf8');
+  const constraint = schema.match(
+    /add constraint events_date_presence_check check \((?<body>[\s\S]*?)\) not valid;/,
+  )?.groups?.body;
+
+  assert.match(constraint ?? '', /status <> 'published'/);
+  assert.match(constraint ?? '', /start_date is not null/);
+  assert.match(constraint ?? '', /calendar_starts_at is not null/);
+  assert.match(constraint ?? '', /jsonb_array_length\(occurrence_dates\) > 0/);
+});
+
 test('Netlify and SSR responses carry baseline security headers', async () => {
   const [netlifyConfig, middleware] = await Promise.all([
     readFile(new URL('../../../netlify.toml', import.meta.url), 'utf8'),

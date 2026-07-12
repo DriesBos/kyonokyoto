@@ -5,7 +5,7 @@ import {
 } from '../../../../packages/shared/event-schedule.mjs';
 import { supabase } from './supabase';
 import type { AppLocale } from './i18n';
-import { formatEventDateRange, parseEnglishMonthDateRange } from './calendar';
+import { formatEventDateRange } from './calendar';
 import type { SourceConfig } from './sources';
 import { sourceTruthForEvent } from './sources';
 
@@ -142,15 +142,8 @@ export const formatEventsForLocale = ({
   events.map((rawEvent) => {
     const event = localizeEvent(rawEvent, activeLocale);
     const sourceTruth = sourceTruthForEvent(event, configuredSources, activeLocale);
-    const fallbackCalendarYear =
-      event.source_url.match(/20\d{2}/)?.[0] ?? event.updated_at?.match(/20\d{2}/)?.[0] ?? today;
-    const parsedCalendarDates =
-      event.calendar_starts_at && event.calendar_ends_at
-        ? null
-        : parseEnglishMonthDateRange(event.date_text, fallbackCalendarYear);
-    const calendarStartsAt =
-      event.calendar_starts_at ?? parsedCalendarDates?.calendar_starts_at ?? null;
-    const calendarEndsAt = event.calendar_ends_at ?? parsedCalendarDates?.calendar_ends_at ?? null;
+    const calendarStartsAt = event.calendar_starts_at ?? event.start_date;
+    const calendarEndsAt = event.calendar_ends_at ?? event.end_date ?? event.start_date;
     const eventWithCalendarDates = {
       ...event,
       institution_name: sourceTruth.institution_name,
@@ -166,7 +159,12 @@ export const formatEventsForLocale = ({
 
     return {
       ...eventWithCalendarDates,
-      date_text: formatEventDateRange(calendarStartsAt, calendarEndsAt, event.date_text),
+      date_text: formatEventDateRange(
+        event.start_date ?? calendarStartsAt,
+        event.end_date ?? calendarEndsAt,
+        event.date_text,
+        activeLocale,
+      ),
       timing: classifyEventTiming(eventWithCalendarDates, today),
     };
   });

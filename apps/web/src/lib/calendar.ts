@@ -62,102 +62,79 @@ export const cleanDisplayText = (value: string) => {
   );
 };
 
-export const parseEnglishMonthDateRange = (dateText: string, fallbackYear?: string | null) => {
-  const months: Record<string, string> = {
-    january: '01',
-    jan: '01',
-    february: '02',
-    feb: '02',
-    march: '03',
-    mar: '03',
-    april: '04',
-    apr: '04',
-    may: '05',
-    june: '06',
-    jun: '06',
-    july: '07',
-    jul: '07',
-    august: '08',
-    aug: '08',
-    september: '09',
-    sep: '09',
-    sept: '09',
-    october: '10',
-    oct: '10',
-    november: '11',
-    nov: '11',
-    december: '12',
-    dec: '12',
-  };
-
-  const cleaned = decodeHtml(dateText)
-    .replace(/\([^)]*\)/g, '')
-    .replace(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const datedMatch = cleaned.match(
-    /([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})/,
-  );
-  const undatedMatch = cleaned.match(/([A-Za-z]+)\s+(\d{1,2})\s*[–-]\s*([A-Za-z]+)\s+(\d{1,2})/);
-  const match = datedMatch ?? undatedMatch;
-  const normalizedFallbackYear = fallbackYear?.match(/20\d{2}/)?.[0] ?? null;
-
-  if (!match) return { calendar_starts_at: null, calendar_ends_at: null };
-
-  const [, startMonthName, startDay, endMonthName, endDay] = match;
-  const year = datedMatch?.[5] ?? normalizedFallbackYear;
-  const startMonth = months[startMonthName.toLowerCase()];
-  const endMonth = months[endMonthName.toLowerCase()];
-
-  if (!year || !startMonth || !endMonth)
-    return { calendar_starts_at: null, calendar_ends_at: null };
-
-  const startDate = `${year}-${startMonth}-${String(startDay).padStart(2, '0')}`;
-  const endDate = `${year}-${endMonth}-${String(endDay).padStart(2, '0')}`;
-
-  return {
-    calendar_starts_at: `${startDate}T09:00:00+09:00`,
-    calendar_ends_at: `${endDate}T17:30:00+09:00`,
-  };
+const formatDateOnly = (
+  value: string,
+  locale: 'en' | 'ja',
+  fields: { year?: boolean; month?: boolean; day?: boolean } = {
+    year: true,
+    month: true,
+    day: true,
+  },
+) => {
+  const date = new Date(`${value}T00:00:00Z`);
+  return new Intl.DateTimeFormat(locale === 'ja' ? 'ja-JP' : 'en-GB', {
+    timeZone: 'UTC',
+    year: fields.year ? 'numeric' : undefined,
+    month: fields.month ? (locale === 'ja' ? 'long' : 'short') : undefined,
+    day: fields.day ? 'numeric' : undefined,
+  }).format(date);
 };
 
-export const formatEventDate = (value: string | null) => {
-  if (!value) return '';
-
-  const decodedValue = decodeHtml(value);
-  const isoLikeMatch = decodedValue.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (isoLikeMatch) {
-    const [, year, month, day] = isoLikeMatch;
-    return `${year}.${month}.${day}`;
+export const formatEventDateParts = (
+  start: string | null,
+  end: string | null,
+  fallback: string,
+  locale: 'en' | 'ja' = 'en',
+) => {
+  const startDate = normalizeDateOnly(start);
+  const endDate = normalizeDateOnly(end);
+  if (!startDate) {
+    return { startDate: null, endDate: null, startText: fallback, endText: '', separator: '' };
+  }
+  if (!endDate || endDate === startDate) {
+    return {
+      startDate,
+      endDate: null,
+      startText: formatDateOnly(startDate, locale),
+      endText: '',
+      separator: '',
+    };
   }
 
-  const dottedMatch = decodedValue.match(/(\d{4})\.(\d{2})\.(\d{2})/);
-  if (dottedMatch) {
-    const [, year, month, day] = dottedMatch;
-    return `${year}.${month}.${day}`;
-  }
+  const [startYear, startMonth] = startDate.split('-');
+  const [endYear, endMonth] = endDate.split('-');
+  const sameYear = startYear === endYear;
+  const sameMonth = sameYear && startMonth === endMonth;
+  const startText =
+    locale === 'ja'
+      ? formatDateOnly(startDate, locale)
+      : formatDateOnly(startDate, locale, {
+          year: !sameYear,
+          month: !sameMonth,
+          day: true,
+        });
+  const endText =
+    locale === 'ja' && sameYear
+      ? formatDateOnly(endDate, locale, { month: !sameMonth, day: true })
+      : formatDateOnly(endDate, locale);
 
-  const japaneseMatch = decodedValue.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日/);
-  if (japaneseMatch) {
-    const [, year, month, day] = japaneseMatch;
-    return `${year}.${month.padStart(2, '0')}.${day.padStart(2, '0')}`;
-  }
-
-  return decodedValue;
+  return {
+    startDate,
+    endDate,
+    startText,
+    endText,
+    separator: locale === 'ja' ? '〜' : ' – ',
+  };
 };
 
 export const formatEventDateRange = (
   start: string | null,
   end: string | null,
   fallback: string,
+  locale: 'en' | 'ja' = 'en',
 ) => {
-  const formattedStart = formatEventDate(start ?? fallback);
-  const formattedEnd = formatEventDate(end);
-
-  if (!formattedStart) return fallback;
-  if (!formattedEnd || formattedEnd === formattedStart) return formattedStart;
-
-  return `${formattedStart} - ${formattedEnd}`;
+  const parts = formatEventDateParts(start, end, fallback, locale);
+  return parts.endText ? `${parts.startText}${parts.separator}${parts.endText}` : parts.startText;
 };
 
 const validCoordinatePair = (lat: unknown, lng: unknown) => {

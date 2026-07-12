@@ -24,10 +24,13 @@ import {
   extractSenOkuEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  hasVerifiedEventDate,
   isPublicIpAddress,
+  isUrlAllowedByRobotsText,
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,
+  normalizeEventDatePrecision,
   normalizeHumanDateText,
   parseGenericDateRange,
   parseImageDimensionsFromBytes,
@@ -90,6 +93,72 @@ test('generic date discovery prefers structured and exhibition date content over
   `;
 
   assert.equal(extractBestDateText(html), '2026-07-11 - 2026-08-01');
+});
+
+test('crawler publishes only events with a machine-verifiable start date', () => {
+  assert.equal(hasVerifiedEventDate({ start_date: '2026-07-11' }), true);
+  assert.equal(hasVerifiedEventDate({ calendar_starts_at: '2026-07-11T10:00:00+09:00' }), true);
+  assert.equal(hasVerifiedEventDate({ occurrence_dates: ['2026-07-11'] }), true);
+  assert.equal(hasVerifiedEventDate({ end_date: '2026-08-01' }), false);
+  assert.equal(hasVerifiedEventDate({ date_text: 'See source page' }), false);
+});
+
+test('all-day events store date precision without invented timestamps', () => {
+  assert.deepEqual(
+    normalizeEventDatePrecision({
+      is_all_day: true,
+      start_date: '2026-07-11',
+      end_date: '2026-08-01',
+      calendar_starts_at: '2026-07-11T10:00:00+09:00',
+      calendar_ends_at: '2026-08-01T18:00:00+09:00',
+    }),
+    {
+      is_all_day: true,
+      start_date: '2026-07-11',
+      end_date: '2026-08-01',
+      calendar_starts_at: null,
+      calendar_ends_at: null,
+    },
+  );
+
+  const timed = {
+    is_all_day: false,
+    calendar_starts_at: '2026-07-11T10:00:00+09:00',
+    calendar_ends_at: '2026-07-11T18:00:00+09:00',
+  };
+  assert.equal(normalizeEventDatePrecision(timed), timed);
+});
+
+test('robots rules use the most specific agent and longest matching path', () => {
+  const robots = `
+    User-agent: *
+    Disallow: /private/
+    Allow: /private/public/
+
+    User-agent: kyo-no-kyoto-bot
+    Disallow: /bot-blocked/
+  `;
+
+  assert.equal(
+    isUrlAllowedByRobotsText(robots, 'kyo-no-kyoto-bot/0.1', 'https://example.test/private/item'),
+    true,
+  );
+  assert.equal(
+    isUrlAllowedByRobotsText(
+      robots,
+      'kyo-no-kyoto-bot/0.1',
+      'https://example.test/bot-blocked/item',
+    ),
+    false,
+  );
+  assert.equal(
+    isUrlAllowedByRobotsText(robots, 'other-bot/1.0', 'https://example.test/private/public/item'),
+    true,
+  );
+  assert.equal(
+    isUrlAllowedByRobotsText(robots, 'other-bot/1.0', 'https://example.test/private/item'),
+    false,
+  );
 });
 
 test('crawler URL guard blocks local and private network targets', async () => {

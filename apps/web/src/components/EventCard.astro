@@ -3,13 +3,15 @@ import GeneralButton from './GeneralButton.astro';
 import YouTubeEmbed from './YouTubeEmbed.astro';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
-import { calendarDetailsFor, calendarLocationFor } from '../lib/calendar';
+import { calendarDetailsFor, calendarLocationFor, formatEventDateParts } from '../lib/calendar';
 
 type EventRow = {
   id: string;
   title: string;
   categories: string[];
   date_text: string;
+  start_date: string | null;
+  end_date: string | null;
   timing?: 'ongoing' | 'upcoming' | 'past' | 'permanent';
   institution_name: string;
   venue_name: string | null;
@@ -44,6 +46,7 @@ type Props = {
 
 const {
   event,
+  locale = 'en',
   mapSourceSlug,
   mapLocationId,
   mapsUrl,
@@ -72,6 +75,7 @@ const calendarEndDate = event.calendar_ends_at?.slice(0, 10) ?? '';
 const calendarDetails = calendarDetailsFor(event);
 const calendarLocation = calendarLocationFor(event);
 const showInstitutionMeta = event.timing !== 'permanent';
+const dateParts = formatEventDateParts(event.start_date, event.end_date, event.date_text, locale);
 ---
 
 <article
@@ -117,7 +121,23 @@ const showInstitutionMeta = event.timing !== 'permanent';
   <div class="event-card__body">
     <div class="event-card__body__header">
       <div class="event-card__body__meta">
-        <span data-event-field="dateText">{event.date_text}</span>
+        <span data-event-field="dateText">
+          {
+            dateParts.startDate ? (
+              <>
+                <time datetime={dateParts.startDate}>{dateParts.startText}</time>
+                {dateParts.endDate ? (
+                  <>
+                    {dateParts.separator}
+                    <time datetime={dateParts.endDate}>{dateParts.endText}</time>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              event.date_text
+            )
+          }
+        </span>
         {
           showInstitutionMeta ? (
             <span data-event-field="institutionName">{event.institution_name}</span>

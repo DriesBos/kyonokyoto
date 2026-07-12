@@ -120,9 +120,23 @@ create table if not exists public.events (
   updated_at timestamptz not null default now(),
 
   constraint events_date_presence_check check (
-    date_text <> '' or start_date is not null or calendar_starts_at is not null
+    status <> 'published'
+    or start_date is not null
+    or calendar_starts_at is not null
+    or jsonb_array_length(occurrence_dates) > 0
   )
 );
+
+-- Existing undated rows remain readable until their next source crawl archives them.
+-- New or updated published rows must carry a machine-verifiable start date.
+alter table public.events drop constraint if exists events_date_presence_check;
+alter table public.events
+  add constraint events_date_presence_check check (
+    status <> 'published'
+    or start_date is not null
+    or calendar_starts_at is not null
+    or jsonb_array_length(occurrence_dates) > 0
+  ) not valid;
 
 create table if not exists public.event_translations (
   id uuid primary key default gen_random_uuid(),

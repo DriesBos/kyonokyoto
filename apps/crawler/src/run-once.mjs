@@ -27,6 +27,7 @@ let crawl4AiDisabled = false;
 let googleTranslationClientPromise = null;
 let missingGoogleTranslateConfigWarningShown = false;
 const domainFetchSchedule = new Map();
+const robotsPolicyCache = new Map();
 const supportedTranslationLocales = ['en', 'ja'];
 const localizedEventFields = ['title', 'description'];
 const missingDateCanMeanNoCurrentEventSources = new Set(['sibasi']);
@@ -165,6 +166,71 @@ function envFlag(env, name, fallback = true) {
   const value = env[name];
   if (value === undefined) return fallback;
   return !/^(0|false|no|off)$/i.test(String(value).trim());
+}
+
+function robotsPatternMatches(pattern, path) {
+  const anchored = pattern.endsWith('$');
+  const source = pattern
+    .replace(/\$$/, '')
+    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+    .replaceAll('*', '.*');
+  return new RegExp(`^${source}${anchored ? '$' : ''}`).test(path);
+}
+
+function isUrlAllowedByRobotsText(robotsText, userAgent, value) {
+  const groups = [];
+  let agents = [];
+  let rules = [];
+
+  const flush = () => {
+    if (agents.length) groups.push({ agents, rules });
+    agents = [];
+    rules = [];
+  };
+
+  for (const rawLine of String(robotsText ?? '').split(/\r?\n/)) {
+    if (!rawLine.trim()) {
+      flush();
+      continue;
+    }
+    const line = rawLine.replace(/#.*/, '').trim();
+    if (!line) continue;
+    const separatorIndex = line.indexOf(':');
+    if (separatorIndex === -1) continue;
+    const field = line.slice(0, separatorIndex).trim().toLowerCase();
+    const entry = line.slice(separatorIndex + 1).trim();
+
+    if (field === 'user-agent') {
+      if (rules.length) flush();
+      agents.push(entry.toLowerCase());
+    } else if ((field === 'allow' || field === 'disallow') && agents.length) {
+      if (entry || field === 'allow') rules.push({ type: field, pattern: entry });
+    }
+  }
+  flush();
+
+  const normalizedAgent = String(userAgent ?? '').toLowerCase();
+  const matchingGroups = groups
+    .map((group) => ({
+      ...group,
+      specificity: Math.max(
+        ...group.agents.map((agent) =>
+          agent === '*' ? 0 : normalizedAgent.includes(agent) ? agent.length : -1,
+        ),
+      ),
+    }))
+    .filter((group) => group.specificity >= 0);
+  if (!matchingGroups.length) return true;
+
+  const bestSpecificity = Math.max(...matchingGroups.map((group) => group.specificity));
+  const path = `${new URL(value).pathname}${new URL(value).search}`;
+  const matchingRules = matchingGroups
+    .filter((group) => group.specificity === bestSpecificity)
+    .flatMap((group) => group.rules)
+    .filter((rule) => rule.pattern && robotsPatternMatches(rule.pattern, path))
+    .sort((a, b) => b.pattern.length - a.pattern.length || (a.type === 'allow' ? -1 : 1));
+
+  return matchingRules[0]?.type !== 'disallow';
 }
 
 function normalizeLocaleCode(value) {
@@ -1569,6 +1635,97 @@ function getLatestEventDateOnly(event) {
   return [...candidates].sort().at(-1) ?? null;
 }
 
+function hasVerifiedEventDate(event) {
+  if (normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at)) return true;
+  return (
+    Array.isArray(event?.occurrence_dates) &&
+    event.occurrence_dates.some((value) => normalizeDateOnly(value))
+  );
+}
+
+function normalizeEventDatePrecision(event) {
+  return event?.is_all_day === false
+    ? event
+    : {
+        ...event,
+        calendar_starts_at: null,
+        calendar_ends_at: null,
+      };
+}
+
+function dateExtractionOrigin(detailHtml, source, event, usedGenericExtractor) {
+  const configuredDate = selectorTextValues(detailHtml, selectorsFor(source, 'date'))[0];
+  if (
+    configuredDate &&
+    normalizeHumanDateText(configuredDate) === normalizeHumanDateText(event?.date_text)
+  ) {
+    return 'configured_selector';
+  }
+
+  const eventStart = normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at);
+  if (
+    eventStart &&
+    extractJsonLdDateText(detailHtml).some(
+      (value) => parseGenericDateRange(value).startDate === eventStart,
+    )
+  ) {
+    return 'json_ld';
+  }
+
+  if (
+    eventStart &&
+    selectElements(detailHtml, 'time').some((element) => {
+      const value = extractTagAttribute(element, 'datetime') ?? stripTags(element);
+      return parseGenericDateRange(value).startDate === eventStart;
+    })
+  ) {
+    return 'time_element';
+  }
+
+  if (!usedGenericExtractor) return 'source_specific_extractor';
+
+  const matchesStart = (value) =>
+    eventStart && parseGenericDateRange(value ?? '').startDate === eventStart;
+  const semanticDateElements = selectElements(
+    detailHtml,
+    '[class*=date], [id*=date], [class*=period], [id*=period], [class*=schedule], [id*=schedule]',
+  );
+  if (semanticDateElements.some((element) => matchesStart(stripTags(element)))) {
+    return 'semantic_element';
+  }
+  if (
+    ['og:description', 'description', 'og:title'].some((name) =>
+      matchesStart(extractMeta(detailHtml, name)),
+    )
+  ) {
+    return 'metadata';
+  }
+  if (selectorTextValues(detailHtml, ['main', 'article']).some(matchesStart)) {
+    return 'article_content';
+  }
+
+  return 'page_fallback';
+}
+
+function recordDateExtraction(diagnostics, detailHtml, source, event, usedGenericExtractor) {
+  if (!diagnostics || diagnostics.date_extractions.length >= 20) return;
+
+  const parsed = parseGenericDateRange(event?.date_text ?? '');
+  const startDate = normalizeDateOnly(event?.start_date ?? event?.calendar_starts_at);
+  diagnostics.date_extractions.push({
+    url: event?.source_url ?? null,
+    raw: String(event?.date_text ?? '').slice(0, 300),
+    normalized: normalizeHumanDateText(event?.date_text).slice(0, 300),
+    origin: dateExtractionOrigin(detailHtml, source, event, usedGenericExtractor),
+    parser: parsed.parserId ?? (startDate ? 'source_specific' : null),
+    inferred_year: Boolean(
+      startDate && !String(event?.date_text ?? '').includes(startDate.slice(0, 4)),
+    ),
+    start_date: startDate,
+    end_date: normalizeDateOnly(event?.end_date ?? event?.calendar_ends_at),
+  });
+}
+
 function getLatestEventYearHint(event, detailUrl) {
   const haystacks = [
     typeof event?.date_text === 'string' ? event.date_text : '',
@@ -1681,7 +1838,7 @@ function parseGenericDateRange(dateText) {
       isValidDateParts(endYear, endMonth, endDay) &&
       parsed.endDate >= parsed.startDate
     ) {
-      return parsed;
+      return { ...parsed, parserId: parser.name };
     }
   }
 
@@ -1690,6 +1847,7 @@ function parseGenericDateRange(dateText) {
     endDate: null,
     calendarStartsAt: null,
     calendarEndsAt: null,
+    parserId: null,
   };
 }
 
@@ -5907,7 +6065,7 @@ async function readResponsePrefix(response, byteLimit) {
   return Buffer.concat(chunks, total);
 }
 
-async function fetchImageDimensions(url, userAgent, env) {
+async function fetchImageDimensions(url, userAgent, env, diagnostics = null) {
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),
@@ -5915,6 +6073,7 @@ async function fetchImageDimensions(url, userAgent, env) {
   );
 
   try {
+    await assertRobotsAllowed(url, userAgent, env, diagnostics);
     const response = await fetchRemote(url, {
       headers: buildImageProbeHeaders(userAgent),
       signal: controller.signal,
@@ -6043,6 +6202,9 @@ function createCrawlDiagnostics(env = {}) {
     image_dimension_probe_count: 0,
     image_dimension_probe_rejected_count: 0,
     image_dimension_probe_failed_count: 0,
+    robots_checked_count: 0,
+    robots_blocked_count: 0,
+    date_extractions: [],
   };
 }
 
@@ -6149,6 +6311,40 @@ async function waitForDomainDelay(url, env) {
 
   if (waitMs > 0) {
     await sleep(waitMs);
+  }
+}
+
+async function assertRobotsAllowed(url, userAgent, env, diagnostics = null) {
+  if (!envFlag(env, 'CRAWLER_RESPECT_ROBOTS_TXT', true)) return;
+
+  const target = new URL(url);
+  const cacheKey = `${target.origin}\n${String(userAgent).toLowerCase()}`;
+  let robotsText = robotsPolicyCache.get(cacheKey);
+
+  if (robotsText === undefined) {
+    const robotsUrl = new URL('/robots.txt', target).toString();
+    try {
+      await waitForDomainDelay(robotsUrl, env);
+      const response = await fetchRemote(robotsUrl, {
+        headers: buildStaticFetchHeaders(userAgent),
+        signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_ROBOTS_TIMEOUT_MS', 10000)),
+      });
+      robotsText = response.ok
+        ? (await response.text()).slice(0, 512 * 1024)
+        : response.status >= 400 && response.status < 500
+          ? ''
+          : 'User-agent: *\nDisallow: /';
+    } catch {
+      // RFC 9309 requires complete disallow while robots.txt is unreachable.
+      robotsText = 'User-agent: *\nDisallow: /';
+    }
+    robotsPolicyCache.set(cacheKey, robotsText);
+    if (diagnostics) diagnostics.robots_checked_count += 1;
+  }
+
+  if (!isUrlAllowedByRobotsText(robotsText, userAgent, url)) {
+    if (diagnostics) diagnostics.robots_blocked_count += 1;
+    throw new Error(`robots.txt disallows crawler URL: ${url}`);
   }
 }
 
@@ -6299,6 +6495,8 @@ async function fetchStaticHtml(url, userAgent, env = {}) {
 }
 
 async function fetchHtml(url, userAgent, env = {}, options = {}) {
+  await assertRobotsAllowed(url, userAgent, env, options.context?.diagnostics);
+
   if (options.renderMode === 'always') {
     const rendered = await fetchHtmlWithCrawl4Ai(url, userAgent, env, options.context);
     if (rendered) return rendered;
@@ -6768,7 +6966,7 @@ async function normalizeEventImagesForSource(
   for (const imageUrl of probeImageUrls) {
     try {
       if (diagnostics) diagnostics.image_dimension_probe_count += 1;
-      const dimensions = await fetchImageDimensionsFn(imageUrl, userAgent, env);
+      const dimensions = await fetchImageDimensionsFn(imageUrl, userAgent, env, diagnostics);
 
       if (dimensions && isSmallImageCandidate(dimensions, imageUrl)) {
         if (diagnostics) diagnostics.image_dimension_probe_rejected_count += 1;
@@ -6952,6 +7150,7 @@ async function crawlSource({
         eventExtractor(detailPage.html, crawlSourceConfig, detailUrl, sourceContext),
         crawlSourceConfig,
       );
+      extractedEvent = normalizeEventDatePrecision(extractedEvent);
 
       if (
         sourceRenderMode === 'auto' &&
@@ -6972,28 +7171,31 @@ async function crawlSource({
             crawlSourceConfig,
           );
           detailPage = renderedDetailPage;
-          extractedEvent = renderedEvent;
+          extractedEvent = normalizeEventDatePrecision(renderedEvent);
         }
       }
 
       const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, 'detail', detailPage);
 
+      const usedGenericExtractor = !eventExtractors[source.slug];
+      recordDateExtraction(
+        diagnostics,
+        detailPage.html,
+        crawlSourceConfig,
+        extractedEvent,
+        usedGenericExtractor,
+      );
+
+      if (!hasVerifiedEventDate(extractedEvent)) {
+        pushSkippedEvent(skippedEvents, diagnostics, {
+          detailUrl,
+          title: extractedEvent.title,
+          reason: 'missing verifiable event date',
+        });
+        continue;
+      }
+
       if (source.slug === 'sibasi') {
-        const hasVerifiedDate =
-          Boolean(extractedEvent.start_date) ||
-          Boolean(extractedEvent.end_date) ||
-          (Array.isArray(extractedEvent.occurrence_dates) &&
-            extractedEvent.occurrence_dates.length > 0);
-
-        if (!hasVerifiedDate) {
-          pushSkippedEvent(skippedEvents, diagnostics, {
-            detailUrl,
-            title: extractedEvent.title,
-            reason: 'missing verifiable event date',
-          });
-          continue;
-        }
-
         if (classifyEventTiming(extractedEvent, todayJapan) === 'past') {
           pushSkippedEvent(skippedEvents, diagnostics, {
             detailUrl,
@@ -7312,10 +7514,13 @@ export {
   buildMachineTranslatedEvent,
   getSourceSpecificSkipReason,
   hasExtractedImage,
+  hasVerifiedEventDate,
   isPublicIpAddress,
+  isUrlAllowedByRobotsText,
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,
+  normalizeEventDatePrecision,
   normalizeHumanDateText,
   parseGenericDateRange,
   parseImageDimensionsFromBytes,
