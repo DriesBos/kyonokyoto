@@ -154,7 +154,10 @@
       "allowed_domains": ["nakka-art.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition-post/", "/exhibition-post/"],
-      "notes": "Purple art marker from Google My Maps. Official exhibitions index lists current, upcoming, and past exhibitions.",
+      "notes": "Purple art marker from Google My Maps. Official exhibitions index lists current, upcoming, and past exhibitions. Keep only the first extracted event image.",
+      "qa": {
+        "image_rules": "Keep only the first extracted image for each event."
+      },
       "selectors": {
         "listing_links": ".li-list .li a"
       },
@@ -196,7 +199,12 @@
       "allowed_domains": ["www.yoshimiarts.com", "yoshimiarts.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition", "/exhibition"],
-      "notes": "Purple art marker from Google My Maps. Official exhibition page includes Osaka and Tokyo sections; crawler should prefer Osaka venue text.",
+      "notes": "Purple art marker from Google My Maps. Official exhibition page includes Osaka and Tokyo sections; crawler should prefer Osaka venue text. Detail pages place the event date immediately after the featured image and include parenthesized weekday abbreviations.",
+      "qa": {
+        "field_sources": {
+          "date": "Event information block immediately after the featured image."
+        }
+      },
       "selectors": {
         "listing_links": "p.style2 a"
       },
@@ -397,7 +405,7 @@
       "allowed_domains": ["www.artm.pref.hyogo.jp", "artm.pref.hyogo.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
-      "notes": "Official annual exhibition listing for the Hyogo Prefectural Museum of Art in Kobe.",
+      "notes": "Official Japanese annual schedule is authoritative. Treat every `.exhibition-item` as an event, infer omitted years from the schedule heading, and keep only ongoing/upcoming date ranges. Some upcoming cards have no detail link.",
       "beta": true,
       "locales": {
         "ja": {
@@ -405,8 +413,18 @@
           "event_page_patterns": ["/exhibition/"]
         },
         "en": {
-          "start_urls": ["https://www.artm.pref.hyogo.jp/eng/exhibition/"],
+          "start_urls": [],
           "event_page_patterns": ["/eng/exhibition/", "/exhibition/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "qa": {
+        "field_sources": {
+          "listing_links": "Each `.exhibition-item` on the Japanese annual schedule becomes an inline event.",
+          "date": "Date range inside each annual-schedule card; missing start year comes from the schedule heading."
         }
       },
       "crawl_hints": {
@@ -537,8 +555,11 @@
       "allowed_domains": ["www.osaka-geidai.ac.jp", "osaka-geidai.ac.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/whatsnew/"],
-      "notes": "Only crawl items tagged `アート・展覧会`; source-specific detail URL extractor filters listing anchors by that tag.",
-      "beta": true,
+      "notes": "Only crawl items tagged `アート・展覧会`; source-specific detail URL extractor filters listing anchors by that tag. Keep only the first extracted event image.",
+      "beta": false,
+      "qa": {
+        "image_rules": "Keep only the first extracted image for each event."
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.osaka-geidai.ac.jp/whatsnew"],
@@ -598,16 +619,23 @@
       "directions_query": "hitoto gallery, Tenjinbashi 5-chome, Kita-ku, Osaka",
       "lat": 34.70839,
       "lng": 135.51102,
-      "base_url": "https://hitoto.info/",
-      "start_urls": ["https://hitoto.info/"],
+      "base_url": "https://hitoto.info/next-exhibition/",
+      "start_urls": ["https://hitoto.info/next-exhibition/"],
       "allowed_domains": ["hitoto.info"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/"],
-      "notes": "Homepage lists upcoming exhibitions; site describes hitoto as an Osaka Tenjinbashi 5-chome gallery.",
+      "notes": "The `next-exhibition` archive is the authoritative current/upcoming list. Detail pages place the featured image first, then title/date, with description in the lower entry-content block.",
       "beta": true,
+      "selectors": {
+        "listing_links": "main .entry-title a",
+        "title": ".detail_txt .entry-title",
+        "date": ".detail_txt .entry-period_time",
+        "description": ".detail_txt .entry-content",
+        "images": ".detail_thumb .post-thumbnail img"
+      },
       "locales": {
         "ja": {
-          "start_urls": ["https://hitoto.info/"],
+          "start_urls": ["https://hitoto.info/next-exhibition/"],
           "event_page_patterns": ["/"]
         }
       },
@@ -615,8 +643,20 @@
         "native_locales": ["ja"]
       },
       "crawl_hints": {
-        "skip_patterns": ["/category/", "/about", "/access"],
+        "skip_patterns": ["/category/", "/past-exhibition/", "/about", "/access"],
         "max_detail_pages": 6
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://hitoto.info/next-exhibition/"]
+        },
+        "field_sources": {
+          "listing_links": "Current/upcoming archive entry-title links.",
+          "title": "Detail-page entry title after featured image.",
+          "date": "Detail-page entry-period_time after featured image.",
+          "description": "Detail-page entry-content below title/date."
+        },
+        "image_rules": "Use the featured image from detail_thumb."
       }
     },
     {
@@ -725,26 +765,68 @@
         "display_category": [],
         "event_category": ["exhibition"]
       },
-      "language": "en",
+      "language": "ja",
       "address_text": "Yamazaki Bldg. 2F, 1-19-27 Minami-Horie, Nishi-ku, Osaka 550-0015 Japan",
       "directions_query": "Tezukayama Gallery, Minami-Horie, Osaka",
       "lat": 34.67178,
       "lng": 135.49239,
-      "base_url": "https://www.tezukayama-g.com/",
-      "start_urls": ["https://www.tezukayama-g.com/"],
+      "base_url": "https://www.tezukayama-g.com/exhibitions/status/current",
+      "start_urls": [
+        "https://www.tezukayama-g.com/exhibitions/status/current",
+        "https://www.tezukayama-g.com/exhibitions/status/future"
+      ],
       "allowed_domains": ["www.tezukayama-g.com", "tezukayama-g.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibition", "/exhibitions"],
-      "notes": "Homepage exposes current/future exhibitions and art fair entries.",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Current and future status pages are authoritative and link to exhibition detail pages. Details expose title, date, description, then a gallery whose anchor hrefs are the full-resolution images.",
       "beta": true,
+      "selectors": {
+        "listing_links": ".p-archive-event-item__container",
+        "title": ".p-event-header__title",
+        "date": ".p-event-header__period",
+        "description": ".p-event-intro__summery"
+      },
       "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.tezukayama-g.com/exhibitions/status/current",
+            "https://www.tezukayama-g.com/exhibitions/status/future"
+          ],
+          "event_page_patterns": ["/exhibition/"]
+        },
         "en": {
-          "start_urls": ["https://www.tezukayama-g.com/"],
-          "event_page_patterns": ["/exhibition", "/exhibitions"]
+          "start_urls": [
+            "https://www.tezukayama-g.com/en/exhibitions/status/current",
+            "https://www.tezukayama-g.com/en/exhibitions/status/future"
+          ],
+          "event_page_patterns": ["/en/exhibition/"]
         }
       },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
       "crawl_hints": {
+        "skip_patterns": ["/exhibitions/status/past", "/art-fairs/"],
         "max_detail_pages": 8
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": [
+            "https://www.tezukayama-g.com/exhibitions/status/current",
+            "https://www.tezukayama-g.com/exhibitions/status/future"
+          ],
+          "en": [
+            "https://www.tezukayama-g.com/en/exhibitions/status/current",
+            "https://www.tezukayama-g.com/en/exhibitions/status/future"
+          ]
+        },
+        "field_sources": {
+          "listing_links": "Exhibition cards on current/future status pages.",
+          "title": "Detail header title.",
+          "date": "Detail header period.",
+          "description": "Detail intro summary below title/date."
+        },
+        "image_rules": "Use full-resolution hrefs from the gallery below the description, not thumbnail src values."
       }
     },
     {

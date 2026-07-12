@@ -2,7 +2,19 @@
 
 Update this file whenever source JSON changes or test crawls run.
 
+2026-07-12: Generic date extraction now normalizes full-width Japanese text, Japanese/English weekdays, era years, and common range separators; parses validated Japanese, English, and numeric ranges through one shared path; and prefers JSON-LD or semantic event-date blocks over publication dates and whole-page text. Existing source-specific parsers remain as fallbacks. Focused regression coverage added; no crawl run.
+
+2026-07-12: Complete sequential VPS crawl on `main` commit `900398c` synced and attempted all 119 sources: Kyoto 49/50, Osaka 29/29, Tokyo 40/40. Outcomes were 100 `source_ok`, 11 `source_no_current_events`, 4 `source_needs_review`, 3 `source_empty`, and 1 `source_failed`. `taka-ishii-gallery` failed because its listing returned no Kyoto detail URLs. Empty sources were `imura-art`, `yod-gallery`, and `congres-square-grand-green-osaka`. Review sources were `hill-top-gallery`, `atelier-muji-ginza`, `ota-fine-arts`, and `play-museum`. Translation audit checked 320 events and found 9 existing gaps: 7 English rows on `purple-purple`, 1 English row on `sokyo-kyoto`, and 1 Japanese row on `kuramonzen`. Crawls ran one source at a time under one VPS lock with five-minute city cooldowns; peak observed swap stayed below 500 MiB. One final Netlify rebuild returned 200 and the crawl lock was released. Enabled city timers are queued to reactivate before the next 36-hour cycle instead of immediately repeating this crawl.
+
 ## Kyoto Sources
+
+2026-07-12: Kusakabe Gallery now reads homepage event info before the slideshow, extracts its dates/hours, uses the original Wix feature asset instead of the `blur_2` LQIP, and takes description paragraphs after the slideshow. Focused test added; no crawl run.
+
+2026-07-12: CURATION⇄FAIR Kyoto/Tokyo now use their city NEWS indexes instead of annual landing pages. Discovery accepts only current-year titles containing `Announcement of CURATION⇄FAIR` plus the matching city. Kyoto uses the detailed 2026 release and extracts November 6–8; Tokyo currently yields no event because no qualifying announcement exists. Focused tests added; no crawl run.
+
+2026-07-12: Chushin Art Museum date parser now normalizes full-width Japanese dates before parsing. This gives the frontend standard `YYYY.MM.DD - YYYY.MM.DD` output and lets the next crawl archive the stale 2024 Ceramic Sight event. Focused extractor test added; no crawl run.
+
+2026-07-12: QA tuning: SAMAC now keeps only the first event image. Hakari Contemporary now extracts exhibition prose separately from event/related-event information and skips its first two poster variants so media begins with installation/artwork imagery. Focused extractor tests added; no crawl run.
 
 2026-07-12: Full Kyoto VPS cycle on `main` commit `b15c2f6` synced 50 sources and completed 49/50 crawls; `taka-ishii-gallery` failed because no Kyoto detail URLs were found. Translation check found 9 gaps: 7 English on `purple-purple`, 1 English on `sokyo-kyoto`, and 1 Japanese on `kuramonzen`. Art Collaboration Kyoto skipped its event for a missing image; Imura Art returned anti-bot shells. Hash-fragment inline sources (`art-gallery-kitano`, `gallery-take-two`, `chushin-bijutsu`) returned repeated event IDs and need identity/upsert QA. Netlify rebuild hook returned 200.
 2026-07-12: Updated `art-collaboration-kyoto` extraction to explicitly keep its 1200×630 homepage OG image. This bypasses the generic WordPress-theme asset rejection only for ACK. Focused regression coverage added; no database crawl run.
@@ -44,6 +56,18 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
+2026-07-12: Tezukayama Gallery now discovers detail pages only from current/future status listings. Detail extraction reads title, date, description, then full-resolution gallery hrefs in page order. Japanese and English status pages are native. Focused test added; no crawl run.
+
+2026-07-12: Hitoto now discovers only current/upcoming posts from `/next-exhibition/`. Detail extraction follows its actual order: featured image, title/date, then lower description content. Focused config/extractor test added; no crawl run.
+
+2026-07-12: Hyogo Prefectural Museum of Art now treats each Japanese annual-schedule card as an inline event, infers omitted years from the schedule heading, and excludes passed cards by parsed end date. Current official schedule resolves to 2 ongoing and 7 upcoming exhibitions; English is machine-translated because its schedule omits an announced date. Focused test added; no crawl run.
+
+2026-07-12: Yoshimi Arts dates now parse from the event block after the featured image; shared English date detection strips parenthesized weekday abbreviations such as `(sat)` and `(sun)`. Focused test added; no crawl run.
+
+2026-07-12: NAKKA now keeps only the first event image. Focused extractor test added; no crawl run.
+
+2026-07-12: Osaka University of Arts now keeps only the first event image and is public (`beta: false`). Focused extractor/config test updated; no crawl run.
+
 ### Active source tuning
 
 - `parco-hall-shinsaibashi`: 2026-06-26 approved clean PARCO event pages and keeps only the first extracted image per event.
@@ -51,12 +75,6 @@ Update this file whenever source JSON changes or test crawls run.
 - `kaze-art-planning`: 2026-06-26 removed from Osaka source JSON by request; no crawl run.
 
 These sources need more JSON tuning before approval. Keep `beta: true` until fixed and re-crawled cleanly.
-
-### `hyogo-prefectural-museum-of-art`
-
-- Problem: archive and old pages saved as events.
-- Crawl leak examples: `i_backnum.html`, `j_2504`, old year collection pages.
-- Likely fix: tighten `event_page_patterns`, add `crawl_hints.skip_patterns` for archive/backnumber and old year pages, or add listing selector for current/special exhibition cards only.
 
 ### `i-gallery-osaka`
 
@@ -76,12 +94,6 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 - Crawl leak examples: `/exhibition/past`, generic `past exhibition`.
 - Likely fix: add skip for `/past`; tune selectors for current/upcoming detail content.
 
-### `hitoto`
-
-- Problem: saved category pages.
-- Crawl leak examples: `カテゴリー: Art`, `カテゴリー: これからの展覧`, `カテゴリー: これまでの展覧`.
-- Likely fix: skip category pages; target individual post/event URLs only.
-
 ### `jitsuzaisei`
 
 - Problem: saved blog/news index pages.
@@ -93,12 +105,6 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 - Problem: saved utility/index pages.
 - Crawl leak examples: `Mail News`, `schedule`, `Top/coming soon`.
 - Likely fix: skip mail/news/schedule/archive pages; use listing selector for real exhibition pages.
-
-### `tezukayama-gallery`
-
-- Problem: saved status index pages.
-- Crawl leak examples: `/exhibitions/status/current`, `/exhibitions/status/past`.
-- Likely fix: skip `/exhibitions/status/`; keep `/exhibition/<slug>` pages.
 
 ### `masaki-art-museum`
 

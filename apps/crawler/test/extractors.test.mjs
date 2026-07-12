@@ -16,6 +16,7 @@ import {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractBestDateText,
   extractSourceSpecificDetailUrls,
   fetchRemote,
   extractLocaleUrlsFromHtml,
@@ -27,6 +28,8 @@ import {
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,
+  normalizeHumanDateText,
+  parseGenericDateRange,
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,
   recordFetchedPage,
@@ -52,6 +55,42 @@ const testTaxonomy = (
   display_category = [],
   event_category = [],
 ) => ({ venue_category, display_category, event_category });
+
+test('generic date parser normalizes and validates common Japanese and English formats', () => {
+  const cases = [
+    ['２０２６年７月１１日（土）～８月１日（土）', '2026-07-11', '2026-08-01'],
+    ['令和8年7月11日〜8月1日', '2026-07-11', '2026-08-01'],
+    ['July 11 – August 1, 2026', '2026-07-11', '2026-08-01'],
+    ['11 July – 1 August 2026', '2026-07-11', '2026-08-01'],
+    ['2026.7.11–8.1', '2026-07-11', '2026-08-01'],
+    ['December 20, 2026 – January 10, 2027', '2026-12-20', '2027-01-10'],
+  ];
+
+  for (const [raw, startDate, endDate] of cases) {
+    const parsed = parseGenericDateRange(raw);
+    assert.equal(parsed.startDate, startDate, raw);
+    assert.equal(parsed.endDate, endDate, raw);
+  }
+
+  assert.equal(
+    normalizeHumanDateText('２０２６年７月１１日（土）～８月１日（土）'),
+    '2026年7月11日 -8月1日',
+  );
+  assert.equal(parseGenericDateRange('2026年2月30日').startDate, null);
+});
+
+test('generic date discovery prefers structured and exhibition date content over publication dates', () => {
+  const html = `
+    <meta property="og:description" content="Published July 1, 2026">
+    <div class="published-date">July 1, 2026</div>
+    <script type="application/ld+json">
+      {"@type":"ExhibitionEvent","startDate":"2026-07-11","endDate":"2026-08-01"}
+    </script>
+    <main><p class="event-period">July 11 – August 1, 2026</p></main>
+  `;
+
+  assert.equal(extractBestDateText(html), '2026-07-11 - 2026-08-01');
+});
 
 test('crawler URL guard blocks local and private network targets', async () => {
   assert.equal(isPublicIpAddress('8.8.8.8'), true);
@@ -418,7 +457,7 @@ test('Art Collaboration Kyoto keeps its theme-hosted OG image', () => {
   );
 });
 
-test('Osaka Geidai detail extraction keeps art exhibition tagged links only', () => {
+test('Osaka Geidai keeps art exhibition links and first event image only', async () => {
   const listingHtml = `
     <ul>
       <li><a href="/whatsnew/art-a">アート・展覧会 2026.05.26 茂本ヒデキチ 墨絵個展</a></li>
@@ -437,6 +476,165 @@ test('Osaka Geidai detail extraction keeps art exhibition tagged links only', ()
       'https://www.osaka-geidai.ac.jp/whatsnew/art-b',
     ],
   );
+
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const source = sources.find((item) => item.slug === 'osaka-geidai-whatsnew');
+  const event = eventExtractors[source.slug](
+    `<title>Collection Exhibition | Osaka University of Arts</title>
+     <p>2026.06.03 - 2026.11.24</p>
+     <img src="https://www.osaka-geidai.ac.jp/images/first.jpg" width="1200" height="800">
+     <img src="https://www.osaka-geidai.ac.jp/images/second.jpg" width="1200" height="800">`,
+    source,
+    'https://www.osaka-geidai.ac.jp/whatsnew/collection-exhibition',
+  );
+
+  assert.equal(source.beta, false);
+  assert.deepEqual(event.image_urls, ['https://www.osaka-geidai.ac.jp/images/first.jpg']);
+});
+
+test('NAKKA extraction keeps only the first event image', () => {
+  const source = {
+    slug: 'nakanoshima-museum-of-art-osaka',
+    name: 'Nakanoshima Museum of Art',
+    taxonomy: testTaxonomy(['museum'], [], ['exhibition']),
+  };
+  const event = eventExtractors[source.slug](
+    `<title>Current Exhibition | NAKKA</title>
+     <p>2026.07.01 - 2026.09.30</p>
+     <img src="https://nakka-art.jp/images/first.jpg" width="1200" height="800">
+     <img src="https://nakka-art.jp/images/second.jpg" width="1200" height="800">`,
+    source,
+    'https://nakka-art.jp/en/exhibition-post/current-exhibition/',
+  );
+
+  assert.deepEqual(event.image_urls, ['https://nakka-art.jp/images/first.jpg']);
+});
+
+test('Yoshimi Arts reads parenthesized-weekday dates after feature image', () => {
+  const event = extractGenericEvent(
+    `<title>Shigeru Izumi－Print Collection | Yoshimi Arts</title>
+     <img src="https://www.yoshimiarts.com/exhibition/photo2026/Izumi-PrintCollection.jpg" width="600" height="800">
+     <p><strong>Shigeru Izumi－Print Collection</strong><br>
+     Jul 11 (sat) - Aug 2 (sun), 2026<br>12:00-19:00</p>`,
+    {
+      slug: 'yoshimi-arts',
+      name: 'Yoshimi Arts',
+      taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
+    },
+    'https://www.yoshimiarts.com/en/exhibition/20260711_Shigeru_Izumi-Print_Collection.html',
+  );
+
+  assert.equal(event.start_date, '2026-07-11');
+  assert.equal(event.end_date, '2026-08-02');
+});
+
+test('Hyogo annual schedule keeps ongoing and upcoming cards only', () => {
+  const year = new Date().getFullYear();
+  const html = `
+    <h2>${year}年 年間スケジュール</h2>
+    <div class="exhibition-item">
+      <img src="https://www.artm.pref.hyogo.jp/past.jpg" width="800" height="600">
+      <h3 class="exhibition-title">終了展</h3>
+      <span class="exhibition-date">1月1日-1月2日</span>
+    </div>
+    <div class="exhibition-item">
+      <img src="https://www.artm.pref.hyogo.jp/current.jpg" width="800" height="600">
+      <h3 class="exhibition-title">開催中展<span class="exhibition-subtitle">Current</span></h3>
+      <span class="exhibition-date">1月1日-12月31日</span>
+      <div class="exhibition-body"><p>Current exhibition description.</p></div>
+    </div>
+    <div class="exhibition-item">
+      <img src="https://www.artm.pref.hyogo.jp/upcoming.jpg" width="800" height="600">
+      <h3 class="exhibition-title">次回展</h3>
+      <span class="exhibition-date">12月17日-${year + 1}年2月23日</span>
+    </div>
+  `;
+  const source = {
+    slug: 'hyogo-prefectural-museum-of-art',
+    name: 'Hyogo Prefectural Museum of Art',
+    taxonomy: testTaxonomy(['museum'], [], ['exhibition']),
+  };
+  const listingUrl = 'https://www.artm.pref.hyogo.jp/exhibition/';
+  const urls = detailUrlExtractors[source.slug](html, listingUrl);
+
+  assert.deepEqual(urls, [`${listingUrl}#exhibition-1`, `${listingUrl}#exhibition-2`]);
+
+  const event = eventExtractors[source.slug](html, source, urls[1]);
+  assert.equal(event.title, '次回展');
+  assert.equal(event.start_date, `${year}-12-17`);
+  assert.equal(event.end_date, `${year + 1}-02-23`);
+  assert.deepEqual(event.image_urls, ['https://www.artm.pref.hyogo.jp/upcoming.jpg']);
+});
+
+test('Hitoto uses current/upcoming listing and ordered detail fields', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const source = sources.find((item) => item.slug === 'hitoto');
+  const listingHtml = `
+    <main>
+      <article><h2 class="entry-title"><a href="https://hitoto.info/pictogram/">Pictogram</a></h2></article>
+      <a href="https://hitoto.info/past-exhibition/">Past exhibitions</a>
+    </main>
+  `;
+  const detailHtml = `
+    <article>
+      <div class="detail_thumb"><div class="post-thumbnail">
+        <img src="https://hitoto.info/blog/wp-content/pictogram.jpg" width="920" height="517">
+      </div></div>
+      <article class="detail_txt">
+        <h1 class="entry-title">西本良太「ピクトグラム」</h1>
+        <p class="entry-period_time">2026.7.11（土）〜8.1（土）13:00-19:00</p>
+        <section class="entry-content"><p>hitotoで初めてとなる木工作家の個展です。</p></section>
+      </article>
+    </article>
+  `;
+  const urls = extractGenericDetailUrls(listingHtml, source.start_urls[0], source);
+  const event = extractGenericEvent(detailHtml, source, urls[0]);
+
+  assert.deepEqual(source.start_urls, ['https://hitoto.info/next-exhibition/']);
+  assert.deepEqual(urls, ['https://hitoto.info/pictogram/']);
+  assert.equal(event.title, '西本良太「ピクトグラム」');
+  assert.equal(event.start_date, '2026-07-11');
+  assert.equal(event.end_date, '2026-08-01');
+  assert.equal(event.description, 'hitotoで初めてとなる木工作家の個展です。');
+  assert.deepEqual(event.image_urls, ['https://hitoto.info/blog/wp-content/pictogram.jpg']);
+});
+
+test('Tezukayama follows status cards and keeps full gallery images', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const source = sources.find((item) => item.slug === 'tezukayama-gallery');
+  const listingHtml = `
+    <article class="p-archive-event-item">
+      <a href="https://www.tezukayama-g.com/exhibition/ten-years-of-thunder" class="p-archive-event-item__container">Exhibition</a>
+    </article>
+  `;
+  const detailHtml = `
+    <header class="p-event-header">
+      <img src="https://www.tezukayama-g.com/hero.jpg">
+      <h1 class="p-event-header__title">アーカイブ展：雷鳴の十年</h1>
+      <p class="p-event-header__period">2026.7.4 Sat - 2026.8.1 Sat</p>
+    </header>
+    <div class="p-event-intro"><div class="p-event-intro__summery"><p>展覧会の説明です。</p></div></div>
+    <div class="p-event-gallery">
+      <a class="c-image-gallery-item" href="https://www.tezukayama-g.com/gallery-1-full.jpg"><img src="https://www.tezukayama-g.com/gallery-1-thumb.jpg"></a>
+      <a class="c-image-gallery-item" href="https://www.tezukayama-g.com/gallery-2-full.jpg"><img src="https://www.tezukayama-g.com/gallery-2-thumb.jpg"></a>
+    </div>
+  `;
+  const urls = extractGenericDetailUrls(listingHtml, source.start_urls[0], source);
+  const event = eventExtractors[source.slug](detailHtml, source, urls[0]);
+
+  assert.deepEqual(source.start_urls, [
+    'https://www.tezukayama-g.com/exhibitions/status/current',
+    'https://www.tezukayama-g.com/exhibitions/status/future',
+  ]);
+  assert.deepEqual(urls, ['https://www.tezukayama-g.com/exhibition/ten-years-of-thunder']);
+  assert.equal(event.title, 'アーカイブ展：雷鳴の十年');
+  assert.equal(event.start_date, '2026-07-04');
+  assert.equal(event.end_date, '2026-08-01');
+  assert.equal(event.description, '展覧会の説明です。');
+  assert.deepEqual(event.image_urls, [
+    'https://www.tezukayama-g.com/gallery-1-full.jpg',
+    'https://www.tezukayama-g.com/gallery-2-full.jpg',
+  ]);
 });
 
 test('generic listing selectors support common attribute filters', () => {
@@ -1844,21 +2042,40 @@ test('city source configs are valid crawl inputs', async () => {
   }
 });
 
-test('CURATION FAIR sources use current-year English and Japanese pages', async () => {
+test('CURATION FAIR sources discover only current-year announcement news', async () => {
   const year = String(new Date().getFullYear());
+  const kyotoSources = await loadSourcesConfig({ city: 'kyoto' });
+  const tokyoSources = await loadSourcesConfig({ city: 'tokyo' });
+  const kyoto = kyotoSources.find((item) => item.slug === 'curation-fair-kyoto');
+  const tokyo = tokyoSources.find((item) => item.slug === 'curation-fair-tokyo');
+  const listingHtml = `
+    <a href="/en/news/post_20260402">Announcement of CURATION⇄FAIR Kyoto ${year}</a>
+    <a href="/en/news/release_20251106">CURATION⇄FAIR Tokyo ${year} dates announced</a>
+    <a href="/en/news/post_20250402">Announcement of CURATION⇄FAIR Tokyo ${Number(year) - 1}</a>
+  `;
 
-  for (const city of ['kyoto', 'tokyo']) {
-    const sources = await loadSourcesConfig({ city });
-    const source = sources.find((item) => item.slug === `curation-fair-${city}`);
+  assert.deepEqual(kyoto?.taxonomy, testTaxonomy(['fair'], ['contemporary'], ['fair']));
+  assert.deepEqual(kyoto?.start_urls, ['https://curation-fair.com/en/news/kyoto']);
+  assert.deepEqual(detailUrlExtractors[kyoto.slug](listingHtml, kyoto.start_urls[0], kyoto), [
+    'https://curation-fair.com/en/news/release_20260706',
+  ]);
+  assert.deepEqual(tokyo?.taxonomy, testTaxonomy(['fair'], [], ['fair']));
+  assert.deepEqual(tokyo?.start_urls, ['https://curation-fair.com/en/news/tokyo']);
+  assert.deepEqual(detailUrlExtractors[tokyo.slug](listingHtml, tokyo.start_urls[0], tokyo), []);
 
-    assert.deepEqual(
-      source?.taxonomy,
-      testTaxonomy(['fair'], city === 'kyoto' ? ['contemporary'] : [], ['fair']),
-    );
-    assert.equal(source?.beta, true);
-    assert.deepEqual(source?.start_urls, [`https://curation-fair.com/en/${city}${year}`]);
-    assert.deepEqual(source?.locales?.ja?.start_urls, [`https://curation-fair.com/${city}${year}`]);
-  }
+  const event = eventExtractors[kyoto.slug](
+    `<h1>Press release</h1>
+     <p>CURATION⇄FAIR Kyoto brings together galleries and programs across three historic temples in Nishijin.</p>
+     <p>Visitors encounter art, architecture, gardens, and Kyoto culture through one annual fair.</p>
+     <p>Dates: Friday 6 November - Sunday 8 November, 2026</p>
+     <img src="https://curation-fair.com/kyoto-2026.jpg" width="1600" height="900">`,
+    kyoto,
+    kyoto.event_info_urls.en,
+  );
+
+  assert.equal(event.title, 'CURATION⇄FAIR Kyoto');
+  assert.equal(event.start_date, '2026-11-06');
+  assert.equal(event.end_date, '2026-11-08');
 });
 
 test('source config includes Imura Art exhibition tabs', async () => {
@@ -2131,13 +2348,18 @@ test('source config follows Kuramonzen detail pages for per-event fields', async
   ]);
 });
 
-test('Hakari extraction keeps lazy-loaded hero image first', () => {
+test('Hakari extraction keeps prose and skips both poster images', () => {
   const event = eventExtractors['hakari-contemporary'](
     `
       <title>非道| Ateleology - hakari contemporary</title>
       <div class="post_content">
         <figure><img src="data:image/gif;base64,placeholder" data-src="https://hakari.art/wp-content/uploads/Ateleology_KV_1080_1920.jpg" width="1920" height="1080"></figure>
+        <figure><img data-src="https://hakari.art/wp-content/uploads/Ateleology_KV_1080_1350.jpg" width="1080" height="1350"></figure>
         <p><strong>Floating Island</strong><br>Feb. 15 - Mar. 15, 2025<br>12:00 - 18:00</p>
+        <p>このたび、hakari contemporaryでは、展覧会「Floating Island」を開催いたします。</p>
+        <p>本展では、映像、彫刻、パフォーマンスを通して、身体と知覚の関係を問い直します。</p>
+        <p>Hakari Contemporary is pleased to present “Floating Island,” a new exhibition.</p>
+        <figure><img data-src="https://hakari.art/wp-content/uploads/Installation-View.jpg" width="1600" height="1200"></figure>
         <figure><img data-src="https://hakari.art/wp-content/uploads/Artwork_Ask-Anything.jpg" width="1600" height="1200"></figure>
       </div>
     `,
@@ -2155,13 +2377,38 @@ test('Hakari extraction keeps lazy-loaded hero image first', () => {
   assert.equal(event.start_date, '2025-02-15');
   assert.equal(event.end_date, '2025-03-15');
   assert.equal(
+    event.description,
+    'このたび、hakari contemporaryでは、展覧会「Floating Island」を開催いたします。\n\n本展では、映像、彫刻、パフォーマンスを通して、身体と知覚の関係を問い直します。',
+  );
+  assert.equal(
     event.primary_image_url,
-    'https://hakari.art/wp-content/uploads/Ateleology_KV_1080_1920.jpg',
+    'https://hakari.art/wp-content/uploads/Installation-View.jpg',
   );
   assert.deepEqual(event.image_urls, [
-    'https://hakari.art/wp-content/uploads/Ateleology_KV_1080_1920.jpg',
+    'https://hakari.art/wp-content/uploads/Installation-View.jpg',
     'https://hakari.art/wp-content/uploads/Artwork_Ask-Anything.jpg',
   ]);
+});
+
+test('SAMAC extraction keeps only the first image', () => {
+  const event = eventExtractors.samac(
+    `
+      <title>Summer Exhibition | SAMAC</title>
+      <meta property="og:image" content="https://www.samac.jp/images/exhibition/main.jpg">
+      <p>Summer exhibition description with enough text for generic extraction.</p>
+      <img src="https://www.samac.jp/images/exhibition/detail-1.jpg" width="1200" height="800">
+      <img src="https://www.samac.jp/images/exhibition/detail-2.jpg" width="1200" height="800">
+    `,
+    {
+      slug: 'samac',
+      name: 'SAMAC',
+      taxonomy: testTaxonomy(['museum'], [], ['exhibition']),
+    },
+    'https://www.samac.jp/en/exhibition/example.php',
+  );
+
+  assert.equal(event.primary_image_url, 'https://www.samac.jp/images/exhibition/detail-1.jpg');
+  assert.deepEqual(event.image_urls, ['https://www.samac.jp/images/exhibition/detail-1.jpg']);
 });
 
 test('source config keeps MTK exhibition links in listing order', async () => {
@@ -2368,6 +2615,42 @@ test('Kankakari extraction parses exhibition periods and cleans title dates', ()
   assert.equal(titleOnlyEvent.title, 'Title Date exhibition');
   assert.equal(titleOnlyEvent.start_date, '2026-06-01');
   assert.equal(titleOnlyEvent.end_date, '2026-06-15');
+});
+
+test('Kusakabe extraction reads homepage order and replaces blurred Wix image', () => {
+  const source = {
+    slug: 'kusakabe-gallery',
+    name: 'Kusakabe Gallery',
+    address_text: '486 Nakatsukasa-cho, Kamigyo-ku, Kyoto',
+    taxonomy: testTaxonomy(['gallery'], ['contemporary'], ['exhibition']),
+  };
+  const html = `
+    <section>
+      <p>Kusakabe gallery</p>
+      <p>7月の展示のお知らせ</p>
+      <p>2026年７月11日(Sat.)〜 7月21日(Tue)</p>
+      <p>11:00 - 18:00　水曜日休み</p>
+      <wow-image data-image-info="{&quot;imageData&quot;:{&quot;width&quot;:1418,&quot;height&quot;:1772,&quot;uri&quot;:&quot;f549a3_feature~mv2.png&quot;}}">
+        <img src="https://static.wixstatic.com/media/f549a3_feature~mv2.png/v1/fill/w_56,h_70,blur_2/feature.png">
+      </wow-image>
+      <p>作品と同時に、Tシャツやポストカードにかたちを変えたものを同時に展示いたします。</p>
+      <p>さまざまなジャンルの作品を、いつもと異なる視点からお楽しみください。</p>
+    </section>
+  `;
+  const url = 'https://www.kusakabeg.com/';
+  const event = eventExtractors[source.slug](html, source, url);
+
+  assert.deepEqual(detailUrlExtractors[source.slug](html, url), [url]);
+  assert.equal(event.title, '7月の展示のお知らせ');
+  assert.equal(event.start_date, '2026-07-11');
+  assert.equal(event.end_date, '2026-07-21');
+  assert.equal(event.start_time_text, '11:00');
+  assert.equal(event.end_time_text, '18:00');
+  assert.equal(
+    event.primary_image_url,
+    'https://static.wixstatic.com/media/f549a3_feature~mv2.png',
+  );
+  assert.match(event.description, /Tシャツやポストカード/);
 });
 
 test('source-specific skip rule drops past Kankakari events', () => {
@@ -2740,6 +3023,11 @@ test('Chushin extraction treats exh sections as individual events', () => {
       <h3 class="cate_heading03">2026年2月10日（火）～3月19日（木）</h3>
       <p>彫刻家 西野康造氏の展覧会を開催いたします。</p>
     </section>
+    <section class="" id="exh071">
+      <h2 class="cate_heading02">六兵衛清水 CERAMIC SIGHT</h2>
+      <h3 class="cate_heading03">２０２４年２月７日（水）～３月１５日（金） 月曜日休館</h3>
+      <img src="/bijyutu/exhibition/images/img_bijyutu_exhibition_71.jpg" alt="">
+    </section>
   `;
   const source = {
     name: 'Chushin Museum of Art',
@@ -2754,6 +3042,7 @@ test('Chushin extraction treats exh sections as individual events', () => {
   assert.deepEqual(urls, [
     'https://www.chushin.co.jp/bijyutu/exhibition/index.html#exh073',
     'https://www.chushin.co.jp/bijyutu/exhibition/index.html#exh072',
+    'https://www.chushin.co.jp/bijyutu/exhibition/index.html#exh071',
   ]);
 
   const event = extractChushinEvent(listingHtml, source, urls[0]);
@@ -2769,6 +3058,12 @@ test('Chushin extraction treats exh sections as individual events', () => {
 
   const rubyEvent = extractChushinEvent(listingHtml, source, urls[1]);
   assert.equal(rubyEvent.title, '西野康造 空・宙');
+
+  const fullWidthDateEvent = extractChushinEvent(listingHtml, source, urls[2]);
+  assert.equal(fullWidthDateEvent.start_date, '2024-02-07');
+  assert.equal(fullWidthDateEvent.end_date, '2024-03-15');
+  assert.equal(fullWidthDateEvent.calendar_starts_at, '2024-02-07T10:00:00+09:00');
+  assert.equal(fullWidthDateEvent.calendar_ends_at, '2024-03-15T17:00:00+09:00');
 });
 
 test('fetch classification distinguishes bot challenges from renderable JS shells', () => {

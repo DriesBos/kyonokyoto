@@ -232,22 +232,25 @@
       "directions_query": "Daihonzan Myokenji Temple, Kyoto",
       "lat": 35.0345866,
       "lng": 135.7546761,
-      "base_url": "https://curation-fair.com/en/kyoto2026",
-      "start_urls": ["https://curation-fair.com/en/kyoto2026"],
-      "url_year": "current",
+      "base_url": "https://curation-fair.com/en/news/kyoto",
+      "start_urls": ["https://curation-fair.com/en/news/kyoto"],
+      "event_info_urls": {
+        "ja": "https://curation-fair.com/news/release_20260706",
+        "en": "https://curation-fair.com/en/news/release_20260706"
+      },
       "allowed_domains": ["curation-fair.com"],
       "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/en/kyoto2026", "/kyoto2026"],
-      "notes": "Annual CURATION⇄FAIR Kyoto page. The current-year page may temporarily contain only a coming-soon announcement or no event details.",
+      "event_page_patterns": ["/en/news/", "/news/"],
+      "notes": "Annual fair with at most one event. Watch the Kyoto NEWS index and create an event only when a current-year title contains `Announcement of CURATION⇄FAIR Kyoto`; use the detailed July 2026 release for current event fields.",
       "beta": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://curation-fair.com/kyoto2026"],
-          "event_page_patterns": ["/kyoto2026"]
+          "start_urls": ["https://curation-fair.com/news/kyoto"],
+          "event_page_patterns": ["/news/"]
         },
         "en": {
-          "start_urls": ["https://curation-fair.com/en/kyoto2026"],
-          "event_page_patterns": ["/en/kyoto2026"]
+          "start_urls": ["https://curation-fair.com/en/news/kyoto"],
+          "event_page_patterns": ["/en/news/"]
         }
       },
       "capabilities": {
@@ -338,16 +341,17 @@
       "allowed_domains": ["hakari.art"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
-      "notes": "Use the exhibitions page cards. Current and upcoming sections may be empty; when that happens, the crawler should find detail pages and skip past events.",
+      "notes": "Use the exhibitions page cards. Current and upcoming sections may be empty; when that happens, the crawler should find detail pages and skip past events. Extract exhibition prose separately from event information and omit the first two poster images from event media.",
       "qa": {
         "listing_urls": {
           "ja": ["https://hakari.art/exhibitions/"]
         },
         "language_url_pattern": "Japanese source only; English locale has no listing URL and should be machine-translated.",
         "field_sources": {
-          "listing_links": "figure a cards on exhibitions page"
+          "listing_links": "figure a cards on exhibitions page",
+          "description": "Exhibition prose beginning with the Hakari introduction; exclude event and related-event information."
         },
-        "image_rules": "Expect current/upcoming sections to be empty sometimes; crawler should skip past detail pages cleanly."
+        "image_rules": "Skip the first two unique images (wide and portrait poster variants); begin event media with installation or artwork images."
       },
       "capabilities": {
         "native_locales": ["ja"],
@@ -1387,7 +1391,14 @@
       "allowed_domains": ["www.kusakabeg.com", "kusakabeg.com"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition", "/news", "/"],
-      "notes": "Exhibitions surfaced on the homepage.",
+      "notes": "The homepage contains one current exhibition in this order: event information, Wix slideshow feature image, then description. Parse the date and hours from the first block and use the original Wix media URI instead of its blurred LQIP src.",
+      "qa": {
+        "field_sources": {
+          "date": "Event information block before the homepage slideshow.",
+          "description": "Paragraphs immediately after the homepage slideshow."
+        },
+        "image_rules": "Use the original imageData URI from the first slideshow wow-image; never store the blur_2 LQIP src."
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.kusakabeg.com/"],
@@ -1527,7 +1538,10 @@
         "/exhibition/index.php",
         "/exhibition/index.php?m=future"
       ],
-      "notes": "Crawl both the current (index.php) and upcoming (index.php?m=future) exhibition index pages.",
+      "notes": "Crawl both the current (index.php) and upcoming (index.php?m=future) exhibition index pages. Keep only the first extracted event image.",
+      "qa": {
+        "image_rules": "Keep only the first extracted image for each event."
+      },
       "locales": {
         "ja": {
           "start_urls": [

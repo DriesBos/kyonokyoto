@@ -824,9 +824,172 @@ function extractSectionValue(html, dtText) {
   return match ? stripTags(match) : null;
 }
 
+const ENGLISH_MONTHS = {
+  january: 1,
+  jan: 1,
+  february: 2,
+  feb: 2,
+  march: 3,
+  mar: 3,
+  april: 4,
+  apr: 4,
+  may: 5,
+  june: 6,
+  jun: 6,
+  july: 7,
+  jul: 7,
+  august: 8,
+  aug: 8,
+  september: 9,
+  sep: 9,
+  sept: 9,
+  october: 10,
+  oct: 10,
+  november: 11,
+  nov: 11,
+  december: 12,
+  dec: 12,
+};
+
+const ENGLISH_MONTH_PATTERN = Object.keys(ENGLISH_MONTHS).join('|');
+
+function normalizeHumanDateText(value) {
+  return decodeHtml(String(value ?? ''))
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/令和(元|\d+)年/gu, (_, year) => `${2018 + (year === '元' ? 1 : Number(year))}年`)
+    .replace(/[‐‑‒–—―−－〜～~]/g, '-')
+    .replace(
+      /\s*[（(](?:(?:月|火|水|木|金|土|日)(?:曜日)?|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?[）)]/giu,
+      ' ',
+    )
+    .replace(
+      /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?,?\s*/giu,
+      '',
+    )
+    .replace(/\b(jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\./giu, '$1')
+    .replace(/\s+to\s+/giu, ' - ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*,\s*/g, ', ')
+    .trim();
+}
+
+function isValidDateParts(year, month, day) {
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  return (
+    date.getUTCFullYear() === Number(year) &&
+    date.getUTCMonth() === Number(month) - 1 &&
+    date.getUTCDate() === Number(day)
+  );
+}
+
+function buildParsedDateRange(startYear, startMonth, startDay, endYear, endMonth, endDay) {
+  const sy = Number(startYear);
+  const sm = Number(startMonth);
+  const sd = Number(startDay);
+  let ey = Number(endYear ?? startYear);
+  const em = Number(endMonth ?? startMonth);
+  const ed = Number(endDay ?? startDay);
+
+  if (endYear == null && em * 100 + ed < sm * 100 + sd) ey += 1;
+  if (!isValidDateParts(sy, sm, sd) || !isValidDateParts(ey, em, ed)) return null;
+
+  const startDate = toDateOnly(sy, sm, sd);
+  const endDate = toDateOnly(ey, em, ed);
+  if (endDate < startDate) return null;
+
+  return {
+    startDate,
+    endDate,
+    calendarStartsAt: `${startDate}T00:00:00+09:00`,
+    calendarEndsAt: `${endDate}T23:59:00+09:00`,
+  };
+}
+
+function parseBilingualDateRange(dateText) {
+  const text = normalizeHumanDateText(dateText);
+  let match = text.match(
+    /(\d{4})年(\d{1,2})月(\d{1,2})日[^\d]{0,30}?-\s*(?:(\d{4})年)?\s*(\d{1,2})月(\d{1,2})日/u,
+  );
+  if (match)
+    return buildParsedDateRange(match[1], match[2], match[3], match[4], match[5], match[6]);
+
+  match = text.match(
+    /(\d{4})[./-](\d{1,2})[./-](\d{1,2})[^\d]{0,20}?-\s*(?:(\d{4})[./-])?(\d{1,2})[./-](\d{1,2})/u,
+  );
+  if (match)
+    return buildParsedDateRange(match[1], match[2], match[3], match[4], match[5], match[6]);
+
+  match = text.match(
+    new RegExp(
+      `(${ENGLISH_MONTH_PATTERN})\\.?\\s+(\\d{1,2})(?:,?\\s+(\\d{4}))?\\s*-\\s*(${ENGLISH_MONTH_PATTERN})\\.?\\s+(\\d{1,2})(?:,?\\s+(\\d{4}))?`,
+      'iu',
+    ),
+  );
+  if (match && (match[3] || match[6])) {
+    const startYear = match[3] ?? match[6];
+    const endYear =
+      match[6] ??
+      (ENGLISH_MONTHS[match[4].toLowerCase()] < ENGLISH_MONTHS[match[1].toLowerCase()]
+        ? Number(startYear) + 1
+        : startYear);
+    return buildParsedDateRange(
+      startYear,
+      ENGLISH_MONTHS[match[1].toLowerCase()],
+      match[2],
+      endYear,
+      ENGLISH_MONTHS[match[4].toLowerCase()],
+      match[5],
+    );
+  }
+
+  match = text.match(
+    new RegExp(
+      `(\\d{1,2})\\s+(${ENGLISH_MONTH_PATTERN})\\.?(?:,?\\s+(\\d{4}))?\\s*-\\s*(\\d{1,2})\\s+(${ENGLISH_MONTH_PATTERN})\\.?(?:,?\\s+(\\d{4}))?`,
+      'iu',
+    ),
+  );
+  if (match && (match[3] || match[6])) {
+    const startYear = match[3] ?? match[6];
+    const endYear =
+      match[6] ??
+      (ENGLISH_MONTHS[match[5].toLowerCase()] < ENGLISH_MONTHS[match[2].toLowerCase()]
+        ? Number(startYear) + 1
+        : startYear);
+    return buildParsedDateRange(
+      startYear,
+      ENGLISH_MONTHS[match[2].toLowerCase()],
+      match[1],
+      endYear,
+      ENGLISH_MONTHS[match[5].toLowerCase()],
+      match[4],
+    );
+  }
+
+  match = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/u);
+  if (match) return buildParsedDateRange(match[1], match[2], match[3]);
+
+  match = text.match(/(\d{4})[./-](\d{1,2})[./-](\d{1,2})/u);
+  if (match) return buildParsedDateRange(match[1], match[2], match[3]);
+
+  match = text.match(
+    new RegExp(`(${ENGLISH_MONTH_PATTERN})\\.?\\s+(\\d{1,2}),?\\s+(\\d{4})`, 'iu'),
+  );
+  if (match)
+    return buildParsedDateRange(match[3], ENGLISH_MONTHS[match[1].toLowerCase()], match[2]);
+
+  match = text.match(
+    new RegExp(`(\\d{1,2})\\s+(${ENGLISH_MONTH_PATTERN})\\.?[,]?\\s+(\\d{4})`, 'iu'),
+  );
+  if (match)
+    return buildParsedDateRange(match[3], ENGLISH_MONTHS[match[2].toLowerCase()], match[1]);
+
+  return null;
+}
+
 function parseJapaneseDateRange(dateText) {
-  const pattern =
-    /(\d{4})年(\d{1,2})月(\d{1,2})日.*?[～〜\-－–—]\s*(?:(\d{4})年)?\s*(\d{1,2})月(\d{1,2})日/u;
+  dateText = normalizeHumanDateText(dateText);
+  const pattern = /(\d{4})年(\d{1,2})月(\d{1,2})日.*?-\s*(?:(\d{4})年)?\s*(\d{1,2})月(\d{1,2})日/u;
   const match = dateText.match(pattern);
 
   if (!match) {
@@ -852,6 +1015,7 @@ function parseJapaneseDateRange(dateText) {
 }
 
 function parseJapaneseSingleDate(dateText) {
+  dateText = normalizeHumanDateText(dateText);
   const match = dateText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/u);
 
   if (!match) {
@@ -1489,32 +1653,44 @@ function parseSibasiDateRange(text, detailUrl) {
 }
 
 function parseGenericDateRange(dateText) {
-  return parseJapaneseDateRange(dateText).startDate
-    ? parseJapaneseDateRange(dateText)
-    : parseSlashDateRange(dateText).startDate
-      ? parseSlashDateRange(dateText)
-      : parseDottedDateRange(dateText).startDate
-        ? parseDottedDateRange(dateText)
-        : parseEnglishMonthDateRangeWithOptionalStartYear(dateText).startDate
-          ? parseEnglishMonthDateRangeWithOptionalStartYear(dateText)
-          : parseEnglishMonthDateRangeWithWeekdays(dateText).startDate
-            ? parseEnglishMonthDateRangeWithWeekdays(dateText)
-            : parseEnglishMonthDateRange(dateText).startDate
-              ? parseEnglishMonthDateRange(dateText)
-              : parseEnglishDayMonthYearRange(dateText).startDate
-                ? parseEnglishDayMonthYearRange(dateText)
-                : parseJapaneseSingleDate(dateText).startDate
-                  ? parseJapaneseSingleDate(dateText)
-                  : parseSlashSingleDate(dateText).startDate
-                    ? parseSlashSingleDate(dateText)
-                    : parseEnglishSingleDate(dateText).startDate
-                      ? parseEnglishSingleDate(dateText)
-                      : {
-                          startDate: null,
-                          endDate: null,
-                          calendarStartsAt: null,
-                          calendarEndsAt: null,
-                        };
+  const normalized = normalizeHumanDateText(dateText);
+  const parsers = [
+    parseBilingualDateRange,
+    parseJapaneseDateRange,
+    parseSlashDateRange,
+    parseDottedDateRange,
+    parseEnglishMonthDateRangeWithOptionalStartYear,
+    parseEnglishMonthDateRangeWithWeekdays,
+    parseEnglishMonthDateRange,
+    parseEnglishDayMonthYearRange,
+    parseJapaneseSingleDate,
+    parseSlashSingleDate,
+    parseEnglishSingleDate,
+  ];
+
+  for (const parser of parsers) {
+    const parsed = parser(normalized);
+    const [startYear, startMonth, startDay] = parsed?.startDate?.split('-') ?? [];
+    const [endYear, endMonth, endDay] = parsed?.endDate?.split('-') ?? [];
+    if (
+      parsed?.startDate &&
+      parsed?.endDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(parsed.startDate) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(parsed.endDate) &&
+      isValidDateParts(startYear, startMonth, startDay) &&
+      isValidDateParts(endYear, endMonth, endDay) &&
+      parsed.endDate >= parsed.startDate
+    ) {
+      return parsed;
+    }
+  }
+
+  return {
+    startDate: null,
+    endDate: null,
+    calendarStartsAt: null,
+    calendarEndsAt: null,
+  };
 }
 
 function normalizeUrl(value, baseUrl) {
@@ -2114,17 +2290,59 @@ function extractOsakaGeidaiDetailUrls(listingHtml, listingUrl) {
   return [...new Set(urls)];
 }
 
+function extractHyogoExhibitionItems(listingHtml) {
+  return selectElements(listingHtml, '.exhibition-item');
+}
+
+function extractHyogoDateText(itemHtml, scheduleYear) {
+  const text = stripTags(itemHtml).replace(/\s+/g, ' ').trim();
+  const dateText = text.match(
+    /(?:20\d{2}年)?\d{1,2}月\d{1,2}日[^\d]{0,20}?[-–—～〜－][^\d]{0,20}?(?:20\d{2}年)?\d{1,2}月\d{1,2}日/u,
+  )?.[0];
+  if (!dateText) return null;
+
+  return /^20\d{2}年/u.test(dateText) ? dateText : `${scheduleYear}年${dateText}`;
+}
+
+function extractHyogoDetailUrls(listingHtml, listingUrl) {
+  const scheduleYear = listingHtml.match(/(20\d{2})年\s*年間スケジュール/u)?.[1];
+  if (!scheduleYear) return [];
+
+  const today = toJapanDate(new Date());
+  return extractHyogoExhibitionItems(listingHtml).flatMap((itemHtml, index) => {
+    const dateText = extractHyogoDateText(itemHtml, scheduleYear);
+    if (!dateText) return [];
+    const parsedDates = parseGenericDateRange(dateText);
+    if (!parsedDates.startDate) return [];
+    if (
+      classifyEventTiming(
+        { start_date: parsedDates.startDate, end_date: parsedDates.endDate },
+        today,
+      ) === 'past'
+    ) {
+      return [];
+    }
+    return [`${listingUrl}#exhibition-${index}`];
+  });
+}
+
 function extractSnowCurrentDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
 }
 
 function extractFirstDateText(text) {
+  const normalizedText = normalizeHumanDateText(text);
   const patterns = [
-    /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2}(?:,\s*\d{4})?\s*[-–—～〜]\s*(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
-    /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\s*[-–—～〜]\s*\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
-    /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s*[-–—～〜]\s*\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
-    /\d{4}年\d{1,2}月\d{1,2}日[\s\S]{0,40}?[～〜\-－][\s\S]{0,40}?\d{4}年\d{1,2}月\d{1,2}日/u,
-    /\d{4}[./-]\d{1,2}[./-]\d{1,2}[\s\S]{0,30}?[-–—～〜][\s\S]{0,30}?(?:\d{4}[./-])?\d{1,2}[./-]\d{1,2}/u,
+    new RegExp(
+      `(?:${ENGLISH_MONTH_PATTERN})\\.?\\s+\\d{1,2}(?:,?\\s*\\d{4})?\\s*-\\s*(?:${ENGLISH_MONTH_PATTERN})\\.?\\s+\\d{1,2}(?:,?\\s*\\d{4})?`,
+      'iu',
+    ),
+    new RegExp(
+      `\\d{1,2}\\s+(?:${ENGLISH_MONTH_PATTERN})\\.?(?:,?\\s*\\d{4})?\\s*-\\s*\\d{1,2}\\s+(?:${ENGLISH_MONTH_PATTERN})\\.?(?:,?\\s*\\d{4})?`,
+      'iu',
+    ),
+    /\d{4}年\d{1,2}月\d{1,2}日[\s\S]{0,40}?-[\s\S]{0,40}?(?:\d{4}年)?\d{1,2}月\d{1,2}日/u,
+    /\d{4}[./-]\d{1,2}[./-]\d{1,2}[\s\S]{0,30}?-[\s\S]{0,30}?(?:\d{4}[./-])?\d{1,2}[./-]\d{1,2}/u,
     /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+\d{1,2},\s*\d{4}/iu,
     /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
     /\d{4}年\d{1,2}月\d{1,2}日/u,
@@ -2132,19 +2350,59 @@ function extractFirstDateText(text) {
   ];
 
   for (const pattern of patterns) {
-    const match = text.match(pattern);
+    const match = normalizedText.match(pattern);
     if (match) return match[0].replace(/\s+/g, ' ').trim();
   }
 
   return 'See source page';
 }
 
+function extractJsonLdDateText(detailHtml) {
+  const values = [];
+  const visit = (value) => {
+    if (Array.isArray(value)) return value.forEach(visit);
+    if (!value || typeof value !== 'object') return;
+    if (typeof value.startDate === 'string') {
+      values.push(
+        typeof value.endDate === 'string'
+          ? `${value.startDate} - ${value.endDate}`
+          : value.startDate,
+      );
+    }
+    Object.values(value).forEach(visit);
+  };
+
+  for (const match of detailHtml.matchAll(
+    /<script\b[^>]*type=(['"])application\/ld\+json\1[^>]*>([\s\S]*?)<\/script>/gi,
+  )) {
+    try {
+      visit(JSON.parse(match[2]));
+    } catch {
+      // Invalid third-party JSON-LD. Continue with visible page content.
+    }
+  }
+
+  return values;
+}
+
 function extractBestDateText(detailHtml) {
+  const semanticDateElements = selectElements(
+    detailHtml,
+    '[class*=date], [id*=date], [class*=period], [id*=period], [class*=schedule], [id*=schedule]',
+  )
+    .filter((element) => !/publish|posted|updated|投稿日|公開日|更新日/iu.test(element))
+    .map(stripTags);
   const candidates = [
-    stripTags(detailHtml),
+    ...extractJsonLdDateText(detailHtml),
+    ...semanticDateElements,
     stripTags(extractMeta(detailHtml, 'og:description') ?? ''),
     stripTags(extractMeta(detailHtml, 'description') ?? ''),
     stripTags(extractMeta(detailHtml, 'og:title') ?? ''),
+    ...selectorTextValues(detailHtml, ['main', 'article']),
+    ...selectElements(detailHtml, 'time')
+      .filter((element) => !/pubdate|publish|posted|updated/iu.test(element))
+      .map((element) => extractTagAttribute(element, 'datetime') ?? stripTags(element)),
+    stripTags(detailHtml),
   ].filter(Boolean);
 
   for (const candidate of candidates) {
@@ -2257,6 +2515,29 @@ function extractEssenceDetailUrls(_listingHtml, listingUrl) {
 
 function extractArtCollaborationKyotoDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
+}
+
+function extractCurationFairDetailUrls(listingHtml, listingUrl, source) {
+  const city = source.slug.replace('curation-fair-', '');
+  const year = String(new Date().getFullYear());
+  const announcementUrl = [
+    ...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi),
+  ]
+    .map((match) => ({
+      url: normalizeUrl(match[2], listingUrl),
+      title: stripTags(match[3]).replace(/\s+/g, ' ').trim(),
+    }))
+    .find(
+      ({ title }) =>
+        /Announcement of CURATION\s*⇄\s*FAIR/iu.test(title) &&
+        new RegExp(`\\b${city}\\b`, 'i').test(title) &&
+        title.includes(year),
+    )?.url;
+
+  if (!announcementUrl) return [];
+  return [
+    normalizeUrl(source.event_info_urls?.[source.language] ?? announcementUrl, listingUrl),
+  ].filter(Boolean);
 }
 
 function extractKoenKyotoDetailUrls(_listingHtml, listingUrl) {
@@ -3909,6 +4190,35 @@ function extractHakariImageUrls(detailHtml, detailUrl) {
   return imageUrls.slice(0, MAX_IMAGES_PER_EVENT);
 }
 
+function extractHakariDescription(detailHtml) {
+  const paragraphs = [
+    ...extractHakariContentHtml(detailHtml).matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi),
+  ]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const introIndex = paragraphs.findIndex((paragraph) =>
+    /^(?:このたび[、,]?\s*hakari contemporary|hakari contemporary (?:is pleased|presents|will present))/iu.test(
+      paragraph,
+    ),
+  );
+
+  if (introIndex === -1) return null;
+
+  const description = [];
+  for (const paragraph of paragraphs.slice(introIndex)) {
+    if (
+      description.length &&
+      /^hakari contemporary (?:is pleased|presents|will present)/iu.test(paragraph)
+    ) {
+      break;
+    }
+    description.push(paragraph);
+    if (description.length === 5) break;
+  }
+
+  return description.join('\n\n').slice(0, 1200) || null;
+}
+
 function extractHakariDateText(detailHtml) {
   const contentText = stripTags(extractHakariContentHtml(detailHtml));
   const monthRange = contentText.match(
@@ -3940,13 +4250,47 @@ function extractHakariEvent(detailHtml, source, detailUrl) {
     }
   }
 
-  const imageUrls = extractHakariImageUrls(detailHtml, detailUrl);
+  const imageUrls = extractHakariImageUrls(detailHtml, detailUrl).slice(2);
+
+  return {
+    ...event,
+    description: extractHakariDescription(detailHtml) ?? event.description,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    extraction_confidence: event.start_date ? 0.55 : event.extraction_confidence,
+  };
+}
+
+function extractSamacEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const firstImageUrl = event.image_urls?.[0] ?? event.primary_image_url ?? null;
+
+  return {
+    ...event,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
+function extractTezukayamaEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const galleryHtml = selectElements(detailHtml, '.p-event-gallery')[0] ?? '';
+  const imageUrls = [
+    ...new Set(
+      [...galleryHtml.matchAll(/<a\b[^>]*>/gi)]
+        .map((match) => parseTagAttributes(match[0]))
+        .filter((attributes) =>
+          (attributes.class ?? '').split(/\s+/).includes('c-image-gallery-item'),
+        )
+        .map((attributes) => normalizeUrl(attributes.href, detailUrl))
+        .filter(Boolean),
+    ),
+  ].slice(0, MAX_IMAGES_PER_EVENT);
 
   return {
     ...event,
     primary_image_url: imageUrls[0] ?? event.primary_image_url,
     image_urls: imageUrls.length ? imageUrls : event.image_urls,
-    extraction_confidence: event.start_date ? 0.55 : event.extraction_confidence,
   };
 }
 
@@ -4497,6 +4841,136 @@ function extractKankakariEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractKusakabeEvent(detailHtml, source, detailUrl) {
+  const eventHtml =
+    [...detailHtml.matchAll(/<section\b[^>]*>[\s\S]*?<\/section>/gi)].find((match) =>
+      /\d{4}年\s*\d{1,2}月\s*\d{1,2}日/u.test(stripTags(match[0]).normalize('NFKC')),
+    )?.[0] ?? detailHtml;
+  const paragraphs = [...eventHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => ({
+      index: match.index,
+      text: stripTags(match[1])
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    }))
+    .filter(({ text }) => text);
+  const dateParagraphIndex = paragraphs.findIndex(({ text }) =>
+    /\d{4}年\s*\d{1,2}月\s*\d{1,2}日/u.test(text.normalize('NFKC')),
+  );
+  const dateText = paragraphs[dateParagraphIndex]?.text.normalize('NFKC') ?? 'See source page';
+  const parsedDates = parseGenericDateRange(dateText);
+  const title =
+    paragraphs
+      .slice(0, dateParagraphIndex)
+      .map(({ text }) => text)
+      .filter((text) => !/^Kusakabe gallery\s*$/i.test(text))
+      .at(-1) ?? source.name;
+  const timeText = paragraphs
+    .slice(dateParagraphIndex + 1)
+    .find(({ text }) => /\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}\b/.test(text))?.text;
+  const [, startTime = null, endTime = null] =
+    timeText?.match(/\b(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})\b/) ?? [];
+  const imageTag = eventHtml.match(/<wow-image\b[^>]*data-image-info=(['"])(.*?)\1[^>]*>/i)?.[0];
+  const imageInfo = imageTag ? decodeHtml(parseTagAttributes(imageTag)['data-image-info']) : null;
+  let imageUrl = null;
+
+  try {
+    const uri = JSON.parse(imageInfo)?.imageData?.uri;
+    imageUrl = uri ? `https://static.wixstatic.com/media/${uri}` : null;
+  } catch {
+    imageUrl = null;
+  }
+
+  const imageIndex = imageTag ? eventHtml.indexOf(imageTag) : -1;
+  const description = paragraphs
+    .filter(({ index }) => imageIndex !== -1 && index > imageIndex)
+    .map(({ text }) => text)
+    .join('\n\n');
+
+  return {
+    title,
+    categories: flattenTaxonomy(source.taxonomy),
+    description,
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: startTime,
+    end_time_text: endTime,
+    is_all_day: !startTime,
+    timezone: 'Asia/Tokyo',
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at:
+      parsedDates.startDate && startTime
+        ? `${parsedDates.startDate}T${startTime}:00+09:00`
+        : parsedDates.calendarStartsAt,
+    calendar_ends_at:
+      parsedDates.endDate && endTime
+        ? `${parsedDates.endDate}T${endTime}:00+09:00`
+        : parsedDates.calendarEndsAt,
+    primary_image_url: imageUrl,
+    image_urls: imageUrl ? [imageUrl] : [],
+    source_url: detailUrl,
+    extraction_confidence: parsedDates.startDate && imageUrl ? 0.9 : 0.4,
+  };
+}
+
+function extractHyogoEvent(detailHtml, source, detailUrl) {
+  const index = Number(new URL(detailUrl).hash.match(/^#exhibition-(\d+)$/)?.[1]);
+  const itemHtml = extractHyogoExhibitionItems(detailHtml)[index];
+  if (!itemHtml) throw new Error(`Could not find Hyogo exhibition ${index}`);
+
+  const scheduleYear = detailHtml.match(/(20\d{2})年\s*年間スケジュール/u)?.[1];
+  const dateText = extractHyogoDateText(itemHtml, scheduleYear);
+  const parsedDates = parseGenericDateRange(dateText ?? '');
+  const rawTitle = itemHtml.match(
+    /<h3\b[^>]*class=(['"])[^'"]*\bexhibition-title\b[^'"]*\1[^>]*>([\s\S]*?)<\/h3>/i,
+  )?.[2];
+  const title = stripTags(
+    (rawTitle ?? source.name)
+      .replace(/<span\b[^>]*class=(['"])[^'"]*\bexhibition-subtitle\b[^'"]*\1[^>]*>[\s\S]*$/i, '')
+      .replace(/<rt\b[^>]*>[\s\S]*?<\/rt>/gi, ''),
+  )
+    .replace(/\s+/g, ' ')
+    .trim();
+  const description = selectorTextValues(itemHtml, ['.exhibition-body']).join('\n\n').trim();
+  const imageUrls = extractGenericImageUrls(itemHtml, detailUrl, { includeOgImage: false });
+
+  return {
+    title,
+    categories: flattenTaxonomy(source.taxonomy),
+    description,
+    institution_name: source.name,
+    venue_name: source.name,
+    address_text: source.address_text ?? source.name,
+    directions_query: source.directions_query ?? `${source.name}, Kobe`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: 'Asia/Tokyo',
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: detailUrl,
+    extraction_confidence: parsedDates.startDate ? 0.9 : 0.4,
+  };
+}
+
 function extractFukudaTableValue(detailHtml, labels) {
   for (const rowMatch of detailHtml.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
     const rowHtml = rowMatch[1];
@@ -4973,9 +5447,9 @@ function extractChushinSectionHtml(detailHtml, sectionId) {
 }
 
 function parseChushinDateRange(dateText) {
-  const cleaned = dateText.replace(/\s+/g, ' ');
+  const cleaned = dateText.normalize('NFKC').replace(/\s+/g, ' ');
   const range = cleaned.match(
-    /(\d{4})年(\d{1,2})月(\d{1,2})日[\s\S]{0,20}?[～〜\-－][\s\S]{0,20}?(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日/u,
+    /(\d{4})年(\d{1,2})月(\d{1,2})日[\s\S]{0,20}?[~～〜\-－][\s\S]{0,20}?(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日/u,
   );
 
   if (!range) {
@@ -5042,6 +5516,37 @@ function extractChushinEvent(detailHtml, source, detailUrl) {
     image_urls: imageUrls,
     source_url: detailUrl,
     extraction_confidence: sectionHtml ? 0.78 : 0.35,
+  };
+}
+
+function extractCurationFairEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const pageText = stripTags(detailHtml).replace(/\s+/g, ' ').trim();
+  const dateText =
+    pageText.match(/Dates:\s*[^.]{0,140}?20\d{2}/i)?.[0] ??
+    pageText.match(/会期[：:]\s*20\d{2}年\d{1,2}月\d{1,2}日[^。]{0,80}?\d{1,2}日/u)?.[0] ??
+    event.date_text;
+  const parsedDates = parseGenericDateRange(dateText);
+  const description = [...detailHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .filter((paragraph) => paragraph.length > 80)
+    .slice(0, 2)
+    .join('\n\n');
+
+  return {
+    ...event,
+    title: source.name,
+    description: description || event.description,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    extraction_confidence: parsedDates.startDate ? 0.82 : event.extraction_confidence,
   };
 }
 
@@ -5125,6 +5630,8 @@ const detailUrlExtractors = {
   'art-gallery-kitano': extractKitanoDetailUrls,
   'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
   'chushin-bijutsu': extractChushinDetailUrls,
+  'curation-fair-kyoto': extractCurationFairDetailUrls,
+  'curation-fair-tokyo': extractCurationFairDetailUrls,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddDetailUrls,
   'fukuda-art-museum': extractFukudaDetailUrls,
   'gallery-take-two': extractGalleryTakeTwoDetailUrls,
@@ -5132,8 +5639,10 @@ const detailUrlExtractors = {
   'ginza-graphic-gallery': extractDddDetailUrls,
   'hosomi-museum': extractHosomiMuseumDetailUrls,
   'hosoo-gallery': extractHosooDetailUrls,
+  'hyogo-prefectural-museum-of-art': extractHyogoDetailUrls,
   'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
+  'kusakabe-gallery': extractKoenKyotoDetailUrls,
   kcua: extractKcuaDetailUrls,
   'kyoto-art-center': extractKacDetailUrls,
   'kyoto-national-museum': extractKyohakuDetailUrls,
@@ -5158,6 +5667,8 @@ const eventExtractors = {
   artro: extractArtroEvent,
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
   'chushin-bijutsu': extractChushinEvent,
+  'curation-fair-kyoto': extractCurationFairEvent,
+  'curation-fair-tokyo': extractCurationFairEvent,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddEvent,
   'fukuda-art-museum': extractFukudaEvent,
   'gallery-baiken': extractBaikenEvent,
@@ -5166,6 +5677,7 @@ const eventExtractors = {
   'ginza-graphic-gallery': extractDddEvent,
   'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
+  'hyogo-prefectural-museum-of-art': extractHyogoEvent,
   'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraEvent,
   'koen-kyoto': extractKoenEvent,
   'kyoto-art-center': extractKacEvent,
@@ -5175,9 +5687,13 @@ const eventExtractors = {
   kyotophonie: extractKyotophonieEvent,
   kankakari: extractKankakariEvent,
   kuramonzen: extractKuramonzenEvent,
+  'kusakabe-gallery': extractKusakabeEvent,
   'leica-gallery-kyoto': extractLeicaKyotoEvent,
+  'nakanoshima-museum-of-art-osaka': extractSamacEvent,
+  'osaka-geidai-whatsnew': extractSamacEvent,
   'parco-hall-shinsaibashi': extractParcoHallEvent,
   'raku-museum': extractRakuMuseumEvent,
+  samac: extractSamacEvent,
   momak: extractMomakEvent,
   mtk: extractMtkEvent,
   'oyamazaki-villa-museum': extractOyamazakiEvent,
@@ -5189,6 +5705,7 @@ const eventExtractors = {
   'snow-contemporary': extractSnowContemporaryEvent,
   'standing-pine-tokyo': extractStandingPineEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
+  'tezukayama-gallery': extractTezukayamaEvent,
   zenbi: extractZenbiEvent,
 };
 
@@ -5199,7 +5716,7 @@ function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, sourc
 
   return [
     ...new Set(
-      pages.flatMap((listingPage) => detailUrlExtractor(listingPage.html, listingPage.url)),
+      pages.flatMap((listingPage) => detailUrlExtractor(listingPage.html, listingPage.url, source)),
     ),
   ];
 }
@@ -6799,8 +7316,11 @@ export {
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,
   normalizeEventImagesForSource,
+  normalizeHumanDateText,
+  parseGenericDateRange,
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,
+  extractBestDateText,
   recordFetchedPage,
   sanitizePostgresJson,
   sanitizePostgresText,

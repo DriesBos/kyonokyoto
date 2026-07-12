@@ -128,6 +128,21 @@ test('landing and header render city-specific brand titles', async () => {
   assert.match(logo, /logo-wordmark/);
 });
 
+test('landing counts include beta source events only in development', async () => {
+  const page = await readFile(
+    resolve(import.meta.dirname, '../src/pages/[city]/[locale]/index.astro'),
+    'utf8',
+  );
+  const betaFilter = page.indexOf('const events = import.meta.env.DEV');
+  const timingCounts = page.indexOf("const ongoingEvents = displayEvents.filter");
+  const landingProps = page.indexOf('ongoingCount={ongoingEvents.length}');
+
+  assert.match(page, /betaSourceSlugsAll\.has\(slug\)/);
+  assert.ok(betaFilter >= 0 && betaFilter < timingCounts);
+  assert.ok(timingCounts < landingProps);
+  assert.match(page, /upcomingCount=\{upcomingEvents\.length\}/);
+});
+
 test('landing typography loads without fallback font swap', async () => {
   const layout = await readFile(resolve(import.meta.dirname, '../src/layouts/BaseLayout.astro'), 'utf8');
   const styles = await readFile(resolve(import.meta.dirname, '../src/styles/app.sass'), 'utf8');
