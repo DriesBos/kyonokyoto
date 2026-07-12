@@ -57,11 +57,12 @@ export const eventSelect =
   'id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, lat, lng, start_date, end_date, calendar_starts_at, calendar_ends_at, primary_image_url, image_urls, source_url, description, updated_at, schedule_type, occurrence_dates';
 
 export const eventTranslationSelect = 'event_translations(locale, title, description)';
+export const eventSourceSelect = 'sources(slug)';
 
 const fetchEvents = ({ city, locale }: { city: AppCity; locale: AppLocale }) =>
   supabase
     .from('events')
-    .select(`${eventSelect}, ${eventTranslationSelect}`)
+    .select(`${eventSelect}, ${eventSourceSelect}, ${eventTranslationSelect}`)
     .eq('status', 'published')
     .eq('city', city)
     .eq('event_translations.locale', locale)

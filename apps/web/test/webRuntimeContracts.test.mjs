@@ -8,6 +8,8 @@ test('event SSR query filters city and requested locale without schema fallback 
   const events = await readWebFile('src/lib/events.ts');
   const page = await readWebFile('src/pages/[city]/[locale]/index.astro');
 
+  assert.match(events, /eventSourceSelect = 'sources\(slug\)'/);
+  assert.match(events, /\$\{eventSelect\}, \$\{eventSourceSelect\}, \$\{eventTranslationSelect\}/);
   assert.match(events, /\.eq\('city', city\)/);
   assert.match(events, /\.eq\('event_translations\.locale', locale\)/);
   assert.match(events, /schedule_type, occurrence_dates/);
@@ -24,6 +26,13 @@ test('locale switch uses route navigation and viewport keeps browser zoom', asyn
   assert.doesNotMatch(header, /initLocaleToggle|data-locale-option/);
   assert.match(layout, /width=device-width, initial-scale=1, viewport-fit=cover/);
   assert.doesNotMatch(layout, /maximum-scale|user-scalable/);
+});
+
+test('keyboard focus remains visible after pointer-focus reset', async () => {
+  const styles = await readWebFile('src/styles/app.sass');
+
+  assert.match(styles, /:focus:not\(:focus-visible\)/);
+  assert.match(styles, /:focus-visible[\s\S]*outline: 2px solid currentColor !important/);
 });
 
 test('nonce CSP permits the custom cursor and keeps processed scripts external', async () => {
