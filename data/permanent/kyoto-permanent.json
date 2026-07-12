@@ -5,6 +5,11 @@
     {
       "slug": "kyoto-art-center",
       "is_active": true,
+      "taxonomy": {
+        "venue_category": ["institute", "museum"],
+        "display_category": ["performance"],
+        "event_category": ["exhibition", "workshop"]
+      },
       "primary_image_url": "https://www.kac.or.jp/wp-content/themes/kac/assets/images/info-guide_mv.webp?v=20240708115147",
       "image_urls": [
         "https://www.kac.or.jp/wp-content/themes/kac/assets/images/info-guide_mv.webp?v=20240708115147"
@@ -30,7 +35,11 @@
       "directions_query": "京都市左京区若王子町15-1",
       "lat": 35.0155614,
       "lng": 135.7955184,
-      "source_categories": ["craft", "gallery"],
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["craft"],
+        "event_category": []
+      },
       "is_active": true,
       "media_embeds": [
         {
@@ -59,7 +68,11 @@
       "directions_query": "京都市左京区岡崎円勝寺町36-1",
       "lat": 35.011101,
       "lng": 135.780533,
-      "source_categories": ["design", "craft", "gallery"],
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design", "craft"],
+        "event_category": []
+      },
       "is_active": true,
       "primary_image_url": "https://essencekyoto.com/cdn/shop/files/IMG_7993_4472x.JPG?v=1615927295",
       "image_urls": ["https://essencekyoto.com/cdn/shop/files/IMG_7993_4472x.JPG?v=1615927295"],
@@ -84,7 +97,11 @@
       "directions_query": "京都市北区平野上柳町26-3",
       "lat": 35.0351347,
       "lng": 135.7260355,
-      "source_categories": ["art", "museum"],
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": []
+      },
       "is_active": true,
       "description": {
         "en": "Founded by painter Insho Domoto in 1966, the museum presents works shaped by his belief in breaking with tradition to create new art; he also designed the building inside and out.",
@@ -110,7 +127,11 @@
       "directions_query": "京都市左京区岩倉花園町642-19",
       "lat": 35.07210905519659,
       "lng": 135.7982482797623,
-      "source_categories": ["craft", "design", "gallery"],
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design", "craft"],
+        "event_category": []
+      },
       "is_active": true,
       "description": {
         "en": "A converted wood warehouse in quiet Iwakura that combines a handmade Japanese footwear atelier with a gallery introducing selected objects, clothing, craft and cultural events.",
@@ -138,7 +159,11 @@
       "directions_query": "京都市左京区浄土寺南田町10",
       "lat": 35.0261106,
       "lng": 135.7962923,
-      "source_categories": ["craft", "gallery"],
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["craft"],
+        "event_category": []
+      },
       "is_active": true,
       "description": {
         "en": "A gallery shop near Ginkakuji and the Philosopher's Path, presenting ceramics, kintsugi and contemporary craft in an old house setting, with opening days announced on Instagram.",
@@ -166,7 +191,11 @@
       "directions_query": "京都市左京区北白川小倉町50-10",
       "lat": 35.0314869,
       "lng": 135.7888114,
-      "source_categories": ["architecture", "gallery"],
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["architecture"],
+        "event_category": []
+      },
       "is_active": true,
       "description": {
         "en": "ARTCOURT Gallery's appointment-only Kyoto viewing room, opened in 2018 in a Kitashirakawa residence designed around nature, art and time spent in a living space.",
@@ -180,6 +209,34 @@
       "urls": {
         "en": "https://www.instagram.com/acgvillakyoto/",
         "ja": "https://www.instagram.com/acgvillakyoto/"
+      }
+    },
+    {
+      "slug": "kahitsukan",
+      "name": "Kahitsukan, Kyoto Museum of Contemporary Art",
+      "names": {
+        "en": "Kahitsukan, Kyoto Museum of Contemporary Art",
+        "ja": "何必館・京都現代美術館"
+      },
+      "base_url": "http://www.kahitsukan.or.jp/",
+      "address_text": "271 Gionmachi Kitagawa, Higashiyama-ku, Kyoto-shi, Kyoto 605-0073 Japan",
+      "directions_query": "何必館・京都現代美術館, 京都市東山区祇園町北側271",
+      "lat": 35.003988,
+      "lng": 135.775377,
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "is_active": true,
+      "primary_image_url": "http://www.kahitsukan.or.jp/kindai2026/EXT00901.jpg",
+      "image_urls": ["http://www.kahitsukan.or.jp/kindai2026/EXT00901.jpg"],
+      "description": {
+        "en": "Although set in the heart of the lively Gion area, the museum offers you a quiet haven once you step inside. Its fifth floor features a Sun Garden and a tea arbor designed to allow visitors to view the exhibits in natural light. The museum holds special exhibitions of modern and contemporary paintings, crafts, photos, calligraphic works, and more, centering on the collections of works by Japanese-style painter Kagaku Murakami, oil painter Kaoru Yamaguchi, and multi-genre artist Rosanjin Kitaoji."
+      },
+      "urls": {
+        "en": "http://www.kahitsukan.or.jp/frame_e.html",
+        "ja": "http://www.kahitsukan.or.jp/frame.html"
       }
     }
   ]

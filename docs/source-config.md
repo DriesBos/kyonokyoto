@@ -31,7 +31,7 @@ Crawler uses `names[locale]` for event card institution/venue text when extracti
 Source JSON is authoritative for venue identity:
 
 - `name`
-- `source_categories`
+- `taxonomy`
 - `address_text`
 - `directions_query`
 - `lat`
@@ -171,22 +171,59 @@ Optional. Use for fetch/crawl behavior exceptions.
 - `max_detail_pages` caps detail URLs for this source.
 - `skip_patterns` drops matching URLs before detail fetch.
 
-## `source_type`
+## `taxonomy`
 
-Required single value. Broad identity of source venue/organization.
+Required grouped filter metadata. Registry source of truth: `data/categories.mjs`.
+Unknown keys, misspelled values, missing dimensions, and empty `venue_category` arrays fail
+source validation and the web build.
 
-Current values:
+```json
+{
+  "taxonomy": {
+    "venue_category": ["gallery"],
+    "display_category": ["photography", "graphic"],
+    "event_category": ["exhibition"]
+  }
+}
+```
 
-- `art-center`
-- `design`
+### `venue_category`
+
 - `fair`
 - `festival`
-- `gallery`
+- `campus`
 - `museum`
-- `university`
-- `venue`
+- `gallery`
+- `institute`
+- `theatre`
 
-Used as fallback/category metadata. Not used to choose crawl behavior.
+### `display_category`
+
+- `photography`
+- `architecture`
+- `painting`
+- `textile`
+- `ukiyoe`
+- `performance`
+- `design`
+- `graphic`
+- `ceramics`
+- `craft`
+- `new-media`
+- `sculpture`
+- `music`
+- `contemporary`
+
+### `event_category`
+
+- `workshop`
+- `exhibition`
+- `fair`
+- `festival`
+- `event`
+
+`fair` and `festival` intentionally exist in two dimensions. Namespaced filter tokens distinguish
+`venue_category:fair` from `event_category:fair`.
 
 ## `crawl_strategy`
 
@@ -207,7 +244,7 @@ Set `url_year` to `"current"` for annual source URLs. Loader replaces any four-d
 Keep these. They are runtime fields:
 
 - crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `capabilities`
-- web/map truth: `name`, `names`, `source_categories`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`
+- web/map truth: `name`, `names`, `taxonomy`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`
 
 Metadata-only today:
 
@@ -217,47 +254,5 @@ Metadata-only today:
 
 Do not remove `address_text`, `lat`, or `lng`; they are source-owned map truth. If `locales` has full start URLs, root `start_urls`/`event_page_patterns` are still fallback/default crawler scope.
 
-## `source_categories`
-
-Array of public filter/map categories. Use separate strings. Registry source of truth:
-`data/categories.mjs`. Unregistered values fail source validation and web tests.
-
-Current values:
-
-- `exhibition`
-- `museum`
-- `gallery`
-- `art`
-- `photography`
-- `design`
-- `craft`
-- `event`
-- `music`
-- `performance`
-- `ceramics`
-- `workshop`
-- `festival`
-- `fair`
-- `architecture`
-- `graphic`
-- `new-media`
-- `sculpture`
-- `textiles`
-- `ukiyoe`
-- `campus`
-
-Format:
-
-```json
-{
-  "source_categories": ["music", "exhibition"]
-}
-```
-
-Avoid:
-
-```json
-{
-  "source_categories": ["music, exhibition"]
-}
-```
+Supabase still requires its legacy `source_type` column. Sync/seed scripts derive that value from
+the first `venue_category`; source JSON does not store a separate source type.

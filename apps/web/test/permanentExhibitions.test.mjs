@@ -3,6 +3,12 @@ import test from 'node:test';
 
 import { permanentEventsForLocale } from '../src/lib/permanentExhibitions.ts';
 
+const testTaxonomy = (
+  venue_category = ['gallery'],
+  display_category = [],
+  event_category = [],
+) => ({ venue_category, display_category, event_category });
+
 const sources = [
   {
     slug: 'kyoto-art-center',
@@ -11,9 +17,8 @@ const sources = [
       en: 'Kyoto Art Center',
       ja: '京都芸術センター',
     },
-    source_type: 'art-center',
     base_url: 'https://www.kac.or.jp',
-    source_categories: ['exhibition', 'museum'],
+    taxonomy: testTaxonomy(['museum'], [], ['exhibition']),
     address_text: '546-2 Yamabushiyama-cho, Nakagyo-ku, Kyoto 604-8156 Japan',
     lat: 35.005436,
     lng: 135.758345,
@@ -45,7 +50,7 @@ test('permanent highlights resolve source venue data for locale cards', () => {
   assert.equal(event.institution_name, '京都芸術センター');
   assert.equal(event.date_text, 'あわせて');
   assert.equal(event.timing, 'permanent');
-  assert.deepEqual(event.categories, ['exhibition', 'museum']);
+  assert.deepEqual(event.categories, ['venue_category:museum', 'event_category:exhibition']);
   assert.equal(event.address_text, '546-2 Yamabushiyama-cho, Nakagyo-ku, Kyoto 604-8156 Japan');
   assert.equal(event.lat, 35.005436);
   assert.equal(event.lng, 135.758345);
@@ -63,7 +68,7 @@ test('permanent highlights use embedded venue metadata when no source row exists
       address_text: '15-1 Nyakuoji-cho, Sakyo-ku, Kyoto 606-8444 Japan',
       lat: 35.0155614,
       lng: 135.7955184,
-      source_categories: ['craft', 'gallery'],
+      taxonomy: testTaxonomy(['gallery'], ['craft']),
       media_embeds: [
         {
           type: 'youtube',
@@ -82,7 +87,7 @@ test('permanent highlights use embedded venue metadata when no source row exists
   assert.equal(event.id, 'permanent:sayuu');
   assert.equal(event.title, '若王子倶楽部 左右');
   assert.equal(event.institution_name, '若王子倶楽部 左右');
-  assert.deepEqual(event.categories, ['craft', 'gallery']);
+  assert.deepEqual(event.categories, ['venue_category:gallery', 'display_category:craft']);
   assert.equal(event.address_text, '15-1 Nyakuoji-cho, Sakyo-ku, Kyoto 606-8444 Japan');
   assert.equal(event.lat, 35.0155614);
   assert.equal(event.lng, 135.7955184);
@@ -108,7 +113,7 @@ test('occasional highlights use localized cadence text', () => {
       address_text: '10 Jodoji Minamidacho, Sakyo-ku, Kyoto 606-8403 Japan',
       lat: 35.0261106,
       lng: 135.7962923,
-      source_categories: ['craft', 'gallery'],
+      taxonomy: testTaxonomy(['gallery'], ['craft']),
     },
   ];
 

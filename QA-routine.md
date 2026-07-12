@@ -25,6 +25,7 @@ Safe manual edits:
 - `lat`
 - `lng`
 - `base_url`
+- `taxonomy`
 - `start_urls`
 - `locales`
 - `event_page_patterns`

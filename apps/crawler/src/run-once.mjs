@@ -10,6 +10,7 @@ import {
   loadSourcesConfig,
   normalizeCity,
 } from '../../../data/sources/source-config.mjs';
+import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildEventDedupeKey } from '../../../packages/shared/event-dedupe.mjs';
 import {
@@ -421,7 +422,7 @@ function normalizeEventSourceTruth(eventData, source) {
     venue_name: venueName ?? eventData.venue_name ?? null,
     address_text: addressText ?? eventData.address_text ?? null,
     directions_query: directionsQuery ?? eventData.directions_query ?? null,
-    categories: normalizeCategoryList(source?.source_categories ?? []),
+    categories: flattenTaxonomy(source?.taxonomy),
     lat: lat ?? null,
     lng: lng ?? null,
   };
@@ -2272,13 +2273,81 @@ function extractKcuaDetailUrls(listingHtml, listingUrl) {
       [...listingHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)]
         .filter((match) => /<img\b[^>]+(?:src|data-src)=(["'])[^"']+\1/i.test(match[3]))
         .map((match) => normalizeUrl(match[2], listingUrl))
-        .filter((url) => url && /\/(?:en\/)?archives\/20\d{2}\/\d+\/?$/i.test(new URL(url).pathname)),
+        .filter(
+          (url) => url && /\/(?:en\/)?archives\/20\d{2}\/\d+\/?$/i.test(new URL(url).pathname),
+        ),
     ),
   ];
 }
 
 function extractHosomiMuseumDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
+}
+
+function extractKitanoDetailUrls(listingHtml, listingUrl) {
+  return [
+    ...listingHtml.matchAll(
+      /<div\b[^>]*class=(['"])[^'"]*\bwrapper\b[^'"]*\1[^>]*id=(['"])(\d{9})\2/gi,
+    ),
+  ].map((match) => `${listingUrl}#${match[3]}`);
+}
+
+function extractIsseyMiyakeKuraDetailUrls(listingHtml, listingUrl) {
+  return [
+    ...listingHtml.matchAll(
+      /<a\b[^>]*href=(['"])([^'"]*\/blogs\/kyotokura\/\d+)\1[^>]*class=(['"])[^'"]*\bnews\b[^'"]*\3[^>]*>([\s\S]*?)<\/a>/gi,
+    ),
+  ]
+    .filter((match) =>
+      /class=(['"])[^'"]*\b_tag\b[^'"]*\1[^>]*>\s*(?:ON VIEW|開催中)\s*</iu.test(match[4]),
+    )
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean);
+}
+
+function extractSokyoDetailUrls(listingHtml, listingUrl) {
+  const sections = ['current', 'upcoming'].flatMap((status) => {
+    const start = listingHtml.indexOf(`id="exhibitions-grid-${status}"`);
+    if (start === -1) return [];
+    const rest = listingHtml.slice(start);
+    const next = rest.slice(1).search(/id="exhibitions-grid-(?:current|upcoming|past)"/i);
+    return [next === -1 ? rest : rest.slice(0, next + 1)];
+  });
+
+  return [
+    ...new Set(
+      sections
+        .flatMap((section) => [
+          ...section.matchAll(/<a\b[^>]*href=(['"])([^'"]*\/exhibitions\/[^'"]+\/overview\/)\1/gi),
+        ])
+        .map((match) => normalizeUrl(match[2], listingUrl))
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function extractGalleryTakeTwoItems(listingHtml) {
+  const payload = listingHtml.match(
+    /<script\b[^>]*id=(['"])wix-warmup-data\1[^>]*>([\s\S]*?)<\/script>/i,
+  )?.[2];
+  if (!payload) return [];
+
+  try {
+    const warmup = JSON.parse(payload);
+    return Object.values(warmup?.appsWarmupData ?? {})
+      .flatMap((app) => Object.entries(app ?? {}))
+      .filter(([key]) => key.endsWith('_galleryData'))
+      .flatMap(([, gallery]) => gallery?.items ?? []);
+  } catch {
+    return [];
+  }
+}
+
+function extractGalleryTakeTwoDetailUrls(listingHtml, listingUrl) {
+  return extractGalleryTakeTwoItems(listingHtml)
+    .filter((item) => item?.itemId && item?.mediaUrl)
+    .filter((item) => !/coming soon/i.test(item?.metaData?.fileName ?? ''))
+    .map((item) => `${listingUrl}#${item.itemId}`);
 }
 
 function extractHosooDetailUrls(listingHtml, listingUrl) {
@@ -2460,11 +2529,9 @@ function extractSibasiEvent(detailHtml, source, detailUrl) {
   const parsedDates = parseSibasiDateRange(pageText, detailUrl);
   const imageUrls = extractGenericImageUrls(detailHtml, detailUrl);
 
-  const category = detailUrl.includes('/exhibition') ? 'exhibition' : 'live';
-
   return {
     title,
-    categories: [category, source.source_type].filter(Boolean),
+    categories: flattenTaxonomy(source.taxonomy),
     description: extractGenericDescription(detailHtml),
     institution_name: source.name,
     venue_name: source.name,
@@ -3461,7 +3528,7 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    categories: [source.source_type, 'needs-review'].filter(Boolean),
+    categories: flattenTaxonomy(source.taxonomy),
     description: configuredDescription || extractGenericDescription(detailHtml),
     institution_name: source.name,
     venue_name: source.name,
@@ -3484,6 +3551,108 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
     image_urls: imageUrls,
     source_url: detailUrl,
     extraction_confidence: 0.25,
+  };
+}
+
+function extractKitanoEvent(detailHtml, source, detailUrl) {
+  const eventId = new URL(detailUrl).hash.slice(1);
+  const start = detailHtml.search(
+    new RegExp(
+      `<div\\b[^>]*class=(['"])[^'"]*\\bwrapper\\b[^'"]*\\1[^>]*id=(['"])${eventId}\\2`,
+      'i',
+    ),
+  );
+  const rest = start === -1 ? '' : detailHtml.slice(start);
+  const next = rest
+    .slice(1)
+    .search(/<div\b[^>]*class=(['"])[^'"]*\bwrapper\b[^'"]*\1[^>]*id=(['"])\d{9}\2/i);
+  const eventHtml = next === -1 ? rest : rest.slice(0, next + 1);
+  const title = stripTags(eventHtml.match(/<h5\b[^>]*>([\s\S]*?)<\/h5>/i)?.[1] ?? '');
+  const dateText = stripTags(
+    eventHtml.match(/<h5\b[^>]*>[\s\S]*?<\/h5>\s*<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? '',
+  );
+  const parsedDates = parseGenericDateRange(dateText);
+  const description = stripTags(
+    eventHtml.match(/<div\b[^>]*class=(['"])[^'"]*\bmt-3\b[^'"]*\1[^>]*>([\s\S]*?)<\/div>/i)?.[2] ??
+      '',
+  );
+  const imageTag = eventHtml.match(/<img\b[^>]*>/i)?.[0] ?? '';
+  const imageUrl = normalizeUrl(extractTagAttribute(imageTag, 'src'), detailUrl);
+
+  return {
+    ...extractGenericEvent(eventHtml, source, detailUrl),
+    title,
+    description,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({ startDate: parsedDates.startDate, endDate: parsedDates.endDate }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrl,
+    image_urls: imageUrl ? [imageUrl] : [],
+    extraction_confidence: 0.95,
+  };
+}
+
+function extractGalleryTakeTwoEvent(detailHtml, source, detailUrl) {
+  const eventId = new URL(detailUrl).hash.slice(1);
+  const item = extractGalleryTakeTwoItems(detailHtml).find(
+    (candidate) => candidate?.itemId === eventId,
+  );
+  const title = item?.metaData?.title?.trim() ?? source.name;
+  const description = item?.metaData?.description?.trim() ?? null;
+  const dateText = description?.split('\n')[0]?.trim() ?? 'See source page';
+  const parsedDates = parseGenericDateRange(dateText);
+  const imageUrl = item?.mediaUrl ? `https://static.wixstatic.com/media/${item.mediaUrl}` : null;
+
+  return {
+    ...extractGenericEvent('', source, detailUrl),
+    title,
+    description,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({ startDate: parsedDates.startDate, endDate: parsedDates.endDate }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    primary_image_url: imageUrl,
+    image_urls: imageUrl ? [imageUrl] : [],
+    extraction_confidence: 0.95,
+  };
+}
+
+function extractIsseyMiyakeKuraEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const heading =
+    [...detailHtml.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)]
+      .map((match) => stripTags(match[1]))
+      .find((value) =>
+        /20\d{2}\.\d{2}\.\d{2}\s*\|\s*ISSEY MIYAKE KYOTO\s*\|\s*KURA/i.test(value),
+      ) ?? '';
+  const dateText = heading.match(/20\d{2}\.\d{2}\.\d{2}/)?.[0] ?? event.date_text;
+  const startDate = parseDottedDateRange(dateText).startDate;
+  const endDate = startDate ? shiftDateOnlyByYears(startDate, 1) : null;
+  const title = heading
+    .replace(/^.*?20\d{2}\.\d{2}\.\d{2}\s*\|\s*ISSEY MIYAKE KYOTO\s*\|\s*KURA\s*/i, '')
+    .trim();
+  const imageUrls = extractGenericImageUrls(detailHtml, detailUrl, { includeOgImage: false })
+    .filter((url) => /KURA_/i.test(url))
+    .slice(0, 4);
+
+  return {
+    ...event,
+    title: title || event.title,
+    date_text: `${dateText} — ON VIEW`,
+    start_date: startDate,
+    end_date: endDate,
+    // ponytail: publisher gives no closing date; one-year horizon keeps ON VIEW item current until listing changes.
+    ...buildScheduleFields({ startDate, endDate }),
+    calendar_starts_at: startDate ? `${startDate}T11:00:00+09:00` : null,
+    calendar_ends_at: endDate ? `${endDate}T20:00:00+09:00` : null,
+    primary_image_url: imageUrls[0] ?? event.primary_image_url,
+    image_urls: imageUrls.length ? imageUrls : event.image_urls,
+    extraction_confidence: 0.9,
   };
 }
 
@@ -3529,7 +3698,9 @@ function extractLeicaKyotoEvent(detailHtml, source, detailUrl) {
 }
 
 function extractTwentyOneDefinitionValue(detailHtml, labels) {
-  for (const match of detailHtml.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
+  for (const match of detailHtml.matchAll(
+    /<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi,
+  )) {
     const label = stripTags(match[1]).replace(/\s+/g, ' ').trim();
     if (labels.includes(label)) {
       return stripTags(match[2]).replace(/\s+/g, ' ').trim() || null;
@@ -3557,8 +3728,7 @@ function extractTwentyOneEvent(detailHtml, source, detailUrl) {
     extractTwentyOneDefinitionValue(detailHtml, ['Title', 'タイトル']) ??
     extractTwentyOneHeadingTitle(detailHtml) ??
     event.title;
-  const dateText =
-    extractTwentyOneDefinitionValue(detailHtml, ['Date', '会期']) ?? event.date_text;
+  const dateText = extractTwentyOneDefinitionValue(detailHtml, ['Date', '会期']) ?? event.date_text;
   const parsedDates = parseGenericDateRange(dateText);
 
   return {
@@ -3619,7 +3789,8 @@ function parseScaiDateRange(dateText, detailUrl) {
 
 function extractScaiTitleInfo(detailHtml) {
   const titleInfoStart = detailHtml.search(/class=(["'])[^"']*\btitle_info\b[^"']*\1/i);
-  const titleInfoHtml = titleInfoStart === -1 ? detailHtml : detailHtml.slice(titleInfoStart, titleInfoStart + 5000);
+  const titleInfoHtml =
+    titleInfoStart === -1 ? detailHtml : detailHtml.slice(titleInfoStart, titleInfoStart + 5000);
   const title = stripTags(titleInfoHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -3662,8 +3833,7 @@ function extractScaiEvent(detailHtml, source, detailUrl) {
 
 function extractSnowContentHtml(detailHtml) {
   return (
-    detailHtml.match(/<div\b[^>]*id=(["'])boxEX1\1[^>]*>([\s\S]*?)<\/div>/i)?.[2] ??
-    detailHtml
+    detailHtml.match(/<div\b[^>]*id=(["'])boxEX1\1[^>]*>([\s\S]*?)<\/div>/i)?.[2] ?? detailHtml
   );
 }
 
@@ -3680,8 +3850,7 @@ function extractSnowContemporaryEvent(detailHtml, source, detailUrl) {
       .map((line) => line.replace(/\s+/g, ' ').trim())
       .find((line) => /^session[：:]/i.test(line)) ?? event.date_text;
   const parsedDates = parseGenericDateRange(dateText);
-  const [, startTime, endTime] =
-    dateText.match(/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/) ?? [];
+  const [, startTime, endTime] = dateText.match(/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/) ?? [];
 
   return {
     ...event,
@@ -4442,9 +4611,7 @@ function extractFukudaEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(
-      Boolean,
-    ),
+    categories: flattenTaxonomy(source.taxonomy),
     description: description || extractGenericDescription(detailHtml),
     institution_name: source.name,
     venue_name: source.name,
@@ -4511,9 +4678,7 @@ function buildRakuMuseumEvent(source, detailUrl, fields) {
 
   return {
     title: fields.title || source.name,
-    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(
-      Boolean,
-    ),
+    categories: flattenTaxonomy(source.taxonomy),
     description: fields.description || null,
     institution_name: source.name,
     venue_name: source.name,
@@ -4702,9 +4867,7 @@ function extractKoenEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    categories: [source.source_type, ...(source.source_categories ?? []), 'needs-review'].filter(
-      Boolean,
-    ),
+    categories: flattenTaxonomy(source.taxonomy),
     description: description || extractGenericDescription(mainHtml),
     institution_name: source.name,
     venue_name: source.name,
@@ -4855,7 +5018,7 @@ function extractChushinEvent(detailHtml, source, detailUrl) {
 
   return {
     title,
-    categories: [source.source_type, 'needs-review'].filter(Boolean),
+    categories: flattenTaxonomy(source.taxonomy),
     description,
     institution_name: source.name,
     venue_name: source.name,
@@ -4958,14 +5121,17 @@ function extractKuramonzenEvent(detailHtml, source, detailUrl) {
 
 const detailUrlExtractors = {
   '21-21-design-sight': extractTwentyOneDetailUrls,
+  'art-gallery-kitano': extractKitanoDetailUrls,
   'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
   'chushin-bijutsu': extractChushinDetailUrls,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddDetailUrls,
   'fukuda-art-museum': extractFukudaDetailUrls,
+  'gallery-take-two': extractGalleryTakeTwoDetailUrls,
   'gallery-yamahon': extractGalleryYamahonDetailUrls,
   'ginza-graphic-gallery': extractDddDetailUrls,
   'hosomi-museum': extractHosomiMuseumDetailUrls,
   'hosoo-gallery': extractHosooDetailUrls,
+  'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
   kcua: extractKcuaDetailUrls,
   'kyoto-art-center': extractKacDetailUrls,
@@ -4979,6 +5145,7 @@ const detailUrlExtractors = {
   'scai-park': extractScaiDetailUrlsFor('scai-park'),
   'sen-oku-hakukokan': extractSenOkuDetailUrls,
   'snow-contemporary': extractSnowCurrentDetailUrls,
+  'sokyo-kyoto': extractSokyoDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
   zenbi: extractZenbiDetailUrls,
   'gallery-unfold': extractGalleryUnfoldDetailUrls,
@@ -4986,16 +5153,19 @@ const detailUrlExtractors = {
 
 const eventExtractors = {
   '21-21-design-sight': extractTwentyOneEvent,
+  'art-gallery-kitano': extractKitanoEvent,
   artro: extractArtroEvent,
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
   'chushin-bijutsu': extractChushinEvent,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddEvent,
   'fukuda-art-museum': extractFukudaEvent,
   'gallery-baiken': extractBaikenEvent,
+  'gallery-take-two': extractGalleryTakeTwoEvent,
   'gallery-yamahon': extractGalleryYamahonEvent,
   'ginza-graphic-gallery': extractDddEvent,
   'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
+  'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraEvent,
   'koen-kyoto': extractKoenEvent,
   'kyoto-art-center': extractKacEvent,
   'kyoto-national-museum': extractKyohakuEvent,
@@ -5024,8 +5194,7 @@ const eventExtractors = {
 function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, source) {
   if (!detailUrlExtractor || !listingPages.length) return [];
 
-  const pages =
-    source?.slug === '21-21-design-sight' ? listingPages : listingPages.slice(0, 1);
+  const pages = source?.slug === '21-21-design-sight' ? listingPages : listingPages.slice(0, 1);
 
   return [
     ...new Set(

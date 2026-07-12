@@ -3,11 +3,19 @@ import test from 'node:test';
 
 import {
   allActiveSourcesFrom,
+  categoriesForEvents,
   mapSourcesForEvents,
+  matchesCategoryGroups,
   sourceDisplayNameForEvent,
   sourceSlugForEvent,
   sourceTruthForEvent,
 } from '../src/lib/sources.ts';
+
+const testTaxonomy = (
+  venue_category = ['gallery'],
+  display_category = [],
+  event_category = [],
+) => ({ venue_category, display_category, event_category });
 
 test('source normalization rejects unregistered filter categories', () => {
   assert.throws(
@@ -16,12 +24,45 @@ test('source normalization rejects unregistered filter categories', () => {
         {
           slug: 'bad-category',
           name: 'Bad Category',
-          source_type: 'fair',
           base_url: 'https://example.com',
-          source_categories: ['book fair'],
+          taxonomy: testTaxonomy(['gallery'], [], ['book fair']),
         },
       ]),
-    /bad-category: unsupported public categories: book fair/,
+    /bad-category: unsupported event_category "book fair"/,
+  );
+});
+
+test('category filters group namespaced taxonomy and combine dimensions', () => {
+  const categories = [
+    'venue_category:gallery',
+    'display_category:graphic',
+    'event_category:exhibition',
+  ];
+
+  assert.deepEqual(categoriesForEvents([{ categories }]), [
+    { slug: 'venue_category:gallery', label: 'gallery', dimension: 'venue_category' },
+    { slug: 'display_category:graphic', label: 'graphic', dimension: 'display_category' },
+    { slug: 'event_category:exhibition', label: 'exhibition', dimension: 'event_category' },
+  ]);
+  assert.equal(
+    matchesCategoryGroups(
+      categories,
+      new Map([
+        ['venue_category', ['venue_category:museum', 'venue_category:gallery']],
+        ['event_category', ['event_category:exhibition']],
+      ]),
+    ),
+    true,
+  );
+  assert.equal(
+    matchesCategoryGroups(
+      categories,
+      new Map([
+        ['venue_category', ['venue_category:gallery']],
+        ['event_category', ['event_category:workshop']],
+      ]),
+    ),
+    false,
   );
 });
 
@@ -30,7 +71,7 @@ test('map sources include permanent events without source config rows', () => {
     id: 'permanent:sayuu',
     source_id: 'sayuu',
     title: 'Permanent collection',
-    categories: ['craft', 'gallery'],
+    categories: ['venue_category:gallery', 'display_category:craft'],
     date_text: 'Permanent',
     institution_name: 'SAYUU',
     venue_name: null,
@@ -56,7 +97,7 @@ test('map sources include permanent events without source config rows', () => {
       id: 'sayuu:35.015561:135.795518:sayuu',
       sourceSlug: 'sayuu',
       name: 'SAYUU',
-      categories: ['craft', 'gallery'],
+      categories: ['venue_category:gallery', 'display_category:craft'],
       lat: 35.0155614,
       lng: 135.7955184,
     },
@@ -76,10 +117,9 @@ test('sourceDisplayNameForEvent prefers localized source names over scraped even
         en: 'Correct English Gallery',
         ja: '正しいギャラリー',
       },
-      source_type: 'gallery',
       base_url: 'https://example.test/events/',
       allowed_domains: ['example.test'],
-      source_categories: ['gallery'],
+      taxonomy: testTaxonomy(['gallery']),
     },
   ];
 
@@ -100,9 +140,8 @@ test('sourceSlugForEvent prefers Supabase source relation over URL matching', ()
     {
       slug: 'example-gallery',
       name: 'Example Gallery',
-      source_type: 'gallery',
       base_url: 'https://example.test/events/',
-      source_categories: ['gallery'],
+      taxonomy: testTaxonomy(['gallery']),
     },
   ];
 
@@ -132,9 +171,8 @@ test('sourceTruthForEvent returns venue and categories from source JSON', () => 
       names: {
         ja: '正しいギャラリー',
       },
-      source_type: 'gallery',
       base_url: 'https://example.test/events/',
-      source_categories: ['gallery', 'exhibition'],
+      taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
       address_text: 'Correct address',
       directions_query: 'Correct map query',
       lat: 35.1,
@@ -148,7 +186,7 @@ test('sourceTruthForEvent returns venue and categories from source JSON', () => 
     venue_name: 'Example Gallery',
     address_text: 'Correct address',
     directions_query: 'Correct map query',
-    categories: ['gallery', 'exhibition'],
+    categories: ['venue_category:gallery', 'event_category:exhibition'],
     lat: 35.1,
     lng: 135.1,
   });

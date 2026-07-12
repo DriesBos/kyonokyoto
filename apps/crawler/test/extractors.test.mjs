@@ -47,6 +47,11 @@ import {
 } from '../../../data/sources/source-config.mjs';
 
 const fixturesRoot = resolve(import.meta.dirname, 'fixtures');
+const testTaxonomy = (
+  venue_category = ['gallery'],
+  display_category = [],
+  event_category = [],
+) => ({ venue_category, display_category, event_category });
 
 test('crawler URL guard blocks local and private network targets', async () => {
   assert.equal(isPublicIpAddress('8.8.8.8'), true);
@@ -207,7 +212,7 @@ test('event coordinates prefer configured venue locations', () => {
     },
     {
       name: 'Kyoto City KYOCERA Museum of Art',
-      source_categories: ['museum'],
+      taxonomy: testTaxonomy(['museum']),
       address_text: '124 Okazaki Enshoji-cho, Sakyo-ku, Kyoto 606-8344 Japan',
       lat: 35,
       lng: 135,
@@ -228,7 +233,7 @@ test('event coordinates prefer configured venue locations', () => {
   assert.equal(event.institution_name, 'Kyoto City KYOCERA Museum of Art');
   assert.equal(event.venue_name, 'The Triangle');
   assert.equal(event.address_text, 'The Triangle, Kyoto City KYOCERA Museum of Art');
-  assert.deepEqual(event.categories, ['museum']);
+  assert.deepEqual(event.categories, ['venue_category:museum']);
 });
 
 test('event coordinates fall back to source coordinates', () => {
@@ -241,7 +246,7 @@ test('event coordinates fall back to source coordinates', () => {
     },
     {
       name: 'The Terminal Kyoto',
-      source_categories: ['gallery'],
+      taxonomy: testTaxonomy(['gallery']),
       address_text: '424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan',
       directions_query: 'The Terminal Kyoto, Kyoto',
       lat: '35.0007',
@@ -262,7 +267,7 @@ test('event coordinates fall back to source coordinates', () => {
   assert.equal(event.venue_name, 'The Terminal Kyoto');
   assert.equal(event.address_text, '424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan');
   assert.equal(event.directions_query, 'The Terminal Kyoto, Kyoto');
-  assert.deepEqual(event.categories, ['gallery']);
+  assert.deepEqual(event.categories, ['venue_category:gallery']);
 });
 
 test('event coordinates stay null when source has no usable location', () => {
@@ -271,7 +276,7 @@ test('event coordinates stay null when source has no usable location', () => {
       title: 'Remote exhibition',
       venue_name: 'Unknown venue',
     },
-    {},
+    { taxonomy: testTaxonomy(['gallery']) },
   );
 
   assert.equal(event.lat, null);
@@ -306,8 +311,7 @@ test('generic date parsers read en dash date ranges', () => {
     `,
     {
       name: 'Example Gallery',
-      source_type: 'gallery',
-      source_categories: ['gallery'],
+      taxonomy: testTaxonomy(['gallery']),
       selectors: {
         title: '.event-title',
         date: '.event-date',
@@ -325,8 +329,7 @@ test('generic date parsers read en dash date ranges', () => {
     `,
     {
       name: 'Example Gallery',
-      source_type: 'gallery',
-      source_categories: ['gallery'],
+      taxonomy: testTaxonomy(['gallery']),
       selectors: {
         title: '.event-title',
         date: '.event-date',
@@ -344,8 +347,7 @@ test('generic date parsers read en dash date ranges', () => {
     `,
     {
       name: 'Example Gallery',
-      source_type: 'gallery',
-      source_categories: ['gallery'],
+      taxonomy: testTaxonomy(['gallery']),
       selectors: {
         title: '.event-title',
         date: '.event-date',
@@ -527,11 +529,9 @@ test('21_21 source-specific extraction reads all configured listing pages', () =
   ];
 
   assert.deepEqual(
-    extractSourceSpecificDetailUrls(
-      detailUrlExtractors['21-21-design-sight'],
-      listingPages,
-      { slug: '21-21-design-sight' },
-    ),
+    extractSourceSpecificDetailUrls(detailUrlExtractors['21-21-design-sight'], listingPages, {
+      slug: '21-21-design-sight',
+    }),
     [
       'https://www.2121designsight.jp/en/program/soup/',
       'https://www.2121designsight.jp/en/program/hojoki/',
@@ -543,8 +543,7 @@ test('21_21 source-specific extraction reads all configured listing pages', () =
 test('21_21 event extraction reads definition-list title and date rows', () => {
   const source = {
     name: '21_21 DESIGN SIGHT',
-    source_type: 'museum',
-    source_categories: ['design', 'museum', 'exhibition'],
+    taxonomy: testTaxonomy(['museum'], ['design'], ['exhibition']),
     address_text: 'Tokyo Midtown, Tokyo',
   };
   const programEvent = eventExtractors['21-21-design-sight'](
@@ -626,9 +625,7 @@ test('21_21 source config uses only the second exhibition photo', async () => {
     event.primary_image_url,
     'https://www.2121designsight.jp/en/program/soup/topweb.jpg',
   );
-  assert.deepEqual(event.image_urls, [
-    'https://www.2121designsight.jp/en/program/soup/topweb.jpg',
-  ]);
+  assert.deepEqual(event.image_urls, ['https://www.2121designsight.jp/en/program/soup/topweb.jpg']);
 });
 
 test('SCAI detail extraction keeps each location current and upcoming links', () => {
@@ -679,8 +676,7 @@ test('SCAI detail extraction keeps each location current and upcoming links', ()
 test('SCAI event extraction reads title dates and open-ended current shows', () => {
   const source = {
     name: 'SCAI Park',
-    source_type: 'gallery',
-    source_categories: ['gallery', 'exhibition'],
+    taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
     address_text: 'TERRADA Art Complex I 5F, Tokyo',
   };
   const standardEvent = eventExtractors['scai-the-bathhouse'](
@@ -807,8 +803,7 @@ test('Fukuda event extraction uses exhibition overview dates', () => {
   `;
   const source = {
     name: 'Fukuda Art Museum',
-    source_type: 'museum',
-    source_categories: ['museum'],
+    taxonomy: testTaxonomy(['museum']),
     language: 'ja',
   };
 
@@ -847,8 +842,7 @@ test('Fukuda English event extraction parses overview date order', () => {
   `;
   const source = {
     name: 'Fukuda Art Museum',
-    source_type: 'museum',
-    source_categories: ['museum'],
+    taxonomy: testTaxonomy(['museum']),
     language: 'en',
   };
 
@@ -881,8 +875,7 @@ test('Kyoto National Museum extraction drops the first flyer image', () => {
   `;
   const source = {
     name: 'Kyoto National Museum',
-    source_type: 'museum',
-    source_categories: ['museum'],
+    taxonomy: testTaxonomy(['museum']),
   };
 
   const event = eventExtractors['kyoto-national-museum'](
@@ -975,8 +968,7 @@ test('Taka Ishii event extraction uses heading02 detail title', () => {
   `;
   const source = {
     name: 'Taka Ishii Gallery',
-    source_type: 'gallery',
-    source_categories: ['gallery'],
+    taxonomy: testTaxonomy(['gallery']),
   };
 
   const event = eventExtractors['taka-ishii-gallery'](
@@ -1049,8 +1041,7 @@ test('generic event extraction returns title, dates, and images', async () => {
   const detailHtml = await readFile(resolve(fixturesRoot, 'generic-detail.html'), 'utf8');
   const source = {
     name: 'Example Gallery',
-    source_type: 'gallery',
-    source_categories: ['art'],
+    taxonomy: testTaxonomy(['gallery']),
   };
 
   const event = extractGenericEvent(
@@ -1080,8 +1071,8 @@ test('generic event extraction returns title, dates, and images', async () => {
 test('generic event extraction ignores common site chrome images', () => {
   const source = {
     name: 'Oyamazaki Villa Museum',
-    source_type: 'museum',
     address_text: '5-3 Zenihara, Oyamazaki-cho, Kyoto',
+    taxonomy: testTaxonomy(['museum']),
   };
   const event = extractGenericEvent(
     `
@@ -1107,7 +1098,7 @@ test('generic event extraction can ignore source og images', () => {
   const source = {
     slug: 'artro',
     name: 'Artro',
-    source_type: 'gallery',
+    taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
     skip_og_image: true,
     selectors: {
       images: 'main.main img',
@@ -1245,8 +1236,7 @@ test('generic event extraction can use configured field selectors', () => {
   `;
   const source = {
     name: 'Example Gallery',
-    source_type: 'gallery',
-    source_categories: ['gallery'],
+    taxonomy: testTaxonomy(['gallery']),
     selectors: {
       title: '.event-title',
       date: '.event-date',
@@ -1389,9 +1379,7 @@ test('Mori Art Museum source config uses content-main copy and images', async ()
     <div class="relatedExhibition"><img src="../../../assets_c/2026/05/related.jpg"></div>
   `;
 
-  assert.deepEqual(source?.start_urls, [
-    'https://www.mori.art.museum/en/exhibitions/index.html',
-  ]);
+  assert.deepEqual(source?.start_urls, ['https://www.mori.art.museum/en/exhibitions/index.html']);
   assert.deepEqual(source?.locales?.ja?.start_urls, [
     'https://www.mori.art.museum/jp/exhibitions/index.html',
   ]);
@@ -1465,7 +1453,10 @@ test('Yutaka Kikutake Gallery source config keeps current/upcoming and artwork i
   );
 
   assert.equal(event.title, 'Breathing, trying to weep');
-  assert.equal(event.date_text, 'Current Kyobashi May 30 (Sat) - July 25 (Sat), 2026 11:00 - 19:00 Closed on Sun, Mon and National Holidays');
+  assert.equal(
+    event.date_text,
+    'Current Kyobashi May 30 (Sat) - July 25 (Sat), 2026 11:00 - 19:00 Closed on Sun, Mon and National Holidays',
+  );
   assert.equal(event.start_date, '2026-05-30');
   assert.equal(event.end_date, '2026-07-25');
   assert.deepEqual(event.image_urls, [
@@ -1554,10 +1545,7 @@ test('Ginza Graphic Gallery source config uses Tokyo schedule pages and first im
     <img src="schedule_images/IMG_2_00000855.jpg" alt="">
   `;
 
-  assert.equal(
-    source.start_urls[0],
-    'https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2',
-  );
+  assert.equal(source.start_urls[0], 'https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2');
   assert.deepEqual(source.locales.ja.start_urls, [
     'https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=1',
   ]);
@@ -1700,8 +1688,7 @@ test('Oyamazaki extraction uses article metadata and skips flyer image', () => {
   `;
   const source = {
     name: 'Oyamazaki Villa Museum',
-    source_type: 'museum',
-    source_categories: ['museum'],
+    taxonomy: testTaxonomy(['museum']),
     selectors: {
       title: '.p-news_title',
       date: '.p-news_date',
@@ -1744,8 +1731,7 @@ test('Oyamazaki extraction uses article metadata and skips flyer image', () => {
 test('Baiken event extraction cleans Japanese title dates and infers year', () => {
   const source = {
     name: 'Gallery Baiken',
-    source_type: 'gallery',
-    source_categories: ['gallery'],
+    taxonomy: testTaxonomy(['gallery']),
     address_text: '682 Takenoko-cho, Nakagyo-ku, Kyoto 604-8153 Japan',
     lat: 35.004873,
     lng: 135.759387,
@@ -1807,8 +1793,9 @@ test('source config validator reports missing source truth', () => {
       },
     }),
     [
-      'draft-source: missing source_type',
-      'draft-source: missing source_categories',
+      'draft-source: missing taxonomy.venue_category',
+      'draft-source: missing taxonomy.display_category',
+      'draft-source: missing taxonomy.event_category',
       'draft-source: missing lat/lng',
     ],
   );
@@ -1819,13 +1806,12 @@ test('source config validator rejects unregistered filter categories', () => {
     validateSourceConfig({
       slug: 'bad-category',
       name: 'Bad Category',
-      source_type: 'fair',
-      source_categories: ['book fair'],
+      taxonomy: testTaxonomy(['gallery'], [], ['book fair']),
       lat: 35,
       lng: 135,
       capabilities: { native_locales: ['ja'] },
     }),
-    ['bad-category: unsupported source category "book fair"'],
+    ['bad-category: unsupported event_category "book fair"'],
   );
 });
 
@@ -1848,8 +1834,7 @@ test('CURATION FAIR sources use current-year English and Japanese pages', async 
     const sources = await loadSourcesConfig({ city });
     const source = sources.find((item) => item.slug === `curation-fair-${city}`);
 
-    assert.equal(source?.source_type, 'fair');
-    assert.deepEqual(source?.source_categories, ['fair']);
+    assert.deepEqual(source?.taxonomy, testTaxonomy(['fair'], [], ['fair']));
     assert.equal(source?.beta, true);
     assert.deepEqual(source?.start_urls, [`https://curation-fair.com/en/${city}${year}`]);
     assert.deepEqual(source?.locales?.ja?.start_urls, [`https://curation-fair.com/${city}${year}`]);
@@ -1976,13 +1961,10 @@ test('source config includes Hosomi Museum current exhibition', async () => {
 
   assert.equal(source?.name, 'Hosomi Museum');
   assert.equal(source?.language, 'en');
-  assert.deepEqual(source?.start_urls, [
+  assert.deepEqual(source?.start_urls, ['https://www.emuseum.or.jp/eng/exhibition_eng/index.html']);
+  assert.deepEqual(detailUrlExtractors['hosomi-museum'](detailHtml, source.start_urls[0]), [
     'https://www.emuseum.or.jp/eng/exhibition_eng/index.html',
   ]);
-  assert.deepEqual(
-    detailUrlExtractors['hosomi-museum'](detailHtml, source.start_urls[0]),
-    ['https://www.emuseum.or.jp/eng/exhibition_eng/index.html'],
-  );
 
   const event = extractGenericEvent(detailHtml, source, source.start_urls[0]);
 
@@ -1990,9 +1972,7 @@ test('source config includes Hosomi Museum current exhibition', async () => {
   assert.equal(event.date_text, 'June 13 (Sat) – August 2 (Sun), 2026');
   assert.equal(event.start_date, '2026-06-13');
   assert.equal(event.end_date, '2026-08-02');
-  assert.deepEqual(event.image_urls, [
-    'https://www.emuseum.or.jp/img_exhi/ex093/main_ban-pc.jpg',
-  ]);
+  assert.deepEqual(event.image_urls, ['https://www.emuseum.or.jp/img_exhi/ex093/main_ban-pc.jpg']);
 });
 
 test('source config includes KyotoBa gallery events with Japanese default', async () => {
@@ -2048,20 +2028,14 @@ test('source config includes Sokyo Kyoto location exhibitions', async () => {
 
   assert.equal(source?.name, 'Sokyo Kyoto');
   assert.equal(source?.language, 'ja');
-  assert.deepEqual(source?.start_urls, ['https://sokyogallery.com/exhibitions/location/6/']);
-  assert.equal(
-    source?.selectors?.listing_links,
-    '.records_list a[href*="/exhibitions/"][href$="/overview/"]',
-  );
-  assert.equal(
-    source?.locales?.ja?.start_urls?.[0],
-    'https://sokyogallery.com/exhibitions/location/6/',
-  );
-  assert.equal(
-    source?.locales?.en?.start_urls?.[0],
-    'https://sokyogallery.com/en/exhibitions/location/6/',
-  );
-  assert.match(source?.notes ?? '', /Only the Kyoto SOKYO location/);
+  assert.deepEqual(source?.start_urls, ['https://sokyogallery.com/exhibitions/']);
+  assert.deepEqual(source?.selectors?.listing_links, [
+    '#exhibitions-grid-current a[href*="/exhibitions/"][href$="/overview/"]',
+    '#exhibitions-grid-upcoming a[href*="/exhibitions/"][href$="/overview/"]',
+  ]);
+  assert.equal(source?.locales?.ja?.start_urls?.[0], 'https://sokyogallery.com/exhibitions/');
+  assert.equal(source?.locales?.en?.start_urls?.[0], 'https://sokyogallery.com/en/exhibitions/');
+  assert.match(source?.notes ?? '', /Current and Upcoming/);
 });
 
 test('source config follows Kuramonzen detail pages for per-event fields', async () => {
@@ -2150,8 +2124,8 @@ test('Hakari extraction keeps lazy-loaded hero image first', () => {
     {
       slug: 'hakari-contemporary',
       name: 'hakari contemporary',
-      source_type: 'gallery',
       address_text: 'Porte de Okazaki #103, Kyoto',
+      taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
     },
     'https://hakari.art/exhibitions/floating-island/',
   );
@@ -2272,8 +2246,7 @@ test('source locale config applies localized source names', async () => {
       names: {
         ja: '京都芸術センター',
       },
-      source_type: 'art-center',
-      source_categories: ['exhibition'],
+      taxonomy: testTaxonomy(['institute'], [], ['exhibition']),
     },
     'ja',
   );
@@ -2331,8 +2304,7 @@ test('source-specific skip rule drops Kyocera Collection Room pages', () => {
 test('Kankakari extraction parses exhibition periods and cleans title dates', () => {
   const source = {
     name: 'Kankakari',
-    source_type: 'gallery',
-    source_categories: ['gallery', 'craft'],
+    taxonomy: testTaxonomy(['gallery'], ['craft']),
     address_text: '15 Murasakino Shimotsukiyama-cho, Kita-ku, Kyoto Japan',
   };
   const gakuEvent = eventExtractors.kankakari(
@@ -2418,9 +2390,8 @@ test('Raku Museum extraction keeps only the first image', async () => {
   `;
   const source = {
     name: 'Raku Museum',
-    source_type: 'museum',
     language: 'en',
-    source_categories: ['art', 'museum'],
+    taxonomy: testTaxonomy(['museum']),
   };
 
   const event = extractRakuMuseumEvent(
@@ -2476,8 +2447,7 @@ test('Raku Museum English exhibition extraction reads tab content date', () => {
   `;
   const source = {
     name: 'Raku Museum',
-    source_type: 'museum',
-    source_categories: ['ceramics', 'museum', 'craft'],
+    taxonomy: testTaxonomy(['museum'], ['ceramics', 'craft']),
     language: 'en',
   };
 
@@ -2514,8 +2484,7 @@ test('Raku Museum Japanese homepage extraction reads info row', () => {
   `;
   const source = {
     name: 'Raku Museum',
-    source_type: 'museum',
-    source_categories: ['ceramics', 'museum', 'craft'],
+    taxonomy: testTaxonomy(['museum'], ['ceramics', 'craft']),
     language: 'ja',
   };
 
@@ -2562,8 +2531,7 @@ test('koen event extraction reads the main container listing', () => {
   `;
   const source = {
     name: 'koen',
-    source_type: 'gallery',
-    source_categories: ['gallery'],
+    taxonomy: testTaxonomy(['gallery']),
     language: 'ja',
     address_text: '15-2 Ichijoji Tsukamotocho, Sakyo-ku, Kyoto 606-8176 Japan',
   };
@@ -2620,8 +2588,7 @@ test('Sen-Oku extraction removes the trailing ad image', () => {
   `;
   const source = {
     name: 'Sen-Oku Hakukokan Museum',
-    source_type: 'museum',
-    source_categories: ['art', 'museum'],
+    taxonomy: testTaxonomy(['museum']),
   };
 
   const event = extractSenOkuEvent(
@@ -2656,8 +2623,7 @@ test('Sen-Oku title extraction drops subtitle spans without font wrapper', () =>
     `,
     {
       name: 'Sen-Oku Hakukokan Museum',
-      source_type: 'museum',
-      source_categories: ['art', 'museum'],
+      taxonomy: testTaxonomy(['museum']),
     },
     'https://sen-oku.or.jp/program/202604_special/',
   );
@@ -2757,8 +2723,7 @@ test('Chushin extraction treats exh sections as individual events', () => {
   `;
   const source = {
     name: 'Chushin Museum of Art',
-    source_type: 'museum',
-    source_categories: ['art', 'museum'],
+    taxonomy: testTaxonomy(['museum']),
   };
 
   const urls = extractChushinDetailUrls(
@@ -2873,6 +2838,108 @@ test('diagnostics and source outcome summarize crawl health', () => {
       sourceSlug: 'sibasi',
     }),
     'source_no_current_events',
+  );
+});
+
+test('Kitano inline exhibitions become separate one-image events', () => {
+  const html = `
+    <div class="wrapper" id="202607081">
+      <h5>First Show</h5><p>2026.07.08 - 2026.07.13</p>
+      <img src="images/first.png"><div class="wrapper mt-3"><p>First description</p></div>
+    </div>
+    <div class="wrapper" id="202607151">
+      <h5>Second Show</h5><p>2026.07.15 - 2026.07.20</p>
+      <img src="images/second.png"><div class="wrapper mt-3"><p>Second description</p></div>
+    </div>`;
+  const source = {
+    name: 'Art Gallery Kitano',
+    taxonomy: testTaxonomy(['gallery'], ['contemporary'], ['exhibition']),
+  };
+  const urls = detailUrlExtractors['art-gallery-kitano'](
+    html,
+    'https://www.gallery-kitano.com/exhibition.aspx',
+  );
+  const event = eventExtractors['art-gallery-kitano'](html, source, urls[0]);
+
+  assert.deepEqual(urls, [
+    'https://www.gallery-kitano.com/exhibition.aspx#202607081',
+    'https://www.gallery-kitano.com/exhibition.aspx#202607151',
+  ]);
+  assert.equal(event.title, 'First Show');
+  assert.equal(event.start_date, '2026-07-08');
+  assert.deepEqual(event.image_urls, ['https://www.gallery-kitano.com/images/first.png']);
+});
+
+test('Gallery Take Two drops coming-soon placeholders and keeps one image', () => {
+  const galleryData = {
+    appsWarmupData: {
+      gallery: {
+        schedule_galleryData: {
+          items: [
+            {
+              itemId: 'real-event',
+              mediaUrl: 'real.jpg',
+              metaData: {
+                title: 'Real Exhibition',
+                description: '2026年7月10日(金) 〜 7月15日(水)\nDetails',
+                fileName: 'poster.jpg',
+              },
+            },
+            {
+              itemId: 'placeholder',
+              mediaUrl: 'placeholder.jpg',
+              metaData: {
+                title: 'Later',
+                description: '2026年8月1日',
+                fileName: 'coming soon.jpeg',
+              },
+            },
+          ],
+        },
+      },
+    },
+  };
+  const html = `<script id="wix-warmup-data">${JSON.stringify(galleryData)}</script>`;
+  const source = {
+    name: 'Gallery Take Two',
+    taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
+  };
+  const urls = detailUrlExtractors['gallery-take-two'](
+    html,
+    'https://www.gallery-taketwo.com/schedule',
+  );
+  const event = eventExtractors['gallery-take-two'](html, source, urls[0]);
+
+  assert.deepEqual(urls, ['https://www.gallery-taketwo.com/schedule#real-event']);
+  assert.equal(event.title, 'Real Exhibition');
+  assert.equal(event.end_date, '2026-07-15');
+  assert.deepEqual(event.image_urls, ['https://static.wixstatic.com/media/real.jpg']);
+});
+
+test('Issey Kura discovery keeps only ON VIEW cards', () => {
+  const listingHtml = `
+    <a href="/blogs/kyotokura/1" class="news _cell"><p class="_tag">ON VIEW</p></a>
+    <a href="/blogs/kyotokura/2" class="news _cell"><p class="_tag"></p></a>`;
+  const urls = detailUrlExtractors['issey-miyake-kyoto-kura'](
+    listingHtml,
+    'https://www.isseymiyake.com/blogs/kyotokura',
+  );
+
+  assert.deepEqual(urls, ['https://www.isseymiyake.com/blogs/kyotokura/1']);
+});
+
+test('Sokyo discovery excludes Past cards', () => {
+  const html = `
+    <div id="exhibitions-grid-current"><a href="/exhibitions/1/overview/">Current</a></div>
+    <div id="exhibitions-grid-upcoming"><a href="/exhibitions/2/overview/">Upcoming</a></div>
+    <div id="exhibitions-grid-past"><a href="/exhibitions/3/overview/">Past</a></div>`;
+
+  assert.deepEqual(
+    detailUrlExtractors['sokyo-kyoto'](html, 'https://sokyogallery.com/exhibitions/'),
+    [
+      'https://sokyogallery.com/exhibitions/1/overview/',
+      'https://sokyogallery.com/exhibitions/2/overview/',
+    ],
   );
 });
 

@@ -1,17 +1,28 @@
 import type { EventRow } from './events';
 import type { AppLocale } from './i18n';
-import { assertPublicCategories, PUBLIC_CATEGORIES } from '../../../../data/categories.mjs';
+import {
+  assertTaxonomy,
+  CATEGORY_DIMENSIONS,
+  CATEGORY_REGISTRY,
+  flattenTaxonomy,
+  parseCategoryToken,
+} from '../../../../data/categories.mjs';
+
+export type Taxonomy = {
+  venue_category: string[];
+  display_category: string[];
+  event_category: string[];
+};
 
 export type SourceConfig = {
   slug: string;
   name: string;
   names?: Partial<Record<'en' | 'ja', string>>;
-  source_type: string;
+  taxonomy: Taxonomy;
   base_url: string;
   start_urls?: string[];
   allowed_domains?: string[];
   event_page_patterns?: string[];
-  source_categories?: string[];
   address_text?: string;
   lat?: number;
   lng?: number;
@@ -41,6 +52,7 @@ export type MapSource = {
 export type CategoryOption = {
   slug: string;
   label: string;
+  dimension: keyof Taxonomy;
 };
 
 type SourceRelation = { slug?: string | null } | { slug?: string | null }[] | null;
@@ -70,8 +82,6 @@ export type EventSourceTruth = {
   lng: number | null;
 };
 
-export const preferredCategoryOrder = PUBLIC_CATEGORIES;
-
 export const normalizeCategory = (value: string) =>
   value
     .toLowerCase()
@@ -83,6 +93,11 @@ export const normalizeCategory = (value: string) =>
 export const normalizeCategoryList = (values: string[]) => [
   ...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean)),
 ];
+
+export const matchesCategoryGroups = (categories: string[], activeGroups: Map<string, string[]>) =>
+  [...activeGroups.values()].every((groupCategories) =>
+    groupCategories.some((category) => categories.includes(category)),
+  );
 
 export const titleCaseCategory = (value: string) =>
   value
@@ -98,9 +113,7 @@ export const allActiveSourcesFrom = (sources: SourceConfig[]) =>
     .filter((source) => source.is_active !== false)
     .map((source) => ({
       ...source,
-      source_categories: normalizeCategoryList(
-        assertPublicCategories(source.source_categories ?? [], source.slug),
-      ),
+      taxonomy: assertTaxonomy(source.taxonomy, source.slug) as Taxonomy,
     }));
 
 export const configuredSourcesFrom = (sources: SourceConfig[]) =>
@@ -109,9 +122,7 @@ export const configuredSourcesFrom = (sources: SourceConfig[]) =>
     .filter((source) => !source.beta || import.meta.env.DEV)
     .map((source) => ({
       ...source,
-      source_categories: normalizeCategoryList(
-        assertPublicCategories(source.source_categories ?? [], source.slug),
-      ),
+      taxonomy: assertTaxonomy(source.taxonomy, source.slug) as Taxonomy,
     }));
 
 export const normalizeUrl = (value: string | undefined) => {
@@ -347,7 +358,7 @@ export const sourceTruthForEvent = (
       source.directions_query ??
       event.directions_query ??
       addressText,
-    categories: normalizeCategoryList(source.source_categories ?? event.categories ?? []),
+    categories: flattenTaxonomy(source.taxonomy),
     lat,
     lng,
   };
@@ -364,11 +375,7 @@ const locationNameForEvent = (
 };
 
 const locationCategoriesForSource = (source: SourceConfig) => {
-  const categorySlugs = [source.source_type, ...(source.source_categories ?? [])]
-    .map(normalizeCategory)
-    .filter(Boolean);
-
-  return [...new Set(categorySlugs)];
+  return flattenTaxonomy(source.taxonomy);
 };
 
 export const mapLocationIdForEvent = (
@@ -404,27 +411,30 @@ export const mapCoordinatesForEvent = (
 };
 
 export const categoriesForEvents = (events: EventRow[]): CategoryOption[] => {
-  const categoryMap = new Map<string, string>();
+  const categoryMap = new Map<string, CategoryOption>();
 
   for (const event of events) {
-    for (const category of event.categories) {
-      const slug = normalizeCategory(category);
-      if (!slug || categoryMap.has(slug)) continue;
-      categoryMap.set(slug, titleCaseCategory(category));
+    for (const token of event.categories) {
+      const parsed = parseCategoryToken(token);
+      if (!parsed || categoryMap.has(token)) continue;
+      categoryMap.set(token, {
+        slug: token,
+        label: titleCaseCategory(parsed.category).toLowerCase(),
+        dimension: parsed.dimension as keyof Taxonomy,
+      });
     }
   }
 
-  return [...categoryMap.entries()]
-    .map(([slug, label]) => ({ slug, label: label.toLowerCase() }))
-    .sort((a, b) => {
-      const aIndex = preferredCategoryOrder.indexOf(a.slug);
-      const bIndex = preferredCategoryOrder.indexOf(b.slug);
+  return [...categoryMap.values()].sort((a, b) => {
+    const dimensionDifference =
+      CATEGORY_DIMENSIONS.indexOf(a.dimension) - CATEGORY_DIMENSIONS.indexOf(b.dimension);
+    if (dimensionDifference) return dimensionDifference;
 
-      if (aIndex === -1 && bIndex === -1) return a.label.localeCompare(b.label);
-      if (aIndex === -1) return 1;
-      if (bIndex === -1) return -1;
-      return aIndex - bIndex;
-    });
+    return (
+      CATEGORY_REGISTRY[a.dimension].indexOf(parseCategoryToken(a.slug)?.category) -
+      CATEGORY_REGISTRY[b.dimension].indexOf(parseCategoryToken(b.slug)?.category)
+    );
+  });
 };
 
 export const mapSourcesForEvents = (

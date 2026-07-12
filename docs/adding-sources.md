@@ -16,8 +16,11 @@ Add these first:
 {
   "slug": "example-gallery",
   "name": "Example Gallery",
-  "source_type": "gallery",
-  "source_categories": ["gallery", "exhibition"],
+  "taxonomy": {
+    "venue_category": ["gallery"],
+    "display_category": ["photography"],
+    "event_category": ["exhibition"]
+  },
   "language": "ja",
   "base_url": "https://example.jp",
   "start_urls": ["https://example.jp/exhibitions/"],
@@ -56,7 +59,7 @@ Crawler-owned event fields:
 Source-owned fields:
 
 - source/venue name
-- categories
+- grouped taxonomy
 - address
 - directions query
 - coordinates

@@ -9,11 +9,11 @@ import { routePathFor } from '../lib/routeState';
 type CategoryOption = {
   slug: string;
   label: string;
+  dimension: 'venue_category' | 'display_category' | 'event_category';
 };
 
 type Props = {
   categories?: CategoryOption[];
-  activeCategory?: string;
   activeTiming?: 'ongoing' | 'upcoming' | 'permanent' | '';
   showFilters?: boolean;
   showTimingFilters?: boolean;
@@ -24,7 +24,6 @@ type Props = {
 
 const {
   categories = [],
-  activeCategory = '',
   activeTiming = '',
   showFilters = true,
   showTimingFilters = true,
@@ -50,15 +49,16 @@ const timingFilters = showTimingFilters
       { slug: 'upcoming', label: copy.upcoming },
     ]
   : [];
+const categoryGroups = ['venue_category', 'display_category', 'event_category'].map(
+  (dimension) => ({
+    dimension,
+    categories: categories.filter((category) => category.dimension === dimension),
+  }),
+);
 const showFilterControls = showFilters && (categories.length > 0 || timingFilters.length > 0);
 ---
 
-<header
-  class="headerWrapper"
-  data-category-filter
-  data-active-category={activeCategory}
-  data-active-timing={activeTiming}
->
+<header class="headerWrapper" data-category-filter data-active-timing={activeTiming}>
   <div
     class:list={['mainHeader', compact && 'mainHeader--compact']}
     data-main-header
@@ -126,16 +126,25 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
             aria-hidden="true"
             inert
           >
-            {categories.map((category) => (
-              <GeneralButton
-                label={'#' + category.label}
-                pressed={activeCategory === category.slug}
-                verticalPadding="full"
-                showDot={true}
-                dataCategory={category.slug}
-                dataCategoryButton={true}
-                dataFilterButton={true}
-              />
+            {categoryGroups.map((group) => (
+              <div
+                class="category-filter__group"
+                role="group"
+                aria-label={group.dimension.replace('_category', '')}
+              >
+                {group.categories.map((category) => (
+                  <GeneralButton
+                    label={'#' + category.label}
+                    pressed={false}
+                    verticalPadding="full"
+                    showDot={true}
+                    dataCategory={category.slug}
+                    dataCategoryDimension={category.dimension}
+                    dataCategoryButton={true}
+                    dataFilterButton={true}
+                  />
+                ))}
+              </div>
             ))}
             {timingFilters.map((filter) => (
               <GeneralButton
@@ -269,6 +278,9 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
       &[data-mobile-open]
         overflow: visible
         pointer-events: auto
+
+    &__group
+      display: contents
 
   @media (max-width: $mobile-breakpoint)
     .mainHeader

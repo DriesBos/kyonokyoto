@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isPublicCategory, isSourceType } from '../categories.mjs';
+import { assertTaxonomy, CATEGORY_DIMENSIONS, taxonomyErrors } from '../categories.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const supportedCities = new Set(['kyoto', 'osaka', 'tokyo']);
@@ -263,14 +263,25 @@ export function applySourceOverride(source, override = {}) {
     ...sourceQa,
     ...overrideQa,
   };
+  const taxonomy = assertTaxonomy(
+    Object.fromEntries(
+      CATEGORY_DIMENSIONS.map((dimension) => [
+        dimension,
+        Object.hasOwn(override.taxonomy ?? {}, dimension)
+          ? override.taxonomy[dimension]
+          : source.taxonomy?.[dimension],
+      ]),
+    ),
+    source.slug ?? override.slug ?? 'unknown-source',
+  );
 
-  return {
+  const output = {
     ...source,
     ...override,
     start_urls: override.start_urls ?? source.start_urls ?? [],
     allowed_domains: override.allowed_domains ?? source.allowed_domains ?? [],
     event_page_patterns: override.event_page_patterns ?? source.event_page_patterns ?? [],
-    source_categories: override.source_categories ?? source.source_categories ?? [],
+    taxonomy,
     locales: {
       ...sourceLocales,
       ...overrideLocales,
@@ -294,6 +305,10 @@ export function applySourceOverride(source, override = {}) {
     ...(hasQaConfig ? { qa } : {}),
     venue_locations: override.venue_locations ? overrideVenueLocations : sourceVenueLocations,
   };
+
+  delete output.source_type;
+  delete output.source_categories;
+  return output;
 }
 
 export function validateSourceConfig(source) {
@@ -301,20 +316,7 @@ export function validateSourceConfig(source) {
   const slug = source?.slug ?? 'unknown-source';
 
   if (!source?.name) warnings.push(`${slug}: missing name`);
-  if (!source?.source_type) {
-    warnings.push(`${slug}: missing source_type`);
-  } else if (!isSourceType(source.source_type)) {
-    warnings.push(`${slug}: unsupported source_type "${source.source_type}"`);
-  }
-  if (!Array.isArray(source?.source_categories) || !source.source_categories.length) {
-    warnings.push(`${slug}: missing source_categories`);
-  } else {
-    for (const category of source.source_categories) {
-      if (!isPublicCategory(category)) {
-        warnings.push(`${slug}: unsupported source category "${category}"`);
-      }
-    }
-  }
+  warnings.push(...taxonomyErrors(source?.taxonomy, slug));
   if (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng))) {
     warnings.push(`${slug}: missing lat/lng`);
   }

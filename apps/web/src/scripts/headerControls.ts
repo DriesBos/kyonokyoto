@@ -10,15 +10,8 @@ import {
   killHeightTransitionTweens,
   toHeight,
 } from '../lib/heightTransition';
+import { matchesCategoryGroups } from '../lib/sources';
 import { scrollRootFor } from './scrollRoot';
-
-const normalizeCategory = (value: string) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, 'and')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 
 export const initHeaderControls = () => {
   const root = document.querySelector('[data-category-filter]');
@@ -42,7 +35,12 @@ export const initHeaderControls = () => {
   const eventsSection = document.querySelector('[data-events-section]');
   const mainHeader = root.querySelector('[data-main-header]');
 
-  let activeCategory = root instanceof HTMLElement ? root.dataset.activeCategory || '' : '';
+  const activeCategories = new Set(
+    categoryButtons
+      .filter((button) => button.getAttribute('aria-pressed') === 'true')
+      .map((button) => (button instanceof HTMLElement ? button.dataset.category || '' : ''))
+      .filter(Boolean),
+  );
   let activeTiming = root instanceof HTMLElement ? root.dataset.activeTiming || '' : '';
   let activeStarred = false;
   let filterExpandedScrollOrigin: number | null = null;
@@ -61,7 +59,19 @@ export const initHeaderControls = () => {
 
   const isFilterExpanded = () =>
     disclosure instanceof HTMLElement && disclosure.getAttribute('aria-expanded') === 'true';
-  const isFilteringActive = () => Boolean(activeCategory || activeTiming || activeStarred);
+  const isFilteringActive = () => Boolean(activeCategories.size || activeTiming || activeStarred);
+
+  const activeCategoriesByDimension = () => {
+    const groups = new Map<string, string[]>();
+    categoryButtons.forEach((button) => {
+      if (!(button instanceof HTMLElement)) return;
+      const category = button.dataset.category || '';
+      const dimension = button.dataset.categoryDimension || '';
+      if (!activeCategories.has(category) || !dimension) return;
+      groups.set(dimension, [...(groups.get(dimension) ?? []), category]);
+    });
+    return groups;
+  };
 
   const syncFilterDisclosureButtonState = () => {
     if (!(disclosure instanceof HTMLElement)) return;
@@ -173,17 +183,18 @@ export const initHeaderControls = () => {
   const applyFilter = () => {
     let visibleCount = 0;
     syncStarredButtonState();
+    const activeGroups = activeCategoriesByDimension();
 
     cards.forEach((card) => {
       const categories = (card.getAttribute('data-categories') || '')
         .split('|')
         .filter(Boolean)
-        .map(normalizeCategory);
+        .map((category) => category.trim());
       const timing =
         card.getAttribute('data-timing') ||
         card.closest('[data-event-group]')?.getAttribute('data-event-group-name') ||
         '';
-      const matchesCategory = !activeCategory || categories.includes(activeCategory);
+      const matchesCategory = matchesCategoryGroups(categories, activeGroups);
       const matchesTiming = !activeTiming || timing === activeTiming;
       const matchesStarred =
         !activeStarred || (card instanceof HTMLElement && card.dataset.starred === 'true');
@@ -236,17 +247,17 @@ export const initHeaderControls = () => {
     button.addEventListener('click', () => {
       if (!(button instanceof HTMLElement)) return;
       const nextCategory = button.dataset.category || '';
-      activeCategory = activeCategory === nextCategory ? '' : nextCategory;
+      if (activeCategories.has(nextCategory)) {
+        activeCategories.delete(nextCategory);
+      } else {
+        activeCategories.add(nextCategory);
+      }
       activeStarred = false;
       if (starredButton instanceof HTMLElement) {
         starredButton.setAttribute('aria-pressed', 'false');
       }
 
-      categoryButtons.forEach((item) => {
-        if (!(item instanceof HTMLElement)) return;
-        const isActive = item.dataset.category === activeCategory;
-        item.setAttribute('aria-pressed', String(isActive));
-      });
+      button.setAttribute('aria-pressed', String(activeCategories.has(nextCategory)));
 
       applyFilter();
     });
@@ -279,7 +290,7 @@ export const initHeaderControls = () => {
       activeStarred = !activeStarred;
       starredButton.setAttribute('aria-pressed', String(activeStarred));
       if (activeStarred) {
-        activeCategory = '';
+        activeCategories.clear();
         activeTiming = '';
         categoryButtons.forEach((item) => {
           if (item instanceof HTMLElement) item.setAttribute('aria-pressed', 'false');

@@ -54,15 +54,7 @@ const {
 } = Astro.props;
 const copy = uiText.en;
 
-const normalizeCategory = (value: string) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, 'and')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-const categorySlugs = event.categories.map(normalizeCategory);
+const categorySlugs = event.categories.map((category) => category.trim()).filter(Boolean);
 const maxImagesPerCard = 3;
 const mediaEmbeds = (event.media_embeds ?? []).filter(
   (embed) => embed.type === 'youtube' && embed.video_id,

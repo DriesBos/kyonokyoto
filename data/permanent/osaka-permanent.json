@@ -15,7 +15,11 @@
       "directions_query": "Marco Gallery, 4-12-25 Minamisemba, Chuo-ku, Osaka",
       "lat": 34.67508,
       "lng": 135.49843,
-      "source_categories": ["art", "gallery"],
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": []
+      },
       "is_active": true,
       "beta": true,
       "description": {
@@ -39,7 +43,11 @@
       "directions_query": "Takenaka Carpentry Tools Museum, Kobe",
       "lat": 34.71171,
       "lng": 135.19682,
-      "source_categories": ["craft", "museum", "design"],
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": ["design", "craft"],
+        "event_category": []
+      },
       "is_active": true,
       "beta": true,
       "description": {

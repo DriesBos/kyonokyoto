@@ -1,3 +1,4 @@
+import { matchesCategoryGroups } from '../lib/sources';
 import { scrollRootFor } from './scrollRoot';
 
 type MapSource = {
@@ -185,9 +186,16 @@ const createUserMarkerContent = () => {
   return marker;
 };
 
-const getActiveMapCategory = () => {
-  const activeButton = document.querySelector("[data-category-button][aria-pressed='true']");
-  return activeButton instanceof HTMLElement ? (activeButton.dataset.category ?? '') : '';
+const getActiveMapCategories = () => {
+  const groups = new Map<string, string[]>();
+  document.querySelectorAll("[data-category-button][aria-pressed='true']").forEach((button) => {
+    if (!(button instanceof HTMLElement)) return;
+    const category = button.dataset.category ?? '';
+    const dimension = button.dataset.categoryDimension ?? '';
+    if (!category || !dimension) return;
+    groups.set(dimension, [...(groups.get(dimension) ?? []), category]);
+  });
+  return groups;
 };
 
 const getActiveMapStarred = () => {
@@ -540,12 +548,12 @@ const initMap = async (element: Element) => {
       );
 
     const applyMapFilter = () => {
-      const activeCategory = getActiveMapCategory();
+      const activeCategories = getActiveMapCategories();
       const activeStarred = getActiveMapStarred();
       const visibleStarredLocationIds = activeStarred ? getVisibleStarredLocationIds() : null;
 
       markerRecords.forEach(({ marker, source, content }) => {
-        const matchesCategory = !activeCategory || source.categories.includes(activeCategory);
+        const matchesCategory = matchesCategoryGroups(source.categories, activeCategories);
         const matchesStarred =
           !visibleStarredLocationIds || visibleStarredLocationIds.has(source.id);
         const matches = matchesCategory && matchesStarred;

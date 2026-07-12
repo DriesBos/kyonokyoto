@@ -1,7 +1,7 @@
 import type { AppLocale } from './i18n';
 import type { ClassifiedEvent } from './events';
-import type { SourceConfig } from './sources';
-import { assertPublicCategories } from '../../../../data/categories.mjs';
+import type { SourceConfig, Taxonomy } from './sources';
+import { assertTaxonomy, flattenTaxonomy } from '../../../../data/categories.mjs';
 
 export type MediaEmbed = {
   type: 'youtube';
@@ -17,7 +17,7 @@ export type PermanentExhibitionHighlight = {
   name?: string;
   names?: Partial<Record<AppLocale, string>>;
   base_url?: string;
-  source_categories?: string[];
+  taxonomy: Taxonomy;
   address_text?: string;
   directions_query?: string | null;
   lat?: number;
@@ -108,9 +108,8 @@ export const permanentEventsForLocale = ({
         id: `${cadence}:${highlight.slug}`,
         source_id: highlight.slug,
         title: institutionName,
-        categories: assertPublicCategories(
-          source?.source_categories ?? highlight.source_categories ?? [],
-          highlight.slug,
+        categories: flattenTaxonomy(
+          assertTaxonomy(source?.taxonomy ?? highlight.taxonomy, highlight.slug),
         ),
         date_text: cadenceDateText[activeLocale],
         institution_name: institutionName,

@@ -5,7 +5,11 @@
     {
       "slug": "21-21-design-sight",
       "name": "21_21 DESIGN SIGHT",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": ["design"],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "21_21 DESIGN SIGHT, Tokyo",
       "lat": 35.6675382,
@@ -40,7 +44,6 @@
         "date_format": "Month D, YYYY-Month D, YYYY",
         "image_rules": "Use topweb image only; skips generic header/flyer media and keeps one exhibition image."
       },
-      "source_categories": ["design", "museum", "exhibition"],
       "selectors": {
         "images": "img[src*=\"topweb\"]"
       },
@@ -68,7 +71,11 @@
     {
       "slug": "artizon-museum",
       "name": "Artizon Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Artizon Museum, Tokyo",
       "lat": 35.6788414,
@@ -90,7 +97,6 @@
         },
         "image_rules": "Use artwork-list contain images; skip flyer/hero image."
       },
-      "source_categories": ["museum", "exhibition"],
       "selectors": {
         "images": "img.objectFit--contain"
       },
@@ -112,7 +118,11 @@
     {
       "slug": "atelier-muji-ginza",
       "name": "ATELIER MUJI GINZA",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design"],
+        "event_category": ["exhibition"]
+      },
       "language": "ja",
       "directions_query": "ATELIER MUJI GINZA, Tokyo",
       "lat": 35.6730811,
@@ -123,7 +133,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/jp/exhibition/"],
       "notes": "Purple art marker from Google My Maps. Japanese-first source; direct HTTP can rate-limit.",
-      "source_categories": ["design", "gallery", "exhibition"],
       "capabilities": {
         "native_locales": ["ja"],
         "machine_translate_missing_locales": true
@@ -137,7 +146,11 @@
     {
       "slug": "ginza-graphic-gallery",
       "name": "ginza graphic gallery",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design"],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "ginza graphic gallery, Tokyo",
       "lat": 35.6697019,
@@ -167,7 +180,6 @@
         "image_rules": "DNP schedule extractor stores only first image."
       },
       "beta": false,
-      "source_categories": ["design", "gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=1"],
@@ -197,7 +209,11 @@
     {
       "slug": "mori-art-museum",
       "name": "Mori Art Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Mori Art Museum, Tokyo",
       "lat": 35.6604621,
@@ -220,7 +236,6 @@
         },
         "image_rules": "Use content images only; skip flyer/banner image."
       },
-      "source_categories": ["museum", "exhibition"],
       "selectors": {
         "description": "div.content-main",
         "images": "div.content-img img, figure.content-img img"
@@ -243,7 +258,11 @@
     {
       "slug": "museum-of-contemporary-art-tokyo",
       "name": "Museum of Contemporary Art",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Museum of Contemporary Art Tokyo, Tokyo",
       "lat": 35.6797467,
@@ -254,7 +273,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Listing cards are client-rendered; force render and use card selectors to avoid template links.",
-      "source_categories": ["museum", "exhibition"],
       "selectors": {
         "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper"
       },
@@ -277,7 +295,11 @@
     {
       "slug": "national-art-center-tokyo",
       "name": "The National Art Center",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "The National Art Center Tokyo, Tokyo",
       "lat": 35.665289,
@@ -295,7 +317,6 @@
         "/english/event/"
       ],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.nact.jp/exhibition_and_event/"],
@@ -317,7 +338,11 @@
     {
       "slug": "national-museum-of-modern-art-tokyo",
       "name": "The National Museum of Modern Art",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "The National Museum of Modern Art, Tokyo",
       "lat": 35.6905432,
@@ -328,7 +353,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.momat.go.jp/exhibitions"],
@@ -347,7 +371,11 @@
     {
       "slug": "tokyo-metropolitan-art-museum",
       "name": "Metropolitan Art Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Tokyo Metropolitan Art Museum, Tokyo",
       "lat": 35.7172113,
@@ -358,7 +386,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.tobikan.jp/exhibition/"],
@@ -377,7 +404,11 @@
     {
       "slug": "tokyo-opera-city-art-gallery",
       "name": "Opera City Art Gallery",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "ja",
       "directions_query": "Tokyo Opera City Art Gallery, Tokyo",
       "lat": 35.6824478,
@@ -391,7 +422,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/ag/exh/"],
       "notes": "Purple art marker from Google My Maps. Japanese-first source.",
-      "source_categories": ["gallery", "exhibition"],
       "capabilities": {
         "native_locales": ["ja"],
         "machine_translate_missing_locales": true
@@ -404,7 +434,11 @@
     {
       "slug": "tokyo-photographic-art-museum",
       "name": "Photographic Art Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": ["photography"],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Tokyo Photographic Art Museum, Tokyo",
       "lat": 35.6416411,
@@ -416,7 +450,6 @@
       "event_page_patterns": ["/current/", "/e/contents/exhibition/", "/contents/exhibition/"],
       "notes": "Purple art marker from Google My Maps. Current page requested as beta source.",
       "beta": false,
-      "source_categories": ["photography", "museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://topmuseum.jp/current/"],
@@ -434,7 +467,11 @@
     {
       "slug": "sumida-hokusai-museum",
       "name": "The Sumida Hokusai Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "The Sumida Hokusai Museum, Tokyo",
       "lat": 35.6963607,
@@ -445,7 +482,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/modules/Exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://hokusai-museum.jp/modules/Exhibition/exhibitions"],
@@ -464,7 +500,11 @@
     {
       "slug": "yayoi-kusama-museum",
       "name": "Yayoi Kusama Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Yayoi Kusama Museum, Tokyo",
       "lat": 35.7031959,
@@ -475,7 +515,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://yayoikusamamuseum.jp/exhibition/current/"],
@@ -494,7 +533,11 @@
     {
       "slug": "scai-the-bathhouse",
       "name": "SCAI The Bathhouse",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "SCAI The Bathhouse, Tokyo",
       "address_text": "Kashiwayu-Ato, 6-1-23 Yanaka, Taito-ku, Tokyo 110-0001 Japan",
@@ -519,7 +562,6 @@
         },
         "image_rules": "Source-specific extractor keeps first image; later images are duplicate sizes, artist thumbnails, or posters."
       },
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.scaithebathhouse.com/ja/"],
@@ -538,7 +580,11 @@
     {
       "slug": "scai-piramide",
       "name": "SCAI Piramide",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "SCAI Piramide, Piramide Bldg. 3F, 6-6-9 Roppongi, Minato-ku, Tokyo",
       "address_text": "Piramide Bldg. 3F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032",
@@ -563,7 +609,6 @@
         },
         "image_rules": "Source-specific extractor keeps first image; later images are duplicate sizes, artist thumbnails, or posters."
       },
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.scaithebathhouse.com/ja/"],
@@ -582,7 +627,11 @@
     {
       "slug": "scai-park",
       "name": "SCAI Park",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "SCAI Park, TERRADA Art Complex I, Tokyo",
       "address_text": "TERRADA Art Complex I 5F, 1-33-10 Higashi Shinagawa, Shinagawa-ku, Tokyo 140-0002 Japan",
@@ -608,7 +657,6 @@
         "date_format": "Thu. D Month - or D Month-D Month YYYY",
         "image_rules": "Source-specific extractor keeps first image; later images are duplicate sizes, artist thumbnails, or posters."
       },
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.scaithebathhouse.com/ja/"],
@@ -627,7 +675,11 @@
     {
       "slug": "ota-fine-arts",
       "name": "OTA FINE ARTS",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "OTA FINE ARTS, Tokyo",
       "lat": 35.6618246,
@@ -638,7 +690,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Multi-location gallery; prefer Tokyo venue text when present.",
-      "source_categories": ["gallery", "exhibition"],
       "capabilities": {
         "native_locales": ["en"],
         "machine_translate_missing_locales": true
@@ -651,7 +702,11 @@
     {
       "slug": "take-ninagawa",
       "name": "Take Ninagawa",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Take Ninagawa, Tokyo",
       "lat": 35.6576415,
@@ -663,7 +718,6 @@
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Re-enabled as beta source.",
       "beta": true,
-      "source_categories": ["gallery", "exhibition"],
       "capabilities": {
         "native_locales": ["en"],
         "machine_translate_missing_locales": true
@@ -675,7 +729,11 @@
     {
       "slug": "taro-okamoto-memorial-museum",
       "name": "Taro Okamoto Memorial Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Taro Okamoto Memorial Museum, Tokyo",
       "lat": 35.661308,
@@ -686,7 +744,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://taro-okamoto.or.jp/exhibition/"],
@@ -705,7 +762,11 @@
     {
       "slug": "what-museum",
       "name": "WHAT MUSEUM",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "WHAT MUSEUM, Tokyo",
       "lat": 35.6207667,
@@ -716,7 +777,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "capabilities": {
         "native_locales": ["ja", "en"],
         "machine_translate_missing_locales": true
@@ -729,7 +789,11 @@
     {
       "slug": "university-art-museum-tokyo-geidai",
       "name": "Tokyo University of the Arts",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "The University Art Museum, Tokyo University of the Arts, Tokyo",
       "lat": 35.7192079,
@@ -740,7 +804,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibit/", "/exhibit/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://museum.geidai.ac.jp/exhibit/"],
@@ -759,7 +822,11 @@
     {
       "slug": "setagaya-art-museum",
       "name": "Setagaya Art Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Setagaya Art Museum, Tokyo",
       "lat": 35.6314881,
@@ -782,7 +849,6 @@
         "image_rules": "Use Works on Display images and additional more-list images; skip flyer, pickup, and OG thumbnails."
       },
       "beta": false,
-      "source_categories": ["museum", "exhibition"],
       "selectors": {
         "images": "#EXHB-WORKS-LIST img, ul.more img"
       },
@@ -803,7 +869,11 @@
     {
       "slug": "yamatane-museum-of-art",
       "name": "Yamatane Museum of Art",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Yamatane Museum of Art, Tokyo",
       "lat": 35.6533454,
@@ -817,7 +887,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exh/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.yamatane-museum.jp/exh/"],
@@ -839,7 +908,11 @@
     {
       "slug": "japan-folk-crafts-museum",
       "name": "Japan Folk Crafts Museum",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": ["craft"],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Japan Folk Crafts Museum, Tokyo",
       "lat": 35.660829,
@@ -850,7 +923,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["museum", "craft", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://mingeikan.or.jp/exhibition/special/"],
@@ -869,7 +941,11 @@
     {
       "slug": "perrotin-tokyo",
       "name": "Perrotin Tokyo",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Perrotin Tokyo, Tokyo",
       "lat": 35.6619792,
@@ -880,7 +956,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Multi-location gallery; prefer Tokyo venue text when present.",
-      "source_categories": ["gallery", "exhibition"],
       "capabilities": {
         "native_locales": ["en"],
         "machine_translate_missing_locales": true
@@ -894,7 +969,11 @@
     {
       "slug": "nanzuka",
       "name": "NANZUKA",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "NANZUKA, Tokyo",
       "lat": 35.6721013,
@@ -905,7 +984,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/ja/exhibitions"],
       "notes": "Purple art markers from Google My Maps. One source covers NANZUKA Tokyo exhibition pages and known Tokyo map venues.",
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://nanzuka.com/ja/exhibitions"],
@@ -940,7 +1018,11 @@
     {
       "slug": "maho-kubota-gallery",
       "name": "MAHO KUBOTA GALLERY",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "MAHO KUBOTA GALLERY, Tokyo",
       "lat": 35.672776,
@@ -951,7 +1033,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Purple art marker from Google My Maps.",
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.mahokubota.com/exhibitions/"],
@@ -970,7 +1051,11 @@
     {
       "slug": "lurf-museum",
       "name": "Lurf MUSEUM",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "directions_query": "Lurf MUSEUM, Tokyo",
       "lat": 35.6479401,
@@ -981,7 +1066,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
       "notes": "Purple art marker from Google My Maps. Former lurfmuseum.art route redirects; current official exhibition index is lurfgallery.com.",
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://lurfgallery.com/exhibitions"],
@@ -1000,7 +1084,11 @@
     {
       "slug": "gyre-gallery",
       "name": "GYRE GALLERY",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "address_text": "GYRE 3F, 5-10-1 Jingumae, Shibuya-ku, Tokyo 150-0001 Japan",
       "directions_query": "GYRE GALLERY, 5-10-1 Jingumae, Shibuya-ku, Tokyo",
@@ -1013,7 +1101,6 @@
       "event_page_patterns": ["/art/", "/artandgallery/"],
       "notes": "Official GYRE Omotesando art page. Beta source; current exhibition details usually live under /artandgallery/.",
       "beta": true,
-      "source_categories": ["gallery", "art", "exhibition"],
       "locales": {
         "en": {
           "start_urls": ["https://en.gyre-omotesando.com/art/"],
@@ -1031,7 +1118,11 @@
     {
       "slug": "yutaka-kikutake-gallery",
       "name": "Yutaka Kikutake Gallery",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "address_text": "Piramide Bldg. 2F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
       "directions_query": "Yutaka Kikutake Gallery, 6-6-9 Roppongi, Minato-ku, Tokyo",
@@ -1059,7 +1150,6 @@
         "image_rules": "Use ordered artwork images from div.artwork; ignore past-listing and layout images."
       },
       "beta": true,
-      "source_categories": ["gallery", "exhibition"],
       "selectors": {
         "listing_links": "ul.ex-current a, ul.ex-upcoming a",
         "title": ".ex-title",
@@ -1084,7 +1174,11 @@
     {
       "slug": "standing-pine-tokyo",
       "name": "STANDING PINE Tokyo",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "address_text": "TERRADA ART COMPLEX I 3F, 1-33-10 Higashi-Shinagawa, Shinagawa-ku, Tokyo 140-0002 Japan",
       "directions_query": "STANDING PINE, TERRADA ART COMPLEX, Tokyo",
@@ -1113,7 +1207,6 @@
         "image_rules": "Use right-column detail images and content images; source-specific extractor trims artist names after pipe."
       },
       "beta": false,
-      "source_categories": ["gallery", "exhibition"],
       "selectors": {
         "listing_links": ".split-block__item-link",
         "title": ".content-detail__description-item.is_title",
@@ -1138,7 +1231,11 @@
     {
       "slug": "tokyo-node",
       "name": "TOKYO NODE",
-      "source_type": "venue",
+      "taxonomy": {
+        "venue_category": ["institute"],
+        "display_category": ["design"],
+        "event_category": ["exhibition", "event"]
+      },
       "language": "ja",
       "address_text": "Toranomon Hills Station Tower, 2-6-2 Toranomon, Minato-ku, Tokyo 105-0001 Japan",
       "directions_query": "TOKYO NODE, Toranomon Hills Station Tower, Tokyo",
@@ -1161,7 +1258,6 @@
         "image_rules": "Use mobile gallery square, usually second visual; skip desktop hero and related-event square thumbnails."
       },
       "beta": true,
-      "source_categories": ["art", "design", "event", "exhibition"],
       "selectors": {
         "images": ".e-gallery_fv_thumbnail_mobile img.image-square"
       },
@@ -1183,7 +1279,11 @@
     {
       "slug": "kenji-taki-gallery",
       "name": "KENJI TAKI GALLERY",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "address_text": "3-18-2-102 Nishi-Shinjuku, Shinjuku-ku, Tokyo 160-0023 Japan",
       "directions_query": "KENJI TAKI GALLERY, 3-18-2 Nishi-Shinjuku, Tokyo",
@@ -1196,7 +1296,6 @@
       "event_page_patterns": ["/pages/", "/exhibition/"],
       "notes": "Official Kenji Taki Gallery info/exhibitions page. Beta source.",
       "beta": false,
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "en": {
           "start_urls": ["https://www.kenjitaki.com/pages/info.html"],
@@ -1210,7 +1309,11 @@
     {
       "slug": "snow-contemporary",
       "name": "SNOW Contemporary",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "address_text": "404 Hayano Bldg., 2-13-12 Nishiazabu, Minato-ku, Tokyo 106-0031 Japan",
       "directions_query": "SNOW Contemporary, 2-13-12 Nishiazabu, Minato-ku, Tokyo",
@@ -1239,7 +1342,6 @@
         "image_rules": "Use only #resizeimage img; skip nav/upcoming/past/info links."
       },
       "beta": false,
-      "source_categories": ["gallery", "exhibition"],
       "selectors": {
         "description": "#boxEX1",
         "images": "#resizeimage img"
@@ -1267,7 +1369,11 @@
     {
       "slug": "play-museum",
       "name": "PLAY! MUSEUM",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": ["design"],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "address_text": "GREEN SPRINGS W3, 3-1 Midoricho, Tachikawa, Tokyo 190-0014 Japan",
       "directions_query": "PLAY! MUSEUM, GREEN SPRINGS, Tachikawa, Tokyo",
@@ -1280,7 +1386,6 @@
       "event_page_patterns": ["/en/", "/museum/"],
       "notes": "Official PLAY! MUSEUM English page. Beta source.",
       "beta": true,
-      "source_categories": ["museum", "design", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://play2020.jp/"],
@@ -1298,7 +1403,11 @@
     {
       "slug": "pola-museum-annex",
       "name": "Pola Museum Annex",
-      "source_type": "museum",
+      "taxonomy": {
+        "venue_category": ["museum", "gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "ja",
       "address_text": "Pola Ginza Bldg. 3F, 1-7-7 Ginza, Chuo-ku, Tokyo 104-0061 Japan",
       "directions_query": "Pola Museum Annex, Ginza, Tokyo",
@@ -1311,7 +1420,6 @@
       "event_page_patterns": ["/"],
       "notes": "Official Pola Museum Annex site. Beta source; homepage usually exposes current exhibition.",
       "beta": false,
-      "source_categories": ["museum", "gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.polamuseum.or.jp/"],
@@ -1328,7 +1436,11 @@
     {
       "slug": "taro-nasu-gallery",
       "name": "TARO NASU",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
       "language": "en",
       "address_text": "Piramide Bldg. 4F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
       "directions_query": "TARO NASU, 6-6-9 Roppongi, Minato-ku, Tokyo",
@@ -1341,7 +1453,6 @@
       "event_page_patterns": ["/en/", "/exhibition/"],
       "notes": "Official TARO NASU gallery site. Beta source; homepage links current and forthcoming exhibitions.",
       "beta": true,
-      "source_categories": ["gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.taronasugallery.com/"],
@@ -1359,7 +1470,11 @@
     {
       "slug": "issey-miyake-ginza-cube",
       "name": "ISSEY MIYAKE GINZA | CUBE",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design"],
+        "event_category": ["exhibition"]
+      },
       "language": "ja",
       "directions_query": "ISSEY MIYAKE GINZA CUBE, Ginza, Tokyo",
       "lat": 35.67235,
@@ -1372,7 +1487,6 @@
       "event_page_patterns": ["/blogs/cube"],
       "notes": "Official CUBE gallery page for ISSEY MIYAKE GINZA, listing design/art/craft exhibitions and events.",
       "beta": true,
-      "source_categories": ["design", "gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.isseymiyake.com/blogs/cube"],
@@ -1390,7 +1504,11 @@
     {
       "slug": "issey-miyake-shinjuku-shikaku",
       "name": "ISSEY MIYAKE SHINJUKU | SHIKAKU",
-      "source_type": "gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design"],
+        "event_category": ["exhibition"]
+      },
       "language": "ja",
       "directions_query": "ISSEY MIYAKE SHINJUKU SHIKAKU, Isetan Shinjuku, Tokyo",
       "lat": 35.69174,
@@ -1403,7 +1521,6 @@
       "event_page_patterns": ["/blogs/shikaku"],
       "notes": "Official SHIKAKU gallery page for ISSEY MIYAKE SHINJUKU, listing special projects and gallery events.",
       "beta": true,
-      "source_categories": ["design", "gallery", "exhibition"],
       "locales": {
         "ja": {
           "start_urls": ["https://www.isseymiyake.com/blogs/shikaku"],
@@ -1425,7 +1542,11 @@
         "en": "CURATION⇄FAIR Tokyo",
         "ja": "CURATION⇄FAIR Tokyo"
       },
-      "source_type": "fair",
+      "taxonomy": {
+        "venue_category": ["fair"],
+        "display_category": [],
+        "event_category": ["fair"]
+      },
       "language": "en",
       "address_text": "1-15-9 Kudankita, Chiyoda-ku, Tokyo 102-0073 Japan",
       "directions_query": "kudan house, Tokyo",
@@ -1439,7 +1560,6 @@
       "event_page_patterns": ["/en/tokyo2026", "/tokyo2026"],
       "notes": "Annual CURATION⇄FAIR Tokyo page. The current-year page may temporarily contain only a coming-soon announcement or no event details.",
       "beta": true,
-      "source_categories": ["fair"],
       "locales": {
         "ja": {
           "start_urls": ["https://curation-fair.com/tokyo2026"],

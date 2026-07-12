@@ -9,7 +9,7 @@ import {
   loadSourcesConfig,
   validateSourceConfig,
 } from '../../../data/sources/source-config.mjs';
-import { isPublicCategory } from '../../../data/categories.mjs';
+import { assertTaxonomy } from '../../../data/categories.mjs';
 
 const projectRoot = resolve(import.meta.dirname, '../../..');
 
@@ -51,7 +51,7 @@ test('each city has source and permanent files', async () => {
   }
 });
 
-test('source and permanent categories use the public registry', async () => {
+test('source and permanent taxonomy use the grouped registry', async () => {
   for (const city of cityConfigs) {
     const files = [
       [`data/sources/${city.sourceFile}`, 'sources'],
@@ -62,9 +62,7 @@ test('source and permanent categories use the public registry', async () => {
       const payload = await readJson(path);
 
       for (const row of payload[rowsKey]) {
-        for (const category of row.source_categories ?? []) {
-          assert.equal(isPublicCategory(category), true, `${path}: ${row.slug}: ${category}`);
-        }
+        assert.doesNotThrow(() => assertTaxonomy(row.taxonomy, `${path}: ${row.slug}`));
       }
     }
   }

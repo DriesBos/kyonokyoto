@@ -23,6 +23,7 @@ type Props = {
   target?: string;
   rel?: string;
   dataCategory?: string;
+  dataCategoryDimension?: string;
   dataCategoryButton?: boolean;
   dataTiming?: string;
   dataTimingButton?: boolean;
@@ -48,6 +49,7 @@ const {
   target,
   rel,
   dataCategory,
+  dataCategoryDimension,
   dataCategoryButton = false,
   dataTiming,
   dataTimingButton = false,
@@ -74,6 +76,7 @@ const classes = [
       target={target}
       rel={rel}
       data-category={dataCategory}
+      data-category-dimension={dataCategoryDimension}
       data-category-button={dataCategoryButton ? '' : undefined}
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? '' : undefined}
@@ -94,6 +97,7 @@ const classes = [
       class:list={classes}
       aria-disabled="true"
       data-category={dataCategory}
+      data-category-dimension={dataCategoryDimension}
       data-category-button={dataCategoryButton ? '' : undefined}
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? '' : undefined}
@@ -116,6 +120,7 @@ const classes = [
       value={value}
       name={name}
       data-category={dataCategory}
+      data-category-dimension={dataCategoryDimension}
       data-category-button={dataCategoryButton ? '' : undefined}
       data-timing={dataTiming}
       data-timing-button={dataTimingButton ? '' : undefined}

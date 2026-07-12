@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { loadSourcesConfig, normalizeCity } from '../data/sources/source-config.mjs';
+import { primaryVenueCategory } from '../data/categories.mjs';
 
 const projectRoot = process.cwd();
 const crawlerEnvPath = resolve(projectRoot, 'apps/crawler/.env');
@@ -50,7 +51,7 @@ const sources = sourceConfig.map((source) => ({
   slug: source.slug,
   city,
   name: source.name,
-  source_type: source.source_type,
+  source_type: primaryVenueCategory(source.taxonomy),
   language: source.language ?? 'ja',
   base_url: source.base_url,
   start_urls: source.start_urls ?? [],

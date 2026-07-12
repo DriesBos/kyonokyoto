@@ -1,49 +1,98 @@
-export const PUBLIC_CATEGORIES = Object.freeze([
-  'exhibition',
-  'museum',
-  'gallery',
-  'art',
-  'photography',
-  'design',
-  'craft',
-  'event',
-  'music',
-  'performance',
-  'ceramics',
-  'workshop',
-  'festival',
-  'fair',
-  'architecture',
-  'graphic',
-  'new-media',
-  'sculpture',
-  'textiles',
-  'ukiyoe',
-  'campus',
-]);
+export const CATEGORY_REGISTRY = Object.freeze({
+  venue_category: Object.freeze([
+    'fair',
+    'festival',
+    'campus',
+    'museum',
+    'gallery',
+    'institute',
+    'theatre',
+  ]),
+  display_category: Object.freeze([
+    'photography',
+    'architecture',
+    'painting',
+    'textile',
+    'ukiyoe',
+    'performance',
+    'design',
+    'graphic',
+    'ceramics',
+    'craft',
+    'new-media',
+    'sculpture',
+    'music',
+    'contemporary',
+  ]),
+  event_category: Object.freeze(['workshop', 'exhibition', 'fair', 'festival', 'event']),
+});
 
-export const SOURCE_TYPES = Object.freeze([
-  'art-center',
-  'design',
-  'fair',
-  'festival',
-  'gallery',
-  'museum',
-  'university',
-  'venue',
-]);
+export const CATEGORY_DIMENSIONS = Object.freeze(Object.keys(CATEGORY_REGISTRY));
 
-const publicCategorySet = new Set(PUBLIC_CATEGORIES);
-const sourceTypeSet = new Set(SOURCE_TYPES);
+export function normalizeTaxonomy(value = {}) {
+  return Object.fromEntries(
+    CATEGORY_DIMENSIONS.map((dimension) => [
+      dimension,
+      [
+        ...new Set(
+          (Array.isArray(value?.[dimension]) ? value[dimension] : [])
+            .filter((item) => typeof item === 'string')
+            .map((item) => item.trim().toLowerCase())
+            .filter(Boolean),
+        ),
+      ],
+    ]),
+  );
+}
 
-export const isPublicCategory = (value) => publicCategorySet.has(value);
-export const isSourceType = (value) => sourceTypeSet.has(value);
+export function taxonomyErrors(value = {}, owner = 'item') {
+  const errors = [];
+  const keys = Object.keys(value ?? {});
 
-export function assertPublicCategories(values = [], owner = 'item') {
-  const invalid = values.filter((value) => !isPublicCategory(value));
-  if (invalid.length) {
-    throw new Error(`${owner}: unsupported public categories: ${invalid.join(', ')}`);
+  for (const key of keys) {
+    if (!CATEGORY_DIMENSIONS.includes(key))
+      errors.push(`${owner}: unsupported taxonomy key "${key}"`);
   }
 
-  return values;
+  for (const dimension of CATEGORY_DIMENSIONS) {
+    const categories = value?.[dimension];
+    if (!Array.isArray(categories)) {
+      errors.push(`${owner}: missing taxonomy.${dimension}`);
+      continue;
+    }
+
+    for (const category of categories) {
+      if (!CATEGORY_REGISTRY[dimension].includes(category)) {
+        errors.push(`${owner}: unsupported ${dimension} "${category}"`);
+      }
+    }
+  }
+
+  if (Array.isArray(value?.venue_category) && !value.venue_category.length) {
+    errors.push(`${owner}: missing venue_category`);
+  }
+  return errors;
 }
+
+export function assertTaxonomy(value = {}, owner = 'item') {
+  const errors = taxonomyErrors(value, owner);
+  if (errors.length) throw new Error(errors.join('\n'));
+  return normalizeTaxonomy(value);
+}
+
+export const categoryToken = (dimension, category) => `${dimension}:${category}`;
+
+export function parseCategoryToken(token) {
+  const [dimension, category, ...rest] = String(token ?? '').split(':');
+  if (rest.length || !CATEGORY_REGISTRY[dimension]?.includes(category)) return null;
+  return { dimension, category };
+}
+
+export function flattenTaxonomy(value = {}) {
+  const taxonomy = assertTaxonomy(value);
+  return CATEGORY_DIMENSIONS.flatMap((dimension) =>
+    taxonomy[dimension].map((category) => categoryToken(dimension, category)),
+  );
+}
+
+export const primaryVenueCategory = (value = {}) => assertTaxonomy(value).venue_category[0];
