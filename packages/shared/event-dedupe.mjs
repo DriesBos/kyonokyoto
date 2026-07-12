@@ -12,7 +12,7 @@ function normalizeIdentityPart(value) {
     .replace(/&/g, ' and ')
     .replace(/\s+/g, ' ')
     .replace(/['’]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^\p{Letter}\p{Number}\p{Mark}]+/gu, '-')
     .replace(/^-+|-+$/g, '');
 }
 

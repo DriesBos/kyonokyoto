@@ -13,27 +13,15 @@ import kyotoSourcesPayload from '../../../../../../data/sources/kyoto-sources.js
 import osakaSourcesPayload from '../../../../../../data/sources/osaka-sources.json';
 import tokyoSourcesPayload from '../../../../../../data/sources/tokyo-sources.json';
 import { CITY_COOKIE, cityConfigFor, normalizeCity, type AppCity } from '../../../lib/cities';
-import {
-  LOCALE_COOKIE,
-  normalizeLocale,
-  resolveLocale,
-  supportedLocales,
-  uiText,
-} from '../../../lib/i18n';
+import { LOCALE_COOKIE, normalizeLocale, resolveLocale, uiText } from '../../../lib/i18n';
 import { routePathFor } from '../../../lib/routeState';
+import { cleanDisplayText, googleCalendarUrl, mapsUrl } from '../../../lib/calendar';
 import {
-  calendarDetailsFor,
-  calendarLocationFor,
-  cleanDisplayText,
-  googleCalendarUrl,
-  mapsUrl,
-} from '../../../lib/calendar';
-import {
-  displayEventsByLocale as buildDisplayEventsByLocale,
+  displayEventsForLocale as buildDisplayEventsForLocale,
   fetchPublishedEvents,
 } from '../../../lib/events';
 import {
-  permanentEventsByLocale as buildPermanentEventsByLocale,
+  permanentEventsForLocale as buildPermanentEventsForLocale,
   type PermanentExhibitionHighlight,
 } from '../../../lib/permanentExhibitions';
 import {
@@ -47,7 +35,6 @@ import {
   type SourceConfig,
 } from '../../../lib/sources';
 import { landingSlidesForEvents } from '../../../lib/landingSlides';
-import { serializeInlineJson } from '../../../../../../packages/shared/inline-json.mjs';
 
 export const prerender = false;
 
@@ -102,7 +89,7 @@ const permanentHighlightsPayload = permanentPayloadByCity[city];
 const configuredSources = configuredSourcesFrom(sourcesPayload.sources as SourceConfig[]);
 const allActiveSources = allActiveSourcesFrom(sourcesPayload.sources as SourceConfig[]);
 const betaSourceSlugsAll = new Set(allActiveSources.filter((s) => s.beta).map((s) => s.slug));
-const rawEvents = await fetchPublishedEvents();
+const rawEvents = await fetchPublishedEvents({ city, locale });
 const cityEvents = rawEvents.filter((event) => sourceSlugForEvent(event, allActiveSources));
 const events = import.meta.env.DEV
   ? cityEvents
@@ -110,18 +97,16 @@ const events = import.meta.env.DEV
       const slug = sourceSlugForEvent(event, allActiveSources);
       return !slug || !betaSourceSlugsAll.has(slug);
     });
-const displayEventsByLocale = buildDisplayEventsByLocale({
+const displayEvents = buildDisplayEventsForLocale({
   events,
   configuredSources,
-  supportedLocales,
+  activeLocale: locale,
 });
-const permanentEventsByLocale = buildPermanentEventsByLocale({
+const permanentEvents = buildPermanentEventsForLocale({
   highlights: permanentHighlightsPayload.items as PermanentExhibitionHighlight[],
   configuredSources,
-  supportedLocales,
+  activeLocale: locale,
 });
-const displayEvents = displayEventsByLocale[locale];
-const permanentEvents = permanentEventsByLocale[locale];
 const visibleCards = [...displayEvents, ...permanentEvents];
 const categories = categoriesForEvents(visibleCards);
 const ongoingEvents = displayEvents.filter((event) => event.timing === 'ongoing');
@@ -164,60 +149,6 @@ const excerpt = (value: string | null) => {
   if (!value) return uiText.en.fallbackExcerpt;
   return cleanDisplayText(value);
 };
-
-const eventPayloadById = Object.fromEntries(
-  visibleCards.map((event) => {
-    const localePayload = Object.fromEntries(
-      supportedLocales.map((supportedLocale) => {
-        const localizedEvent =
-          displayEventsByLocale[supportedLocale].find((candidate) => candidate.id === event.id) ??
-          permanentEventsByLocale[supportedLocale].find((candidate) => candidate.id === event.id) ??
-          event;
-
-        return [
-          supportedLocale,
-          {
-            title: localizedEvent.title,
-            dateText: localizedEvent.date_text,
-            institutionName: localizedEvent.institution_name,
-            excerpt: excerpt(localizedEvent.description),
-            mapsUrl: mapsUrlForEvent(localizedEvent),
-            googleCalendarUrl: googleCalendarUrl(localizedEvent),
-            sourceUrl: localizedEvent.source_url,
-            calendarTitle: localizedEvent.title,
-            calendarDetails: calendarDetailsFor(localizedEvent),
-            calendarLocation: calendarLocationFor(localizedEvent),
-          },
-        ];
-      }),
-    );
-
-    return [event.id, localePayload];
-  }),
-);
-
-const localePayload = {
-  events: eventPayloadById,
-  meta: Object.fromEntries(
-    supportedLocales.map((supportedLocale) => [
-      supportedLocale,
-      {
-        title:
-          city === 'kyoto'
-            ? uiText[supportedLocale].title
-            : `${cityConfig.label} | ${uiText.en.title}`,
-        description:
-          city === 'kyoto'
-            ? uiText[supportedLocale].description
-            : uiText[supportedLocale].description
-                .replaceAll('Kyōto', cityConfig.label)
-                .replaceAll('Kyoto', cityConfig.label)
-                .replaceAll('京都', cityConfig.label),
-      },
-    ]),
-  ),
-};
-const localePayloadJson = serializeInlineJson(localePayload);
 ---
 
 <BaseLayout
@@ -373,7 +304,6 @@ const localePayloadJson = serializeInlineJson(localePayload);
         />
       </section>
     </div>
-    <script type="application/json" data-locale-payload set:html={localePayloadJson} />
   </main>
 </BaseLayout>
 

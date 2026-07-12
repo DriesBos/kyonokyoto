@@ -1,6 +1,7 @@
-name: Deploy crawler VPS
+name: Verify and deploy
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -14,8 +15,55 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    name: Verify repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SHARP_IGNORE_GLOBAL_LIBVIPS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/crawler/package-lock.json
+            apps/web/package-lock.json
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix apps/crawler
+          npm ci --prefix apps/web
+      - name: Check formatting
+        run: npm run format:check
+      - name: Test crawler
+        run: npm --prefix apps/crawler test
+      - name: Test web and source configuration
+        run: npm --prefix apps/web test
+      - name: Validate source configuration
+        run: |
+          node --input-type=module - <<'NODE'
+          import { loadAllSourcesConfig, validateSourceConfig } from './data/sources/source-config.mjs';
+          const warnings = (await loadAllSourcesConfig()).flatMap(validateSourceConfig);
+          if (warnings.length) {
+            console.error(warnings.join('\n'));
+            process.exit(1);
+          }
+          NODE
+      - name: Test source sync safety
+        run: node scripts/source-sync-safety.mjs
+      - name: Build web
+        env:
+          PUBLIC_SUPABASE_URL: https://example.supabase.co
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+        run: npm --prefix apps/web run build
+
   deploy:
     name: Fast-forward VPS
+    needs: verify
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     steps:

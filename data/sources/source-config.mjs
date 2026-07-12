@@ -9,6 +9,13 @@ const supportedLocales = new Set(['en', 'ja']);
 const supportedRenderModes = new Set(['auto', 'always', 'never']);
 const selectorKeys = new Set(['listing_links', 'title', 'description', 'date', 'images']);
 
+export function currentYearInTokyo(value = new Date()) {
+  return new Intl.DateTimeFormat('en', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+  }).format(value);
+}
+
 function normalizeLocale(value) {
   if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
@@ -123,7 +130,7 @@ function normalizeStringList(value = []) {
 function resolveCurrentYearUrls(source) {
   if (source?.url_year !== 'current') return source;
 
-  const currentYear = String(new Date().getFullYear());
+  const currentYear = currentYearInTokyo();
   const resolveUrl = (value) =>
     typeof value === 'string' ? value.replace(/20\d{2}/g, currentYear) : value;
   const resolveUrls = (values = []) => values.map(resolveUrl);

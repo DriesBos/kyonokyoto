@@ -29,10 +29,7 @@ test('KCUA follows every current or upcoming exhibition card with an image', () 
   `;
 
   assert.deepEqual(
-    detailUrlExtractors.kcua(
-      listingHtml,
-      'https://gallery.kcua.ac.jp/en/exhibitions-en/',
-    ),
+    detailUrlExtractors.kcua(listingHtml, 'https://gallery.kcua.ac.jp/en/exhibitions-en/'),
     [
       'https://gallery.kcua.ac.jp/en/archives/2026/15095/',
       'https://gallery.kcua.ac.jp/en/archives/2026/15100/',
@@ -69,10 +66,9 @@ test('Leica Gallery Kyoto follows only Kyoto events and parses localized date ra
     </article>
   `;
 
-  assert.deepEqual(
-    extractGenericDetailUrls(listingHtml, source.start_urls[0], source, 8),
-    ['https://leica-camera.com/en-US/event/leica-gallery-kyoto/kissomaru-shimamura'],
-  );
+  assert.deepEqual(extractGenericDetailUrls(listingHtml, source.start_urls[0], source, 8), [
+    'https://leica-camera.com/en-US/event/leica-gallery-kyoto/kissomaru-shimamura',
+  ]);
 
   const event = eventExtractors[source.slug](
     detailHtml,

@@ -1,9 +1,6 @@
 export type AppLocale = 'en' | 'ja';
 
 export const LOCALE_COOKIE = 'kyo_locale';
-export const LOCALE_STORAGE_KEY = 'kyo_locale';
-
-export const supportedLocales: AppLocale[] = ['en', 'ja'];
 
 export const uiText = {
   en: {

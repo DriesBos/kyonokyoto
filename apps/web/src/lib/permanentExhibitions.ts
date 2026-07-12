@@ -134,23 +134,3 @@ export const permanentEventsForLocale = ({
     })
     .filter((event) => event !== null) as ClassifiedEvent[];
 };
-
-export const permanentEventsByLocale = ({
-  highlights,
-  configuredSources,
-  supportedLocales,
-}: {
-  highlights: PermanentExhibitionHighlight[];
-  configuredSources: SourceConfig[];
-  supportedLocales: AppLocale[];
-}) =>
-  Object.fromEntries(
-    supportedLocales.map((supportedLocale) => [
-      supportedLocale,
-      permanentEventsForLocale({
-        highlights,
-        configuredSources,
-        activeLocale: supportedLocale,
-      }),
-    ]),
-  ) as Record<AppLocale, ClassifiedEvent[]>;

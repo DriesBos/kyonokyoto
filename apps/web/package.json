@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@astrojs/netlify": "^7.0.13",
@@ -21,14 +22,12 @@
     "sass": "^1.101.0",
     "sharp": "^0.34.5"
   },
-  "devDependencies": {
-    "@playwright/test": "^1.61.1"
-  },
   "overrides": {
     "@opentelemetry/context-async-hooks": "2.8.0",
     "@opentelemetry/core": "2.8.0",
     "@opentelemetry/resources": "2.8.0",
     "@opentelemetry/sdk-trace-base": "2.8.0",
-    "@opentelemetry/sdk-trace-node": "2.8.0"
+    "@opentelemetry/sdk-trace-node": "2.8.0",
+    "tmp": "0.2.7"
   }
 }

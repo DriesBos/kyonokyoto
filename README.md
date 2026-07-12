@@ -1,274 +1,124 @@
 # kyo-no-kyoto
 
-Multi-city cultural events app, currently focused on Kyoto, Osaka, and Tokyo.
+Multi-city cultural events app for Kyoto, Osaka, and Tokyo.
 
-The goal is to crawl museums, galleries, festival pages, and venue sites by city, normalize that data, store it in Supabase, and publish it through an Astro frontend.
+Source JSON defines venue truth. VPS crawler fetches event pages, stores normalized events and raw evidence in Supabase, and Astro serves city/locale routes from Netlify SSR with CDN revalidation.
 
 ## Structure
 
-- `apps/web` - Astro frontend
-- `apps/crawler` - crawler runtime env and future crawler code
-- `packages/shared` - shared types and utilities
-- `supabase` - database schema and migrations
-- `docs` - project notes and skill references
+- `apps/web` — Astro SSR frontend
+- `apps/crawler` — Node crawler plus Crawl4AI bridge
+- `data/sources` — authoritative city source config
+- `packages/shared` — shared event schedule/dedupe helpers
+- `supabase/migrations` — database change history
+- `supabase/schema.sql` — current idempotent schema snapshot
+- `ops` — VPS deploy and systemd templates
 
 ## Requirements
 
-- Node `>= 22.12.0`
+- Node `22.22.0` or a newer Node 22 release
 - npm
+- Python 3.12 for Crawl4AI
 - Supabase project
+
+## Install
+
+```bash
+npm ci
+npm ci --prefix apps/crawler
+npm ci --prefix apps/web
+```
+
+Use committed npm lockfiles. Do not regenerate pnpm metadata.
 
 ## Environment
 
-Root:
+Copy committed examples; never commit real secrets.
 
-- `.env` for shared local infra values
-- `.env.example` as the template
-
-App-specific:
-
-- `apps/web/.env`
-- `apps/crawler/.env`
-
-Do not commit real secrets. Commit only `*.env.example`.
-
-## Web Setup
-
-Install dependencies:
-
-```bash
-cd apps/web
-npm install
-```
-
-Run the Astro dev server:
-
-```bash
-npm run dev
-```
-
-Motion note:
-
-- Motion behavior is managed manually in app code and styles.
-- There are no built-in `prefers-reduced-motion` checks wired into the web app right now.
-
-Current public env vars used by the web app:
+Web requires:
 
 ```env
 PUBLIC_SUPABASE_URL=
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 PUBLIC_GOOGLE_MAPS_API_KEY=
-PUBLIC_GOOGLE_MAPS_MAP_ID=
 PUBLIC_GOOGLE_MAPS_MAP_ID_KYOTO=
 PUBLIC_GOOGLE_MAPS_MAP_ID_OSAKA=
 PUBLIC_GOOGLE_MAPS_MAP_ID_TOKYO=
 ```
 
-## Crawler Setup
-
-Crawler env lives in:
-
-```bash
-apps/crawler/.env
-```
-
-Current crawler config expects:
+Crawler requires:
 
 ```env
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-DATABASE_URL=
-CRAWLER_TIMEZONE=Asia/Tokyo
-CRAWLER_SCHEDULE=15 3 * * *
-NETLIFY_BUILD_HOOK_URL=
 CRAWL4AI_RENDER_MODE=auto
-GOOGLE_CLOUD_PROJECT=
-GOOGLE_TRANSLATE_LOCATION=global
+CRAWL_HEARTBEAT_URL=
+CRAWL_ALERT_WEBHOOK_URL=
 ```
 
-Current automation recommendation:
+Production systemd sets `CRAWL4AI_PYTHON` and `CRAWL4_AI_BASE_DIRECTORY` to paths under `/srv/kyo-no-kyoto/apps/crawler`.
 
-- sync sources to Supabase
-- crawl all active sources
-- archive previously published events that were not seen in a successful source crawl
-- trigger a Netlify rebuild hook
+## Database
 
-For the current production plan, use a daily cron job on the VPS.
-
-## Git
-
-This project uses one root repository for both apps.
-
-Recommended future deployment split:
-
-- one workflow for `apps/web`
-- one workflow for `apps/crawler`
-
-## Current Status
-
-Done:
-
-- Supabase project initialized
-- Astro app scaffolded
-- web Supabase client dependency installed
-- root git repo initialized
-
-Next:
-
-- define source batch
-- define event schema
-- scaffold crawler code
-- connect data flow from crawler to Supabase to Astro
-
-## Crawler Tuning
-
-Best quick loop for finetuning the crawler:
-
-1. Apply the database schema:
+Create schema changes with Supabase CLI migrations:
 
 ```bash
-psql "$DATABASE_URL" -f supabase/schema.sql
+npx supabase migration new change_name
 ```
 
-2. Seed sources:
+Test locally with `supabase db reset`, then coordinate one remote `supabase db push`. Do not edit live schema first. Keep `supabase/schema.sql` aligned with migrations.
+
+Apply database migrations before deploying crawler or web code. Current code requires `events.city` and translation provenance columns from the tracked migration.
+
+Current migration also provides:
+
+- authoritative `events.city`, derived from `sources.city`
+- validated published-event date rules
+- service-role-only `prune_sources` and `prune_raw_pages` RPCs
+- raw-page cleanup capped at 1,000 rows per default call, retaining referenced pages and latest three captures per source URL
+
+## Source Sync
+
+Normal sync only upserts configured sources:
 
 ```bash
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/sync-sources.mjs --city=kyoto
+node scripts/sync-sources.mjs --city=kyoto
 ```
 
-3. Crawl one source while tuning:
+Missing config rows appear as prune candidates but stay untouched. Removal requires explicit count confirmation:
 
 ```bash
-cd apps/crawler
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:once -- --city=kyoto --source=<slug>
+node scripts/sync-sources.mjs --city=kyoto --prune --confirm-prune=1
 ```
 
-4. Crawl everything for QA:
+Removing at least five rows or 25% of city rows also requires `--allow-large-prune`. Empty config can never prune.
+
+## Crawl
+
+Tune one source:
 
 ```bash
-cd apps/crawler
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" npm run crawl:all -- --city=kyoto --generic-limit=6
+npm --prefix apps/crawler run crawl:once -- --city=kyoto --source=<slug>
 ```
 
-5. Run the full production-style cycle locally:
+Run production-style city cycle from repo root:
 
 ```bash
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/run-crawl-cycle.mjs --city=kyoto
+node scripts/run-crawl-cycle.mjs --city=kyoto
 ```
 
-Create or reuse the Netlify build hook and write it into `apps/crawler/.env`:
+Cycle updates clean `main`, syncs without pruning, crawls, checks translations, and reports status. Web reads Supabase through SSR/cache revalidation; crawl cycles do not trigger Netlify deploys.
+
+See `docs/adding-sources.md`, `docs/source-config.md`, and `QA-routine.md` for source tuning.
+
+## Checks
 
 ```bash
-PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH" node scripts/create-netlify-build-hook.mjs
+npm run format:check
+npm --prefix apps/crawler test
+npm --prefix apps/web test
+npm --prefix apps/web run build
+node scripts/source-sync-safety.mjs
 ```
 
-Useful flags:
-
-```bash
-node scripts/run-crawl-cycle.mjs --skip-deploy
-node scripts/run-crawl-cycle.mjs --skip-update
-node scripts/run-crawl-cycle.mjs --city=osaka --skip-sync
-node scripts/run-crawl-cycle.mjs --city=tokyo --generic-limit=8
-node scripts/run-crawl-cycle.mjs --strict-translations
-cd apps/crawler && npm run crawl:once -- --city=kyoto --source=<slug> --render=always
-node scripts/create-netlify-build-hook.mjs --name="Daily crawler deploy"
-```
-
-Run crawler tests without touching live sites:
-
-```bash
-node --test apps/crawler/test/*.test.mjs
-```
-
-Install pinned Crawl4AI renderer when browser rendering is needed:
-
-```bash
-python3.12 -m venv apps/crawler/.venv
-apps/crawler/.venv/bin/pip install -r apps/crawler/requirements.txt
-CRAWL4_AI_BASE_DIRECTORY="$PWD/apps/crawler/.cache" apps/crawler/.venv/bin/crawl4ai-setup
-```
-
-Python 3.10+ required. Then set `CRAWL4AI_PYTHON` to `apps/crawler/.venv/bin/python`. Bridge defaults Crawl4AI cache to ignored `apps/crawler/.cache`; set `CRAWL4_AI_BASE_DIRECTORY` when runtime needs another writable location.
-
-How to tune effectively:
-
-- Start with the city source file, such as `data/sources/kyoto-sources.json`, `data/sources/osaka-sources.json`, or `data/sources/tokyo-sources.json`:
-  tighten `start_urls`, `allowed_domains`, and especially `event_page_patterns`.
-- If a source is noisy, narrow the generic candidate set first by making `event_page_patterns` more specific.
-- If a source is important and recurring, add a source-specific pair in `apps/crawler/src/run-once.mjs`:
-  one detail URL extractor and one event extractor.
-- For simple source quirks, prefer source config first. See `docs/adding-sources.md` and `docs/source-config.md` for `capabilities`, `selectors`, `crawl_hints`, and `venue_locations`.
-- Use generic mode for broad QA, then promote the noisiest sources to custom extractors one by one.
-- When a source fetch fails entirely, test the homepage manually first; common causes are blocking, redirects, or bad start URLs.
-- With `CRAWL4AI_RENDER_MODE=auto`, crawler keeps static fetch first, then asks Crawl4AI to render detail pages whose extracted event has no image or valid title.
-- Rendered pages keep raw HTML for deterministic extraction and raw-page evidence. Crawl4AI cleaned and pruned HTML are additional description candidates only.
-- Description extraction prefers configured selectors and source-specific copy, then relevant body prose, JSON-LD, and metadata. Title/date/location-only candidates are rejected and reported in crawl QA logs.
-- If a source leaks logo, social, or navigation images without useful HTML dimensions, add `"measure_image_dimensions": true` to that source in the city source file or to its slug in `data/sources/overrides/<city>-overrides.json`.
-- JavaScript shell pages are also handled in `auto` mode: listing or detail pages classified as `js_shell` or `empty_or_suspicious` are retried with Crawl4AI before extraction continues.
-- Source-page requests are paced per domain with `CRAWLER_MIN_DELAY_MS` and `CRAWLER_MAX_DELAY_MS`.
-- Crawl4AI browser renders are capped per source with `CRAWL4AI_MAX_RENDERS_PER_SOURCE`.
-- Use `crawl_hints.wait_for`, `wait_for_images`, and `scan_full_page` for proven source-specific rendering needs. Keep full-page scanning off globally.
-- Generic title extraction records provenance and rejects generic section labels, source-name titles, and date/location-only values before publication.
-- Missing English/Japanese event titles and descriptions are machine-translated during crawl only when `GOOGLE_CLOUD_PROJECT` or `GOOGLE_TRANSLATE_PROJECT_ID` is set and Google credentials are available, for example with `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/google-service-account.json`.
-- When a source has `locales.en`/`locales.ja` or `capabilities.native_locales`, the crawler uses the configured source locale as the canonical crawl, then looks for native alternate-locale event URLs in `<link rel="alternate" hreflang>` and header/nav/menu anchors such as `English` or `日本語`. Native alternate pages save only title and description into `event_translations` before Google Translate is used as a fallback.
-- Locale toggles work best when they expose real `href` URLs. Toggles that only change JavaScript state, cookies, or localStorage need source-specific browser automation.
-- Use `npm run translations:check` in `apps/crawler` to audit published events for missing `en`/`ja` translation rows. Use `npm run translations:backfill -- --dry-run` first, then `npm run translations:backfill` after Google Translation credentials are configured.
-- Each crawl run records structured diagnostics, source outcome, and QA report in `crawl_runs.logs`.
-- Use `--render=always` only for sources whose listing or detail pages genuinely require JavaScript rendering.
-
-Rule of thumb:
-
-- Fix source config first.
-- Add custom extraction second.
-- Touch schema only when many sources need the same new field.
-
-## Scheduler
-
-### VPS deployment
-
-`.github/workflows/deploy-vps.yml` fast-forwards the crawler VPS after every push to `main`.
-Configure these repository values:
-
-- Actions variables: `VPS_HOST`, `VPS_USER`
-- Actions secrets: `VPS_DEPLOY_KEY`, `VPS_KNOWN_HOSTS`
-
-The deploy key should be restricted in `~/.ssh/authorized_keys` to the root-owned
-`/usr/local/bin/kyo-vps-deploy` command. Install `ops/deploy-vps.sh` there during bootstrap.
-The deploy and crawler share one `flock`, so code cannot change during a crawl.
-
-Recommended production path:
-
-1. Put the repo on the VPS.
-2. Keep `apps/crawler/.env` populated with:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `NETLIFY_BUILD_HOOK_URL`
-   - `CRAWL_HEARTBEAT_URL` for a 48-hour dead-man monitor
-   - `CRAWL_ALERT_WEBHOOK_URL` for degraded and failed cycle alerts
-3. Prefer the systemd instance templates in `ops/systemd/`.
-4. Adjust the repo path and Node path.
-5. Enable the city timers:
-
-```bash
-sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@.service.example /etc/systemd/system/kyo-no-kyoto-crawl@.service
-sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl-failure@.service.example /etc/systemd/system/kyo-no-kyoto-crawl-failure@.service
-sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@kyoto.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@kyoto.timer
-sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@osaka.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@osaka.timer
-sudo install -m 0644 ops/systemd/kyo-no-kyoto-crawl@tokyo.timer.example /etc/systemd/system/kyo-no-kyoto-crawl@tokyo.timer
-sudo systemctl daemon-reload
-sudo systemctl enable --now kyo-no-kyoto-crawl@kyoto.timer
-sudo systemctl enable --now kyo-no-kyoto-crawl@osaka.timer
-sudo systemctl enable --now kyo-no-kyoto-crawl@tokyo.timer
-```
-
-Each city runs every 36 hours. Initial timers use 2h30m stagger slots.
-
-Important:
-
-- Supabase does not trigger a rebuild by itself here.
-- The rebuild happens because `scripts/run-crawl-cycle.mjs` calls the Netlify build hook after a successful crawl.
-- Native `flock` prevents overlapping city crawl cycles and releases automatically when a process dies.
-- Production cycles require a clean `main` branch and verify it exactly matches `origin/main` before source sync.
-- A source failure marks the cycle degraded after the rebuild and returns a non-zero exit code. Translation gaps report degraded status; add `--strict-translations` when they should also return non-zero.
-- Configure the heartbeat monitor to alert after 48 hours without success. `OnFailure` sends immediate systemd failures through the alert webhook.
-- If you want Japan-local timing on a Europe-based VPS, either set the VPS timezone to JST or shift the cron time accordingly.
+`.github/workflows/deploy-vps.yml` runs these gates for pull requests and `main`. Only verified non-PR runs invoke restricted VPS SSH deploy. Netlify builds web changes from Git using root `netlify.toml`.

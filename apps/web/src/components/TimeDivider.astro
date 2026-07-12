@@ -1,6 +1,4 @@
 ---
-import Icon from './Icon.astro';
-
 type Props = {
   label?: string;
   readyLabel?: string;
@@ -12,7 +10,8 @@ const {
   readyLabel = 'get ready!',
   ariaLabel = 'upcoming events',
 } = Astro.props;
-const items = Array.from({ length: 20 });
+const repeatedTrackText = (value: string) =>
+  Array.from({ length: 20 }, () => `${value}\u00a0\u00a0↓\u00a0\u00a0`).join('');
 const tracks = [
   {
     label,
@@ -94,22 +93,8 @@ const tracks = [
             data-start={'start' in track ? track.start : undefined}
             data-end={'end' in track ? track.end : undefined}
           >
-            <div class="time-divider__group">
-              {items.map(() => (
-                <>
-                  <span>{track.label}</span>
-                  <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
-                </>
-              ))}
-            </div>
-            <div class="time-divider__group">
-              {items.map(() => (
-                <>
-                  <span>{track.label}</span>
-                  <Icon name="arrow" rotation="bottom" class="time-divider__icon" />
-                </>
-              ))}
-            </div>
+            <div class="time-divider__group">{repeatedTrackText(track.label)}</div>
+            <div class="time-divider__group">{repeatedTrackText(track.label)}</div>
           </div>
         ))
       }
@@ -401,20 +386,11 @@ const tracks = [
         display: none
 
     &__group
-      display: flex
       flex: 0 0 auto
-      align-items: center
-      gap: 2rem
       padding-right: 4px
-      white-space: nowrap
-
-    :global(.time-divider__icon)
-      --icon-size: var(--type-title-size)
-
-    span
-      flex: 0 0 auto
       font-size: var(--type-title-size)
       line-height: 1
+      white-space: nowrap
       letter-spacing: 0
 
   @media (max-width: $mobile-breakpoint)

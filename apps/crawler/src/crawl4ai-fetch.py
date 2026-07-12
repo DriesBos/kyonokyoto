@@ -9,15 +9,27 @@ or scroll-triggered lazy images.
 import argparse
 import asyncio
 from importlib.metadata import version
+import ipaddress
 import json
 import os
 from pathlib import Path
 import sys
 from time import monotonic
+from urllib.parse import urlsplit
 
 os.environ.setdefault(
     "CRAWL4_AI_BASE_DIRECTORY", str(Path(__file__).resolve().parent.parent / ".cache")
 )
+
+SERVICE_WORKER_BLOCK_SCRIPT = """
+if (typeof ServiceWorkerContainer !== "undefined") {
+  Object.defineProperty(ServiceWorkerContainer.prototype, "register", {
+    configurable: false,
+    writable: false,
+    value: () => Promise.reject(new DOMException("Service workers disabled", "SecurityError")),
+  });
+}
+"""
 
 
 def build_parser():
@@ -31,6 +43,7 @@ def build_parser():
     parser.add_argument("--wait-for-images", action="store_true")
     parser.add_argument("--scan-full-page", action="store_true")
     parser.add_argument("--bypass-cache", action="store_true")
+    parser.add_argument("--allowed-domain", action="append", default=[])
     return parser
 
 
@@ -42,9 +55,80 @@ def safe_json(value):
         return str(value)
 
 
+def hostname_allowed(hostname, allowed_domains):
+    hostname = str(hostname or "").lower().rstrip(".")
+    domains = [str(domain).lower().rstrip(".") for domain in allowed_domains]
+    return any(hostname == domain or hostname.endswith(f".{domain}") for domain in domains)
+
+
+def canonical_navigation_url(value):
+    try:
+        parsed = urlsplit(value)
+        port = parsed.port
+    except ValueError:
+        return None
+
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return None
+    if (parsed.scheme == "http" and port == 80) or (parsed.scheme == "https" and port == 443):
+        port = None
+
+    return (
+        parsed.scheme.lower(),
+        parsed.hostname.lower().rstrip("."),
+        port,
+        parsed.path or "/",
+        parsed.query,
+    )
+
+
+async def is_safe_request_url(value, dns_cache=None, resolver=None):
+    dns_cache = dns_cache if dns_cache is not None else {}
+
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+
+    if parsed.scheme in {"about", "blob", "data"}:
+        return True
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+    if parsed.username or parsed.password:
+        return False
+
+    hostname = parsed.hostname.lower().rstrip(".")
+    if hostname in dns_cache:
+        return dns_cache[hostname]
+
+    try:
+        addresses = [ipaddress.ip_address(hostname)]
+    except ValueError:
+        try:
+            if resolver is None:
+                resolver = asyncio.get_running_loop().getaddrinfo
+            port = parsed.port or (443 if parsed.scheme == "https" else 80)
+            resolved = await resolver(hostname, port)
+            addresses = list(
+                {
+                    ipaddress.ip_address(entry[4][0].split("%")[0])
+                    for entry in resolved
+                    if entry[4]
+                }
+            )
+        except (OSError, ValueError):
+            addresses = []
+
+    safe = bool(addresses) and all(address.is_global for address in addresses)
+    dns_cache[hostname] = safe
+    return safe
+
+
 async def render(args):
     if sys.version_info < (3, 10):
         raise RuntimeError("Crawl4AI requires Python 3.10 or newer")
+    if not args.allowed_domain:
+        raise RuntimeError("Renderer requires at least one allowed domain")
 
     from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
     from crawl4ai.content_filter_strategy import PruningContentFilter
@@ -55,6 +139,8 @@ async def render(args):
         viewport_width=1920,
         viewport_height=1080,
         user_agent=args.user_agent,
+        ignore_https_errors=False,
+        extra_args=["--disable-features=ServiceWorker"],
     )
 
     crawler_config = CrawlerRunConfig(
@@ -78,7 +164,54 @@ async def render(args):
     )
 
     started_at = monotonic()
-    async with AsyncWebCrawler(config=browser_config) as crawler:
+    blocked_request_count = 0
+    dns_cache = {}
+    initial_navigation_pending = True
+    crawler = AsyncWebCrawler(config=browser_config)
+
+    async def on_page_context_created(page, context, **_kwargs):
+        await context.add_init_script(SERVICE_WORKER_BLOCK_SCRIPT)
+
+        route_web_socket = getattr(context, "route_web_socket", None)
+        if not callable(route_web_socket):
+            raise RuntimeError("Playwright WebSocket routing unavailable; refusing renderer")
+
+        async def block_web_socket(web_socket):
+            nonlocal blocked_request_count
+            blocked_request_count += 1
+            await web_socket.close(code=1008, reason="Crawler network policy")
+
+        await route_web_socket("**", block_web_socket)
+
+        async def route_filter(route):
+            nonlocal blocked_request_count, initial_navigation_pending
+            request = route.request
+            parsed = urlsplit(request.url)
+            safe = await is_safe_request_url(request.url, dns_cache)
+            navigation_allowed = not request.is_navigation_request() or (
+                initial_navigation_pending
+                and request.frame.parent_frame is None
+                and hostname_allowed(parsed.hostname, args.allowed_domain)
+                and canonical_navigation_url(request.url)
+                == canonical_navigation_url(args.url)
+            )
+
+            if safe and navigation_allowed:
+                if request.is_navigation_request():
+                    initial_navigation_pending = False
+                await route.continue_()
+                return
+
+            blocked_request_count += 1
+            await route.abort("blockedbyclient")
+
+        # ponytail: DNS is checked at route time; network isolation is needed to eliminate rebinding TOCTOU.
+        await context.route("**", route_filter)
+        return page
+
+    crawler.crawler_strategy.set_hook("on_page_context_created", on_page_context_created)
+
+    async with crawler:
         result = await crawler.arun(args.url, config=crawler_config)
 
     media = getattr(result, "media", {}) or {}
@@ -96,6 +229,7 @@ async def render(args):
         "redirected_status_code": getattr(result, "redirected_status_code", None),
         "crawl4ai_version": version("crawl4ai"),
         "duration_ms": round((monotonic() - started_at) * 1000),
+        "blocked_request_count": blocked_request_count,
         "error_message": getattr(result, "error_message", None),
     }
     return payload

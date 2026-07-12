@@ -21,7 +21,6 @@ type AdvancedMarkerInstance = {
   position?: { lat: number; lng: number };
   zIndex?: number | null;
   addEventListener?: (eventName: string, callback: () => void) => void;
-  addListener?: (eventName: string, callback: () => void) => unknown;
 };
 
 type AdvancedMarkerConstructor = new (options: {
@@ -170,8 +169,10 @@ const createMarkerContent = (source: MapSource) => {
         <path fill="var(--color-green)" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12.5 1.75L15.77 8.38L23.08 9.45L17.79 14.6L19.04 21.88L12.5 18.44L5.96 21.88L7.21 14.6L1.92 9.45L9.23 8.38L12.5 1.75Z" />
       </svg>
     </span>
-    <span class="map-marker__label">${source.name}</span>
+    <span class="map-marker__label"></span>
   `;
+  const label = marker.querySelector('.map-marker__label');
+  if (label) label.textContent = source.name;
   return marker;
 };
 
@@ -466,13 +467,7 @@ const initMap = async (element: Element) => {
       });
       marker.zIndex = 0;
 
-      content.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        activateMarkerLocation(source.id);
-      });
       marker.addEventListener?.('gmp-click', () => activateMarkerLocation(source.id));
-      marker.addListener?.('click', () => activateMarkerLocation(source.id));
 
       return { marker, source, content };
     });

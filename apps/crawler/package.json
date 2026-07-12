@@ -14,11 +14,11 @@
     "crawl:tokyo": "node src/run-once.mjs --city=tokyo --source=all",
     "crawl:kac": "node src/run-once.mjs --source=kyoto-art-center",
     "crawl:kyocera": "node src/run-once.mjs --source=kyoto-city-kyocera-museum-of-art",
-    "crawl:momak": "node src/run-once.mjs --source=the-national-museum-of-modern-art",
-    "crawl:sen-oku": "node src/run-once.mjs --source=sen-oku-hakukokan-museum",
+    "crawl:momak": "node src/run-once.mjs --source=momak",
+    "crawl:sen-oku": "node src/run-once.mjs --source=sen-oku-hakukokan",
     "translations:backfill": "node src/backfill-translations.mjs",
     "translations:check": "node src/check-translations.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs && python3 -B -m unittest discover -s test -p 'test_*.py'"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.4.2"

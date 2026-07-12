@@ -1,29 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
+import { parseEnv } from 'node:util';
 import { normalizeCity } from '../data/sources/source-config.mjs';
 import { cycleStatus, parseGitDivergence } from './crawl-cycle-utils.mjs';
 
 const projectRoot = process.cwd();
 const crawlerEnvPath = resolve(projectRoot, 'apps/crawler/.env');
-
-function parseEnvFile(contents) {
-  const env = {};
-
-  for (const rawLine of contents.split('\n')) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-
-    const separatorIndex = line.indexOf('=');
-    if (separatorIndex === -1) continue;
-
-    const key = line.slice(0, separatorIndex).trim();
-    const value = line.slice(separatorIndex + 1).trim();
-    env[key] = value;
-  }
-
-  return env;
-}
 
 function hasFlag(flag) {
   return process.argv.includes(flag);
@@ -122,17 +105,17 @@ async function postStatus(url, payload) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) throw new Error(`Crawler status webhook failed (${response.status})`);
 }
 
 const envContents = await readFile(crawlerEnvPath, 'utf8');
-const env = parseEnvFile(envContents);
+const env = parseEnv(envContents);
 
 const skipSync = hasFlag('--skip-sync');
 const skipCrawl = hasFlag('--skip-crawl');
-const skipDeploy = hasFlag('--skip-deploy');
 const skipUpdate = hasFlag('--skip-update');
 const strictTranslations = hasFlag('--strict-translations');
 const genericLimit = getArg('generic-limit', '6');
@@ -140,7 +123,6 @@ const city = normalizeCity(getArg('city', 'kyoto'));
 if (!city) {
   throw new Error(`Unsupported source city "${getArg('city')}"`);
 }
-const buildHookUrl = env.NETLIFY_BUILD_HOOK_URL ?? env.WEB_REDEPLOY_HOOK_URL ?? null;
 const heartbeatUrl = env.CRAWL_HEARTBEAT_URL ?? null;
 const alertWebhookUrl = env.CRAWL_ALERT_WEBHOOK_URL ?? null;
 let currentStep = 'initialize';
@@ -179,35 +161,6 @@ try {
     { allowFailure: true },
   );
 
-  if (!skipDeploy) {
-    currentStep = 'trigger_rebuild';
-    if (!buildHookUrl) {
-      throw new Error(
-        'Missing NETLIFY_BUILD_HOOK_URL (or WEB_REDEPLOY_HOOK_URL) in apps/crawler/.env',
-      );
-    }
-
-    console.log('\n== Trigger Netlify rebuild ==');
-    const response = await fetch(buildHookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        trigger: 'scheduled-crawl',
-        city,
-        timestamp: new Date().toISOString(),
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Netlify build hook failed (${response.status}): ${errorText}`);
-    }
-
-    console.log(`Triggered rebuild: ${response.status}`);
-  }
-
   const status = cycleStatus({ crawlPassed, translationsPassed });
   const reasons = [
     ...(!crawlPassed ? ['source crawl failures'] : []),
@@ -218,7 +171,6 @@ try {
     city,
     commit,
     reasons,
-    rebuild_triggered: !skipDeploy,
     timestamp: new Date().toISOString(),
   };
 
