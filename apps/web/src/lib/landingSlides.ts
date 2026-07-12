@@ -10,7 +10,7 @@ export type LandingSlide = {
 export const landingSlideLimit = 6;
 
 export const landingSliderSourceSlugsByCity = {
-  kyoto: ['kcua', 'artro', 'leica-gallery-kyoto'],
+  kyoto: ['kcua', 'artro'],
   osaka: ['national-museum-of-art-osaka', 'abeno-harukas-art-museum'],
   tokyo: ['mori-art-museum', 'tokyo-photographic-art-museum'],
 } satisfies Record<AppCity, string[]>;

@@ -1019,8 +1019,8 @@
       "name": "Leica Gallery Kyoto",
       "taxonomy": {
         "venue_category": ["gallery"],
-        "display_category": [],
-        "event_category": []
+        "display_category": ["photography"],
+        "event_category": ["exhibition"]
       },
       "language": "en",
       "address_text": "570-120 Gionmachi Minamigawa, Higashiyama-ku, Kyoto 605-0074 Japan",
@@ -1042,7 +1042,7 @@
         "title": ".headline.h1",
         "date": ".field--name-field-teaser-text",
         "description": ".node--type-event .text-field",
-        "images": ".fancy-slider img"
+        "images": ".node--type-event picture img"
       },
       "locales": {
         "ja": {

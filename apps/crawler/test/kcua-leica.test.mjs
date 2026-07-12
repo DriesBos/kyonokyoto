@@ -57,7 +57,15 @@ test('Leica Gallery Kyoto follows only Kyoto events and parses localized date ra
       <div class="headline h1">Kisshomaru Shimamura Exhibition: what matters</div>
       <div class="field--name-field-teaser-text">August 1, 2026 to October 1, 2026 | Leica Gallery Kyoto</div>
       <div class="text-field"><p>Exhibition description.</p></div>
-      <div class="fancy-slider"><img src="/sites/default/files/kyoto.jpg" alt=""></div>
+      <div class="fancy-slider">
+        <picture>
+          <source srcset="/sites/default/files/kyoto.webp 1x">
+          <img src="/sites/default/files/kyoto.jpg" alt="Kyoto exhibition">
+        </picture>
+        <picture>
+          <img src="/sites/default/files/kyoto-2.jpg" alt="Kyoto exhibition">
+        </picture>
+      </div>
     </article>
   `;
 
@@ -76,6 +84,10 @@ test('Leica Gallery Kyoto follows only Kyoto events and parses localized date ra
   assert.equal(event.start_date, '2026-08-01');
   assert.equal(event.end_date, '2026-10-01');
   assert.equal(event.primary_image_url, 'https://leica-camera.com/sites/default/files/kyoto.jpg');
+  assert.deepEqual(event.image_urls, [
+    'https://leica-camera.com/sites/default/files/kyoto.jpg',
+    'https://leica-camera.com/sites/default/files/kyoto-2.jpg',
+  ]);
 
   const japaneseEvent = eventExtractors[source.slug](
     detailHtml

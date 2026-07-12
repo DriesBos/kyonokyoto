@@ -29,6 +29,7 @@ type AdvancedMarkerConstructor = new (options: {
   position: { lat: number; lng: number };
   title: string;
   content: HTMLElement;
+  anchorLeft?: string;
   gmpClickable?: boolean;
 }) => AdvancedMarkerInstance;
 
@@ -460,6 +461,7 @@ const initMap = async (element: Element) => {
         position: { lat: source.lat, lng: source.lng },
         title: source.name,
         content,
+        anchorLeft: '-0.625rem',
         gmpClickable: true,
       });
       marker.zIndex = 0;
