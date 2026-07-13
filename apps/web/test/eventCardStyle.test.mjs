@@ -28,3 +28,15 @@ test('event card exposes normalized dates as semantic time elements', async () =
   assert.match(component, /<time datetime=\{dateParts\.endDate\}>/);
   assert.match(component, /formatEventDateParts\(event\.start_date, event\.end_date/);
 });
+
+test('event card uses end-only date copy only for ongoing events', async () => {
+  const component = await readFile(componentPath, 'utf8');
+
+  assert.match(component, /event\.timing === 'ongoing'/);
+  assert.match(component, /event\.is_all_day && \/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\//);
+  assert.match(
+    component,
+    /formatOngoingEventEnd\([\s\S]*safeCalendarEndDate \?\? event\.end_date,[\s\S]*uiText\[locale\]\.ongoing,[\s\S]*locale/,
+  );
+  assert.match(component, /<time datetime=\{ongoingEnd\.date\}>\{ongoingEnd\.text\}<\/time>/);
+});

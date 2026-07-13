@@ -3,7 +3,12 @@ import GeneralButton from './GeneralButton.astro';
 import YouTubeEmbed from './YouTubeEmbed.astro';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
-import { calendarDetailsFor, calendarLocationFor, formatEventDateParts } from '../lib/calendar';
+import {
+  calendarDetailsFor,
+  calendarLocationFor,
+  formatEventDateParts,
+  formatOngoingEventEnd,
+} from '../lib/calendar';
 
 type EventRow = {
   id: string;
@@ -79,6 +84,14 @@ const calendarDetails = calendarDetailsFor(event);
 const calendarLocation = calendarLocationFor(event);
 const showInstitutionMeta = event.timing !== 'permanent';
 const dateParts = formatEventDateParts(event.start_date, event.end_date, event.date_text, locale);
+const safeCalendarEndDate =
+  event.is_all_day && /^\d{4}-\d{2}-\d{2}$/.test(event.calendar_ends_at ?? '')
+    ? event.calendar_ends_at
+    : null;
+const ongoingEnd =
+  event.timing === 'ongoing'
+    ? formatOngoingEventEnd(safeCalendarEndDate ?? event.end_date, uiText[locale].ongoing, locale)
+    : null;
 const cardDetailsId = `event-card-details-${event.id}`;
 const cardTitleId = `event-card-title-${event.id}`;
 ---
@@ -134,7 +147,13 @@ const cardTitleId = `event-card-title-${event.id}`;
       <div class="event-card__body__meta">
         <span>
           {
-            dateParts.startDate ? (
+            ongoingEnd ? (
+              ongoingEnd.date ? (
+                <time datetime={ongoingEnd.date}>{ongoingEnd.text}</time>
+              ) : (
+                ongoingEnd.text
+              )
+            ) : dateParts.startDate ? (
               <>
                 <time datetime={dateParts.startDate}>{dateParts.startText}</time>
                 {dateParts.endDate ? (

@@ -406,7 +406,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Official Japanese annual schedule is authoritative. Treat every `.exhibition-item` as an event, infer omitted years from the schedule heading, and keep only ongoing/upcoming date ranges. Some upcoming cards have no detail link.",
-      "beta": true,
+      "beta": false,
       "locales": {
         "ja": {
           "start_urls": ["https://www.artm.pref.hyogo.jp/exhibition/"],
@@ -519,7 +519,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition"],
       "notes": "Official exhibition page includes current, upcoming, and past sections.",
-      "beta": true,
+      "beta": false,
       "locales": {
         "ja": {
           "start_urls": ["https://newpureplus.com/exhibition"],
@@ -625,7 +625,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/"],
       "notes": "The `next-exhibition` archive is the authoritative current/upcoming list. Detail pages place the featured image first, then title/date, with description in the lower entry-content block.",
-      "beta": true,
+      "beta": false,
       "selectors": {
         "listing_links": "main .entry-title a",
         "title": ".detail_txt .entry-title",
@@ -796,7 +796,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Current and future status pages are authoritative and link to exhibition detail pages. Details expose title, date, description, then a gallery whose anchor hrefs are the full-resolution images.",
-      "beta": true,
+      "beta": false,
       "selectors": {
         "listing_links": ".p-archive-event-item__container",
         "title": ".p-event-header__title",
@@ -1089,7 +1089,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blog/", "/"],
       "notes": "Official site and linked blog entries list current exhibition details; supplied entry URL sits under /blog/.",
-      "beta": true,
+      "beta": false,
       "locales": {
         "en": {
           "start_urls": ["https://www.suchsize.com/"],

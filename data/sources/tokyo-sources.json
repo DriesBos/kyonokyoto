@@ -273,8 +273,14 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Listing cards are client-rendered; force render and use card selectors to avoid template links.",
+      "skip_og_image": true,
+      "measure_image_dimensions": true,
+      "qa": {
+        "image_rules": "Use only the exhibition-entry main image. Ignore Open Graph cards and probe final candidates so UI controls and social icons cannot become event media."
+      },
       "selectors": {
-        "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper"
+        "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper",
+        "images": ".l-exhibitions-entry-main__image"
       },
       "locales": {
         "ja": {
@@ -317,6 +323,14 @@
         "/english/event/"
       ],
       "notes": "Purple art marker from Google My Maps.",
+      "skip_og_image": true,
+      "measure_image_dimensions": true,
+      "qa": {
+        "image_rules": "Use the detail-page hero and marked editorial images only. Ignore Open Graph cards and probe final candidates so shared arrows and UI graphics cannot become event media."
+      },
+      "selectors": {
+        "images": [".main_v", ".mt-image-none"]
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.nact.jp/exhibition_and_event/"],
@@ -369,7 +383,7 @@
       "crawl_hints": {
         "max_detail_pages": 10
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "tokyo-metropolitan-art-museum",
@@ -406,7 +420,7 @@
       "crawl_hints": {
         "max_detail_pages": 12
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "tokyo-opera-city-art-gallery",
@@ -511,7 +525,7 @@
       "crawl_hints": {
         "max_detail_pages": 8
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "yayoi-kusama-museum",
@@ -544,7 +558,7 @@
       "crawl_hints": {
         "max_detail_pages": 4
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "scai-the-bathhouse",
@@ -733,7 +747,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Re-enabled as beta source.",
-      "beta": true,
+      "beta": false,
       "capabilities": {
         "native_locales": ["en"],
         "machine_translate_missing_locales": true
@@ -800,7 +814,7 @@
       "crawl_hints": {
         "max_detail_pages": 8
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "university-art-museum-tokyo-geidai",
@@ -833,7 +847,7 @@
       "crawl_hints": {
         "max_detail_pages": 8
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "setagaya-art-museum",
@@ -922,7 +936,7 @@
       "crawl_hints": {
         "max_detail_pages": 8
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "japan-folk-crafts-museum",
@@ -983,7 +997,7 @@
         "skip_patterns": ["/artists/", "/news/", "/viewing-room/"],
         "max_detail_pages": 8
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "nanzuka",
@@ -1166,7 +1180,7 @@
           "description": ".ex-description",
           "images": "div.artwork img[src*=\"/wp-content/uploads/\"]"
         },
-        "image_rules": "Use ordered artwork images from div.artwork; ignore past-listing and layout images."
+        "image_rules": "Use ordered artwork images from div.artwork; ignore past-listing and layout images. Publisher upload URLs require a site Referer when displayed off-site, so the web app rewrites only this exact upload host/path through its bounded image proxy."
       },
       "beta": true,
       "selectors": {
@@ -1276,7 +1290,7 @@
         },
         "image_rules": "Use mobile gallery square, usually second visual; skip desktop hero and related-event square thumbnails."
       },
-      "beta": true,
+      "beta": false,
       "selectors": {
         "images": ".e-gallery_fv_thumbnail_mobile img.image-square"
       },

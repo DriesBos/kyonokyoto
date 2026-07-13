@@ -143,6 +143,23 @@ export const formatEventDateParts = (
   };
 };
 
+export const formatOngoingEventEnd = (
+  end: string | null,
+  fallback: string,
+  locale: 'en' | 'ja' = 'en',
+) => {
+  const endDate = normalizeDateOnly(end);
+  if (!endDate) return { date: null, text: fallback };
+
+  if (locale === 'ja') {
+    return { date: endDate, text: `${formatDateOnly(endDate, locale)}まで` };
+  }
+
+  const year = endDate.slice(2, 4);
+  const dayMonth = formatDateOnly(endDate, locale, { month: true, day: true });
+  return { date: endDate, text: `UNTIL ${dayMonth.toUpperCase()} '${year}` };
+};
+
 export const formatEventDateRange = (
   start: string | null,
   end: string | null,

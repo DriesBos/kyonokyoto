@@ -108,6 +108,46 @@ test('named crawler scripts use registered source slugs', async () => {
   );
 });
 
+test('approved Osaka and Tokyo source allowlist is public without changing nearby beta sources', async () => {
+  const osakaSources = await loadSourcesConfig({ city: 'osaka' });
+  const tokyoSources = await loadSourcesConfig({ city: 'tokyo' });
+  const sourceBySlug = new Map(
+    [...osakaSources, ...tokyoSources].map((source) => [source.slug, source]),
+  );
+  const approvedSlugs = [
+    'suchsize',
+    'tezukayama-gallery',
+    'hitoto',
+    'new-pure-plus',
+    'hyogo-prefectural-museum-of-art',
+    'sumida-hokusai-museum',
+    'yayoi-kusama-museum',
+    'what-museum',
+    'university-art-museum-tokyo-geidai',
+    'yamatane-museum-of-art',
+    'national-museum-of-modern-art-tokyo',
+    'tokyo-node',
+    'tokyo-metropolitan-art-museum',
+    'take-ninagawa',
+    'perrotin-tokyo',
+  ];
+  const unchangedBetaSlugs = [
+    'i-gallery-osaka',
+    'itsuo-art-museum',
+    'gallery-nomart',
+    'tokyo-opera-city-art-gallery',
+    'taro-okamoto-memorial-museum',
+    'gyre-gallery',
+  ];
+
+  for (const slug of approvedSlugs) {
+    assert.equal(sourceBySlug.get(slug)?.beta, false, `${slug} should be public`);
+  }
+  for (const slug of unchangedBetaSlugs) {
+    assert.equal(sourceBySlug.get(slug)?.beta, true, `${slug} should remain beta`);
+  }
+});
+
 test('semantic dedupe preserves Japanese identity text', () => {
   const first = {
     source_url: 'https://museum.example/exhibitions/ja/',
@@ -2465,6 +2505,79 @@ test('Mori Art Museum source config uses content-main copy and images', async ()
     event.primary_image_url,
     'https://www.mori.art.museum/files/exhibitions/2025/10/23/work-01.jpg',
   );
+});
+
+test('Museum of Contemporary Art Tokyo keeps only exhibition-entry art', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'museum-of-contemporary-art-tokyo');
+  const artUrl = 'https://www.mot-art-museum.jp/assets/exhibitions/b077-eric-carle.jpg';
+  const detailHtml = `
+    <meta property="og:image" content="https://www.mot-art-museum.jp/_assets/images/head/og-image@2x.png">
+    <h1>Eric Carle Exhibition</h1>
+    <p>July 1, 2026 - September 30, 2026</p>
+    <p>Exhibition description long enough for the generic extractor to keep as useful event copy.</p>
+    <div class="l-exhibitions-entry-main__image">
+      <picture><source srcset="${artUrl}"><img src="${artUrl}" alt="Eric Carle artwork"></picture>
+    </div>
+    <button><img src="https://www.mot-art-museum.jp/_assets/images/ico-sp-open-arrow@2x.png" alt="open"></button>
+    <a href="https://x.com/"><img src="https://www.mot-art-museum.jp/_assets/images/ico-x.png" alt="X"></a>
+  `;
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.mot-art-museum.jp/en/exhibitions/eric-carle/',
+  );
+  const probedUrls = [];
+  const normalized = await normalizeEventImagesForSource(event, source, {
+    fetchImageDimensionsFn: async (url) => {
+      probedUrls.push(url);
+      return { width: 1600, height: 1200 };
+    },
+  });
+
+  assert.equal(source?.selectors?.images, '.l-exhibitions-entry-main__image');
+  assert.equal(source?.skip_og_image, true);
+  assert.equal(source?.measure_image_dimensions, true);
+  assert.deepEqual(event.image_urls, [artUrl]);
+  assert.deepEqual(normalized.image_urls, [artUrl]);
+  assert.deepEqual(probedUrls, [artUrl]);
+});
+
+test('National Art Center Tokyo keeps hero and editorial art outside shared arrow UI', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'national-art-center-tokyo');
+  const heroUrl = 'https://www.nact.jp/media/_louvre26_Banner_yoko_001.jpg';
+  const editorialUrl = 'https://www.nact.jp/media/louvre-installation-01.jpg';
+  const detailHtml = `
+    <meta property="og:image" content="https://www.nact.jp/common/img/ogp.jpg">
+    <h1>Louvre Museum Exhibition</h1>
+    <p>September 9, 2026 - December 13, 2026</p>
+    <p>Exhibition description long enough for the generic extractor to keep as useful event copy.</p>
+    <div class="main_v"><div><div class="main"><img src="${heroUrl}" alt="Louvre exhibition"></div></div></div>
+    <img class="mt-image-none" src="${editorialUrl}" alt="Installation view">
+    <a href="/english/exhibition_and_event/"><img src="https://www.nact.jp/common/img/common/arrow01.svg" alt="Back"></a>
+  `;
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.nact.jp/english/exhibition_special/2026/louvre2026/',
+  );
+  const probedUrls = [];
+  const normalized = await normalizeEventImagesForSource(event, source, {
+    fetchImageDimensionsFn: async (url) => {
+      probedUrls.push(url);
+      return { width: 1600, height: 900 };
+    },
+  });
+
+  assert.deepEqual(source?.selectors?.images, ['.main_v', '.mt-image-none']);
+  assert.equal(source?.skip_og_image, true);
+  assert.equal(source?.measure_image_dimensions, true);
+  assert.deepEqual(event.image_urls, [heroUrl, editorialUrl]);
+  assert.deepEqual(normalized.image_urls, [heroUrl, editorialUrl]);
+  assert.deepEqual(probedUrls, [heroUrl, editorialUrl]);
 });
 
 test('Yutaka Kikutake Gallery source config keeps current/upcoming and artwork images', async () => {

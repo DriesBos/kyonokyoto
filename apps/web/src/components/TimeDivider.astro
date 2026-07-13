@@ -112,6 +112,7 @@ const tracks = [
   const trackSelector = '[data-time-divider-track]';
   const scrollScrubSeconds = 0.33;
   const layoutSettledFrameCount = 3;
+  const layoutRefreshDelayMs = 80;
   let dividerInstanceCount = 0;
   let scrollTriggerRefreshFrame = 0;
 
@@ -163,8 +164,10 @@ const tracks = [
     buildFrame = 0;
     buildToken = 0;
     context: gsap.Context | null = null;
+    activeScrollRoot: HTMLElement | null = null;
+    eventsSection: HTMLElement | null = null;
     instanceId = '';
-    refreshFrame = 0;
+    refreshTimer = 0;
     releaseFontReady: (() => void) | null = null;
     resizeObserver: ResizeObserver | null = null;
     lastMeasuredWidth: number | null = null;
@@ -186,6 +189,11 @@ const tracks = [
       this.scheduleBuild();
     };
 
+    handleMediaSettled = (event: Event) => {
+      if (!(event.target instanceof HTMLImageElement)) return;
+      this.scheduleRefresh();
+    };
+
     connectedCallback() {
       if (!this.instanceId) {
         this.instanceId = nextDividerInstanceId();
@@ -195,6 +203,10 @@ const tracks = [
       document.addEventListener('event-filter:updated', this.handleFilterUpdate);
       window.addEventListener('resize', this.handleResize);
       window.addEventListener('load', this.handleLoad, { once: true });
+      const eventsSection = this.closest('[data-events-section]');
+      this.eventsSection = eventsSection instanceof HTMLElement ? eventsSection : null;
+      this.eventsSection?.addEventListener('load', this.handleMediaSettled, true);
+      this.eventsSection?.addEventListener('error', this.handleMediaSettled, true);
 
       const fontsReady = document.fonts?.ready;
       if (fontsReady) {
@@ -218,6 +230,9 @@ const tracks = [
       document.removeEventListener('event-filter:updated', this.handleFilterUpdate);
       window.removeEventListener('resize', this.handleResize);
       window.removeEventListener('load', this.handleLoad);
+      this.eventsSection?.removeEventListener('load', this.handleMediaSettled, true);
+      this.eventsSection?.removeEventListener('error', this.handleMediaSettled, true);
+      this.eventsSection = null;
       this.releaseFontReady?.();
       this.releaseFontReady = null;
 
@@ -226,9 +241,9 @@ const tracks = [
         this.buildFrame = 0;
       }
 
-      if (this.refreshFrame) {
-        window.cancelAnimationFrame(this.refreshFrame);
-        this.refreshFrame = 0;
+      if (this.refreshTimer) {
+        window.clearTimeout(this.refreshTimer);
+        this.refreshTimer = 0;
       }
 
       this.cleanupAnimations();
@@ -239,6 +254,7 @@ const tracks = [
       this.resizeObserver = null;
       this.context?.revert();
       this.context = null;
+      this.activeScrollRoot = null;
 
       if (!this.instanceId) return;
 
@@ -250,18 +266,25 @@ const tracks = [
     }
 
     scheduleRefresh() {
-      if (this.refreshFrame) {
-        window.cancelAnimationFrame(this.refreshFrame);
+      if (this.refreshTimer) {
+        window.clearTimeout(this.refreshTimer);
       }
 
-      this.refreshFrame = window.requestAnimationFrame(() => {
-        this.refreshFrame = 0;
-        if (!this.context) return;
-        ScrollTrigger.refresh();
-      });
+      this.refreshTimer = window.setTimeout(() => {
+        this.refreshTimer = 0;
+        if (!this.context || !this.isConnected || !this.isRenderable()) return;
+
+        const nextScrollRoot = this.getScrollRoot();
+        if (nextScrollRoot !== this.activeScrollRoot) {
+          this.scheduleBuild();
+          return;
+        }
+
+        scheduleScrollTriggerRefresh();
+      }, layoutRefreshDelayMs);
     }
 
-    observeLayout(scrollRoot: HTMLElement | null) {
+    observeLayout() {
       this.resizeObserver?.disconnect();
       this.resizeObserver = null;
 
@@ -272,8 +295,12 @@ const tracks = [
       });
       this.resizeObserver.observe(this);
 
-      if (scrollRoot) {
-        this.resizeObserver.observe(scrollRoot);
+      const layoutRoot = this.eventsSection;
+      if (layoutRoot) {
+        this.resizeObserver.observe(layoutRoot);
+        Array.from(layoutRoot.children).forEach((child) => {
+          if (child instanceof HTMLElement) this.resizeObserver?.observe(child);
+        });
       }
     }
 
@@ -283,6 +310,11 @@ const tracks = [
 
       if (this.buildFrame) {
         window.cancelAnimationFrame(this.buildFrame);
+      }
+
+      if (this.refreshTimer) {
+        window.clearTimeout(this.refreshTimer);
+        this.refreshTimer = 0;
       }
 
       this.buildFrame = window.requestAnimationFrame(() => {
@@ -315,6 +347,7 @@ const tracks = [
         if (!tracks.length) return;
 
         const scrollRoot = this.getScrollRoot();
+        this.activeScrollRoot = scrollRoot;
         const scrollTriggerConfig: ScrollTrigger.Vars = {
           id: this.instanceId,
           trigger: this,
@@ -338,7 +371,7 @@ const tracks = [
           timeline.fromTo(track, { xPercent: startX }, { xPercent: endX, duration: 1 }, 0);
         });
 
-        this.observeLayout(scrollRoot);
+        this.observeLayout();
         scheduleScrollTriggerRefresh();
         this.lastMeasuredWidth = window.innerWidth;
       }, this);

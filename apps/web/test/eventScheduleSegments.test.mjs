@@ -123,13 +123,13 @@ test('split phases classify gap as upcoming instead of ongoing', () => {
 test('past and future occurrences window from next relevant date', () => {
   const event = {
     schedule_type: 'occurrence_set',
-    schedule_segments: [allDay('2026-01-10'), allDay('2026-12-01')],
+    schedule_segments: [allDay('2026-01-10'), allDay('2027-05-28')],
   };
 
   assert.equal(classifyEventTiming(event, '2026-05-27'), 'upcoming');
-  assert.equal(nextRelevantScheduleStartDateOnly(event, '2026-05-27'), '2026-12-01');
+  assert.equal(nextRelevantScheduleStartDateOnly(event, '2026-05-27'), '2027-05-28');
   assert.equal(isEventWithinDisplayWindow(event, '2026-05-27'), false);
-  assert.equal(isEventWithinDisplayWindow(event, '2026-06-01'), true);
+  assert.equal(isEventWithinDisplayWindow(event, '2026-05-28'), true);
 });
 
 test('open-ended segment stays upcoming before start and ongoing after start', () => {
