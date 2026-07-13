@@ -41,6 +41,10 @@ Crawler extracts event-specific title, dates, description, images, and source UR
 
 Locale-specific event rows only localize title and description. Dates, venue/source names, addresses, links, categories, coordinates, and media remain shared on the canonical event.
 
+## Required Event Gate
+
+Before persistence, each event needs a valid title, verified date, valid description, and at least one accepted image. Missing or rejected description skips the event as `missing valid description`; it is not stored as an empty optional field. In automatic render mode, missing required fields can trigger one Crawl4AI detail retry before the gate runs.
+
 ## `venue_locations`
 
 Optional. Use when one source has events at multiple venues or rooms and the map marker needs event-level coordinates.
@@ -150,6 +154,8 @@ Optional. Set `true` when a source's Open Graph image is a flyer, site card, log
 ```
 
 When enabled, generic extraction ignores `<meta property="og:image">` and uses real page images or configured `selectors.images` instead. If no usable image remains, the event is skipped by the normal missing-image rule.
+
+This control is per source. It does not disable configured or source-specific images. All image origins cross the same final media boundary before persistence: URL normalization, unsafe/small-candidate rejection, deduplication, optional dimension probing, and the five-image cap.
 
 ## `crawl_hints`
 

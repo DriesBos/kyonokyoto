@@ -8,6 +8,12 @@ export function buildCrawlQaReport({
   skippedEvents = [],
   diagnostics = {},
 }) {
+  const skipReasons = Object.fromEntries(
+    [...new Set(skippedEvents.map((event) => event?.reason).filter(Boolean))].map((reason) => [
+      reason,
+      skippedEvents.filter((event) => event?.reason === reason).length,
+    ]),
+  );
   const missingTranslations = Object.fromEntries(
     supportedLocales.map((locale) => [
       locale,
@@ -28,14 +34,18 @@ export function buildCrawlQaReport({
       retries: diagnostics.retry_count ?? 0,
       bot_challenges: diagnostics.bot_challenge_count ?? 0,
       js_shells: diagnostics.js_shell_count ?? 0,
+      detail_limit_hits: diagnostics.detail_limit_hit_count ?? 0,
+      detail_page_cache_hits: diagnostics.detail_page_cache_hit_count ?? 0,
     },
     skips: {
       missing_image: diagnostics.missing_image_count ?? 0,
       missing_date: diagnostics.skipped_missing_date_count ?? 0,
+      missing_description: diagnostics.skipped_missing_description_count ?? 0,
       invalid_title: diagnostics.skipped_invalid_title_count ?? 0,
       past: diagnostics.skipped_past_count ?? 0,
       old: diagnostics.skipped_old_count ?? 0,
       other: diagnostics.skipped_other_count ?? 0,
+      reasons: skipReasons,
     },
     titles: {
       render_retries: diagnostics.title_render_retry_count ?? 0,

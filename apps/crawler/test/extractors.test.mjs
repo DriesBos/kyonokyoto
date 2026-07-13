@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import {
   assessEventTitle,
   archiveStaleEvents,
+  assertScheduleSegmentStorage,
   assertSafeRemoteUrl,
   assignEventCoordinates,
   buildRendererEnv,
@@ -13,6 +14,7 @@ import {
   classifySourceOutcome,
   crawlRunStatusForOutcome,
   createCrawlDiagnostics,
+  decodeHtmlResponseBytes,
   buildEventTranslationPayload,
   buildMachineTranslatedEvent,
   detailUrlExtractors,
@@ -21,6 +23,7 @@ import {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractMeta,
   extractBestDateText,
   extractSourceSpecificDetailUrls,
   fetchRemote,
@@ -28,10 +31,15 @@ import {
   extractRakuMuseumEvent,
   extractSenOkuEvent,
   getSourceSpecificSkipReason,
+  getSourceTruthSkipReason,
   getRetryDelayMs,
+  getInvalidRequiredEventFields,
+  getSourceDetailLimit,
   hasExtractedImage,
+  hasValidEventDescription,
   hasValidEventTitle,
   hasVerifiedEventDate,
+  detailPageCacheKey,
   isPublicIpAddress,
   isUrlAllowedByRobotsText,
   isUsableNativeLocaleUrl,
@@ -42,11 +50,14 @@ import {
   parseGenericDateRange,
   parseImageDimensionsFromBytes,
   parseKyoceraDateRange,
+  publishEvent,
   recordFetchedPage,
+  recordSkippedEvent,
   reconcileUnavailableTargetTranslation,
   recoverStaleCrawlRuns,
   resolveRendererNavigationUrl,
   resolveEventDescription,
+  shouldRetryDetailWithCrawl4Ai,
   runJsonCommand,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
@@ -58,6 +69,7 @@ import {
   translateTextFields,
   upsertEvent,
   withSourceLocaleConfig,
+  withSourceSpecificDescriptionOrigin,
 } from '../src/run-once.mjs';
 import { buildCrawlQaReport } from '../src/crawl-qa.mjs';
 import {
@@ -167,6 +179,16 @@ test('crawl outcome gates stale archival and persisted status', () => {
       diagnostics: { bot_challenge_count: 1 },
     }),
     false,
+  );
+});
+
+test('detail crawl limits are globally capped and fragment URLs share cache entries', () => {
+  assert.equal(getSourceDetailLimit({}, 8, 50), 8);
+  assert.equal(getSourceDetailLimit({ crawl_hints: { max_detail_pages: 12 } }, 8, 50), 12);
+  assert.equal(getSourceDetailLimit({ crawl_hints: { max_detail_pages: 200 } }, 8, 50), 50);
+  assert.equal(
+    detailPageCacheKey('https://example.test/exhibition?id=1#schedule'),
+    detailPageCacheKey('https://example.test/exhibition?id=1#access'),
   );
 });
 
@@ -473,6 +495,51 @@ test('event upsert fails fast on schema drift', async () => {
   assert.equal(calls, 1);
 });
 
+test('event persistence stages draft before schedule write and publishes explicitly', async () => {
+  let eventPayload;
+  const savedEvent = await upsertEvent(
+    {
+      SUPABASE_URL: 'https://database.example',
+      SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+    },
+    'source-id',
+    'raw-page-id',
+    {
+      title: 'Event title',
+      source_url: 'https://museum.example/event',
+      schedule_segments: [{ is_all_day: true, start_date: '2026-07-13' }],
+    },
+    'url:https://museum.example/event',
+    async (_url, options) => {
+      eventPayload = JSON.parse(options.body)[0];
+      return new Response(JSON.stringify([{ id: 'event-id', title: 'Event title' }]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+  );
+
+  assert.equal(savedEvent.id, 'event-id');
+  assert.equal(eventPayload.status, 'draft');
+  assert.equal('schedule_segments' in eventPayload, false);
+
+  const requests = [];
+  const request = async (input) => {
+    requests.push(input);
+    return [{ id: 'event-id', status: 'published' }];
+  };
+  await assertScheduleSegmentStorage({}, request);
+  await publishEvent({}, 'event-id', request);
+
+  assert.equal(requests[0].path, 'event_schedule_segments?select=id&limit=0');
+  assert.deepEqual(requests[1], {
+    env: {},
+    path: 'events?id=eq.event-id',
+    method: 'PATCH',
+    body: { status: 'published' },
+  });
+});
+
 test('translation helper calls Google client with source and target locales', async () => {
   const calls = [];
   const fields = await translateTextFields(
@@ -733,6 +800,39 @@ test('event coordinates stay null when source has no usable location', () => {
   assert.equal(event.lng, null);
 });
 
+test('source truth flags explicit scraped venue city contradictions before overwrite', () => {
+  const mismatched = assignEventCoordinates(
+    {
+      title: 'Tokyo in title must not affect city checks',
+      venue_name: 'Nagoya Arts Center',
+      address_text: 'Nagoya, Aichi',
+      directions_query: 'Nagoya Arts Center',
+    },
+    {
+      city: 'tokyo',
+      name: 'Tokyo Gallery',
+      taxonomy: testTaxonomy(['gallery']),
+      address_text: 'Tokyo, Japan',
+    },
+  );
+  const titleOnly = assignEventCoordinates(
+    { title: 'Nagoya and Osaka', venue_name: 'Tokyo Gallery', address_text: 'Tokyo, Japan' },
+    {
+      city: 'tokyo',
+      name: 'Tokyo Gallery',
+      taxonomy: testTaxonomy(['gallery']),
+      address_text: 'Tokyo, Japan',
+    },
+  );
+
+  assert.deepEqual(mismatched._source_truth_warnings, ['venue_city_mismatch']);
+  assert.equal(getSourceTruthSkipReason(mismatched), 'venue_city_mismatch');
+  assert.equal(getSourceTruthSkipReason(titleOnly), null);
+  const diagnostics = createCrawlDiagnostics();
+  recordSkippedEvent(diagnostics, getSourceTruthSkipReason(mismatched));
+  assert.equal(diagnostics.skipped_other_count, 1);
+});
+
 test('Kyocera date parser reads Japanese date ranges', () => {
   assert.deepEqual(parseKyoceraDateRange('2026年9月19日-2026年12月20日'), {
     startDate: '2026-09-19',
@@ -850,6 +950,68 @@ test('generic title extraction prefers structured Event names', () => {
   assert.equal(event.title, 'Structured Show');
   assert.equal(event._title_origin, 'json_ld');
   assert.equal(hasValidEventTitle(event), true);
+});
+
+test('generic title prefers scoped heading then page-matched JSON-LD over unrelated events', () => {
+  const detailUrl = 'https://example.test/exhibitions/right-show/';
+  const structured = `
+    <script type="application/ld+json">
+      {
+        "@type": "WebPage",
+        "url": "${detailUrl}",
+        "about": {"@type":"Event","name":"Unrelated nested event"},
+        "mainEntity": {"@type":"ExhibitionEvent","name":"Right Structured Show"}
+      }
+    </script>
+    <main><h1>Exhibitions</h1></main>
+    <meta property="og:title" content="Open Graph fallback">
+  `;
+  const matched = extractGenericEvent(
+    structured,
+    { name: 'Example Gallery', taxonomy: testTaxonomy(['gallery']) },
+    detailUrl,
+  );
+  const scoped = extractGenericEvent(
+    structured.replace('<h1>Exhibitions</h1>', '<h1>Authoritative Scoped Heading</h1>'),
+    { name: 'Example Gallery', taxonomy: testTaxonomy(['gallery']) },
+    detailUrl,
+  );
+
+  assert.equal(matched.title, 'Right Structured Show');
+  assert.equal(matched._title_origin, 'json_ld');
+  assert.equal(scoped.title, 'Authoritative Scoped Heading');
+  assert.equal(scoped._title_origin, 'scoped_heading');
+});
+
+test('meta extraction accepts single quotes and reversed attributes', () => {
+  const html = `
+    <meta content='Reversed title' property='og:title'>
+    <meta content='Useful description' name='description'>
+  `;
+
+  assert.equal(extractMeta(html, 'og:title'), 'Reversed title');
+  assert.equal(extractMeta(html, 'description'), 'Useful description');
+});
+
+test('static HTML byte decoding honors legacy Japanese HTTP and meta charsets', () => {
+  const japaneseBytes = Buffer.from([
+    0x83, 0x65, 0x83, 0x58, 0x83, 0x67, 0x93, 0x57, 0x97, 0x97, 0x89, 0xef,
+  ]);
+  const metaEncoded = Buffer.concat([
+    Buffer.from('<meta charset="Shift_JIS"><title>'),
+    japaneseBytes,
+    Buffer.from('</title>'),
+  ]);
+
+  assert.match(decodeHtmlResponseBytes(metaEncoded), /テスト展覧会/);
+  assert.equal(
+    decodeHtmlResponseBytes(japaneseBytes, 'text/html; charset=windows-31j'),
+    'テスト展覧会',
+  );
+  assert.equal(
+    decodeHtmlResponseBytes(Buffer.from('京都'), 'text/html; charset=unsupported-example'),
+    '京都',
+  );
 });
 
 test('source crawl hints preserve focused Crawl4AI wait and scrolling controls', () => {
@@ -1430,7 +1592,7 @@ test('SCAI event extraction reads title dates and open-ended current shows', () 
   ]);
   assert.equal(openEndedEvent.title, '#46 Daniel Buren, Yuji Takeoka, Reijiro Wada');
   assert.equal(openEndedEvent.start_date, '2026-04-09');
-  assert.equal(openEndedEvent.end_date, '2027-04-09');
+  assert.equal(openEndedEvent.end_date, null);
 });
 
 test('Kyocera detail extraction finds Japanese default URLs', () => {
@@ -1606,6 +1768,7 @@ test('Kyoto National Museum extraction drops the first flyer image', () => {
     event.primary_image_url,
     'https://www.kyohaku.go.jp/images/exhibitions/install-view.jpg',
   );
+  assert.equal(event.is_all_day, true);
 });
 
 test('Kyocera event extraction keeps images inside main post content only', () => {
@@ -1847,6 +2010,59 @@ test('description resolver recovers prose and rejects structured-field copy', ()
   assert.equal(retained._description_valid, true);
 });
 
+test('source-specific description remains authoritative over generic page prose', () => {
+  const source = { name: 'Example Gallery' };
+  const event = withSourceSpecificDescriptionOrigin({
+    title: 'Quiet Forms',
+    description:
+      'Quiet Forms presents a focused selection chosen explicitly by the source extractor.',
+    _description_origin: 'page_body',
+  });
+  const resolved = resolveEventDescription(event, source, {
+    html: '<main><p>Quiet Forms presents competing generic prose found elsewhere on the page.</p></main>',
+  });
+
+  assert.equal(
+    resolved.description,
+    'Quiet Forms presents a focused selection chosen explicitly by the source extractor.',
+  );
+  assert.equal(resolved._description_origin, 'source_specific_extractor');
+  assert.equal(hasValidEventDescription(resolved), true);
+});
+
+test('required-field retry includes invalid title date description and image', () => {
+  const validEvent = {
+    title: 'Quiet Forms',
+    start_date: '2026-04-12',
+    date_precision: 'date',
+    description: 'Quiet Forms presents recent sculpture and works on paper in Kyoto.',
+    _description_valid: true,
+    primary_image_url: 'https://example.test/images/quiet-forms.jpg',
+  };
+  const cases = [
+    ['title', { ...validEvent, title: 'Exhibition', _title_valid: false }],
+    ['date', { ...validEvent, start_date: null }],
+    ['description', { ...validEvent, description: null, _description_valid: false }],
+    ['image', { ...validEvent, primary_image_url: null, image_urls: [] }],
+    [
+      'image',
+      {
+        ...validEvent,
+        primary_image_url: 'https://example.test/images/lqip-placeholder.jpg',
+      },
+    ],
+  ];
+
+  assert.deepEqual(getInvalidRequiredEventFields(validEvent), []);
+  assert.equal(shouldRetryDetailWithCrawl4Ai(validEvent, 'auto', 'fetch'), false);
+  for (const [field, event] of cases) {
+    assert.ok(getInvalidRequiredEventFields(event).includes(field));
+    assert.equal(shouldRetryDetailWithCrawl4Ai(event, 'auto', 'fetch'), true);
+  }
+  assert.equal(shouldRetryDetailWithCrawl4Ai(cases[0][1], 'auto', 'crawl4ai'), false);
+  assert.equal(shouldRetryDetailWithCrawl4Ai(cases[0][1], 'never', 'fetch'), false);
+});
+
 test('generic event extraction ignores common site chrome images', () => {
   const source = {
     name: 'Oyamazaki Villa Museum',
@@ -1873,30 +2089,22 @@ test('generic event extraction ignores common site chrome images', () => {
   assert.equal(hasExtractedImage(event), false);
 });
 
-test('generic event extraction can ignore source og images', () => {
+test('generic event extraction honors skip_og_image without configured media', () => {
   const source = {
     slug: 'artro',
     name: 'Artro',
     taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
     skip_og_image: true,
-    selectors: {
-      images: 'main.main img',
-    },
   };
   const event = extractGenericEvent(
     `
       <meta property="og:image" content="https://artro.jp/uploads/site-card.jpg">
       <article>
-        <img src="/uploads/sidebar-card.jpg" width="900" height="600" alt="">
-      </article>
-      <article>
         <h1>Gallery-room exhibition</h1>
         <time>April 12 - May 31, 2026</time>
         <p>Useful exhibition copy.</p>
-      </article>
-      <main class="main">
         <img src="/uploads/install-view.jpg" width="900" height="600" alt="">
-      </main>
+      </article>
     `,
     source,
     'https://artro.jp/exhibition/gallery-room/',
@@ -1904,6 +2112,39 @@ test('generic event extraction can ignore source og images', () => {
 
   assert.deepEqual(event.image_urls, ['https://artro.jp/uploads/install-view.jpg']);
   assert.equal(event.primary_image_url, 'https://artro.jp/uploads/install-view.jpg');
+});
+
+test('configured media filters UI and LQIP URLs and keeps largest srcset candidate', () => {
+  const event = extractGenericEvent(
+    `
+      <main class="event-media">
+        <img src="/assets/logo.png" width="600" height="200">
+        <img src="https://static.wixstatic.com/media/w_40,h_40,blur_2/preview.jpg">
+        <img src="/images/art-400.jpg" srcset="/images/art-400.jpg 400w, /images/art-1600.jpg 1600w">
+      </main>
+    `,
+    {
+      name: 'Example Gallery',
+      taxonomy: testTaxonomy(['gallery'], [], ['exhibition']),
+      selectors: { images: '.event-media img' },
+    },
+    'https://example.test/exhibitions/example/',
+  );
+
+  assert.deepEqual(event.image_urls, ['https://example.test/images/art-1600.jpg']);
+});
+
+test('generic inline media outranks Open Graph fallback', () => {
+  const event = extractGenericEvent(
+    `
+      <meta property="og:image" content="/images/event-card.jpg">
+      <article><img src="/images/installation.jpg" width="800" height="600"></article>
+    `,
+    { name: 'Example Gallery', taxonomy: testTaxonomy(['gallery'], [], ['exhibition']) },
+    'https://example.test/exhibitions/example/',
+  );
+
+  assert.equal(event.primary_image_url, 'https://example.test/images/installation.jpg');
 });
 
 test('Artro listing extraction follows exhibition card links', () => {
@@ -2594,6 +2835,21 @@ test('source config validator rejects unregistered filter categories', () => {
   );
 });
 
+test('source config validator requires boolean media controls', () => {
+  assert.deepEqual(
+    validateSourceConfig({
+      slug: 'bad-media-control',
+      name: 'Bad Media Control',
+      taxonomy: testTaxonomy(),
+      lat: 35,
+      lng: 135,
+      capabilities: { native_locales: ['ja'] },
+      skip_og_image: 'yes',
+    }),
+    ['bad-media-control: skip_og_image must be boolean'],
+  );
+});
+
 test('city source configs are valid crawl inputs', async () => {
   for (const city of ['osaka', 'tokyo']) {
     const sources = await loadSourcesConfig({ city });
@@ -3039,7 +3295,7 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
       sourceOutcome: 'source_ok',
       detailUrls: ['https://example.test/one', 'https://example.test/two'],
       savedEvents: [{ translations: ['ja', 'en'] }, { translations: ['ja'] }],
-      skippedEvents: [{ reason: 'missing image' }],
+      skippedEvents: [{ reason: 'missing image' }, { reason: 'missing valid description' }],
       diagnostics: {
         fetched_static_count: 2,
         fetched_crawl4ai_count: 1,
@@ -3048,6 +3304,7 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
         js_shell_count: 1,
         missing_image_count: 1,
         skipped_missing_date_count: 0,
+        skipped_missing_description_count: 1,
         skipped_past_count: 0,
         skipped_old_count: 0,
         skipped_other_count: 0,
@@ -3073,7 +3330,7 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
       outcome: 'source_ok',
       detail_urls_found: 2,
       events_saved: 2,
-      events_skipped: 1,
+      events_skipped: 2,
       missing_translations: { en: 1, ja: 0 },
       fetch: {
         static: 2,
@@ -3081,14 +3338,21 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
         retries: 1,
         bot_challenges: 0,
         js_shells: 1,
+        detail_limit_hits: 0,
+        detail_page_cache_hits: 0,
       },
       skips: {
         missing_image: 1,
         missing_date: 0,
+        missing_description: 1,
         invalid_title: 0,
         past: 0,
         old: 0,
         other: 0,
+        reasons: {
+          'missing image': 1,
+          'missing valid description': 1,
+        },
       },
       titles: {
         render_retries: 0,
@@ -3566,9 +3830,9 @@ test('image normalization caps stored images and probes offender source dimensio
     measure_image_dimensions: true,
   };
   const event = {
-    primary_image_url: 'https://example.test/icon.jpg',
+    primary_image_url: 'https://example.test/narrow.jpg',
     image_urls: [
-      'https://example.test/icon.jpg',
+      'https://example.test/narrow.jpg',
       'https://example.test/hero.jpg',
       'https://example.test/gallery-1.jpg',
       'https://example.test/gallery-2.jpg',
@@ -3579,7 +3843,7 @@ test('image normalization caps stored images and probes offender source dimensio
   const normalized = await normalizeEventImagesForSource(event, source, {
     diagnostics,
     fetchImageDimensionsFn: async (url) =>
-      url.includes('icon') ? { width: 320, height: 72 } : { width: 1200, height: 800 },
+      url.includes('narrow') ? { width: 320, height: 72 } : { width: 1200, height: 800 },
   });
 
   assert.deepEqual(normalized.image_urls, [
@@ -3591,6 +3855,50 @@ test('image normalization caps stored images and probes offender source dimensio
   assert.equal(normalized.primary_image_url, 'https://example.test/hero.jpg');
   assert.equal(diagnostics.image_dimension_probe_count, 5);
   assert.equal(diagnostics.image_dimension_probe_rejected_count, 1);
+});
+
+test('final media safety filters custom UI and LQIP candidates without reordering', async () => {
+  const normalized = await normalizeEventImagesForSource(
+    {
+      source_url: 'https://example.test/exhibitions/example/',
+      primary_image_url: '/assets/icon-share.svg',
+      image_urls: [
+        '/assets/icon-share.svg',
+        'https://static.wixstatic.com/media/w_40,h_40,blur_2/preview.jpg',
+        '/images/second-artwork.jpg',
+        '/images/first-artwork.jpg',
+      ],
+    },
+    {},
+  );
+
+  assert.deepEqual(normalized.image_urls, [
+    'https://example.test/images/second-artwork.jpg',
+    'https://example.test/images/first-artwork.jpg',
+  ]);
+  assert.equal(normalized.primary_image_url, 'https://example.test/images/second-artwork.jpg');
+});
+
+test('suspicious unknown image is probed but retained when probe fails', async () => {
+  const diagnostics = createCrawlDiagnostics();
+  const normalized = await normalizeEventImagesForSource(
+    {
+      source_url: 'https://example.test/exhibitions/example/',
+      primary_image_url: '/images/exhibition-thumb.jpg',
+      image_urls: ['/images/exhibition-thumb.jpg'],
+    },
+    {},
+    {
+      diagnostics,
+      fetchImageDimensionsFn: async () => {
+        throw new Error('probe failed');
+      },
+    },
+  );
+
+  assert.deepEqual(normalized.image_urls, ['https://example.test/images/exhibition-thumb.jpg']);
+  assert.equal(diagnostics.image_dimension_probe_count, 1);
+  assert.equal(diagnostics.image_dimension_probe_failed_count, 1);
 });
 
 test('image normalization caps non-offender event images at five', async () => {
@@ -3762,6 +4070,9 @@ test('diagnostics and source outcome summarize crawl health', () => {
   assert.equal(diagnostics.js_shell_count, 1);
   assert.equal(diagnostics.crawl4ai_render_limit, 3);
 
+  recordSkippedEvent(diagnostics, 'missing valid description');
+  assert.equal(diagnostics.skipped_missing_description_count, 1);
+
   assert.equal(
     classifySourceOutcome({
       detailUrls: ['https://example.test/events/a/'],
@@ -3932,7 +4243,7 @@ test('Issey Kura discovery keeps only ON VIEW cards', () => {
 
   assert.equal(event.title, '「WALL WHITE HEM」');
   assert.equal(event.start_date, '2026-07-01');
-  assert.equal(event.end_date, '2027-07-01');
+  assert.equal(event.end_date, null);
   assert.deepEqual(event.image_urls, [
     'https://cdn.shopify.com/KURA_2026jul01_01.jpg',
     'https://cdn.shopify.com/KURA_2026jul01_02.jpg',

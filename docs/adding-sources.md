@@ -127,6 +127,16 @@ Supported selector style: `#id`, `.class`, `tag`, `tag.class`, and descendants l
 
 If date parsing or page layout is weird, add source-specific extractor code and tests instead.
 
+### Event images
+
+Configured `selectors.images` keep page order and outrank generic Open Graph media. Generic extraction prefers article images and uses `og:image` only as a fallback. The final media pass still rejects obvious UI, social, placeholder, and LQIP URLs for configured and source-specific extractors.
+
+Set `"skip_og_image": true` when a source's Open Graph image is a site card, flyer, or other non-event image. This does not disable configured or source-specific images.
+
+Set `"measure_image_dimensions": true` only when opaque image URLs repeatedly leak small icons. Known or suspicious small candidates are probed selectively; probe failure keeps the image rather than deleting the source's only media.
+
+`srcset` uses its largest candidate. Source-specific first-image or second-image rules remain authoritative because the final safety pass filters without reordering.
+
 ## QA Metadata
 
 Use `qa` for facts you keep repeating during review:

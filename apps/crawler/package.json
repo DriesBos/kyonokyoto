@@ -12,6 +12,7 @@
     "crawl:kyoto": "node src/run-once.mjs --city=kyoto --source=all",
     "crawl:osaka": "node src/run-once.mjs --city=osaka --source=all",
     "crawl:tokyo": "node src/run-once.mjs --city=tokyo --source=all",
+    "crawl:replay": "node src/replay-latest.mjs",
     "crawl:kac": "node src/run-once.mjs --source=kyoto-art-center",
     "crawl:kyocera": "node src/run-once.mjs --source=kyoto-city-kyocera-museum-of-art",
     "crawl:momak": "node src/run-once.mjs --source=momak",

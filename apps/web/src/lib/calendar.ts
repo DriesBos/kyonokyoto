@@ -1,4 +1,17 @@
-import { normalizeDateOnly } from '../../../../packages/shared/event-schedule.mjs';
+import {
+  activeOrNextScheduleSegment,
+  normalizeDateOnly,
+} from '../../../../packages/shared/event-schedule.mjs';
+
+type CalendarScheduleSegment = {
+  ordinal?: number;
+  is_all_day: boolean;
+  start_date?: string | null;
+  end_date?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  timezone?: string | null;
+};
 
 export type CalendarEvent = {
   title: string;
@@ -11,6 +24,9 @@ export type CalendarEvent = {
   lng?: number | null;
   calendar_starts_at: string | null;
   calendar_ends_at: string | null;
+  is_all_day?: boolean;
+  schedule_type?: 'single' | 'range' | 'occurrence_set' | 'open_ended' | 'unknown';
+  schedule_segments?: CalendarScheduleSegment[] | null;
   source_url?: string;
 };
 
@@ -172,6 +188,12 @@ export const addDays = (value: string, days: number) => {
 
 export const toGoogleCalendarStamp = (value: string) => value.replaceAll('-', '');
 
+export const toGoogleCalendarTimestamp = (value: string) =>
+  new Date(value)
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
+
 export const calendarDetailsFor = (event: CalendarEvent) =>
   event.description
     ? cleanDisplayText(event.description)
@@ -180,12 +202,24 @@ export const calendarDetailsFor = (event: CalendarEvent) =>
 export const calendarLocationFor = (event: CalendarEvent) =>
   event.address_text ?? event.venue_name ?? event.institution_name;
 
-export const googleCalendarUrl = (event: CalendarEvent) => {
-  const start = normalizeDateOnly(event.calendar_starts_at);
-  if (!start) return null;
+export const googleCalendarUrl = (
+  event: CalendarEvent,
+  todayDateOnly = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date()),
+) => {
+  const segment = activeOrNextScheduleSegment(event, todayDateOnly);
+  if (!segment) return null;
 
-  const end = normalizeDateOnly(event.calendar_ends_at);
-  const exclusiveEnd = addDays(end ?? start, 1);
+  let dates: string;
+  if (segment.is_all_day) {
+    const start = normalizeDateOnly(segment.start_date);
+    const end = normalizeDateOnly(segment.end_date);
+    if (!start || !end) return null;
 
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(exclusiveEnd)}&details=${encodeURIComponent(calendarDetailsFor(event))}&location=${encodeURIComponent(calendarLocationFor(event))}`;
+    dates = `${toGoogleCalendarStamp(start)}/${toGoogleCalendarStamp(addDays(end, 1))}`;
+  } else {
+    if (!segment.starts_at || !segment.ends_at) return null;
+    dates = `${toGoogleCalendarTimestamp(segment.starts_at)}/${toGoogleCalendarTimestamp(segment.ends_at)}`;
+  }
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${dates}&details=${encodeURIComponent(calendarDetailsFor(event))}&location=${encodeURIComponent(calendarLocationFor(event))}`;
 };

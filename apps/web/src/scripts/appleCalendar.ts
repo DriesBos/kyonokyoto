@@ -1,5 +1,15 @@
 const toIcsDate = (value: string) => value.replaceAll('-', '');
 
+const toIcsTimestamp = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
+};
+
 const addDays = (value: string, days: number) => {
   const date = new Date(`${value}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -12,6 +22,63 @@ const escapeIcsText = (value: unknown) =>
     .replaceAll('\n', '\\n')
     .replaceAll(',', '\\,')
     .replaceAll(';', '\\;');
+
+type AppleCalendarEvent = {
+  title: string;
+  details?: string;
+  location?: string;
+  start: string;
+  end: string;
+  isAllDay: boolean;
+  uid?: string;
+  dtStamp?: string;
+};
+
+export const buildAppleCalendarIcs = ({
+  title,
+  details,
+  location,
+  start,
+  end,
+  isAllDay,
+  uid = `${crypto.randomUUID()}@kyonokyoto`,
+  dtStamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z'),
+}: AppleCalendarEvent) => {
+  if (!start || !end) return null;
+
+  let dateLines: string[];
+  if (isAllDay) {
+    const exclusiveEnd = addDays(end, 1);
+    dateLines = [
+      `DTSTART;VALUE=DATE:${toIcsDate(start)}`,
+      `DTEND;VALUE=DATE:${toIcsDate(exclusiveEnd)}`,
+    ];
+  } else {
+    const utcStart = toIcsTimestamp(start);
+    const utcEnd = toIcsTimestamp(end);
+    if (!utcStart || !utcEnd) return null;
+    dateLines = [`DTSTART:${utcStart}`, `DTEND:${utcEnd}`];
+  }
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Kyo no Kyoto//Events//EN',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtStamp}`,
+    ...dateLines,
+    `SUMMARY:${escapeIcsText(title)}`,
+    `DESCRIPTION:${escapeIcsText(details)}`,
+    `LOCATION:${escapeIcsText(location)}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+};
 
 export const initAppleCalendar = () => {
   if (window.__appleCalendarBound) return;
@@ -26,35 +93,18 @@ export const initAppleCalendar = () => {
     event.preventDefault();
 
     const start = button.dataset.calendarStart;
-    if (!start) return;
+    const end = button.dataset.calendarEnd;
+    if (!start || !end) return;
 
-    const end = button.dataset.calendarEnd || start;
-    const exclusiveEnd = addDays(end, 1);
-    const title = escapeIcsText(button.dataset.calendarTitle);
-    const details = escapeIcsText(button.dataset.calendarDetails);
-    const location = escapeIcsText(button.dataset.calendarLocation);
-    const uid = `${crypto.randomUUID()}@kyonokyoto`;
-    const dtStamp = new Date()
-      .toISOString()
-      .replace(/[-:]/g, '')
-      .replace(/\.\d{3}Z$/, 'Z');
-
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Kyo no Kyoto//Events//EN',
-      'CALSCALE:GREGORIAN',
-      'BEGIN:VEVENT',
-      `UID:${uid}`,
-      `DTSTAMP:${dtStamp}`,
-      `DTSTART;VALUE=DATE:${toIcsDate(start)}`,
-      `DTEND;VALUE=DATE:${toIcsDate(exclusiveEnd)}`,
-      `SUMMARY:${title}`,
-      `DESCRIPTION:${details}`,
-      `LOCATION:${location}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].join('\r\n');
+    const ics = buildAppleCalendarIcs({
+      title: button.dataset.calendarTitle ?? 'event',
+      details: button.dataset.calendarDetails,
+      location: button.dataset.calendarLocation,
+      start,
+      end,
+      isAllDay: button.dataset.calendarAllDay === 'true',
+    });
+    if (!ics) return;
 
     const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
