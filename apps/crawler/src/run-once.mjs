@@ -14,7 +14,7 @@ import {
 } from '../../../data/sources/source-config.mjs';
 import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
-import { upsertEventScheduleSegments } from './schedule-segments.mjs';
+import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { buildEventDedupeKey } from '../../../packages/shared/event-dedupe.mjs';
 import {
   buildScheduleFields,
@@ -1238,15 +1238,21 @@ function parseMomakDateRange(dateText) {
   }
 
   const [, sy, sm, sd, explicitEy, em, ed] = match;
-  const ey = explicitEy ?? sy;
-  const startDate = `${sy}-${sm}-${sd}`;
-  const endDate = `${ey}-${em}-${ed}`;
+  const parsed = buildParsedDateRange(sy, sm, sd, explicitEy, em, ed);
+
+  if (!parsed) {
+    return {
+      startDate: null,
+      endDate: null,
+      calendarStartsAt: null,
+      calendarEndsAt: null,
+    };
+  }
 
   return {
-    startDate,
-    endDate,
-    calendarStartsAt: `${startDate}T10:00:00+09:00`,
-    calendarEndsAt: `${endDate}T18:00:00+09:00`,
+    ...parsed,
+    calendarStartsAt: `${parsed.startDate}T10:00:00+09:00`,
+    calendarEndsAt: `${parsed.endDate}T18:00:00+09:00`,
   };
 }
 
@@ -7006,7 +7012,6 @@ function classifySourceOutcome({
   }
 
   if (
-    usedGenericExtractor ||
     diagnostics.skipped_invalid_title_count > 0 ||
     diagnostics.skipped_missing_description_count > 0 ||
     diagnostics.description_rejected_count > 0 ||
@@ -7036,7 +7041,6 @@ function classifySourceOutcome({
     return 'source_no_current_events';
   }
   if (
-    usedGenericExtractor ||
     diagnostics.missing_image_count > 0 ||
     diagnostics.skipped_missing_date_count > 0 ||
     diagnostics.skipped_missing_description_count > 0
@@ -7542,6 +7546,8 @@ async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
 }
 
 async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey, fetchImpl = fetch) {
+  buildScheduleSegmentRows('__preflight__', eventData);
+
   const persistedEventData = Object.fromEntries(
     Object.entries(eventData).filter(
       ([key]) => !key.startsWith('_') && key !== 'schedule_segments',

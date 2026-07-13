@@ -80,6 +80,7 @@ Method: latest stored `crawl_runs` row for each configured source. Counts below 
 - Full-page date fallback is common enough to create false-positive risk.
 - Date and description failures are the largest field-quality gaps.
 - Image-dimension checks are too narrowly enabled to guarantee media quality.
-- `source_needs_review` currently mixes expected beta QA debt with operational failure.
+- This baseline counted clean generic fallback runs as `source_needs_review`; current classifier
+  degrades only for field or fetch problems.
 
 This file is a point-in-time baseline for crawler refactor comparisons. Replace snapshot values only after a comparable latest-run-per-source query.

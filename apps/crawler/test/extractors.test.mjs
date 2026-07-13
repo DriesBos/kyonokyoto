@@ -139,8 +139,18 @@ test('crawl outcome gates stale archival and persisted status', () => {
       detailUrls: ['https://example.test/event'],
       savedEvents: [{ id: 'event-1' }],
       diagnostics: { missing_image_count: 1 },
+      usedGenericExtractor: true,
     }),
     'source_needs_review',
+  );
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: ['https://example.test/event'],
+      savedEvents: [{ id: 'event-1' }],
+      diagnostics: {},
+      usedGenericExtractor: true,
+    }),
+    'source_ok',
   );
   assert.equal(
     classifySourceOutcome({
@@ -483,7 +493,11 @@ test('event upsert fails fast on schema drift', async () => {
         },
         'source-id',
         'raw-page-id',
-        { title: 'Event title', source_url: 'https://museum.example/event' },
+        {
+          title: 'Event title',
+          source_url: 'https://museum.example/event',
+          schedule_segments: [{ is_all_day: true, start_date: '2026-07-13' }],
+        },
         'url:https://museum.example/event',
         async () => {
           calls += 1;
@@ -493,6 +507,37 @@ test('event upsert fails fast on schema drift', async () => {
     /Could not find the 'unexpected_field' column/,
   );
   assert.equal(calls, 1);
+});
+
+test('event upsert rejects invalid schedules before touching a published row', async () => {
+  let calls = 0;
+
+  await assert.rejects(
+    () =>
+      upsertEvent(
+        {
+          SUPABASE_URL: 'https://database.example',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+        },
+        'source-id',
+        'raw-page-id',
+        {
+          title: 'Event title',
+          source_url: 'https://museum.example/event',
+          schedule_type: 'range',
+          schedule_segments: [
+            { is_all_day: true, start_date: '2026-10-24', end_date: '2026-01-17' },
+          ],
+        },
+        'url:https://museum.example/event',
+        async () => {
+          calls += 1;
+          return new Response();
+        },
+      ),
+    /invalid event schedule/,
+  );
+  assert.equal(calls, 0);
 });
 
 test('event persistence stages draft before schedule write and publishes explicitly', async () => {
