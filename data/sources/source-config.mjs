@@ -336,6 +336,11 @@ export function validateSourceConfig(source) {
   if (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng))) {
     warnings.push(`${slug}: missing lat/lng`);
   }
+  for (const field of ['skip_og_image', 'measure_image_dimensions']) {
+    if (source?.[field] !== undefined && typeof source[field] !== 'boolean') {
+      warnings.push(`${slug}: ${field} must be boolean`);
+    }
+  }
 
   const nativeLocales = source?.capabilities?.native_locales ?? [];
   const localeKeys = Object.entries(source?.locales ?? {})
