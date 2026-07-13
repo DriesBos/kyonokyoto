@@ -26,6 +26,7 @@
       "event_page_patterns": ["/exhibition/future/", "/exhibition/now/"],
       "notes": "Purple art marker from Google My Maps. Official exhibition index is Japanese-first and contains current/future exhibition detail links.",
       "selectors": {
+        "title": "p.name[itemprop=\"name\"]",
         "images": ".exhibition .figure img"
       },
       "locales": {

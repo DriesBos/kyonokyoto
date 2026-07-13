@@ -69,7 +69,7 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
-2026-07-13: Abeno Harukas event media now comes only from `.exhibition .figure img`, excluding ticket-sale banners and other images inside `#ticket`. Live structure was checked across all six published future detail pages; focused extractor coverage added, no crawl or database write run.
+2026-07-13: Abeno Harukas titles now come from `p.name[itemprop="name"]`, removing the museum-name document-title suffix; media comes only from `.exhibition .figure img`, excluding ticket-sale banners and other images inside `#ticket`. Live structure was checked across all six event pages; focused extractor coverage added, no crawl or database write run.
 
 2026-07-13: Explicit approval promoted `suchsize`, `tezukayama-gallery`, `hitoto`, `new-pure-plus`, and `hyogo-prefectural-museum-of-art` to public (`beta: false`). Focused config coverage locks this exact allowlist and guards nearby beta sources. No crawl or database write run.
 

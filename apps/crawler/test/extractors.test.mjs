@@ -1232,14 +1232,17 @@ test('Osaka Geidai keeps art exhibition links and first event image only', async
   assert.deepEqual(event.image_urls, ['https://www.osaka-geidai.ac.jp/images/first.jpg']);
 });
 
-test('Abeno Harukas keeps exhibition media outside its ticket section', async () => {
+test('Abeno Harukas keeps event title and media outside site chrome', async () => {
   const sources = await loadSourcesConfig({ city: 'osaka' });
   const source = sources.find((item) => item.slug === 'abeno-harukas-art-museum');
   const event = extractGenericEvent(
-    `<title>Van Gogh Exhibition | Abeno Harukas Museum</title>
+    `<title>Van Gogh Exhibition | Abeno Harukas Art Museum</title>
      <div class="exhibition clearfix">
        <div class="figure"><img src="/exhibition/future/wallraf/images/img_wallraf.jpg"></div>
-       <p>July 4, 2026 - September 9, 2026</p>
+       <div class="detail">
+         <p itemprop="name" class="name"><span>Van Gogh Exhibition</span><br><span>Wallraf-Richartz Museum Collection</span></p>
+         <p>July 4, 2026 - September 9, 2026</p>
+       </div>
      </div>
      <div id="ticket">
        <img src="/exhibition/future/wallraf/images/ticket_set-gogh.png">
@@ -1248,7 +1251,10 @@ test('Abeno Harukas keeps exhibition media outside its ticket section', async ()
     'https://www.aham.jp/exhibition/future/wallraf/',
   );
 
+  assert.equal(source?.selectors?.title, 'p.name[itemprop="name"]');
   assert.equal(source?.selectors?.images, '.exhibition .figure img');
+  assert.equal(event.title, 'Van Gogh Exhibition Wallraf-Richartz Museum Collection');
+  assert.equal(event._title_origin, 'configured_selector');
   assert.deepEqual(event.image_urls, [
     'https://www.aham.jp/exhibition/future/wallraf/images/img_wallraf.jpg',
   ]);
