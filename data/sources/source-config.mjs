@@ -4,16 +4,32 @@ import { fileURLToPath } from 'node:url';
 import { assertTaxonomy, CATEGORY_DIMENSIONS, taxonomyErrors } from '../categories.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const supportedCities = new Set(['kyoto', 'osaka', 'tokyo']);
+const cityTimeZones = new Map([
+  ['kyoto', 'Asia/Tokyo'],
+  ['osaka', 'Asia/Tokyo'],
+  ['tokyo', 'Asia/Tokyo'],
+  ['hong-kong', 'Asia/Hong_Kong'],
+]);
+const supportedCities = new Set(cityTimeZones.keys());
 const supportedLocales = new Set(['en', 'ja']);
 const supportedRenderModes = new Set(['auto', 'always', 'never']);
 const selectorKeys = new Set(['listing_links', 'title', 'description', 'date', 'images']);
 
-export function currentYearInTokyo(value = new Date()) {
+export function timeZoneForCity(city = 'kyoto') {
+  const normalizedCity = normalizeCity(city);
+  if (!normalizedCity) throw new Error(`Unsupported source city "${city}"`);
+  return cityTimeZones.get(normalizedCity);
+}
+
+export function currentYearInCity(city = 'kyoto', value = new Date()) {
   return new Intl.DateTimeFormat('en', {
-    timeZone: 'Asia/Tokyo',
+    timeZone: timeZoneForCity(city),
     year: 'numeric',
   }).format(value);
+}
+
+export function currentYearInTokyo(value = new Date()) {
+  return currentYearInCity('tokyo', value);
 }
 
 function normalizeLocale(value) {
@@ -130,7 +146,7 @@ function normalizeStringList(value = []) {
 function resolveCurrentYearUrls(source) {
   if (source?.url_year !== 'current') return source;
 
-  const currentYear = currentYearInTokyo();
+  const currentYear = currentYearInCity(source.city);
   const resolveUrl = (value) =>
     typeof value === 'string' ? value.replace(/20\d{2}/g, currentYear) : value;
   const resolveUrls = (values = []) => values.map(resolveUrl);
@@ -398,6 +414,7 @@ export async function loadSourcesConfig({ city = 'kyoto' } = {}) {
         {
           ...source,
           city: normalizedCity,
+          timezone: timeZoneForCity(normalizedCity),
         },
         overrides[source.slug],
       ),

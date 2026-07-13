@@ -5,6 +5,7 @@ Use the matching city source file as source of truth:
 - `data/sources/kyoto-sources.json`
 - `data/sources/osaka-sources.json`
 - `data/sources/tokyo-sources.json`
+- `data/sources/hong-kong-sources.json`
 
 Crawler should not guess stable venue facts when you can write them once.
 

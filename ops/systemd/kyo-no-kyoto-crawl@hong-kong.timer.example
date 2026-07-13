@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Hong Kong crawl cycle every 36 hours
+
+[Timer]
+OnActiveSec=7h40m
+OnUnitActiveSec=36h
+Unit=kyo-no-kyoto-crawl@hong-kong.service
+
+[Install]
+WantedBy=timers.target

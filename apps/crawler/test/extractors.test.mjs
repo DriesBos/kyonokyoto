@@ -74,9 +74,11 @@ import {
 import { buildCrawlQaReport } from '../src/crawl-qa.mjs';
 import {
   applySourceOverride,
+  currentYearInCity,
   currentYearInTokyo,
   loadAllSourcesConfig,
   loadSourcesConfig,
+  timeZoneForCity,
   validateSourceConfig,
 } from '../../../data/sources/source-config.mjs';
 import {
@@ -92,8 +94,12 @@ const testTaxonomy = (
   event_category = [],
 ) => ({ venue_category, display_category, event_category });
 
-test('Tokyo year rollover ignores host timezone', () => {
-  assert.equal(currentYearInTokyo(new Date('2025-12-31T15:30:00Z')), '2026');
+test('city year rollover and timezone use local city time', () => {
+  const value = new Date('2025-12-31T15:30:00Z');
+
+  assert.equal(currentYearInTokyo(value), '2026');
+  assert.equal(currentYearInCity('hong-kong', value), '2025');
+  assert.equal(timeZoneForCity('hong-kong'), 'Asia/Hong_Kong');
 });
 
 test('named crawler scripts use registered source slugs', async () => {
@@ -913,6 +919,17 @@ test('source truth flags explicit scraped venue city contradictions before overw
   assert.deepEqual(mismatched._source_truth_warnings, ['venue_city_mismatch']);
   assert.equal(getSourceTruthSkipReason(mismatched), 'venue_city_mismatch');
   assert.equal(getSourceTruthSkipReason(titleOnly), null);
+
+  const hongKongMismatch = assignEventCoordinates(
+    { venue_name: 'Tokyo Gallery', address_text: 'Tokyo, Japan' },
+    { city: 'hong-kong', name: 'Hong Kong Gallery', taxonomy: testTaxonomy(['gallery']) },
+  );
+  const hongKongMatch = assignEventCoordinates(
+    { venue_name: '香港藝術館', address_text: '香港九龍' },
+    { city: 'hong-kong', name: 'Hong Kong Gallery', taxonomy: testTaxonomy(['gallery']) },
+  );
+  assert.equal(getSourceTruthSkipReason(hongKongMismatch), 'venue_city_mismatch');
+  assert.equal(getSourceTruthSkipReason(hongKongMatch), null);
   const diagnostics = createCrawlDiagnostics();
   recordSkippedEvent(diagnostics, getSourceTruthSkipReason(mismatched));
   assert.equal(diagnostics.skipped_other_count, 1);
@@ -998,6 +1015,21 @@ test('generic date parsers read en dash date ranges', () => {
   assert.equal(japaneseEvent.end_date, '2026-07-12');
   assert.equal(weekdayDayMonthEvent.start_date, '2026-05-29');
   assert.equal(weekdayDayMonthEvent.end_date, '2026-07-11');
+});
+
+test('generic Hong Kong events use Hong Kong schedule timezone', () => {
+  const event = extractGenericEvent(
+    `<main>
+      <h1>Harbour Forms</h1>
+      <p class="date">July 11 – August 1, 2026</p>
+    </main>`,
+    { city: 'hong-kong', name: 'Example Gallery', taxonomy: testTaxonomy(['gallery']) },
+    'https://example.test/exhibitions/harbour-forms/',
+  );
+
+  assert.equal(event.timezone, 'Asia/Hong_Kong');
+  assert.equal(event.calendar_starts_at, '2026-07-11T00:00:00+08:00');
+  assert.equal(event.calendar_ends_at, '2026-08-01T23:59:00+08:00');
 });
 
 test('generic title extraction skips section metadata and keeps semantic heading provenance', () => {
@@ -1204,6 +1236,27 @@ test('generic detail extraction prefers event and exhibition URLs', async () => 
     'https://example.test/events/spring-show-2026/',
     'https://example.test/exhibitions/2026/quiet-forms/',
   ]);
+});
+
+test('generic detail extraction matches JCCAC-style query patterns', () => {
+  const listingHtml = `
+    <a href="/?a=doc&id=321">Exhibition detail</a>
+    <a href="/?a=group&id=exhibition&page=2">Next listing page</a>
+  `;
+  const source = {
+    allowed_domains: ['www.jccac.org.hk'],
+    event_page_patterns: ['?a=doc&id='],
+  };
+
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      listingHtml,
+      'https://www.jccac.org.hk/?a=group&id=exhibition',
+      source,
+      4,
+    ),
+    ['https://www.jccac.org.hk/?a=doc&id=321'],
+  );
 });
 
 test('generic detail extraction can use configured listing link selectors', () => {

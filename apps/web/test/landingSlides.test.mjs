@@ -112,3 +112,7 @@ test('landing slider uses configured Tokyo museum sources', () => {
     'tokyo-photographic-art-museum',
   ]);
 });
+
+test('landing slider uses configured Hong Kong venues', () => {
+  assert.deepEqual(landingSliderSourceSlugsByCity['hong-kong'], ['m-plus', 'tai-kwun']);
+});

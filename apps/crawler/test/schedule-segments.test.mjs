@@ -54,6 +54,17 @@ test('schedule persistence writes normalized segments before deleting stale ordi
   );
 });
 
+test('event timezone reaches persisted schedule segments', () => {
+  const [row] = buildScheduleSegmentRows('event-hk', {
+    start_date: '2026-07-13',
+    end_date: '2026-07-20',
+    schedule_type: 'range',
+    timezone: 'Asia/Hong_Kong',
+  });
+
+  assert.equal(row.timezone, 'Asia/Hong_Kong');
+});
+
 test('legacy range becomes one segment and missing schedule is rejected', () => {
   assert.deepEqual(
     buildScheduleSegmentRows('event-1', {

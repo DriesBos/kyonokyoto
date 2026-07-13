@@ -3,7 +3,13 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import test from 'node:test';
 
-import { cityConfigFor, cityConfigs, nextCityFor, normalizeCity } from '../src/lib/cities.ts';
+import {
+  cityConfigFor,
+  cityConfigs,
+  dateOnlyInTimeZone,
+  nextCityFor,
+  normalizeCity,
+} from '../src/lib/cities.ts';
 import {
   loadAllSourcesConfig,
   loadSourcesConfig,
@@ -21,6 +27,7 @@ test('city registry normalizes supported routes and cycles in header order', () 
   assert.equal(normalizeCity('kyoto'), 'kyoto');
   assert.equal(normalizeCity('Osaka'), 'osaka');
   assert.equal(normalizeCity('tokyo'), 'tokyo');
+  assert.equal(normalizeCity('Hong-Kong'), 'hong-kong');
   assert.equal(normalizeCity('nagoya'), null);
 
   assert.equal(cityConfigFor('kyoto')?.themeColor, '#138e00');
@@ -34,9 +41,27 @@ test('city registry normalizes supported routes and cycles in header order', () 
     lat: 35.6651,
     lng: 139.7125,
   });
+  assert.deepEqual(cityConfigFor('hong-kong'), {
+    slug: 'hong-kong',
+    label: 'Hong Kong',
+    brandLabel: 'Kyō-no-HongKong',
+    themeColor: '#d6007f',
+    timeZone: 'Asia/Hong_Kong',
+    mapCenter: { lat: 22.3193, lng: 114.1694 },
+    sourceFile: 'hong-kong-sources.json',
+    permanentFile: 'hong-kong-permanent.json',
+  });
   assert.equal(nextCityFor('kyoto').slug, 'osaka');
   assert.equal(nextCityFor('osaka').slug, 'tokyo');
-  assert.equal(nextCityFor('tokyo').slug, 'kyoto');
+  assert.equal(nextCityFor('tokyo').slug, 'hong-kong');
+  assert.equal(nextCityFor('hong-kong').slug, 'kyoto');
+});
+
+test('city date uses configured timezone at Hong Kong day boundary', () => {
+  const value = new Date('2026-07-13T16:30:00Z');
+
+  assert.equal(dateOnlyInTimeZone(value, 'Asia/Hong_Kong'), '2026-07-14');
+  assert.equal(dateOnlyInTimeZone(value, 'UTC'), '2026-07-13');
 });
 
 test('each city has source and permanent files', async () => {

@@ -48,6 +48,16 @@ sudo -n install -m 0644 \
 sudo -n install -m 0644 \
   ops/systemd/kyo-no-kyoto-crawl-failure@.service.example \
   /etc/systemd/system/kyo-no-kyoto-crawl-failure@.service
+for city in kyoto osaka tokyo hong-kong; do
+  sudo -n install -m 0644 \
+    "ops/systemd/kyo-no-kyoto-crawl@${city}.timer.example" \
+    "/etc/systemd/system/kyo-no-kyoto-crawl@${city}.timer"
+done
 sudo -n systemctl daemon-reload
+sudo -n systemctl enable --now \
+  kyo-no-kyoto-crawl@kyoto.timer \
+  kyo-no-kyoto-crawl@osaka.timer \
+  kyo-no-kyoto-crawl@tokyo.timer \
+  kyo-no-kyoto-crawl@hong-kong.timer
 
 echo "VPS deployed $(git rev-parse --short HEAD)"

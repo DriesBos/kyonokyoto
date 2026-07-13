@@ -7,6 +7,10 @@ test('routePathFor builds canonical city and locale path', () => {
   assert.equal(routePathFor({ city: 'tokyo', locale: 'ja' }), '/tokyo/ja/');
 });
 
+test('routePathFor supports Hong Kong', () => {
+  assert.equal(routePathFor({ city: 'hong-kong', locale: 'en' }), '/hong-kong/en/');
+});
+
 test('routeStateFromPath reads city and locale from supported route shapes', () => {
   assert.deepEqual(routeStateFromPath('/osaka/ja/'), {
     city: 'osaka',
