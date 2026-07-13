@@ -1037,6 +1037,37 @@ test('generic title extraction prefers structured Event names', () => {
   assert.equal(hasValidEventTitle(event), true);
 });
 
+test('generic title extraction keeps title inside event scope and skips section headings', () => {
+  const structured = extractGenericEvent(
+    `
+      <main><h1>Current Exhibitions</h1></main>
+      <article itemscope itemtype="https://schema.org/ExhibitionEvent">
+        <span itemprop="name">Quiet Forms</span>
+        <time itemprop="startDate">July 11 – August 1, 2026</time>
+      </article>
+    `,
+    { name: 'Example Gallery', taxonomy: testTaxonomy(['gallery']) },
+    'https://example.test/exhibitions/quiet-forms/',
+  );
+  const secondaryHeading = extractGenericEvent(
+    `
+      <main>
+        <h1>みどころ</h1>
+        <h2>特別展「インコ イズ カミング！」</h2>
+        <p>2026年6月27日 - 2026年8月30日</p>
+      </main>
+    `,
+    { name: 'Example Museum', taxonomy: testTaxonomy(['museum']) },
+    'https://example.test/exhibitions/parrots/',
+  );
+
+  assert.equal(structured.title, 'Quiet Forms');
+  assert.equal(structured._title_origin, 'structured_dom');
+  assert.ok(structured._title_candidates.some((candidate) => candidate.title === 'Quiet Forms'));
+  assert.equal(secondaryHeading.title, '特別展「インコ イズ カミング！」');
+  assert.equal(secondaryHeading._title_origin, 'scoped_heading');
+});
+
 test('generic title prefers scoped heading then page-matched JSON-LD over unrelated events', () => {
   const detailUrl = 'https://example.test/exhibitions/right-show/';
   const structured = `
@@ -1123,6 +1154,18 @@ test('source crawl hints preserve focused Crawl4AI wait and scrolling controls',
 test('title quality rejects generic, source-name, and date-only values conservatively', () => {
   const source = { name: 'Example Gallery' };
 
+  for (const title of [
+    'NEWS & TOPICS',
+    'Category: Current Exhibitions',
+    'Exhibition Schedule',
+    'Mail News',
+    'Blog',
+    'みどころ',
+    '開催中の展覧会',
+  ]) {
+    assert.equal(hasValidEventTitle(assessEventTitle({ title }, source)), false, title);
+  }
+
   assert.equal(
     hasValidEventTitle(assessEventTitle({ title: 'Current Exhibitions' }, source)),
     false,
@@ -1140,6 +1183,10 @@ test('title quality rejects generic, source-name, and date-only values conservat
   );
   assert.equal(
     hasValidEventTitle(assessEventTitle({ title: 'TOKYO ART BOOK FAIR 2026' }, source)),
+    true,
+  );
+  assert.equal(
+    hasValidEventTitle(assessEventTitle({ title: 'NEWS: Art and Journalism' }, source)),
     true,
   );
 });
@@ -1177,6 +1224,22 @@ test('generic detail extraction can use configured listing link selectors', () =
   assert.deepEqual(
     extractGenericDetailUrls(listingHtml, 'https://example.test/events/', source, 4),
     ['https://example.test/events/selected/'],
+  );
+});
+
+test('generic detail extraction ignores taxonomy archive URLs', () => {
+  const listingHtml = `
+    <a href="/blog/categories/current-exhibitions/">Current exhibitions</a>
+    <a href="/exhibitions/quiet-forms/">Quiet Forms</a>
+  `;
+  const source = {
+    allowed_domains: ['example.test'],
+    event_page_patterns: ['/blog/', '/exhibitions/'],
+  };
+
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, 'https://example.test/exhibitions/', source, 4),
+    ['https://example.test/exhibitions/quiet-forms/'],
   );
 });
 
@@ -3472,6 +3535,49 @@ test('noisy generic sources pin event title and discovery fields', async () => {
     '.l-exhibition-intro__content p',
   ]);
   assert.equal(kouichi?.selectors?.description, '.HTML__Container-sc-1im40xc-0 p');
+});
+
+test('reported Osaka title leaks resolve to concrete event pages and title nodes', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const newPure = sources.find((source) => source.slug === 'new-pure-plus');
+  const jitsuzaisei = sources.find((source) => source.slug === 'jitsuzaisei');
+  const nakanoshima = sources.find((source) => source.slug === 'nakanoshima-kosetsu-museum');
+
+  const newPureUrls = extractGenericDetailUrls(
+    `
+      <section id="current-section"><a title="Current show" href="/17318">Current show</a></section>
+      <section id="upcoming-section"><a title="Upcoming show" href="/17349">Upcoming show</a></section>
+      <a href="/exhibition/upcoming">Upcoming exhibition</a>
+      <a href="/exhibition/past">Past exhibition</a>
+    `,
+    newPure.start_urls[0],
+    newPure,
+    6,
+  );
+  const jitsuzaiseiUrls = extractGenericDetailUrls(
+    `
+      <a href="/post/tamashii-no-kagami">Exhibition</a>
+      <a href="/blog/categories/past-exhibitions">Past exhibitions</a>
+      <a href="/news-topics">NEWS &amp; TOPICS</a>
+    `,
+    jitsuzaisei.start_urls[0],
+    jitsuzaisei,
+    4,
+  );
+  const nakanoshimaEvent = extractGenericEvent(
+    `
+      <div class="single__info__txtwrap--ttl">特別展「インコ イズ カミング！」</div>
+      <h1>みどころ</h1>
+      <p>2026年6月27日 - 2026年8月30日</p>
+    `,
+    nakanoshima,
+    'https://www.kosetsu-museum.or.jp/nakanoshima/exhibition/now/',
+  );
+
+  assert.deepEqual(newPureUrls, ['https://newpureplus.com/17318', 'https://newpureplus.com/17349']);
+  assert.deepEqual(jitsuzaiseiUrls, ['https://www.jitsuzaisei.com/post/tamashii-no-kagami']);
+  assert.equal(nakanoshimaEvent.title, '特別展「インコ イズ カミング！」');
+  assert.equal(nakanoshimaEvent._title_origin, 'configured_selector');
 });
 
 test('Tokyo Metropolitan Art Museum keeps only the exhibition poster', async () => {

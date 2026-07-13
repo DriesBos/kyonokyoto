@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { compareReplayEvent } from '../src/replay-latest.mjs';
+import { assessEventTitle } from '../src/run-once.mjs';
 
 test('replay comparison reports only changed normalized fields', () => {
   const result = compareReplayEvent(
@@ -23,4 +24,19 @@ test('replay comparison reports only changed normalized fields', () => {
   );
 
   assert.deepEqual(result.changed_fields, ['description_present']);
+});
+
+test('replay comparison exposes live title-quality assessment', () => {
+  const extracted = assessEventTitle(
+    { title: 'Upcoming exhibition' },
+    { name: 'Example Gallery' },
+    'generic_fallback',
+  );
+  const result = compareReplayEvent(extracted, { title: 'Upcoming exhibition' });
+
+  assert.deepEqual(result.title_quality, {
+    valid: false,
+    origin: 'generic_fallback',
+    warnings: ['generic_label'],
+  });
 });

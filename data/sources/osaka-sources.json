@@ -372,6 +372,9 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/nakanoshima/exhibition/"],
       "notes": "Purple art marker from Google My Maps. English landing page links current exhibitions; Japanese exhibition details live under /nakanoshima/exhibition/.",
+      "selectors": {
+        "title": [".single__info__txtwrap--ttl", ".info__content--ttl"]
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.kosetsu-museum.or.jp/nakanoshima/"],
@@ -524,6 +527,10 @@
       "event_page_patterns": ["/exhibition"],
       "notes": "Official exhibition page includes current, upcoming, and past sections.",
       "beta": false,
+      "selectors": {
+        "listing_links": "#current-section a[title], #upcoming-section a[title]",
+        "title": "h1.post-title"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://newpureplus.com/exhibition"],
@@ -534,6 +541,7 @@
         "native_locales": ["ja"]
       },
       "crawl_hints": {
+        "skip_patterns": ["/exhibition/current", "/exhibition/upcoming", "/exhibition/past"],
         "max_detail_pages": 6
       }
     },
@@ -680,13 +688,17 @@
       "start_urls": ["https://www.jitsuzaisei.com/exhibitions"],
       "allowed_domains": ["www.jitsuzaisei.com", "jitsuzaisei.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions"],
+      "event_page_patterns": ["/post/"],
       "notes": "Wix exhibition page with current and past sections.",
       "beta": true,
+      "selectors": {
+        "listing_links": "a[href*='/post/']",
+        "title": "h1[data-hook='post-title']"
+      },
       "locales": {
         "ja": {
           "start_urls": ["https://www.jitsuzaisei.com/exhibitions"],
-          "event_page_patterns": ["/exhibitions"]
+          "event_page_patterns": ["/post/"]
         }
       },
       "capabilities": {
@@ -694,6 +706,7 @@
       },
       "crawl_hints": {
         "render_mode": "auto",
+        "skip_patterns": ["/blog/categories/", "/news-topics"],
         "max_detail_pages": 4
       }
     },

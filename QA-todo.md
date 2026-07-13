@@ -69,6 +69,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
+2026-07-13: Generic-title source leaks were tightened without a crawl or database write. NEW PURE+ now follows titled detail anchors only inside live `#current-section` and `#upcoming-section` containers, rejects exhibition category indexes, and reads `h1.post-title`. JITSUZAISEI now follows only concrete `/post/` links, rejects `/blog/categories/` and `/news-topics`, and reads Wix `h1[data-hook="post-title"]`. Nakanoshima Kosetsu reads the event title from Japanese `.single__info__txtwrap--ttl` or English `.info__content--ttl`, avoiding the later `みどころ` heading. Clean recrawl and stale-row cleanup remain pending.
+
 2026-07-13: Abeno Harukas titles now come from `p.name[itemprop="name"]`, removing the museum-name document-title suffix; media comes only from `.exhibition .figure img`, excluding ticket-sale banners and other images inside `#ticket`. Live structure was checked across all six event pages; focused extractor coverage added, no crawl or database write run.
 
 2026-07-13: Explicit approval promoted `suchsize`, `tezukayama-gallery`, `hitoto`, `new-pure-plus`, and `hyogo-prefectural-museum-of-art` to public (`beta: false`). Focused config coverage locks this exact allowlist and guards nearby beta sources. No crawl or database write run.
@@ -112,16 +114,14 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 
 ### `new-pure-plus`
 
-- Approval note: promoted to public on 2026-07-13 by explicit request. Existing leak still needs JSON tuning and a clean recrawl.
-- Problem: saved category/index pages.
-- Crawl leak examples: `/exhibition/past`, generic `past exhibition`.
-- Likely fix: add skip for `/past`; tune selectors for current/upcoming detail content.
+- Approval note: promoted to public on 2026-07-13 by explicit request.
+- JSON tuned: current/upcoming event-detail anchors only; current/upcoming/past category pages skipped.
+- Pending: clean recrawl and removal of stale generic-title rows.
 
 ### `jitsuzaisei`
 
-- Problem: saved blog/news index pages.
-- Crawl leak examples: `Blog`, `NEWS&TOPICS`, `/blog/categories/past-exhibitions`.
-- Likely fix: skip `/blog/categories/` and `/news-topics`; keep concrete `/post/...` exhibition pages.
+- JSON tuned: concrete `/post/` exhibition pages only; blog-category and news indexes skipped.
+- Pending: clean recrawl and visual approval; source remains beta.
 
 ### `plus-y-gallery`
 

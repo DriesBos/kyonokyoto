@@ -3,7 +3,12 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseEnv } from 'node:util';
 import { loadSourcesConfig, normalizeCity } from '../../../data/sources/source-config.mjs';
-import { eventExtractors, extractGenericEvent } from './run-once.mjs';
+import {
+  assessEventTitle,
+  eventExtractors,
+  extractGenericEvent,
+  hasValidEventTitle,
+} from './run-once.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = resolve(__dirname, '..', '.env');
@@ -29,6 +34,14 @@ function normalizeComparableEvent(event = {}) {
   };
 }
 
+function replayTitleQuality(event = {}) {
+  return {
+    valid: hasValidEventTitle(event),
+    origin: event._title_origin ?? 'unknown',
+    warnings: Array.isArray(event._title_warnings) ? event._title_warnings : [],
+  };
+}
+
 export function compareReplayEvent(extracted, stored) {
   const next = normalizeComparableEvent(extracted);
   const previous = normalizeComparableEvent(stored);
@@ -36,7 +49,12 @@ export function compareReplayEvent(extracted, stored) {
     (field) => JSON.stringify(next[field]) !== JSON.stringify(previous[field]),
   );
 
-  return { changed_fields, extracted: next, stored: previous };
+  return {
+    changed_fields,
+    title_quality: replayTitleQuality(extracted),
+    extracted: next,
+    stored: previous,
+  };
 }
 
 async function restGet(env, path) {
@@ -120,7 +138,11 @@ async function main() {
 
     try {
       const extractor = eventExtractors[source.slug] ?? extractGenericEvent;
-      const extracted = extractor(page.raw_html, source, page.url, {});
+      const extracted = assessEventTitle(
+        extractor(page.raw_html, source, page.url, {}),
+        source,
+        extractor === extractGenericEvent ? 'generic_fallback' : 'source_specific_extractor',
+      );
       const stored = eventByRawPageId.get(page.id);
       results.push({
         source: source.slug,
@@ -128,7 +150,10 @@ async function main() {
         status: stored ? 'compared' : 'no_saved_event',
         ...(stored
           ? compareReplayEvent(extracted, stored)
-          : { extracted: normalizeComparableEvent(extracted) }),
+          : {
+              title_quality: replayTitleQuality(extracted),
+              extracted: normalizeComparableEvent(extracted),
+            }),
       });
     } catch (error) {
       results.push({
@@ -142,6 +167,7 @@ async function main() {
 
   const compared = results.filter((result) => result.status === 'compared');
   const changed = compared.filter((result) => result.changed_fields.length);
+  const invalidTitles = results.filter((result) => result.title_quality?.valid === false);
   console.log(
     JSON.stringify(
       {
@@ -152,7 +178,15 @@ async function main() {
         pages_changed: changed.length,
         pages_without_saved_event: results.filter((result) => result.status === 'no_saved_event')
           .length,
+        invalid_title_count: invalidTitles.length,
         extraction_errors: results.filter((result) => result.status === 'extraction_error').length,
+        invalid_titles: invalidTitles.map((result) => ({
+          source: result.source,
+          url: result.url,
+          title: result.extracted.title,
+          origin: result.title_quality.origin,
+          warnings: result.title_quality.warnings,
+        })),
         changes: changed,
         errors: results.filter((result) => result.status === 'extraction_error'),
       },

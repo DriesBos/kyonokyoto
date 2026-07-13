@@ -2314,7 +2314,7 @@ function scoreGenericDetailUrl(source, url) {
   const search = parsed.search.toLowerCase();
   if (/\.(?:jpe?g|png|gif|webp|svg|pdf|zip|css|js)$/i.test(pathname)) return 0;
   if (
-    /\/(?:archive|archives|category|event_category|access|about|contact|privacy|guide|faq|feed|form)(?:\/|$)/.test(
+    /\/(?:archive|archives|category|categories|tag|tags|event_category|access|about|contact|privacy|guide|faq|feed|form)(?:\/|$)/.test(
       pathname,
     ) ||
     /\/(?:customer_authentication|cart)(?:\/|$)/.test(pathname) ||
@@ -3960,16 +3960,17 @@ function extractSenOkuEvent(detailHtml, source, detailUrl, context = {}) {
 }
 
 function cleanTitleCandidate(value, source) {
-  const escapedSourceName = String(source?.name ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-  return stripTags(String(value ?? ''))
+  let title = stripTags(String(value ?? ''))
     .replace(/\s*[|｜\-–—]\s*KYOTOGRAPHIE 京都国際写真祭$/i, '')
-    .replace(
-      escapedSourceName ? new RegExp(`\\s*[|｜\\-–—]\\s*${escapedSourceName}$`, 'i') : /a^/,
-      '',
-    )
     .replace(/\s+/g, ' ')
     .trim();
+
+  for (const sourceName of [source?.name, ...Object.values(source?.names ?? {})].filter(Boolean)) {
+    const escapedSourceName = String(sourceName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    title = title.replace(new RegExp(`\\s*[|｜\\-–—]\\s*${escapedSourceName}$`, 'i'), '').trim();
+  }
+
+  return title;
 }
 
 function extractJsonLdEventTitles(detailHtml, detailUrl = null) {
@@ -4021,19 +4022,22 @@ function titleQualityWarnings(value, source) {
   if (!title) return ['missing'];
 
   const warnings = [];
+  const normalizedTitle = title.normalize('NFKC').replace(/\s+/g, ' ').trim();
+  const unprefixedTitle = normalizedTitle.replace(/^(?:category|tag)\s*:\s*/iu, '').trim();
+  if (/^(?:category|tag)\s*:/iu.test(normalizedTitle)) warnings.push('taxonomy_label');
   if (
-    /^(?:(?:current|upcoming|past|special)\s+)?(?:exhibitions?|events?|event information|news|information|schedule|program|archive|展覧会(?:情報)?|展示(?:情報)?|イベント(?:情報)?|開催中|開催予定)$|^(?:current|upcoming|past|coming soon|top\s*\/\s*coming soon(?:\s*-\s*top)?)$/iu.test(
-      title,
+    /^(?:(?:current|upcoming|past|future|special)\s+)?(?:exhibitions?|events?)$|^(?:event|exhibition)\s+(?:information|schedule)$|^news(?:\s*(?:&|and)\s*topics)?$|^mail\s+news$|^(?:information|schedule|program|archive|blog|current|upcoming|past|coming soon|top\s*\/\s*coming soon(?:\s*-\s*top)?)$|^(?:展覧会(?:情報|スケジュール)?|展示(?:情報)?|イベント(?:情報)?|開催中(?:の展覧会)?|開催予定(?:の展覧会)?|今後の開催予定|これからの展覧会|これまでの展覧会|次回の展示|みどころ)$/iu.test(
+      unprefixedTitle,
     )
   ) {
     warnings.push('generic_label');
   }
 
-  const normalizedTitle = title.normalize('NFKC').toLocaleLowerCase();
+  const normalizedTitleKey = normalizedTitle.toLocaleLowerCase();
   const sourceNames = [source?.name, ...Object.values(source?.names ?? {})]
     .filter((name) => typeof name === 'string' && name.trim())
     .map((name) => name.normalize('NFKC').toLocaleLowerCase());
-  if (sourceNames.includes(normalizedTitle)) warnings.push('matches_source_name');
+  if (sourceNames.includes(normalizedTitleKey)) warnings.push('matches_source_name');
 
   const parsedDate = parseGenericDateRange(extractFirstDateText(title));
   const nonDateText = title
@@ -4062,13 +4066,26 @@ function extractGenericTitleInfo(detailHtml, source, detailUrl = null) {
       value,
       origin: 'configured_selector',
     })),
-    ...selectorTextValues(detailHtml, ['main h1', 'article h1']).map((value) => ({
+    ...selectorTextValues(detailHtml, [
+      '[itemtype*="Event"] [itemprop="name"]',
+      '[typeof*="Event"] [property="name"]',
+    ]).map((value) => ({
       value,
-      origin: 'scoped_heading',
+      origin: 'structured_dom',
     })),
+    ...selectorTextValues(detailHtml, ['article h1', 'article h2', 'article h3', 'main h1']).map(
+      (value) => ({
+        value,
+        origin: 'scoped_heading',
+      }),
+    ),
     ...extractJsonLdEventTitles(detailHtml, detailUrl).map((value) => ({
       value,
       origin: 'json_ld',
+    })),
+    ...selectorTextValues(detailHtml, ['main h2', 'main h3']).map((value) => ({
+      value,
+      origin: 'scoped_heading',
     })),
     ...selectorTextValues(detailHtml, ['h1']).map((value) => ({
       value,
@@ -4100,6 +4117,11 @@ function extractGenericTitleInfo(detailHtml, source, detailUrl = null) {
     title,
     origin: selected?.origin ?? 'source_fallback',
     warnings: selected?.warnings ?? titleQualityWarnings(title, source),
+    candidates: candidates.slice(0, 8).map(({ title: candidateTitle, origin, warnings }) => ({
+      title: candidateTitle,
+      origin,
+      warnings,
+    })),
   };
 }
 
@@ -4483,6 +4505,7 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
     _title_origin: titleInfo.origin,
     _title_warnings: titleInfo.warnings,
     _title_valid: titleInfo.warnings.length === 0,
+    _title_candidates: titleInfo.candidates,
     _description_origin: configuredDescription ? 'configured_selector' : 'generic_fallback',
     _date_origin: configuredDateText ? 'configured_selector' : (discoveredDate?.origin ?? null),
     _date_parser: parsedDates.parserId ?? null,
@@ -6960,6 +6983,7 @@ function recordTitleExtraction(diagnostics, event) {
     origin: event?._title_origin ?? 'unknown',
     valid: hasValidEventTitle(event),
     warnings: event?._title_warnings ?? [],
+    candidates: event?._title_candidates ?? [],
   });
 }
 
