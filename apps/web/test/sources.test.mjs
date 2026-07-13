@@ -104,6 +104,40 @@ test('map sources include permanent events without source config rows', () => {
   ]);
 });
 
+test('map sources use event taxonomy when permanent highlights refine a source', () => {
+  const event = {
+    id: 'permanent:kyoto-art-center',
+    institution_name: 'Kyoto Art Center',
+    categories: [
+      'venue_category:institute',
+      'venue_category:museum',
+      'display_category:performance',
+      'event_category:exhibition',
+      'event_category:workshop',
+    ],
+    lat: 35.005436,
+    lng: 135.758345,
+  };
+  const sources = [
+    {
+      slug: 'kyoto-art-center',
+      name: 'Kyoto Art Center',
+      base_url: 'https://www.kac.or.jp',
+      taxonomy: testTaxonomy(['institute'], ['contemporary']),
+      lat: 35.005436,
+      lng: 135.758345,
+    },
+  ];
+
+  const [mapSource] = mapSourcesForEvents(
+    [event],
+    new Map([[event.id, 'kyoto-art-center']]),
+    sources,
+  );
+
+  assert.deepEqual(mapSource.categories, event.categories);
+});
+
 test('sourceDisplayNameForEvent prefers localized source names over scraped event venue name', () => {
   const event = {
     source_url: 'https://example.test/events/current-exhibition',

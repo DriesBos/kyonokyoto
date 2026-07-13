@@ -5,12 +5,8 @@ import { nextCityFor, cityConfigFor, type AppCity } from '../lib/cities';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
 import { routePathFor } from '../lib/routeState';
-
-type CategoryOption = {
-  slug: string;
-  label: string;
-  dimension: 'venue_category' | 'display_category' | 'event_category';
-};
+import type { CategoryOption } from '../lib/sources';
+import { CATEGORY_DIMENSIONS } from '../../../../data/categories.mjs';
 
 type Props = {
   categories?: CategoryOption[];
@@ -49,12 +45,10 @@ const timingFilters = showTimingFilters
       { slug: 'upcoming', label: copy.upcoming },
     ]
   : [];
-const categoryGroups = ['venue_category', 'display_category', 'event_category'].map(
-  (dimension) => ({
-    dimension,
-    categories: categories.filter((category) => category.dimension === dimension),
-  }),
-);
+const categoryGroups = CATEGORY_DIMENSIONS.map((dimension) => ({
+  dimension,
+  categories: categories.filter((category) => category.dimension === dimension),
+}));
 const showFilterControls = showFilters && (categories.length > 0 || timingFilters.length > 0);
 ---
 

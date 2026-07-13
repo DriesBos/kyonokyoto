@@ -57,6 +57,30 @@ test('permanent highlights resolve source venue data for locale cards', () => {
   assert.equal(event.source_url, 'https://www.kac.or.jp/');
 });
 
+test('permanent highlights preserve their three-part editorial taxonomy', () => {
+  const highlights = [
+    {
+      slug: 'kyoto-art-center',
+      is_active: true,
+      taxonomy: testTaxonomy(['institute', 'museum'], ['performance'], ['exhibition', 'workshop']),
+    },
+  ];
+
+  const [event] = permanentEventsForLocale({
+    highlights,
+    configuredSources: sources,
+    activeLocale: 'en',
+  });
+
+  assert.deepEqual(event.categories, [
+    'venue_category:institute',
+    'venue_category:museum',
+    'display_category:performance',
+    'event_category:exhibition',
+    'event_category:workshop',
+  ]);
+});
+
 test('permanent highlights use embedded venue metadata when no source row exists', () => {
   const highlights = [
     {
