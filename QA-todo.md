@@ -69,6 +69,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
+2026-07-13: Abeno Harukas event media now comes only from `.exhibition .figure img`, excluding ticket-sale banners and other images inside `#ticket`. Live structure was checked across all six published future detail pages; focused extractor coverage added, no crawl or database write run.
+
 2026-07-13: Explicit approval promoted `suchsize`, `tezukayama-gallery`, `hitoto`, `new-pure-plus`, and `hyogo-prefectural-museum-of-art` to public (`beta: false`). Focused config coverage locks this exact allowlist and guards nearby beta sources. No crawl or database write run.
 
 2026-07-12: Post-audit VPS cycle on merged `main` commit `2e7ee9c` attempted all 29 Osaka sources. Run totals: 5 success and 24 partial success; outcomes were 5 `source_ok`, 22 `source_needs_review`, 1 `source_blocked`, and 1 `source_empty`. The crawler fetched 126 pages, saved 44 event results, skipped 48, inserted 4 events, updated 39 existing events, and archived 7. All archival came from healthy complete discovery: `hyogo-prefectural-museum-of-art` saved 9 and archived 5; `tezukayama-gallery` saved 2 and archived 2. Translation writes inserted 8 and updated 64; the cycle-end global audit still reported the same 13 Kyoto gaps.

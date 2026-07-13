@@ -1232,6 +1232,28 @@ test('Osaka Geidai keeps art exhibition links and first event image only', async
   assert.deepEqual(event.image_urls, ['https://www.osaka-geidai.ac.jp/images/first.jpg']);
 });
 
+test('Abeno Harukas keeps exhibition media outside its ticket section', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const source = sources.find((item) => item.slug === 'abeno-harukas-art-museum');
+  const event = extractGenericEvent(
+    `<title>Van Gogh Exhibition | Abeno Harukas Museum</title>
+     <div class="exhibition clearfix">
+       <div class="figure"><img src="/exhibition/future/wallraf/images/img_wallraf.jpg"></div>
+       <p>July 4, 2026 - September 9, 2026</p>
+     </div>
+     <div id="ticket">
+       <img src="/exhibition/future/wallraf/images/ticket_set-gogh.png">
+     </div>`,
+    source,
+    'https://www.aham.jp/exhibition/future/wallraf/',
+  );
+
+  assert.equal(source?.selectors?.images, '.exhibition .figure img');
+  assert.deepEqual(event.image_urls, [
+    'https://www.aham.jp/exhibition/future/wallraf/images/img_wallraf.jpg',
+  ]);
+});
+
 test('NAKKA extraction keeps only the first event image', () => {
   const source = {
     slug: 'nakanoshima-museum-of-art-osaka',
