@@ -114,5 +114,5 @@ test('landing slider uses configured Tokyo museum sources', () => {
 });
 
 test('landing slider uses configured Hong Kong venues', () => {
-  assert.deepEqual(landingSliderSourceSlugsByCity['hong-kong'], ['m-plus', 'tai-kwun']);
+  assert.deepEqual(landingSliderSourceSlugsByCity['hong-kong'], ['m-plus', 'chat-the-mills']);
 });
