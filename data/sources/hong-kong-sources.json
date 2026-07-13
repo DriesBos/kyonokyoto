@@ -25,56 +25,6 @@
       "crawl_hints": { "skip_patterns": ["/past-exhibitions/", "/news/"], "max_detail_pages": 10 }
     },
     {
-      "slug": "tai-kwun",
-      "name": "Tai Kwun — Centre for Heritage and Arts",
-      "taxonomy": {
-        "venue_category": ["museum"],
-        "display_category": ["contemporary", "performance"],
-        "event_category": ["exhibition", "event"]
-      },
-      "language": "en",
-      "directions_query": "Tai Kwun, 10 Hollywood Road, Central, Hong Kong",
-      "lat": 22.2813608,
-      "lng": 114.1539743,
-      "base_url": "https://www.taikwun.hk/en/programme",
-      "start_urls": ["https://www.taikwun.hk/en/programme"],
-      "allowed_domains": ["www.taikwun.hk", "taikwun.hk"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/programme/detail/"],
-      "notes": "Official current/upcoming programme listing. Retain exhibitions and contemporary-art programmes, not shops or lifestyle offers.",
-      "beta": true,
-      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": {
-        "skip_patterns": ["/press/", "/shops/", "/dining/", "/past"],
-        "max_detail_pages": 12
-      }
-    },
-    {
-      "slug": "de-sarthe-gallery",
-      "name": "DE SARTHE",
-      "taxonomy": {
-        "venue_category": ["gallery"],
-        "display_category": ["contemporary"],
-        "event_category": ["exhibition"]
-      },
-      "language": "en",
-      "directions_query": "DE SARTHE, Wong Chuk Hang, Hong Kong",
-      "lat": 22.2486956,
-      "lng": 114.1633049,
-      "base_url": "https://www.desarthe.com/exhibitions",
-      "start_urls": ["https://www.desarthe.com/exhibitions"],
-      "allowed_domains": ["www.desarthe.com", "desarthe.com"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions/"],
-      "notes": "Official exhibitions index. Keep only DE SARTHE Hong Kong gallery exhibitions; exclude art-fair and artist-CV routes.",
-      "beta": true,
-      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": {
-        "skip_patterns": ["/artfairs/", "/artist/", "/press"],
-        "max_detail_pages": 8
-      }
-    },
-    {
       "slug": "blindspot-gallery",
       "name": "Blindspot Gallery",
       "taxonomy": {
@@ -99,28 +49,6 @@
         "skip_patterns": ["/past-exhibition/", "/art-fair/", "/news/"],
         "max_detail_pages": 6
       }
-    },
-    {
-      "slug": "jockey-club-creative-arts-centre",
-      "name": "Jockey Club Creative Arts Centre",
-      "taxonomy": {
-        "venue_category": ["institute", "gallery"],
-        "display_category": ["contemporary"],
-        "event_category": ["exhibition", "event"]
-      },
-      "language": "en",
-      "directions_query": "Jockey Club Creative Arts Centre, Shek Kip Mei, Hong Kong",
-      "lat": 22.3346654,
-      "lng": 114.1657188,
-      "base_url": "https://www.jccac.org.hk/?a=group&id=exhibition",
-      "start_urls": ["https://www.jccac.org.hk/?a=group&id=exhibition"],
-      "allowed_domains": ["www.jccac.org.hk", "jccac.org.hk"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["?a=doc&id=", "?a=group&id=exhibition"],
-      "notes": "Official JCCAC exhibition listing. Query-based detail URLs require targeted QA before promotion.",
-      "beta": true,
-      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "max_detail_pages": 10 }
     },
     {
       "slug": "m-plus",
@@ -202,14 +130,15 @@
       "directions_query": "HKDI Gallery, 3 King Ling Road, Hong Kong",
       "lat": 22.305728,
       "lng": 114.25345,
-      "base_url": "https://hkdi.edu.hk/en/hkdi_gallery",
-      "start_urls": ["https://hkdi.edu.hk/en/hkdi_gallery"],
+      "base_url": "https://hkdi.edu.hk/en/hkdi_gallery/",
+      "start_urls": ["https://hkdi.edu.hk/en/hkdi_gallery/"],
       "allowed_domains": ["hkdi.edu.hk", "www.hkdi.edu.hk"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/hkdi_gallery/exhibition/"],
       "notes": "Official HKDI Gallery page contains current season and archive in one index; date filtering must reject ended shows.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": { "listing_links": "#tabs--exhib-all a.exhib-list__item" },
       "crawl_hints": { "skip_patterns": ["/news/", "/uploaded_files/"], "max_detail_pages": 8 }
     },
     {
@@ -341,12 +270,14 @@
       "directions_query": "Whitestone Gallery Hong Kong, M Place",
       "lat": 22.248800079723647,
       "lng": 114.16390337529094,
-      "base_url": "https://www.whitestone-gallery.com/exhibitions/",
-      "start_urls": ["https://www.whitestone-gallery.com/exhibitions/"],
+      "base_url": "https://www.whitestone-gallery.com/blogs/exhibitions/tagged/location_hong-kong+current",
+      "start_urls": [
+        "https://www.whitestone-gallery.com/blogs/exhibitions/tagged/location_hong-kong+current"
+      ],
       "allowed_domains": ["www.whitestone-gallery.com", "whitestone-gallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/blogs/exhibitions/"],
-      "notes": "Official global exhibition index. Keep Hong Kong / M Place entries; coordinates follow the M Place map embedded on Whitestone’s official Hong Kong location page.",
+      "event_page_patterns": ["/blogs/gallery-exhibitions/hk-"],
+      "notes": "Official current Hong Kong exhibition index. Coordinates follow the M Place map embedded on Whitestone’s official Hong Kong location page.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "skip_patterns": ["/art-fairs/", "/blogs/articles/"], "max_detail_pages": 8 }
@@ -394,7 +325,7 @@
       "notes": "Official Squarespace exhibition calendar includes historical entries below current items; reject ended exhibitions by date.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "max_detail_pages": 6 }
+      "crawl_hints": { "skip_patterns": ["format=ical"], "max_detail_pages": 6 }
     },
     {
       "slug": "contemporary-by-angela-li",
@@ -439,50 +370,6 @@
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "max_detail_pages": 6 }
-    },
-    {
-      "slug": "perrotin-hong-kong",
-      "name": "Perrotin Hong Kong",
-      "taxonomy": {
-        "venue_category": ["gallery"],
-        "display_category": ["contemporary"],
-        "event_category": ["exhibition"]
-      },
-      "language": "en",
-      "directions_query": "Perrotin Hong Kong, K11 ATELIER Victoria Dockside",
-      "lat": 22.2949305,
-      "lng": 114.1755312,
-      "base_url": "https://www.perrotin.com/en/agenda/hong-kong/anytime",
-      "start_urls": ["https://www.perrotin.com/en/agenda/hong-kong/anytime"],
-      "allowed_domains": ["www.perrotin.com", "perrotin.com"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibitions/"],
-      "notes": "Official Hong Kong agenda currently has no matching exhibitions and the location is relocating. Keep beta until a new programme and address are announced.",
-      "beta": true,
-      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "skip_patterns": ["/exhibitions/past/"], "max_detail_pages": 5 }
-    },
-    {
-      "slug": "pace-gallery-hong-kong",
-      "name": "Pace Gallery Hong Kong",
-      "taxonomy": {
-        "venue_category": ["gallery"],
-        "display_category": ["contemporary"],
-        "event_category": ["exhibition"]
-      },
-      "language": "en",
-      "directions_query": "Pace Gallery Hong Kong, H Queen's",
-      "lat": 22.283037,
-      "lng": 114.1553153,
-      "base_url": "https://www.pacegallery.com/exhibitions/?region=Hong%20Kong",
-      "start_urls": ["https://www.pacegallery.com/exhibitions/?region=Hong%20Kong"],
-      "allowed_domains": ["www.pacegallery.com", "pacegallery.com"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/exhibitions/"],
-      "notes": "Official exhibitions index with Hong Kong region query. No current Hong Kong show appeared during research; location and programme need confirmation before promotion.",
-      "beta": true,
-      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "skip_patterns": ["/exhibitions/status/archive/"], "max_detail_pages": 6 }
     }
   ]
 }
