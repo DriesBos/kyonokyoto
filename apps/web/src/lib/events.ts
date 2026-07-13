@@ -8,7 +8,7 @@ import {
   nextRelevantScheduleStartDateOnly,
 } from '../../../../packages/shared/event-schedule.mjs';
 import { supabase } from './supabase';
-import type { AppCity } from './cities';
+import { dateOnlyInTimeZone, type AppCity } from './cities';
 import type { AppLocale } from './i18n';
 import { formatEventDateRange } from './calendar';
 import { withEventMediaDelivery } from './mediaDelivery';
@@ -112,11 +112,6 @@ export const localizeEvent = (event: EventRow, activeLocale: AppLocale): EventRo
   };
 };
 
-export const toJapanDate = (value: Date) =>
-  new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Tokyo',
-  }).format(value);
-
 export const formatEventsForLocale = ({
   events,
   activeLocale,
@@ -191,11 +186,13 @@ export const displayEventsForLocale = ({
   events,
   configuredSources,
   activeLocale,
-  today = toJapanDate(new Date()),
+  timeZone = 'Asia/Tokyo',
+  today = dateOnlyInTimeZone(new Date(), timeZone),
 }: {
   events: EventRow[];
   configuredSources: SourceConfig[];
   activeLocale: AppLocale;
+  timeZone?: string;
   today?: string;
 }) =>
   formatEventsForLocale({ events, activeLocale, configuredSources, today })

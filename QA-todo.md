@@ -2,6 +2,15 @@
 
 Update this file whenever source JSON changes or test crawls run.
 
+## Hong Kong Sources
+
+2026-07-13: Added 21 beta Hong Kong sources from the Google My Maps purple art layer. All rows use official English exhibition/programme pages, grouped taxonomy, map coordinates, `Asia/Hong_Kong`, and machine translation for Japanese. Config validation, 164 crawler tests, 86 web tests, Python tests, formatting, and the Astro build pass. No Supabase sync or live crawl run yet; no source is approved for public display.
+
+- Needs first-crawl tuning: `asia-art-archive` returned 403 to a static reachability check; `de-sarthe-gallery` timed out; `jockey-club-creative-arts-centre` uses query-string detail URLs; `asia-society-hong-kong` has a sparse exhibition index; `contemporary-by-angela-li` mixes current and archived shows; `perrotin-hong-kong` is relocating with no current programme; `pace-gallery-hong-kong` has no current Hong Kong show. Global indexes for DE SARTHE, Rossi & Rossi, David Zwirner, Gagosian, Whitestone, White Cube, Ben Brown, Perrotin, and Pace require venue-city QA before promotion.
+- Looks closest for first crawl: `chat-the-mills`, `tai-kwun`, `blindspot-gallery`, `m-plus`, `hkdi-gallery`, `empty-gallery`, `hong-kong-art-school-gallery`, `blue-lotus-gallery`, and `contemporary-by-angela-li`. This is config/reachability confidence only, not visual approval.
+- Marker decisions: obsolete `M+ Pavilion` became `m-plus`; closed `AfricArt Gallery Hong Kong` was omitted. H Queen's and Pedder Building are tenant containers. Graffiti Wall of Fame and ArtLane are places without recurring official event feeds. Curator Cafe, Blue Bottle, RealDeal, and Omotesando Koffee are not crawler sources.
+- Approval note: keep all Hong Kong rows `beta: true` until targeted VPS crawls and card/media QA pass.
+
 2026-07-12: Fixed shared identity collapse for inline exhibitions. `art-gallery-kitano`, `gallery-take-two`, `chushin-bijutsu`, and `hyogo-prefectural-museum-of-art` now persist their stable inline fragment as `external_id`, and URL identity keys include that explicit ID while still discarding arbitrary fragments. A data migration is prepared to preserve each existing legacy row under its current fragment before corrected crawls insert the other events. Focused and full crawler tests pass; no migration or database crawl run yet.
 
 2026-07-12: Added structural description resolution. Extraction now ranks configured/source-specific copy, Crawl4AI cleaned/pruned body prose, raw-page prose, JSON-LD, then metadata; title/date/location/hours/caption/boilerplate candidates are rejected. Crawl QA records description provenance, recoveries, rejections, and misses. Read-only comparison against 24 suspect published rows recovered real Pola Museum prose and correctly removed multiple date/label-only descriptions. Added live-HTML description selectors for Yamatane Museum of Art, the National Museum of Modern Art Tokyo, and KOUICHI FINE ARTS. Crawl4AI pin updated to 0.8.9 and VPS deploy now syncs Python requirements. Focused tests added; no crawl run.

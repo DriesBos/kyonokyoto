@@ -9,10 +9,18 @@ import TimeDivider from '../../../components/TimeDivider.astro';
 import kyotoPermanentPayload from '../../../../../../data/permanent/kyoto-permanent.json';
 import osakaPermanentPayload from '../../../../../../data/permanent/osaka-permanent.json';
 import tokyoPermanentPayload from '../../../../../../data/permanent/tokyo-permanent.json';
+import hongKongPermanentPayload from '../../../../../../data/permanent/hong-kong-permanent.json';
 import kyotoSourcesPayload from '../../../../../../data/sources/kyoto-sources.json';
 import osakaSourcesPayload from '../../../../../../data/sources/osaka-sources.json';
 import tokyoSourcesPayload from '../../../../../../data/sources/tokyo-sources.json';
-import { CITY_COOKIE, cityConfigFor, normalizeCity, type AppCity } from '../../../lib/cities';
+import hongKongSourcesPayload from '../../../../../../data/sources/hong-kong-sources.json';
+import {
+  CITY_COOKIE,
+  cityConfigFor,
+  dateOnlyInTimeZone,
+  normalizeCity,
+  type AppCity,
+} from '../../../lib/cities';
 import { LOCALE_COOKIE, normalizeLocale, resolveLocale, uiText } from '../../../lib/i18n';
 import { routePathFor } from '../../../lib/routeState';
 import { cleanDisplayText, googleCalendarUrl, mapsUrl } from '../../../lib/calendar';
@@ -77,17 +85,20 @@ const sourcesPayloadByCity = {
   kyoto: kyotoSourcesPayload,
   osaka: osakaSourcesPayload,
   tokyo: tokyoSourcesPayload,
+  'hong-kong': hongKongSourcesPayload,
 } satisfies Record<AppCity, { sources: SourceConfig[] }>;
 const permanentPayloadByCity = {
   kyoto: kyotoPermanentPayload,
   osaka: osakaPermanentPayload,
   tokyo: tokyoPermanentPayload,
+  'hong-kong': hongKongPermanentPayload,
 } satisfies Record<AppCity, { items: PermanentExhibitionHighlight[] }>;
 const sourcesPayload = sourcesPayloadByCity[city];
 const permanentHighlightsPayload = permanentPayloadByCity[city];
 
 const configuredSources = configuredSourcesFrom(sourcesPayload.sources as SourceConfig[]);
 const allActiveSources = allActiveSourcesFrom(sourcesPayload.sources as SourceConfig[]);
+const today = dateOnlyInTimeZone(new Date(), cityConfig.timeZone);
 const betaSourceSlugsAll = new Set(allActiveSources.filter((s) => s.beta).map((s) => s.slug));
 const rawEvents = await fetchPublishedEvents({ city, locale });
 const cityEvents = rawEvents.filter((event) => sourceSlugForEvent(event, allActiveSources));
@@ -101,6 +112,7 @@ const displayEvents = buildDisplayEventsForLocale({
   events,
   configuredSources,
   activeLocale: locale,
+  today,
 });
 const permanentEvents = buildPermanentEventsForLocale({
   highlights: permanentHighlightsPayload.items as PermanentExhibitionHighlight[],
@@ -199,7 +211,7 @@ const excerpt = (value: string | null) => {
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}
-                    googleCalendarUrl={googleCalendarUrl(event)}
+                    googleCalendarUrl={googleCalendarUrl(event, today)}
                     excerpt={excerpt(event.description)}
                     beta={isEventBeta(event)}
                   />
@@ -234,7 +246,7 @@ const excerpt = (value: string | null) => {
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}
-                    googleCalendarUrl={googleCalendarUrl(event)}
+                    googleCalendarUrl={googleCalendarUrl(event, today)}
                     excerpt={excerpt(event.description)}
                     beta={isEventBeta(event)}
                   />
@@ -271,7 +283,7 @@ const excerpt = (value: string | null) => {
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}
-                    googleCalendarUrl={googleCalendarUrl(event)}
+                    googleCalendarUrl={googleCalendarUrl(event, today)}
                     excerpt={excerpt(event.description)}
                     beta={isEventBeta(event)}
                   />

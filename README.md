@@ -1,6 +1,6 @@
 # kyo-no-kyoto
 
-Multi-city cultural events app for Kyoto, Osaka, and Tokyo.
+Multi-city cultural events app for Kyoto, Osaka, Tokyo, and Hong Kong.
 
 Source JSON defines venue truth. VPS crawler fetches event pages, stores normalized events and raw evidence in Supabase, and Astro serves city/locale routes from Netlify SSR with CDN revalidation.
 
@@ -41,9 +41,7 @@ Web requires:
 PUBLIC_SUPABASE_URL=
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 PUBLIC_GOOGLE_MAPS_API_KEY=
-PUBLIC_GOOGLE_MAPS_MAP_ID_KYOTO=
-PUBLIC_GOOGLE_MAPS_MAP_ID_OSAKA=
-PUBLIC_GOOGLE_MAPS_MAP_ID_TOKYO=
+PUBLIC_GOOGLE_MAPS_MAP_ID=
 ```
 
 Crawler requires:

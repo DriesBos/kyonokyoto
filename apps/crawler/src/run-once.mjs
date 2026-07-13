@@ -11,6 +11,7 @@ import {
   currentYearInTokyo,
   loadSourcesConfig,
   normalizeCity,
+  timeZoneForCity,
 } from '../../../data/sources/source-config.mjs';
 import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
@@ -452,6 +453,7 @@ const explicitVenueCityPatterns = new Map([
   ['tokyo', /(?:\bTokyo\b|東京(?:都|市)?)/iu],
   ['kyoto', /(?:\bKyoto\b|京都(?:府|市)?)/iu],
   ['osaka', /(?:\bOsaka\b|大阪(?:府|市)?)/iu],
+  ['hong-kong', /(?:\bHong Kong\b|香港)/iu],
   ['nagoya', /(?:\bNagoya\b|名古屋市?)/iu],
   ['kobe', /(?:\bKobe\b|神戸市?)/iu],
   ['yokohama', /(?:\bYokohama\b|横浜市?)/iu],
@@ -1586,10 +1588,12 @@ function parseEnglishSingleDate(dateText) {
   };
 }
 
+function toDateInTimeZone(value, timeZone = 'Asia/Tokyo') {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone }).format(value);
+}
+
 function toJapanDate(value) {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Tokyo',
-  }).format(value);
+  return toDateInTimeZone(value);
 }
 
 function shiftDateOnlyByYears(dateOnly, deltaYears) {
@@ -2276,6 +2280,13 @@ function pathnameMatchesPattern(pathname, pattern) {
   return normalizedPathname.includes(normalizedPattern) && normalizedPathname !== normalizedPattern;
 }
 
+function urlMatchesEventPattern(url, pattern) {
+  const parsed = new URL(url);
+  return pattern.startsWith('?')
+    ? parsed.search.toLowerCase().includes(pattern.toLowerCase())
+    : pathnameMatchesPattern(parsed.pathname, pattern);
+}
+
 function getGenericDetailUrlRecencyHint(url) {
   const parsed = new URL(url);
   const haystack = `${parsed.pathname} ${parsed.search}`;
@@ -2337,9 +2348,7 @@ function scoreGenericDetailUrl(source, url) {
   const patterns = (source.event_page_patterns ?? []).filter(
     (pattern) => pattern && pattern !== '/',
   );
-  const patternScore = patterns.some((pattern) => pathnameMatchesPattern(pathname, pattern))
-    ? 8
-    : 0;
+  const patternScore = patterns.some((pattern) => urlMatchesEventPattern(url, pattern)) ? 8 : 0;
   const keywordScore =
     /event|exhibition|exhibit|program|live|schedule|news|journal|show|artist|展|催|公演/i.test(
       `${pathname} ${search}`,
@@ -2397,9 +2406,7 @@ function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
       url,
       score: scoreGenericDetailUrl(source, url),
       recencyHint: getGenericDetailUrlRecencyHint(url),
-      matchesPattern: patterns.some((pattern) =>
-        pathnameMatchesPattern(new URL(url).pathname, pattern),
-      ),
+      matchesPattern: patterns.some((pattern) => urlMatchesEventPattern(url, pattern)),
     }))
     .filter((entry) => entry.score > 0)
     .sort(
@@ -4459,6 +4466,9 @@ function extractConfiguredImageUrls(detailHtml, detailUrl, source) {
 }
 
 function extractGenericEvent(detailHtml, source, detailUrl) {
+  const timezone = source.timezone ?? timeZoneForCity(source.city);
+  const utcOffset = timezone === 'Asia/Hong_Kong' ? '+08:00' : '+09:00';
+  const withUtcOffset = (value) => value?.replace(/(?:Z|[+-]\d{2}:\d{2})$/, utcOffset) ?? null;
   const titleInfo = extractGenericTitleInfo(detailHtml, source, detailUrl);
   const configuredDescription = selectorTextValues(detailHtml, selectorsFor(source, 'description'))
     .slice(0, 2)
@@ -4491,13 +4501,13 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
     start_time_text: null,
     end_time_text: null,
     is_all_day: true,
-    timezone: 'Asia/Tokyo',
+    timezone,
     ...buildScheduleFields({
       startDate: parsedDates.startDate,
       endDate: parsedDates.endDate,
     }),
-    calendar_starts_at: parsedDates.calendarStartsAt,
-    calendar_ends_at: parsedDates.calendarEndsAt,
+    calendar_starts_at: withUtcOffset(parsedDates.calendarStartsAt),
+    calendar_ends_at: withUtcOffset(parsedDates.calendarEndsAt),
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     source_url: detailUrl,
@@ -8287,9 +8297,9 @@ async function crawlSource({
     }
 
     const eventExtractor = eventExtractors[source.slug] ?? extractGenericEvent;
-    const todayJapan = toJapanDate(new Date());
-    const oneYearAgoJapan = shiftDateOnlyByYears(todayJapan, -1);
-    const previousYear = Number(todayJapan.slice(0, 4)) - 1;
+    const today = toDateInTimeZone(new Date(), source.timezone ?? timeZoneForCity(source.city));
+    const oneYearAgo = shiftDateOnlyByYears(today, -1);
+    const previousYear = Number(today.slice(0, 4)) - 1;
 
     const savedEvents = [];
     const skippedEvents = [];
@@ -8410,7 +8420,7 @@ async function crawlSource({
       }
 
       if (source.slug === 'sibasi') {
-        if (classifyEventTiming(extractedEvent, todayJapan) === 'past') {
+        if (classifyEventTiming(extractedEvent, today) === 'past') {
           pushSkippedEvent(skippedEvents, diagnostics, {
             detailUrl,
             title: extractedEvent.title,
@@ -8433,12 +8443,7 @@ async function crawlSource({
 
       const latestEventDate = getLatestEventDateOnly(extractedEvent);
       const hasOpenEndedSchedule = hasVerifiedOpenEndedSchedule(extractedEvent);
-      if (
-        !hasOpenEndedSchedule &&
-        latestEventDate &&
-        oneYearAgoJapan &&
-        latestEventDate < oneYearAgoJapan
-      ) {
+      if (!hasOpenEndedSchedule && latestEventDate && oneYearAgo && latestEventDate < oneYearAgo) {
         pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
           title: extractedEvent.title,
