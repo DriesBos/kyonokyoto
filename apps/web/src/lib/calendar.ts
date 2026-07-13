@@ -157,7 +157,7 @@ export const formatOngoingEventEnd = (
 
   const year = endDate.slice(2, 4);
   const dayMonth = formatDateOnly(endDate, locale, { month: true, day: true });
-  return { date: endDate, text: `UNTIL ${dayMonth.toUpperCase()} '${year}` };
+  return { date: endDate, text: `ONGOING — ${dayMonth.toUpperCase()} '${year}` };
 };
 
 export const formatEventDateRange = (

@@ -29,7 +29,7 @@ test('event date parts preserve machine-readable ISO endpoints', () => {
 test('ongoing event dates show only localized end-date copy', () => {
   assert.deepEqual(formatOngoingEventEnd('2026-08-01', 'raw date', 'en'), {
     date: '2026-08-01',
-    text: "UNTIL 1 AUG '26",
+    text: "ONGOING — 1 AUG '26",
   });
   assert.deepEqual(formatOngoingEventEnd('2026-08-01', 'raw date', 'ja'), {
     date: '2026-08-01',
