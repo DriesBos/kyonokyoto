@@ -108,6 +108,46 @@ test('named crawler scripts use registered source slugs', async () => {
   );
 });
 
+test('approved Osaka and Tokyo source allowlist is public without changing nearby beta sources', async () => {
+  const osakaSources = await loadSourcesConfig({ city: 'osaka' });
+  const tokyoSources = await loadSourcesConfig({ city: 'tokyo' });
+  const sourceBySlug = new Map(
+    [...osakaSources, ...tokyoSources].map((source) => [source.slug, source]),
+  );
+  const approvedSlugs = [
+    'suchsize',
+    'tezukayama-gallery',
+    'hitoto',
+    'new-pure-plus',
+    'hyogo-prefectural-museum-of-art',
+    'sumida-hokusai-museum',
+    'yayoi-kusama-museum',
+    'what-museum',
+    'university-art-museum-tokyo-geidai',
+    'yamatane-museum-of-art',
+    'national-museum-of-modern-art-tokyo',
+    'tokyo-node',
+    'tokyo-metropolitan-art-museum',
+    'take-ninagawa',
+    'perrotin-tokyo',
+  ];
+  const unchangedBetaSlugs = [
+    'i-gallery-osaka',
+    'itsuo-art-museum',
+    'gallery-nomart',
+    'tokyo-opera-city-art-gallery',
+    'taro-okamoto-memorial-museum',
+    'gyre-gallery',
+  ];
+
+  for (const slug of approvedSlugs) {
+    assert.equal(sourceBySlug.get(slug)?.beta, false, `${slug} should be public`);
+  }
+  for (const slug of unchangedBetaSlugs) {
+    assert.equal(sourceBySlug.get(slug)?.beta, true, `${slug} should remain beta`);
+  }
+});
+
 test('semantic dedupe preserves Japanese identity text', () => {
   const first = {
     source_url: 'https://museum.example/exhibitions/ja/',
@@ -139,8 +179,18 @@ test('crawl outcome gates stale archival and persisted status', () => {
       detailUrls: ['https://example.test/event'],
       savedEvents: [{ id: 'event-1' }],
       diagnostics: { missing_image_count: 1 },
+      usedGenericExtractor: true,
     }),
     'source_needs_review',
+  );
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: ['https://example.test/event'],
+      savedEvents: [{ id: 'event-1' }],
+      diagnostics: {},
+      usedGenericExtractor: true,
+    }),
+    'source_ok',
   );
   assert.equal(
     classifySourceOutcome({
@@ -483,7 +533,11 @@ test('event upsert fails fast on schema drift', async () => {
         },
         'source-id',
         'raw-page-id',
-        { title: 'Event title', source_url: 'https://museum.example/event' },
+        {
+          title: 'Event title',
+          source_url: 'https://museum.example/event',
+          schedule_segments: [{ is_all_day: true, start_date: '2026-07-13' }],
+        },
         'url:https://museum.example/event',
         async () => {
           calls += 1;
@@ -493,6 +547,37 @@ test('event upsert fails fast on schema drift', async () => {
     /Could not find the 'unexpected_field' column/,
   );
   assert.equal(calls, 1);
+});
+
+test('event upsert rejects invalid schedules before touching a published row', async () => {
+  let calls = 0;
+
+  await assert.rejects(
+    () =>
+      upsertEvent(
+        {
+          SUPABASE_URL: 'https://database.example',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+        },
+        'source-id',
+        'raw-page-id',
+        {
+          title: 'Event title',
+          source_url: 'https://museum.example/event',
+          schedule_type: 'range',
+          schedule_segments: [
+            { is_all_day: true, start_date: '2026-10-24', end_date: '2026-01-17' },
+          ],
+        },
+        'url:https://museum.example/event',
+        async () => {
+          calls += 1;
+          return new Response();
+        },
+      ),
+    /invalid event schedule/,
+  );
+  assert.equal(calls, 0);
 });
 
 test('event persistence stages draft before schedule write and publishes explicitly', async () => {
@@ -952,6 +1037,37 @@ test('generic title extraction prefers structured Event names', () => {
   assert.equal(hasValidEventTitle(event), true);
 });
 
+test('generic title extraction keeps title inside event scope and skips section headings', () => {
+  const structured = extractGenericEvent(
+    `
+      <main><h1>Current Exhibitions</h1></main>
+      <article itemscope itemtype="https://schema.org/ExhibitionEvent">
+        <span itemprop="name">Quiet Forms</span>
+        <time itemprop="startDate">July 11 – August 1, 2026</time>
+      </article>
+    `,
+    { name: 'Example Gallery', taxonomy: testTaxonomy(['gallery']) },
+    'https://example.test/exhibitions/quiet-forms/',
+  );
+  const secondaryHeading = extractGenericEvent(
+    `
+      <main>
+        <h1>みどころ</h1>
+        <h2>特別展「インコ イズ カミング！」</h2>
+        <p>2026年6月27日 - 2026年8月30日</p>
+      </main>
+    `,
+    { name: 'Example Museum', taxonomy: testTaxonomy(['museum']) },
+    'https://example.test/exhibitions/parrots/',
+  );
+
+  assert.equal(structured.title, 'Quiet Forms');
+  assert.equal(structured._title_origin, 'structured_dom');
+  assert.ok(structured._title_candidates.some((candidate) => candidate.title === 'Quiet Forms'));
+  assert.equal(secondaryHeading.title, '特別展「インコ イズ カミング！」');
+  assert.equal(secondaryHeading._title_origin, 'scoped_heading');
+});
+
 test('generic title prefers scoped heading then page-matched JSON-LD over unrelated events', () => {
   const detailUrl = 'https://example.test/exhibitions/right-show/';
   const structured = `
@@ -1038,6 +1154,18 @@ test('source crawl hints preserve focused Crawl4AI wait and scrolling controls',
 test('title quality rejects generic, source-name, and date-only values conservatively', () => {
   const source = { name: 'Example Gallery' };
 
+  for (const title of [
+    'NEWS & TOPICS',
+    'Category: Current Exhibitions',
+    'Exhibition Schedule',
+    'Mail News',
+    'Blog',
+    'みどころ',
+    '開催中の展覧会',
+  ]) {
+    assert.equal(hasValidEventTitle(assessEventTitle({ title }, source)), false, title);
+  }
+
   assert.equal(
     hasValidEventTitle(assessEventTitle({ title: 'Current Exhibitions' }, source)),
     false,
@@ -1055,6 +1183,10 @@ test('title quality rejects generic, source-name, and date-only values conservat
   );
   assert.equal(
     hasValidEventTitle(assessEventTitle({ title: 'TOKYO ART BOOK FAIR 2026' }, source)),
+    true,
+  );
+  assert.equal(
+    hasValidEventTitle(assessEventTitle({ title: 'NEWS: Art and Journalism' }, source)),
     true,
   );
 });
@@ -1092,6 +1224,22 @@ test('generic detail extraction can use configured listing link selectors', () =
   assert.deepEqual(
     extractGenericDetailUrls(listingHtml, 'https://example.test/events/', source, 4),
     ['https://example.test/events/selected/'],
+  );
+});
+
+test('generic detail extraction ignores taxonomy archive URLs', () => {
+  const listingHtml = `
+    <a href="/blog/categories/current-exhibitions/">Current exhibitions</a>
+    <a href="/exhibitions/quiet-forms/">Quiet Forms</a>
+  `;
+  const source = {
+    allowed_domains: ['example.test'],
+    event_page_patterns: ['/blog/', '/exhibitions/'],
+  };
+
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, 'https://example.test/exhibitions/', source, 4),
+    ['https://example.test/exhibitions/quiet-forms/'],
   );
 });
 
@@ -1145,6 +1293,34 @@ test('Osaka Geidai keeps art exhibition links and first event image only', async
 
   assert.equal(source.beta, false);
   assert.deepEqual(event.image_urls, ['https://www.osaka-geidai.ac.jp/images/first.jpg']);
+});
+
+test('Abeno Harukas keeps event title and media outside site chrome', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const source = sources.find((item) => item.slug === 'abeno-harukas-art-museum');
+  const event = extractGenericEvent(
+    `<title>Van Gogh Exhibition | Abeno Harukas Art Museum</title>
+     <div class="exhibition clearfix">
+       <div class="figure"><img src="/exhibition/future/wallraf/images/img_wallraf.jpg"></div>
+       <div class="detail">
+         <p itemprop="name" class="name"><span>Van Gogh Exhibition</span><br><span>Wallraf-Richartz Museum Collection</span></p>
+         <p>July 4, 2026 - September 9, 2026</p>
+       </div>
+     </div>
+     <div id="ticket">
+       <img src="/exhibition/future/wallraf/images/ticket_set-gogh.png">
+     </div>`,
+    source,
+    'https://www.aham.jp/exhibition/future/wallraf/',
+  );
+
+  assert.equal(source?.selectors?.title, 'p.name[itemprop="name"]');
+  assert.equal(source?.selectors?.images, '.exhibition .figure img');
+  assert.equal(event.title, 'Van Gogh Exhibition Wallraf-Richartz Museum Collection');
+  assert.equal(event._title_origin, 'configured_selector');
+  assert.deepEqual(event.image_urls, [
+    'https://www.aham.jp/exhibition/future/wallraf/images/img_wallraf.jpg',
+  ]);
 });
 
 test('NAKKA extraction keeps only the first event image', () => {
@@ -2422,6 +2598,79 @@ test('Mori Art Museum source config uses content-main copy and images', async ()
   );
 });
 
+test('Museum of Contemporary Art Tokyo keeps only exhibition-entry art', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'museum-of-contemporary-art-tokyo');
+  const artUrl = 'https://www.mot-art-museum.jp/assets/exhibitions/b077-eric-carle.jpg';
+  const detailHtml = `
+    <meta property="og:image" content="https://www.mot-art-museum.jp/_assets/images/head/og-image@2x.png">
+    <h1>Eric Carle Exhibition</h1>
+    <p>July 1, 2026 - September 30, 2026</p>
+    <p>Exhibition description long enough for the generic extractor to keep as useful event copy.</p>
+    <div class="l-exhibitions-entry-main__image">
+      <picture><source srcset="${artUrl}"><img src="${artUrl}" alt="Eric Carle artwork"></picture>
+    </div>
+    <button><img src="https://www.mot-art-museum.jp/_assets/images/ico-sp-open-arrow@2x.png" alt="open"></button>
+    <a href="https://x.com/"><img src="https://www.mot-art-museum.jp/_assets/images/ico-x.png" alt="X"></a>
+  `;
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.mot-art-museum.jp/en/exhibitions/eric-carle/',
+  );
+  const probedUrls = [];
+  const normalized = await normalizeEventImagesForSource(event, source, {
+    fetchImageDimensionsFn: async (url) => {
+      probedUrls.push(url);
+      return { width: 1600, height: 1200 };
+    },
+  });
+
+  assert.equal(source?.selectors?.images, '.l-exhibitions-entry-main__image');
+  assert.equal(source?.skip_og_image, true);
+  assert.equal(source?.measure_image_dimensions, true);
+  assert.deepEqual(event.image_urls, [artUrl]);
+  assert.deepEqual(normalized.image_urls, [artUrl]);
+  assert.deepEqual(probedUrls, [artUrl]);
+});
+
+test('National Art Center Tokyo keeps hero and editorial art outside shared arrow UI', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'national-art-center-tokyo');
+  const heroUrl = 'https://www.nact.jp/media/_louvre26_Banner_yoko_001.jpg';
+  const editorialUrl = 'https://www.nact.jp/media/louvre-installation-01.jpg';
+  const detailHtml = `
+    <meta property="og:image" content="https://www.nact.jp/common/img/ogp.jpg">
+    <h1>Louvre Museum Exhibition</h1>
+    <p>September 9, 2026 - December 13, 2026</p>
+    <p>Exhibition description long enough for the generic extractor to keep as useful event copy.</p>
+    <div class="main_v"><div><div class="main"><img src="${heroUrl}" alt="Louvre exhibition"></div></div></div>
+    <img class="mt-image-none" src="${editorialUrl}" alt="Installation view">
+    <a href="/english/exhibition_and_event/"><img src="https://www.nact.jp/common/img/common/arrow01.svg" alt="Back"></a>
+  `;
+
+  const event = extractGenericEvent(
+    detailHtml,
+    source,
+    'https://www.nact.jp/english/exhibition_special/2026/louvre2026/',
+  );
+  const probedUrls = [];
+  const normalized = await normalizeEventImagesForSource(event, source, {
+    fetchImageDimensionsFn: async (url) => {
+      probedUrls.push(url);
+      return { width: 1600, height: 900 };
+    },
+  });
+
+  assert.deepEqual(source?.selectors?.images, ['.main_v', '.mt-image-none']);
+  assert.equal(source?.skip_og_image, true);
+  assert.equal(source?.measure_image_dimensions, true);
+  assert.deepEqual(event.image_urls, [heroUrl, editorialUrl]);
+  assert.deepEqual(normalized.image_urls, [heroUrl, editorialUrl]);
+  assert.deepEqual(probedUrls, [heroUrl, editorialUrl]);
+});
+
 test('Yutaka Kikutake Gallery source config keeps current/upcoming and artwork images', async () => {
   const sources = await loadSourcesConfig({ city: 'tokyo' });
   const source = sources.find((candidate) => candidate.slug === 'yutaka-kikutake-gallery');
@@ -3286,6 +3535,68 @@ test('noisy generic sources pin event title and discovery fields', async () => {
     '.l-exhibition-intro__content p',
   ]);
   assert.equal(kouichi?.selectors?.description, '.HTML__Container-sc-1im40xc-0 p');
+});
+
+test('reported Osaka title leaks resolve to concrete event pages and title nodes', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const newPure = sources.find((source) => source.slug === 'new-pure-plus');
+  const jitsuzaisei = sources.find((source) => source.slug === 'jitsuzaisei');
+  const nakanoshima = sources.find((source) => source.slug === 'nakanoshima-kosetsu-museum');
+
+  const newPureUrls = extractGenericDetailUrls(
+    `
+      <section id="current-section"><a title="Current show" href="/17318">Current show</a></section>
+      <section id="upcoming-section"><a title="Upcoming show" href="/17349">Upcoming show</a></section>
+      <a href="/exhibition/upcoming">Upcoming exhibition</a>
+      <a href="/exhibition/past">Past exhibition</a>
+    `,
+    newPure.start_urls[0],
+    newPure,
+    6,
+  );
+  const jitsuzaiseiUrls = extractGenericDetailUrls(
+    `
+      <a href="/post/tamashii-no-kagami">Exhibition</a>
+      <a href="/blog/categories/past-exhibitions">Past exhibitions</a>
+      <a href="/news-topics">NEWS &amp; TOPICS</a>
+    `,
+    jitsuzaisei.start_urls[0],
+    jitsuzaisei,
+    4,
+  );
+  const nakanoshimaEvent = extractGenericEvent(
+    `
+      <div class="single__info__txtwrap--ttl">特別展「インコ イズ カミング！」</div>
+      <h1>みどころ</h1>
+      <p>2026年6月27日 - 2026年8月30日</p>
+    `,
+    nakanoshima,
+    'https://www.kosetsu-museum.or.jp/nakanoshima/exhibition/now/',
+  );
+
+  assert.deepEqual(newPureUrls, ['https://newpureplus.com/17318', 'https://newpureplus.com/17349']);
+  assert.deepEqual(jitsuzaiseiUrls, ['https://www.jitsuzaisei.com/post/tamashii-no-kagami']);
+  assert.equal(nakanoshimaEvent.title, '特別展「インコ イズ カミング！」');
+  assert.equal(nakanoshimaEvent._title_origin, 'configured_selector');
+});
+
+test('Tokyo Metropolitan Art Museum keeps only the exhibition poster', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'tokyo-metropolitan-art-museum');
+  const posterUrl = 'https://www.tobikan.jp/media/img/poster/2026_britishmuseum_l.jpg';
+  const event = extractGenericEvent(
+    `<meta property="og:image" content="https://tobikan.jp/media/img/poster/2026_britishmuseum_l.jpg">
+     <h1>British Museum Exhibition</h1>
+     <p>July 25, 2026 - October 18, 2026</p>
+     <div class="exhibition-poster"><img src="../../media/img/poster/2026_britishmuseum_l.jpg"></div>
+     <img src="https://tobikan.jp/media/img/poster/2026_britishmuseum_l.jpg">`,
+    source,
+    'https://www.tobikan.jp/en/exhibition/2026_britishmuseum.html',
+  );
+
+  assert.equal(source?.selectors?.images, '.exhibition-poster');
+  assert.equal(source?.skip_og_image, true);
+  assert.deepEqual(event.image_urls, [posterUrl]);
 });
 
 test('crawl QA report summarizes saved events, missing translations, and diagnostics', () => {

@@ -374,10 +374,6 @@ const locationNameForEvent = (
   return venueLocation?.name || source?.name || fallbackName;
 };
 
-const locationCategoriesForSource = (source: SourceConfig) => {
-  return flattenTaxonomy(source.taxonomy);
-};
-
 export const mapLocationIdForEvent = (
   event: EventRow,
   sourceSlug: string | null,
@@ -456,9 +452,7 @@ export const mapSourcesForEvents = (
     if (lat === null || lng === null || !id) return;
 
     const existing = locations.get(id);
-    const categories = source
-      ? locationCategoriesForSource(source)
-      : normalizeCategoryList(event.categories ?? []);
+    const categories = normalizeCategoryList(event.categories ?? []);
     if (existing) {
       existing.categories = [...new Set([...existing.categories, ...categories])];
       return;

@@ -69,10 +69,16 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
+2026-07-13: Generic-title source leaks were tightened without a crawl or database write. NEW PURE+ now follows titled detail anchors only inside live `#current-section` and `#upcoming-section` containers, rejects exhibition category indexes, and reads `h1.post-title`. JITSUZAISEI now follows only concrete `/post/` links, rejects `/blog/categories/` and `/news-topics`, and reads Wix `h1[data-hook="post-title"]`. Nakanoshima Kosetsu reads the event title from Japanese `.single__info__txtwrap--ttl` or English `.info__content--ttl`, avoiding the later `みどころ` heading. Clean recrawl and stale-row cleanup remain pending.
+
+2026-07-13: Abeno Harukas titles now come from `p.name[itemprop="name"]`, removing the museum-name document-title suffix; media comes only from `.exhibition .figure img`, excluding ticket-sale banners and other images inside `#ticket`. Live structure was checked across all six event pages; focused extractor coverage added, no crawl or database write run.
+
+2026-07-13: Explicit approval promoted `suchsize`, `tezukayama-gallery`, `hitoto`, `new-pure-plus`, and `hyogo-prefectural-museum-of-art` to public (`beta: false`). Focused config coverage locks this exact allowlist and guards nearby beta sources. No crawl or database write run.
+
 2026-07-12: Post-audit VPS cycle on merged `main` commit `2e7ee9c` attempted all 29 Osaka sources. Run totals: 5 success and 24 partial success; outcomes were 5 `source_ok`, 22 `source_needs_review`, 1 `source_blocked`, and 1 `source_empty`. The crawler fetched 126 pages, saved 44 event results, skipped 48, inserted 4 events, updated 39 existing events, and archived 7. All archival came from healthy complete discovery: `hyogo-prefectural-museum-of-art` saved 9 and archived 5; `tezukayama-gallery` saved 2 and archived 2. Translation writes inserted 8 and updated 64; the cycle-end global audit still reported the same 13 Kyoto gaps.
 
 - Needs JSON/extractor tuning: `yod-gallery` was blocked; `congres-square-grand-green-osaka` was empty; `abeno-harukas-art-museum` hit rendered shells and missed 2 dates; `artcourt-gallery` saved 0/3; `hill-top-gallery` saved 0/1; `i-gallery-osaka` saved 0/2 with invalid titles/rendered shells; `itsuo-art-museum` saved 0/6 with missing dates; `koji-kinutani-tenku-art-museum` saved 0/1; `masaki-art-museum` saved 0/4; `osaka-nihon-mingeikan` saved 1/6 with image/title/date skips; `osaka-ukiyoe-museum` saved 0/2; `takeo-exhibitions` and `wa-gallery-osaka` each saved 0/1.
-- Looks close; visual approval needed: `hitoto`, `jitsuzaisei`, `kouichi-fine-arts`, `nakanoshima-kosetsu-museum`, `national-museum-of-art-osaka`, `new-pure-plus`, `plus-y-gallery`, `suchsize`, and `yoshimi-arts` saved plausible events but emitted review diagnostics. `gallery-nomart` and `issey-miyake-semba-creation-space` returned only old events.
+- Looks close; visual approval needed: `jitsuzaisei`, `kouichi-fine-arts`, `nakanoshima-kosetsu-museum`, `national-museum-of-art-osaka`, `plus-y-gallery`, and `yoshimi-arts` saved plausible events but emitted review diagnostics. `gallery-nomart` and `issey-miyake-semba-creation-space` returned only old events.
 
 2026-07-12: Tezukayama Gallery now discovers detail pages only from current/future status listings. Detail extraction reads title, date, description, then full-resolution gallery hrefs in page order. Japanese and English status pages are native. Focused test added; no crawl run.
 
@@ -92,7 +98,7 @@ Update this file whenever source JSON changes or test crawls run.
 - `artarea-b1`: 2026-06-26 removed from Osaka source JSON by request; no crawl run.
 - `kaze-art-planning`: 2026-06-26 removed from Osaka source JSON by request; no crawl run.
 
-These sources need more JSON tuning before approval. Keep `beta: true` until fixed and re-crawled cleanly.
+These sources need more JSON tuning before approval. Keep `beta: true` until fixed and re-crawled cleanly unless an explicit approval note below says otherwise.
 
 ### `i-gallery-osaka`
 
@@ -108,15 +114,14 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 
 ### `new-pure-plus`
 
-- Problem: saved category/index pages.
-- Crawl leak examples: `/exhibition/past`, generic `past exhibition`.
-- Likely fix: add skip for `/past`; tune selectors for current/upcoming detail content.
+- Approval note: promoted to public on 2026-07-13 by explicit request.
+- JSON tuned: current/upcoming event-detail anchors only; current/upcoming/past category pages skipped.
+- Pending: clean recrawl and removal of stale generic-title rows.
 
 ### `jitsuzaisei`
 
-- Problem: saved blog/news index pages.
-- Crawl leak examples: `Blog`, `NEWS&TOPICS`, `/blog/categories/past-exhibitions`.
-- Likely fix: skip `/blog/categories/` and `/news-topics`; keep concrete `/post/...` exhibition pages.
+- JSON tuned: concrete `/post/` exhibition pages only; blog-category and news indexes skipped.
+- Pending: clean recrawl and visual approval; source remains beta.
 
 ### `plus-y-gallery`
 
@@ -148,18 +153,25 @@ Review manually, then remove `beta` when approved:
 
 - `osaka-geidai-whatsnew`: tag filter worked; 6 tagged items saved.
 - `kouichi-fine-arts`: one clean exhibition saved.
-- `suchsize`: mostly useful; inspect `Texts` leak before approval.
 - `artcourt-gallery`: real events plus one index leak; small skip-pattern fix likely enough.
 - `takeo-exhibitions`: one saved event; title generic, inspect before approval.
 
 ## Tokyo Sources
+
+2026-07-13: Tokyo Metropolitan Art Museum now extracts only `.exhibition-poster` and skips its duplicate Open Graph poster. Web cards cap existing stored rows to one image immediately. Focused crawler and web tests added; no crawl or database write run.
+
+2026-07-13: Explicit approval promoted `sumida-hokusai-museum`, `yayoi-kusama-museum`, `what-museum`, `university-art-museum-tokyo-geidai`, `yamatane-museum-of-art`, `national-museum-of-modern-art-tokyo`, `tokyo-node`, `tokyo-metropolitan-art-museum`, `take-ninagawa`, and `perrotin-tokyo` to public (`beta: false`). Focused config coverage locks this exact allowlist and guards nearby beta sources. No crawl or database write run.
+
+2026-07-13: Museum of Contemporary Art Tokyo now extracts media only from `.l-exhibitions-entry-main__image`; National Art Center Tokyo now extracts only `.main_v` hero and `.mt-image-none` editorial art. Both skip Open Graph defaults and probe final image dimensions. Representative regression fixtures exclude MOCA chevrons/X icons/default OG and NACT shared red-arrow SVG. MOCA still needs separate discovery tuning; no crawl run.
+
+2026-07-13: Yutaka Kikutake Gallery publisher upload URLs return 403 when third-party display omits the publisher Referer. Web display now rewrites only exact HTTPS `www.yutakakikutakegallery.com/ykgg/wp-content/uploads/` raster URLs through a bounded, cached server proxy that sends the required root Referer; other hosts, paths, protocols, redirects, non-images, and oversized responses are rejected. Existing event rows are fixed at display time after deploy; crawler storage remains unchanged. No crawl or database write run; source remains beta pending visual approval.
 
 2026-07-12: Post-audit VPS cycle on merged `main` commit `2e7ee9c` attempted all 40 Tokyo sources. Run totals: 4 success and 36 partial success; outcomes were 4 `source_ok`, 32 `source_needs_review`, 2 `source_empty`, 1 `source_blocked`, and 1 `source_degraded`. The crawler fetched 271 pages, saved 105 event results, skipped 71, inserted 3 events, updated 102 existing events, and archived 0. Translation writes inserted 6 and updated 204; the cycle-end global audit still reported the same 13 Kyoto gaps. A post-cycle backfill wrote all 13 missing translations with 0 skips; verification then passed all 274 published events with 0 gaps.
 
 - Needs JSON/extractor tuning: `curation-fair-tokyo` was blocked by a JavaScript shell; `museum-of-contemporary-art-tokyo` and `tokyo-opera-city-art-gallery` returned empty discovery; `21-21-design-sight` saved 4 but had degraded fetch health; `artizon-museum` saved 0/4 and `atelier-muji-ginza` saved 0/1 because dates were missing; `nanzuka` saved 0/1 after rendered shells and a missing date; `ota-fine-arts` saved 0/6 because all titles were invalid; `perrotin-tokyo` saved 0/1 for a missing date; `play-museum` saved 0/1 for a missing image; `kenji-taki-gallery` saved 1/3 with two missing images; `setagaya-art-museum` saved 6/7 with one missing image; `sumida-hokusai-museum` saved 3/7 with three missing dates and one missing image; `tokyo-photographic-art-museum` saved 7/10 with three missing images. `pola-museum-annex` still followed news/staff URLs. `national-museum-of-modern-art-tokyo`, `taro-nasu-gallery`, and `university-art-museum-tokyo-geidai` emitted missing/rejected-description diagnostics.
 - No current rows survived the review window: `issey-miyake-ginza-cube`, `issey-miyake-shinjuku-shikaku`, `japan-folk-crafts-museum`, and `maho-kubota-gallery` returned only old events.
 - Healthy complete discovery: `ginza-graphic-gallery`, `scai-piramide`, and `snow-contemporary` each saved 1; `standing-pine-tokyo` saved 7 and skipped 1 old row. All four returned `source_ok` and archived 0.
-- Looks close; visual approval needed: `lurf-museum` saved 4, `mori-art-museum` 6, `national-art-center-tokyo` 2, `tokyo-metropolitan-art-museum` 12, `tokyo-node` 3, `what-museum` 5, and `yutaka-kikutake-gallery` 2 with no skips. `scai-park` and `scai-the-bathhouse` each saved 1 but lacked descriptions; `take-ninagawa` saved 6 with no skips but lacked 2 descriptions. Other plausible rows with old-only skips came from `gyre-gallery`, `pola-museum-annex`, `taro-okamoto-memorial-museum`, `yamatane-museum-of-art`, and `yayoi-kusama-museum`.
+- Looks close; visual approval needed: `lurf-museum` saved 4, `mori-art-museum` 6, `national-art-center-tokyo` 2, and `yutaka-kikutake-gallery` 2 with no skips. `scai-park` and `scai-the-bathhouse` each saved 1 but lacked descriptions. Other plausible rows with old-only skips came from `gyre-gallery`, `pola-museum-annex`, and `taro-okamoto-memorial-museum`.
 
 2026-07-12: Corrected `pola-museum-annex` from the unrelated Hakone Pola Museum domain to the official Ginza current-exhibition page. Discovery now treats that page as the single detail, reads only the exhibition block, removes commented-out title text, and spans both published phases of split exhibitions. Focused test added; no database crawl run yet.
 
@@ -174,7 +186,7 @@ Review manually, then remove `beta` when approved:
 - `setagaya-art-museum`: 2026-06-26 source config now reads `#EXHB-WORKS-LIST img, ul.more img` so event cards use Works on Display images and skip flyer/Pickup thumbnails. Local crawl saved 7 events, skipped 1 missing-image row, and reported 0 missing translations.
 - `standing-pine-tokyo`: 2026-06-26 source config now uses English `/en/exhibitions`, follows `.split-block__item-link`, reads left-column title/date rows, reads right-column copy, and trims artist names after `|`. No-write live extraction of `/en/exhibitions/402` returned `Dear Summer`, `2026-07-04` to `2026-07-25`, and a cover image.
 - `tokyo-node`: 2026-06-26 source config now reads `.e-gallery_fv_thumbnail_mobile img.image-square`, which is the second event visual, and skips desktop hero plus related-event square thumbnails. Local crawl saved 3 events, skipped 0, and reported 0 missing images/translations.
-- `yutaka-kikutake-gallery`: 2026-06-26 source config now follows only `ul.ex-current a, ul.ex-upcoming a`, reads date/copy from `.ex-spec`/`.ex-description`, and reads ordered artwork from `div.artwork img[src*="/wp-content/uploads/"]`. Local crawl saved 2 current events, archived 6 older rows, skipped 0, and reported 0 missing images/translations.
+- `yutaka-kikutake-gallery`: 2026-06-26 source config now follows only `ul.ex-current a, ul.ex-upcoming a`, reads date/copy from `.ex-spec`/`.ex-description`, and reads ordered artwork from `div.artwork img[src*="/wp-content/uploads/"]`. Local crawl saved 2 current events, archived 6 older rows, skipped 0, and reported 0 missing images/translations. 2026-07-13 web delivery added bounded Referer proxy for exact publisher upload URLs; no recrawl needed for existing rows.
 
 New Tokyo sources are `beta: true` and pending first Tokyo crawl QA.
 
@@ -214,11 +226,9 @@ New Tokyo sources are `beta: true` and pending first Tokyo crawl QA.
 ### Looks close
 
 - `tokyo-photographic-art-museum`: saved 7; skipped 3 missing-image rows. Review movie/news rows before approval.
-- `take-ninagawa`: saved 6; review single-day dates before approval.
 - `ginza-graphic-gallery`: saved 2; first-image-only DNP schedule extraction.
 - `setagaya-art-museum`: saved 7; skipped 1 missing-image row; Works on Display image selector tuned.
 - `gyre-gallery`: saved 2; skipped 4 old rows.
-- `tokyo-node`: saved 3; second-image-only selector tuned.
 - `mitsubishi-ichigokan-museum`: saved 3; skipped 2 missing-image rows.
 - `taro-nasu-gallery`: saved 1; skipped 5 old rows.
 

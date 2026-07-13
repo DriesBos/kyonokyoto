@@ -18,6 +18,7 @@ Status: active.
 - Require valid title, verified date, valid description, and final accepted media before persistence.
 - Keep the shared final media pass as the boundary for generic, configured, and source-specific images.
 - Use per-source `skip_og_image: true` when generic Open Graph media is not event media.
+- Keep generic fallback warnings informational; degrade runs only for field or fetch problems.
 - Emit crawl QA report into `crawl_runs.logs`.
 
 Exit criteria:

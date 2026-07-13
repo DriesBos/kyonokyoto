@@ -24,6 +24,24 @@ test('bracket weekdays normalize and Artizon English range parses', () => {
   );
 });
 
+test('MoMAK omitted end year rolls across New Year', async () => {
+  const source = (await loadSourcesConfig({ city: 'kyoto' })).find(
+    (candidate) => candidate.slug === 'momak',
+  );
+  const event = eventExtractors.momak(
+    `<section id="scTitle">
+      <p>2026.10.24 sat. - 01.17 sun.</p>
+      <p>Creating Japanese Jewellery: Personal Expression and Memory</p>
+    </section>
+    <div class="description"><p>Exhibition description.</p></div>`,
+    source,
+    'https://www.momak.go.jp/English/?p=106584',
+  );
+
+  assert.equal(event.start_date, '2026-10-24');
+  assert.equal(event.end_date, '2027-01-17');
+});
+
 test('date candidates use typed page-matching JSON-LD and deterministic precedence', () => {
   const detailUrl = 'https://example.test/exhibitions/current';
   const html = `

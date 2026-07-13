@@ -11,6 +11,7 @@ import { supabase } from './supabase';
 import type { AppCity } from './cities';
 import type { AppLocale } from './i18n';
 import { formatEventDateRange } from './calendar';
+import { withEventMediaDelivery } from './mediaDelivery';
 import type { SourceConfig } from './sources';
 import { sourceTruthForEvent } from './sources';
 
@@ -128,7 +129,7 @@ export const formatEventsForLocale = ({
   today: string;
 }): ClassifiedEvent[] =>
   events.map((rawEvent) => {
-    const event = localizeEvent(rawEvent, activeLocale);
+    const event = withEventMediaDelivery(localizeEvent(rawEvent, activeLocale));
     const sourceTruth = sourceTruthForEvent(event, configuredSources, activeLocale);
     const scheduleSegments = eventScheduleSegments(event);
     const selectedSegment = activeOrNextScheduleSegment(event, today);

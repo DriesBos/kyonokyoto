@@ -339,9 +339,9 @@ export function activeOrNextScheduleSegment(event, todayDateOnly) {
   return segments.find(({ start }) => start > today)?.segment ?? null;
 }
 
-export function isEventWithinDisplayWindow(event, todayDateOnly, { monthsAhead = 6 } = {}) {
+export function isEventWithinDisplayWindow(event, todayDateOnly) {
   const start = nextRelevantScheduleStartDateOnly(event, todayDateOnly);
-  const cutoff = addMonthsDateOnly(todayDateOnly, monthsAhead);
+  const cutoff = addMonthsDateOnly(todayDateOnly, 12);
 
   if (!start) return false;
   if (!cutoff) return true;

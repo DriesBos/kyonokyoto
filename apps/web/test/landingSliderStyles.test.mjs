@@ -38,13 +38,20 @@ test('landing shutter fill covers from bottom without moving its content coordin
 test('landing uses an odd row count so no shutter boundary cuts the centered logo', async () => {
   const script = await readFile(scriptPath, 'utf8');
 
+  assert.match(script, /const rowOverlapPixels = 1/);
   assert.match(script, /const minimumRowCount = Math\.ceil\(height \/ preferredRowHeight\)/);
   assert.match(
     script,
     /const rowCount = minimumRowCount \+ \(minimumRowCount % 2 === 0 \? 1 : 0\)/,
   );
-  assert.match(script, /const rowHeight = height \/ rowCount/);
+  assert.match(
+    script,
+    /const rowHeight = \(height \+ \(rowCount - 1\) \* rowOverlapPixels\) \/ rowCount/,
+  );
+  assert.match(script, /const rowTop = index \* \(rowHeight - rowOverlapPixels\)/);
   assert.match(script, /row\.style\.flexBasis = `\$\{rowHeight\}px`/);
+  assert.match(script, /row\.style\.marginBottom = `-\$\{rowOverlapPixels\}px`/);
+  assert.match(script, /setProperty\('--landing-shutter-content-top', `\$\{rowTop\}px`\)/);
 });
 
 test('landing text blends over images and stays white over animated shutters', async () => {

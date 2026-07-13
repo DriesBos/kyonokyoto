@@ -109,7 +109,7 @@ export const permanentEventsForLocale = ({
         source_id: highlight.slug,
         title: institutionName,
         categories: flattenTaxonomy(
-          assertTaxonomy(source?.taxonomy ?? highlight.taxonomy, highlight.slug),
+          assertTaxonomy(highlight.taxonomy ?? source?.taxonomy, highlight.slug),
         ),
         date_text: cadenceDateText[activeLocale],
         institution_name: institutionName,

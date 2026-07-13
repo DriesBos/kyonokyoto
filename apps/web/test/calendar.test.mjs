@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const { formatEventDateParts, formatEventDateRange } = await import('../src/lib/calendar.ts');
+const { formatEventDateParts, formatEventDateRange, formatOngoingEventEnd } =
+  await import('../src/lib/calendar.ts');
 
 test('event dates format from normalized ISO values for English and Japanese', () => {
   assert.equal(
@@ -22,5 +23,20 @@ test('event date parts preserve machine-readable ISO endpoints', () => {
     startText: '20 Dec 2026',
     endText: '10 Jan 2027',
     separator: ' – ',
+  });
+});
+
+test('ongoing event dates show only localized end-date copy', () => {
+  assert.deepEqual(formatOngoingEventEnd('2026-08-01', 'raw date', 'en'), {
+    date: '2026-08-01',
+    text: "ONGOING — 1 AUG '26",
+  });
+  assert.deepEqual(formatOngoingEventEnd('2026-08-01', 'raw date', 'ja'), {
+    date: '2026-08-01',
+    text: '2026年8月1日まで',
+  });
+  assert.deepEqual(formatOngoingEventEnd(null, 'Open ended', 'en'), {
+    date: null,
+    text: 'Open ended',
   });
 });

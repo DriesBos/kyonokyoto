@@ -18,6 +18,7 @@ const revealSeconds = 0.75;
 const imageHoldSeconds = 1.5;
 const coverSeconds = 0.75;
 const rowStaggerSeconds = 0.02;
+const rowOverlapPixels = 1;
 const coveredClipPath = 'inset(0% 0 0 0)';
 const collapsedTopClipPath = 'inset(0 0 100% 0)';
 const collapsedBottomClipPath = 'inset(100% 0 0 0)';
@@ -97,23 +98,25 @@ const createRows = (
   const { width, height } = root.getBoundingClientRect();
   const minimumRowCount = Math.ceil(height / preferredRowHeight);
   const rowCount = minimumRowCount + (minimumRowCount % 2 === 0 ? 1 : 0);
-  const rowHeight = height / rowCount;
+  const rowHeight = (height + (rowCount - 1) * rowOverlapPixels) / rowCount;
   const fragment = document.createDocumentFragment();
 
   for (let index = 0; index < rowCount; index += 1) {
+    const rowTop = index * (rowHeight - rowOverlapPixels);
     const row = document.createElement('span');
     const fill = document.createElement('span');
     const whiteContent = content.cloneNode(true) as HTMLElement;
 
     row.className = 'landing__shutter-row';
     row.style.flexBasis = `${rowHeight}px`;
+    if (index < rowCount - 1) row.style.marginBottom = `-${rowOverlapPixels}px`;
     fill.className = 'landing__shutter-fill';
     fill.style.clipPath = fillClipPath;
     whiteContent.classList.add('landing__content--shutter');
     whiteContent.setAttribute('aria-hidden', 'true');
     whiteContent.style.width = `${width}px`;
     whiteContent.style.height = `${height}px`;
-    whiteContent.style.setProperty('--landing-shutter-content-top', `${index * rowHeight}px`);
+    whiteContent.style.setProperty('--landing-shutter-content-top', `${rowTop}px`);
     fill.append(whiteContent);
     row.append(fill);
     fragment.append(row);
