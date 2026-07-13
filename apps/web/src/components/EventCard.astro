@@ -64,7 +64,7 @@ const {
 const copy = uiText.en;
 
 const categorySlugs = event.categories.map((category) => category.trim()).filter(Boolean);
-const maxImagesPerCard = 3;
+const maxImagesPerCard = mapSourceSlug === 'tokyo-metropolitan-art-museum' ? 1 : 3;
 const mediaEmbeds = (event.media_embeds ?? []).filter(
   (embed) => embed.type === 'youtube' && embed.video_id,
 );

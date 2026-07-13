@@ -402,10 +402,15 @@
       "allowed_domains": ["www.tobikan.jp", "tobikan.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
-      "notes": "Official exhibition index. Follow exhibition cards only; detail pages expose localized exhibition-header titles.",
+      "notes": "Official exhibition index. Follow exhibition cards only; detail pages expose localized exhibition-header titles. Keep only the exhibition poster image.",
+      "qa": {
+        "image_rules": "Use only .exhibition-poster; skip the duplicate Open Graph poster."
+      },
+      "skip_og_image": true,
       "selectors": {
         "listing_links": ".exhibition-item",
-        "title": ".exhibition-header-title"
+        "title": ".exhibition-header-title",
+        "images": ".exhibition-poster"
       },
       "locales": {
         "ja": {

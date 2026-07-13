@@ -3446,6 +3446,25 @@ test('noisy generic sources pin event title and discovery fields', async () => {
   assert.equal(kouichi?.selectors?.description, '.HTML__Container-sc-1im40xc-0 p');
 });
 
+test('Tokyo Metropolitan Art Museum keeps only the exhibition poster', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+  const source = sources.find((candidate) => candidate.slug === 'tokyo-metropolitan-art-museum');
+  const posterUrl = 'https://www.tobikan.jp/media/img/poster/2026_britishmuseum_l.jpg';
+  const event = extractGenericEvent(
+    `<meta property="og:image" content="https://tobikan.jp/media/img/poster/2026_britishmuseum_l.jpg">
+     <h1>British Museum Exhibition</h1>
+     <p>July 25, 2026 - October 18, 2026</p>
+     <div class="exhibition-poster"><img src="../../media/img/poster/2026_britishmuseum_l.jpg"></div>
+     <img src="https://tobikan.jp/media/img/poster/2026_britishmuseum_l.jpg">`,
+    source,
+    'https://www.tobikan.jp/en/exhibition/2026_britishmuseum.html',
+  );
+
+  assert.equal(source?.selectors?.images, '.exhibition-poster');
+  assert.equal(source?.skip_og_image, true);
+  assert.deepEqual(event.image_urls, [posterUrl]);
+});
+
 test('crawl QA report summarizes saved events, missing translations, and diagnostics', () => {
   assert.deepEqual(
     buildCrawlQaReport({

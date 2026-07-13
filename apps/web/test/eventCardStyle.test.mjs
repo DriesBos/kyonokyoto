@@ -40,3 +40,9 @@ test('event card uses end-only date copy only for ongoing events', async () => {
   );
   assert.match(component, /<time datetime=\{ongoingEnd\.date\}>\{ongoingEnd\.text\}<\/time>/);
 });
+
+test('Tokyo Metropolitan Art Museum cards show one image', async () => {
+  const component = await readFile(componentPath, 'utf8');
+
+  assert.match(component, /mapSourceSlug === 'tokyo-metropolitan-art-museum' \? 1 : 3/);
+});

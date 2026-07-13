@@ -156,6 +156,8 @@ Review manually, then remove `beta` when approved:
 
 ## Tokyo Sources
 
+2026-07-13: Tokyo Metropolitan Art Museum now extracts only `.exhibition-poster` and skips its duplicate Open Graph poster. Web cards cap existing stored rows to one image immediately. Focused crawler and web tests added; no crawl or database write run.
+
 2026-07-13: Explicit approval promoted `sumida-hokusai-museum`, `yayoi-kusama-museum`, `what-museum`, `university-art-museum-tokyo-geidai`, `yamatane-museum-of-art`, `national-museum-of-modern-art-tokyo`, `tokyo-node`, `tokyo-metropolitan-art-museum`, `take-ninagawa`, and `perrotin-tokyo` to public (`beta: false`). Focused config coverage locks this exact allowlist and guards nearby beta sources. No crawl or database write run.
 
 2026-07-13: Museum of Contemporary Art Tokyo now extracts media only from `.l-exhibitions-entry-main__image`; National Art Center Tokyo now extracts only `.main_v` hero and `.mt-image-none` editorial art. Both skip Open Graph defaults and probe final image dimensions. Representative regression fixtures exclude MOCA chevrons/X icons/default OG and NACT shared red-arrow SVG. MOCA still needs separate discovery tuning; no crawl run.
