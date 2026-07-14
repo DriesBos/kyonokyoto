@@ -181,8 +181,8 @@
       "allowed_domains": ["gallery.hkas.edu.hk"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition/", "/current/"],
-      "notes": "Official gallery homepage exposes Current, Previous, and Archive. Keep Current only during beta QA.",
-      "beta": true,
+      "notes": "Official gallery homepage exposes Current, Previous, and Archive. Keep Current only.",
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "skip_patterns": ["/archive/", "/previous/"], "max_detail_pages": 3 }
     },
@@ -231,7 +231,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Official Hong Kong location page contains current and upcoming exhibitions; narrower than the global archive.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "skip_patterns": ["/past-exhibitions/", "/fairs/"], "max_detail_pages": 6 }
     },
@@ -301,7 +301,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/gallery-exhibitions/"],
       "notes": "Official Hong Kong location page has a dedicated Current and Upcoming Exhibitions section.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "skip_patterns": ["/exhibitions/archive"], "max_detail_pages": 5 }
     },
