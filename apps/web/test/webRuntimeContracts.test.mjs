@@ -81,3 +81,12 @@ test('event cards use sibling disclosure control and native inert content', asyn
   assert.match(controls, /content\.setAttribute\('aria-hidden', String\(!isActive\)\)/);
   assert.doesNotMatch(controls, /card\.setAttribute\('aria-pressed'/);
 });
+
+test('event card media uses native overflow scrolling', async () => {
+  const card = await readWebFile('src/components/EventCard.astro');
+  const controls = await readWebFile('src/scripts/eventCardControls.ts');
+
+  assert.match(card, /overflow-x: auto/);
+  assert.match(card, /touch-action: auto/);
+  assert.doesNotMatch(controls, /mediaPointerState|setPointerCapture|\.scrollLeft\s*=/);
+});

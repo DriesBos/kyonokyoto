@@ -7,11 +7,7 @@ const disclosureSelector = '[data-event-card-disclosure]';
 const cardDotClass = 'event-card-dot';
 const contentSelector = '.event-card__body__content';
 const fadeSelector = '[data-event-card-fade]';
-const mediaSelector = '.event-card__media';
 const mediaHeightProperty = '--event-card-media-row-height-current';
-const mediaScrollThreshold = 6;
-const mediaPointerState = new Map();
-const mediaScrollClickSuppressions = new WeakSet();
 const heightTransition = {
   duration: 250,
   easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
@@ -100,15 +96,6 @@ const fadeOut = (targets, options = {}) => {
       })
       .catch(() => {});
   });
-};
-
-const canScrollMedia = (media) => media.scrollWidth > media.clientWidth + 1;
-
-const releaseMediaPointer = (pointerId, state) => {
-  if (!state?.capturedPointer) return;
-  if (typeof state.media.hasPointerCapture !== 'function') return;
-  if (!state.media.hasPointerCapture(pointerId)) return;
-  state.media.releasePointerCapture(pointerId);
 };
 
 const getCardDot = (card) => {
@@ -414,82 +401,9 @@ export const initEventCardControls = () => {
     setContentState(card, card.getAttribute('data-active') === 'true');
   });
 
-  document.addEventListener('pointerdown', (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-
-    const media = target.closest(mediaSelector);
-    if (!(media instanceof HTMLElement)) return;
-
-    mediaPointerState.set(event.pointerId, {
-      media,
-      x: event.clientX,
-      y: event.clientY,
-      scrollLeft: media.scrollLeft,
-      pointerType: event.pointerType,
-      dragging: false,
-      capturedPointer: false,
-    });
-
-    const state = mediaPointerState.get(event.pointerId);
-    if (canScrollMedia(media) && typeof media.setPointerCapture === 'function') {
-      media.setPointerCapture(event.pointerId);
-      state.capturedPointer = true;
-    }
-  });
-
-  document.addEventListener('pointermove', (event) => {
-    const state = mediaPointerState.get(event.pointerId);
-    if (!state) return;
-
-    const deltaX = event.clientX - state.x;
-    const deltaY = event.clientY - state.y;
-    const absX = Math.abs(deltaX);
-    const absY = Math.abs(deltaY);
-
-    if (!state.dragging) {
-      if (absX <= mediaScrollThreshold || absX <= absY || !canScrollMedia(state.media)) return;
-      state.dragging = true;
-    }
-
-    state.media.scrollLeft = state.scrollLeft - deltaX;
-    event.preventDefault();
-  });
-
-  document.addEventListener('pointerup', (event) => {
-    const state = mediaPointerState.get(event.pointerId);
-    if (!state) return;
-
-    releaseMediaPointer(event.pointerId, state);
-    mediaPointerState.delete(event.pointerId);
-
-    const deltaX = Math.abs(event.clientX - state.x);
-    const deltaY = Math.abs(event.clientY - state.y);
-    const scrollDelta = Math.abs(state.media.scrollLeft - state.scrollLeft);
-    const wasHorizontalScroll =
-      state.dragging || scrollDelta > 0 || (deltaX > mediaScrollThreshold && deltaX > deltaY);
-
-    if (wasHorizontalScroll) {
-      mediaScrollClickSuppressions.add(state.media);
-    }
-  });
-
-  document.addEventListener('pointercancel', (event) => {
-    const state = mediaPointerState.get(event.pointerId);
-    releaseMediaPointer(event.pointerId, state);
-    mediaPointerState.delete(event.pointerId);
-  });
-
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-
-    const media = target.closest(mediaSelector);
-    if (media instanceof HTMLElement && mediaScrollClickSuppressions.has(media)) {
-      mediaScrollClickSuppressions.delete(media);
-      event.preventDefault();
-      return;
-    }
 
     const card = target.closest(cardSelector);
     if (!(card instanceof HTMLElement)) return;
