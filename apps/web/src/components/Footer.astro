@@ -1,18 +1,15 @@
 ---
 import Icon from './Icon.astro';
-import PageEdgeStrokes from './PageEdgeStrokes.astro';
 
 type Props = {
   cityLabel?: string;
-  lines?: number;
   scrollTopLabel?: string;
 };
 
-const { cityLabel = 'Kyōtō', lines = 24, scrollTopLabel = 'Scroll to top' } = Astro.props;
+const { cityLabel = 'Kyōtō', scrollTopLabel = 'Scroll to top' } = Astro.props;
 ---
 
 <footer class="site-footer" data-site-footer>
-  <PageEdgeStrokes position="bottom" lines={lines} />
   <div class="site-footer__content page-edge-strokes__footer">
     <div class="site-footer__left page-edge-strokes__left">
       <div class="site-footer__credit page-edge-strokes__credit">
@@ -75,6 +72,7 @@ const { cityLabel = 'Kyōtō', lines = 24, scrollTopLabel = 'Scroll to top' } = 
     width: 100%
     height: 50vh
     padding-bottom: calc(var(--page-padding-y) + env(safe-area-inset-bottom))
+    background: repeating-linear-gradient(to bottom, var(--stroke) 0 var(--stroke-width), transparent var(--stroke-width) calc(var(--stroke-width) + var(--stroke-gap)))
 
   .site-footer__content
     position: absolute

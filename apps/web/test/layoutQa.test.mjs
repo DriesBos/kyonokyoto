@@ -27,5 +27,6 @@ test('footer is half a viewport tall and renders current city', async () => {
   assert.match(footer, /\.site-footer\s*\n(?:    .+\n)*?    flex: 0 0 50vh/);
   assert.match(footer, /\.site-footer\s*\n(?:    .+\n)*?    height: 50vh/);
   assert.match(footer, /\.site-footer__credit\s*\n\s+padding-left: var\(--page-padding-x\)/);
+  assert.match(footer, /background: repeating-linear-gradient/);
   assert.match(page, /<Footer cityLabel=\{cityConfig\.label\} \/>/);
 });
