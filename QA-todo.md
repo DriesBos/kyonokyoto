@@ -4,7 +4,7 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
 
-2026-07-14: Explicit approval promoted `hong-kong-art-school-gallery`, `david-zwirner-hong-kong`, and `white-cube-hong-kong` to public (`beta: false`) after their clean first live run. Focused config coverage locks this exact allowlist and keeps nearby Hong Kong rows beta. Production source sync and Hong Kong crawl follow deployment.
+2026-07-14: Explicit approval promoted `hong-kong-art-school-gallery`, `david-zwirner-hong-kong`, and `white-cube-hong-kong` to public (`beta: false`) after their clean first live run. Focused config coverage locks this exact allowlist and keeps nearby Hong Kong rows beta. Production deploy passed. Targeted Art School crawl `e645a7f4-aa89-496a-b7a3-f40ab757d815` saved 2 events with 0 skips and complete English/Japanese translations; all three sources appeared in repeated live-route checks. Follow-up: its bilingual parser read `8–29 August 2026` as ending on 8 August.
 
 2026-07-13: Added 21 beta Hong Kong sources from the Google My Maps purple art layer. All rows use official English exhibition/programme pages, grouped taxonomy, map coordinates, `Asia/Hong_Kong`, and machine translation for Japanese. Config validation, 164 crawler tests, 86 web tests, Python tests, formatting, and the Astro build pass. No Supabase sync or live crawl run yet; no source is approved for public display.
 
