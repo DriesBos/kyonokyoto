@@ -234,21 +234,23 @@ const cardTitleId = `event-card-title-${event.id}`;
   {
     hasMedia ? (
       <div class="event-card__media">
-        {mediaEmbeds.map((embed) => (
-          <YouTubeEmbed videoId={embed.video_id} title={`${event.title} video`} />
-        ))}
-        {images.map((imageUrl, index) => (
-          <span class="event-card__image-frame">
-            <img
-              class="event-card__image"
-              src={imageUrl}
-              alt={index === 0 ? event.title : ''}
-              loading="lazy"
-              decoding="async"
-              aria-hidden={index === 0 ? undefined : 'true'}
-            />
-          </span>
-        ))}
+        <div class="event-card__media-track">
+          {mediaEmbeds.map((embed) => (
+            <YouTubeEmbed videoId={embed.video_id} title={`${event.title} video`} />
+          ))}
+          {images.map((imageUrl, index) => (
+            <span class="event-card__image-frame">
+              <img
+                class="event-card__image"
+                src={imageUrl}
+                alt={index === 0 ? event.title : ''}
+                loading="lazy"
+                decoding="async"
+                aria-hidden={index === 0 ? undefined : 'true'}
+              />
+            </span>
+          ))}
+        </div>
       </div>
     ) : null
   }
@@ -399,22 +401,12 @@ const cardTitleId = `event-card-title-${event.id}`;
       position: relative
       z-index: 2
       flex: 0 1 auto
-      display: grid
-      grid-auto-flow: column
-      grid-auto-columns: max-content
-      align-items: start
-      justify-content: start
-      gap: var(--event-card-media-gap)
       min-width: 0
       max-height: var(--event-card-media-row-height-current)
-      inline-size: fit-content
       max-inline-size: 66%
       overflow-x: auto
       overflow-y: hidden
-      overscroll-behavior-x: contain
       pointer-events: auto
-      touch-action: auto
-      -webkit-overflow-scrolling: touch
       scrollbar-width: thin
       padding: 0 var(--page-padding-x)
 
@@ -431,19 +423,24 @@ const cardTitleId = `event-card-title-${event.id}`;
         inline-size: 100%
         max-inline-size: 100%
 
+    &__media-track
+      display: flex
+      flex-wrap: nowrap
+      align-items: flex-start
+      gap: var(--event-card-media-gap)
+      inline-size: max-content
+
     &__image-frame
       position: relative
       display: block
       width: max-content
       height: var(--event-card-media-row-height-current)
       overflow: hidden
-      pointer-events: auto
 
     &__image
       display: block
       width: auto
       height: var(--event-card-media-row-height-current)
-      pointer-events: auto
 
     &__title
       display: -webkit-box
@@ -513,7 +510,6 @@ const cardTitleId = `event-card-title-${event.id}`;
 
     &__media
       flex-basis: auto
-      inline-size: fit-content
       max-inline-size: 100%
 
     &__body

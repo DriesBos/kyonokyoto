@@ -86,7 +86,9 @@ test('event card media uses native overflow scrolling', async () => {
   const card = await readWebFile('src/components/EventCard.astro');
   const controls = await readWebFile('src/scripts/eventCardControls.ts');
 
+  assert.match(card, /class="event-card__media-track"/);
   assert.match(card, /overflow-x: auto/);
-  assert.match(card, /touch-action: auto/);
+  assert.match(card, /&__media-track[\s\S]*?display: flex[\s\S]*?inline-size: max-content/);
+  assert.doesNotMatch(card, /touch-action|-webkit-overflow-scrolling|overscroll-behavior-x/);
   assert.doesNotMatch(controls, /mediaPointerState|setPointerCapture|\.scrollLeft\s*=/);
 });
