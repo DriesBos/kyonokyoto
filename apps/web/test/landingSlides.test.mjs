@@ -113,6 +113,6 @@ test('landing slider uses configured Tokyo museum sources', () => {
   ]);
 });
 
-test('landing slider uses configured Hong Kong venues', () => {
-  assert.deepEqual(landingSliderSourceSlugsByCity['hong-kong'], ['m-plus', 'chat-the-mills']);
+test('landing slider uses David Zwirner in Hong Kong', () => {
+  assert.deepEqual(landingSliderSourceSlugsByCity['hong-kong'], ['david-zwirner-hong-kong']);
 });
