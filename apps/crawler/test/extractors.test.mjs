@@ -114,11 +114,12 @@ test('named crawler scripts use registered source slugs', async () => {
   );
 });
 
-test('approved Osaka and Tokyo source allowlist is public without changing nearby beta sources', async () => {
+test('approved source allowlist is public without changing nearby beta sources', async () => {
   const osakaSources = await loadSourcesConfig({ city: 'osaka' });
   const tokyoSources = await loadSourcesConfig({ city: 'tokyo' });
+  const hongKongSources = await loadSourcesConfig({ city: 'hong-kong' });
   const sourceBySlug = new Map(
-    [...osakaSources, ...tokyoSources].map((source) => [source.slug, source]),
+    [...osakaSources, ...tokyoSources, ...hongKongSources].map((source) => [source.slug, source]),
   );
   const approvedSlugs = [
     'suchsize',
@@ -136,6 +137,9 @@ test('approved Osaka and Tokyo source allowlist is public without changing nearb
     'tokyo-metropolitan-art-museum',
     'take-ninagawa',
     'perrotin-tokyo',
+    'hong-kong-art-school-gallery',
+    'david-zwirner-hong-kong',
+    'white-cube-hong-kong',
   ];
   const unchangedBetaSlugs = [
     'i-gallery-osaka',
@@ -144,6 +148,9 @@ test('approved Osaka and Tokyo source allowlist is public without changing nearb
     'tokyo-opera-city-art-gallery',
     'taro-okamoto-memorial-museum',
     'gyre-gallery',
+    'm-plus',
+    'gagosian-hong-kong',
+    'whitestone-gallery-hong-kong',
   ];
 
   for (const slug of approvedSlugs) {

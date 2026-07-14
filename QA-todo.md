@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
 
+2026-07-14: Explicit approval promoted `hong-kong-art-school-gallery`, `david-zwirner-hong-kong`, and `white-cube-hong-kong` to public (`beta: false`) after their clean first live run. Focused config coverage locks this exact allowlist and keeps nearby Hong Kong rows beta. Production source sync and Hong Kong crawl follow deployment.
+
 2026-07-13: Added 21 beta Hong Kong sources from the Google My Maps purple art layer. All rows use official English exhibition/programme pages, grouped taxonomy, map coordinates, `Asia/Hong_Kong`, and machine translation for Japanese. Config validation, 164 crawler tests, 86 web tests, Python tests, formatting, and the Astro build pass. No Supabase sync or live crawl run yet; no source is approved for public display.
 
 2026-07-13: First live Hong Kong cycle synced 21 sources and completed all attempts: 3 clean, 14 degraded/review, and 4 robots-blocked. Translation audit passed 326/326 events. Exit 2 correctly marked the cycle degraded while preserving successful rows. All sources remain beta.
@@ -11,9 +13,9 @@ Update this file whenever source JSON changes or test crawls run.
 - Removed from scheduled config: `tai-kwun` and `jockey-club-creative-arts-centre` explicitly disallow this crawler; `de-sarthe-gallery` has no reachable robots policy; `pace-gallery-hong-kong` ignores its Hong Kong filter and returned global shows; `perrotin-hong-kong` has no current Hong Kong programme. Re-add only with an official allowed city-scoped feed.
 - Tuned after first crawl: `blue-lotus-gallery` skips Squarespace `format=ical` links; `hkdi-gallery` uses the canonical trailing-slash index and scoped exhibition cards; `whitestone-gallery-hong-kong` uses its official current Hong Kong feed and HK detail pattern.
 - Needs extractor/config tuning: `gagosian-hong-kong` detail pages exposed related global exhibitions as primary titles/dates; `chat-the-mills`, `m-plus`, `asia-society-hong-kong`, `rossi-and-rossi`, `asia-art-archive`, and archive-only `contemporary-by-angela-li` need stored-result review. `blindspot-gallery` was blocked during fetch. Keep all beta.
-- Clean first-run sources: `hong-kong-art-school-gallery`, `david-zwirner-hong-kong`, and `white-cube-hong-kong`. Visual/card approval still required before promotion.
+- Clean first-run sources: `hong-kong-art-school-gallery`, `david-zwirner-hong-kong`, and `white-cube-hong-kong`; approved for public display on 2026-07-14.
 - Marker decisions: obsolete `M+ Pavilion` became `m-plus`; closed `AfricArt Gallery Hong Kong` was omitted. H Queen's and Pedder Building are tenant containers. Graffiti Wall of Fame and ArtLane are places without recurring official event feeds. Curator Cafe, Blue Bottle, RealDeal, and Omotesando Koffee are not crawler sources.
-- Approval note: keep all Hong Kong rows `beta: true` until targeted VPS crawls and card/media QA pass.
+- Approval note: keep remaining Hong Kong rows `beta: true` until targeted VPS crawls and card/media QA pass.
 
 2026-07-12: Fixed shared identity collapse for inline exhibitions. `art-gallery-kitano`, `gallery-take-two`, `chushin-bijutsu`, and `hyogo-prefectural-museum-of-art` now persist their stable inline fragment as `external_id`, and URL identity keys include that explicit ID while still discarding arbitrary fragments. A data migration is prepared to preserve each existing legacy row under its current fragment before corrected crawls insert the other events. Focused and full crawler tests pass; no migration or database crawl run yet.
 
