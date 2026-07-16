@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Hong Kong beta source batch seeded from purple art markers in the shared Google My Maps export. Sources use official English current/upcoming exhibition pages where available. AfricArt Gallery Hong Kong was excluded because its former official domain is dead and current listings mark the venue permanently closed.",
+  "description": "Hong Kong sources seeded from the shared Google My Maps purple art layer and the curated art, architecture, and design expansion list. Sources use official English current/upcoming exhibition pages where available.",
   "sources": [
     {
       "slug": "chat-the-mills",
@@ -370,6 +370,491 @@
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "max_detail_pages": 6 }
+    },
+    {
+      "slug": "hong-kong-palace-museum",
+      "name": "Hong Kong Palace Museum",
+      "taxonomy": {
+        "venue_category": ["museum"],
+        "display_category": ["painting", "design", "ceramics", "textile"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "8 Museum Drive, West Kowloon Cultural District, Kowloon, Hong Kong",
+      "directions_query": "Hong Kong Palace Museum, 8 Museum Drive, Kowloon",
+      "lat": 22.3016491,
+      "lng": 114.1553984,
+      "base_url": "https://www.hkpm.org.hk/en/exhibition",
+      "start_urls": ["https://www.hkpm.org.hk/en/exhibition"],
+      "allowed_domains": ["www.hkpm.org.hk", "hkpm.org.hk"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibition/", "/en/exhibition-"],
+      "notes": "Official exhibition index separates Current and Past. Keep current and upcoming museum exhibitions only.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["/past", "/about/", "/press-release/"],
+        "max_detail_pages": 14
+      }
+    },
+    {
+      "slug": "para-site",
+      "name": "Para Site",
+      "taxonomy": {
+        "venue_category": ["institute", "gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "22/F, Wing Wah Industrial Building, 677 King's Road, Quarry Bay, Hong Kong",
+      "directions_query": "Para Site, 677 King's Road, Quarry Bay, Hong Kong",
+      "lat": 22.2912265,
+      "lng": 114.2089984,
+      "base_url": "https://www.para-site.art/exhibitions/",
+      "start_urls": ["https://www.para-site.art/exhibitions/"],
+      "allowed_domains": ["www.para-site.art", "para-site.art"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official exhibitions archive surfaces current entries first; reject ended exhibitions by date.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": { "skip_patterns": ["/programmes/", "/residencies/"], "max_detail_pages": 8 }
+    },
+    {
+      "slug": "oi-art-space",
+      "name": "Oi!",
+      "taxonomy": {
+        "venue_category": ["institute", "gallery"],
+        "display_category": ["contemporary", "design"],
+        "event_category": ["exhibition", "event"]
+      },
+      "language": "en",
+      "address_text": "12 Oil Street, North Point, Hong Kong",
+      "directions_query": "Oi! Art Space, 12 Oil Street, North Point, Hong Kong",
+      "lat": 22.2890247,
+      "lng": 114.1930287,
+      "base_url": "https://www.apo.hk/en/web/apo/oi_projects_and_programmes.html",
+      "start_urls": ["https://www.apo.hk/en/web/apo/oi_projects_and_programmes.html"],
+      "allowed_domains": ["www.apo.hk", "apo.hk"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/web/apo/"],
+      "notes": "Official Oi! projects and programmes page. Exclude venue, archive, application, and general information pages.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["oi.html", "archive", "application", "important-notes", "contact"],
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "videotage",
+      "name": "Videotage",
+      "taxonomy": {
+        "venue_category": ["institute", "gallery"],
+        "display_category": ["new-media", "contemporary"],
+        "event_category": ["exhibition", "event"]
+      },
+      "language": "en",
+      "address_text": "Unit 13, Cattle Depot Artist Village, 63 Ma Tau Kok Road, To Kwa Wan, Kowloon, Hong Kong",
+      "directions_query": "Videotage, Cattle Depot Artist Village, Hong Kong",
+      "lat": 22.3208092,
+      "lng": 114.1915081,
+      "base_url": "https://www.videotage.org.hk/",
+      "start_urls": ["https://www.videotage.org.hk/"],
+      "allowed_domains": ["www.videotage.org.hk", "videotage.org.hk"],
+      "crawl_strategy": "homepage-and-detail-pages",
+      "event_page_patterns": ["/programme/"],
+      "notes": "Official homepage lists current programmes first. Keep dated exhibitions and public programmes; reject open calls and archive records.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": { "skip_patterns": ["open-call", "/vmac/", "/news/"], "max_detail_pages": 10 }
+    },
+    {
+      "slug": "one-a-space",
+      "name": "1a space",
+      "taxonomy": {
+        "venue_category": ["institute", "gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "Unit 14, Cattle Depot Artist Village, 63 Ma Tau Kok Road, To Kwa Wan, Kowloon, Hong Kong",
+      "directions_query": "1a space, Cattle Depot Artist Village, Hong Kong",
+      "lat": 22.3208092,
+      "lng": 114.1915081,
+      "base_url": "https://www.oneaspace.org.hk/exhibitions",
+      "start_urls": ["https://www.oneaspace.org.hk/exhibitions"],
+      "allowed_domains": ["www.oneaspace.org.hk", "oneaspace.org.hk"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event-details/", "/exhibition/"],
+      "notes": "Official exhibitions index. Wix rendering and current-versus-past discovery need first-crawl QA.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "skip_patterns": ["past", "lightbox", "application"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "hong-kong-arts-centre",
+      "name": "Hong Kong Arts Centre",
+      "taxonomy": {
+        "venue_category": ["institute", "gallery"],
+        "display_category": ["contemporary", "new-media", "graphic"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "2 Harbour Road, Wan Chai, Hong Kong",
+      "directions_query": "Hong Kong Arts Centre, 2 Harbour Road, Wan Chai",
+      "lat": 22.2802096,
+      "lng": 114.1708165,
+      "base_url": "https://hkac.org.hk/en/artsatthecentre_exhibition/",
+      "start_urls": ["https://hkac.org.hk/en/artsatthecentre_exhibition/"],
+      "allowed_domains": ["hkac.org.hk", "www.hkac.org.hk"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/calendar_programme_detail/", "/calendar_programme_detail/"],
+      "notes": "Official Arts at the Centre exhibition listing. Exclude cinema, performance, education, and venue pages.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["cinema", "performance", "course", "visit_", "membership"],
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "pmq",
+      "name": "PMQ",
+      "taxonomy": {
+        "venue_category": ["institute", "gallery"],
+        "display_category": ["design", "contemporary"],
+        "event_category": ["exhibition", "event", "workshop"]
+      },
+      "language": "en",
+      "address_text": "35 Aberdeen Street, Central, Hong Kong",
+      "directions_query": "PMQ, 35 Aberdeen Street, Central, Hong Kong",
+      "lat": 22.2832741,
+      "lng": 114.1518456,
+      "base_url": "https://www.pmq.org.hk/happenings/current-upcoming/",
+      "start_urls": ["https://www.pmq.org.hk/happenings/current-upcoming/"],
+      "allowed_domains": ["www.pmq.org.hk", "pmq.org.hk"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event/"],
+      "notes": "Official current and upcoming programme. Broad design venue taxonomy intentionally includes exhibitions, events, and workshops.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["venue-rental", "/shop/", "/directory/"],
+        "max_detail_pages": 12
+      }
+    },
+    {
+      "slug": "gallery-exit",
+      "name": "Gallery EXIT",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "3/F, 25 Hing Wo Street, Tin Wan, Aberdeen, Hong Kong",
+      "directions_query": "Gallery EXIT, 25 Hing Wo Street, Tin Wan, Hong Kong",
+      "lat": 22.2498273,
+      "lng": 114.1481437,
+      "base_url": "https://www.galleryexit.com/exhibitions.html",
+      "start_urls": ["https://www.galleryexit.com/exhibitions.html"],
+      "allowed_domains": ["www.galleryexit.com", "galleryexit.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/20"],
+      "notes": "Official exhibition index uses year-number detail pages and surfaces current entries first.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["/projects.html", "/artists.html"],
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "sin-sin-fine-art",
+      "name": "Sin Sin Fine Art",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "Unit A, 4/F, Kin Teck Industrial Building, 26 Wong Chuk Hang Road, Hong Kong",
+      "directions_query": "Sin Sin Fine Art, 26 Wong Chuk Hang Road, Hong Kong",
+      "lat": 22.248025,
+      "lng": 114.1646166,
+      "base_url": "https://www.sinsinfineart.com/exhibitions.html",
+      "start_urls": ["https://www.sinsinfineart.com/exhibitions.html"],
+      "allowed_domains": ["www.sinsinfineart.com", "sinsinfineart.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/20"],
+      "notes": "Official exhibition index links current-year detail pages before archive entries.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["exhibitions-firstdecade", "legacy.", "/events.html"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "13a-new-street-art-gallery",
+      "name": "13A New Street Art Gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "graphic"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "13A New Street, Tai Ping Shan, Hong Kong",
+      "directions_query": "13A New Street Art Gallery, Hong Kong",
+      "lat": 22.2858927,
+      "lng": 114.1468636,
+      "base_url": "https://www.13anewstreet.com/exhibitions-1",
+      "start_urls": ["https://www.13anewstreet.com/exhibitions-1"],
+      "allowed_domains": ["www.13anewstreet.com", "13anewstreet.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event-details/"],
+      "notes": "Official Wix current and upcoming exhibitions page. Reject fairs and offsite hotel projects by venue during QA.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "skip_patterns": ["pastexhibitions", "art-fair", "pullman-hotel"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "jps-gallery-hong-kong",
+      "name": "JPS Gallery Hong Kong",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "G/F, 88-90 Staunton Street, Central, Hong Kong",
+      "directions_query": "JPS Gallery, 88 Staunton Street, Hong Kong",
+      "lat": 22.2832782,
+      "lng": 114.1512386,
+      "base_url": "https://jpsgallery.com/exhibitions/",
+      "start_urls": ["https://jpsgallery.com/exhibitions/"],
+      "allowed_domains": ["jpsgallery.com", "www.jpsgallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official global exhibition index. Keep Hong Kong gallery entries only; reject Tokyo and fair rows.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["/zh-hant/", "/art-fair/", "/tokyo/"],
+        "max_detail_pages": 10
+      }
+    },
+    {
+      "slug": "villepin",
+      "name": "Villepin",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting", "design"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "53-55 Hollywood Road, Central, Hong Kong",
+      "directions_query": "Villepin, 53-55 Hollywood Road, Hong Kong",
+      "lat": 22.282933,
+      "lng": 114.1530178,
+      "base_url": "https://www.villepinart.com/exhibitions",
+      "start_urls": ["https://www.villepinart.com/exhibitions"],
+      "allowed_domains": ["www.villepinart.com", "villepinart.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions-1/"],
+      "notes": "Official Hong Kong exhibitions page. Keep Hong Kong entries; reject Milan and offsite collaborations.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["/milan", "/off-site", "format=ical"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "10-chancery-lane-gallery",
+      "name": "10 Chancery Lane Gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "G/F, 10 Chancery Lane, SoHo, Central, Hong Kong",
+      "directions_query": "10 Chancery Lane Gallery, Hong Kong",
+      "lat": 22.2806985,
+      "lng": 114.15345,
+      "base_url": "https://www.10chancerylanegallery.com/exhibitions/",
+      "start_urls": ["https://www.10chancerylanegallery.com/exhibitions/"],
+      "allowed_domains": ["www.10chancerylanegallery.com", "10chancerylanegallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official current and past exhibition index. Exclude art fairs and ended shows by date.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": { "skip_patterns": ["/art-fairs/", "/viewing-room/"], "max_detail_pages": 8 }
+    },
+    {
+      "slug": "hanart-tz-gallery",
+      "name": "Hanart TZ Gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "2/F, Mai On Industrial Building, 17-21 Kung Yip Street, Kwai Chung, Hong Kong",
+      "directions_query": "Hanart TZ Gallery, 17-21 Kung Yip Street, Hong Kong",
+      "lat": 22.3623573,
+      "lng": 114.1349839,
+      "base_url": "https://www.hanart.com/exhibitions/",
+      "start_urls": ["https://www.hanart.com/exhibitions/"],
+      "allowed_domains": ["www.hanart.com", "hanart.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official exhibition index. Reject art fairs, external institutional shows, and news posts.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["art-basel", "/news/", "/category/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "galerie-du-monde",
+      "name": "gdm (Galerie du Monde)",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "108 Ruttonjee Centre, 11 Duddell Street, Central, Hong Kong",
+      "directions_query": "Galerie du Monde, 11 Duddell Street, Hong Kong",
+      "lat": 22.2799195,
+      "lng": 114.1567446,
+      "base_url": "https://galeriedumonde.com/exhibitions/",
+      "start_urls": ["https://galeriedumonde.com/exhibitions/"],
+      "allowed_domains": ["galeriedumonde.com", "www.galeriedumonde.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official gdm exhibition index. Keep Hong Kong exhibitions only; reject Taipei and external projects.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": { "skip_patterns": ["/events/", "/news/", "taipei"], "max_detail_pages": 8 }
+    },
+    {
+      "slug": "ora-ora",
+      "name": "Ora-Ora",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "new-media"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "105-107, Barrack Block, Tai Kwun, 10 Hollywood Road, Central, Hong Kong",
+      "directions_query": "Ora-Ora, Tai Kwun, Hong Kong",
+      "lat": 22.2811562,
+      "lng": 114.154009,
+      "base_url": "https://www.ora-ora.com/exhibitions/",
+      "start_urls": ["https://www.ora-ora.com/exhibitions/"],
+      "allowed_domains": ["www.ora-ora.com", "ora-ora.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official exhibition index redirects to the relevant current or recent year. Reject art fairs and language duplicates.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["art-basel", "/past/", "/fr/", "/zh/"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "grotto-fine-art",
+      "name": "Grotto Fine Art",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "2/F, East 17, 17 Main Street East, Shau Kei Wan, Hong Kong",
+      "directions_query": "Grotto Fine Art, 17 Main Street East, Hong Kong",
+      "lat": 22.2810767,
+      "lng": 114.2306516,
+      "base_url": "https://www.grottofineart.com/exhibitions",
+      "start_urls": ["https://www.grottofineart.com/exhibitions"],
+      "allowed_domains": ["www.grottofineart.com", "grottofineart.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/20"],
+      "notes": "Official Squarespace exhibition index uses year-prefixed detail slugs and surfaces current entries first.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["format=ical", "/fairs", "/contact"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "kwai-fung-hin",
+      "name": "Kwai Fung Hin Art Gallery",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "Office A, 9/F, Entertainment Building, 30 Queen's Road Central, Hong Kong",
+      "directions_query": "Kwai Fung Hin Art Gallery, 30 Queen's Road Central, Hong Kong",
+      "lat": 22.2814484,
+      "lng": 114.1564672,
+      "base_url": "https://www.kwaifunghin.com/exhibitions/",
+      "start_urls": ["https://www.kwaifunghin.com/exhibitions/"],
+      "allowed_domains": ["www.kwaifunghin.com", "kwaifunghin.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official exhibition index mixes Hong Kong and Singapore. Keep Hong Kong rows only.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "skip_patterns": ["/art-fairs/", "/events/", "singapore"],
+        "max_detail_pages": 8
+      }
+    },
+    {
+      "slug": "soluna-fine-art",
+      "name": "Soluna Fine Art",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary", "painting"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "G/F, 52 Sai Street, Sheung Wan, Hong Kong",
+      "directions_query": "Soluna Fine Art, 52 Sai Street, Hong Kong",
+      "lat": 22.2846578,
+      "lng": 114.1485796,
+      "base_url": "https://www.solunafineart.com/exhibitions",
+      "start_urls": ["https://www.solunafineart.com/exhibitions"],
+      "allowed_domains": ["www.solunafineart.com", "solunafineart.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/", "/exhibitions/"],
+      "notes": "Official exhibition index. Exclude fairs and ended exhibitions by date.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "skip_patterns": ["/fairs", "lightbox"],
+        "max_detail_pages": 8
+      }
     }
   ]
 }
