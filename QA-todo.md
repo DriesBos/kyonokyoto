@@ -4,12 +4,14 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
 
+2026-07-16: Fixed shared English date parsing for same-month shorthand such as Hong Kong Art School's live `8 - 29 August 2026`; it now resolves to `2026-08-08` through `2026-08-29` instead of collapsing to one date. Focused regression added; database row still needs targeted recrawl.
+
 2026-07-16: Added 19 beta Hong Kong sources from `docs/hong-kong-art-design.md`: Hong Kong Palace Museum, Para Site, Oi!, Videotage, 1a space, Hong Kong Arts Centre, PMQ, Gallery EXIT, Sin Sin Fine Art, 13A New Street Art Gallery, JPS Gallery, Villepin, 10 Chancery Lane Gallery, Hanart TZ Gallery, Galerie du Monde, Ora-Ora, Grotto Fine Art, Soluna Fine Art, and Kwai Fung Hin. Rows use official English programme pages, verified venue addresses/map coordinates, grouped taxonomy, and machine translation for Japanese. Robots policies allow configured public routes. Config validation, 164 crawler tests, 3 Python tests, and 87 web tests pass. No sync, live crawl, database write, or card/media approval yet.
 
 - First-crawl risks: Wix/Squarespace rendering for `one-a-space`, `13a-new-street-art-gallery`, `villepin`, `grotto-fine-art`, and `soluna-fine-art`; mixed venue/city feeds for `jps-gallery-hong-kong`, `galerie-du-monde`, and `kwai-fung-hin`; broad programme types at `oi-art-space`, `videotage`, `hong-kong-arts-centre`, and `pmq`.
 - Approval note: keep all 19 additions `beta: true` until targeted crawl and visual/card QA pass.
 
-2026-07-14: Explicit approval promoted `hong-kong-art-school-gallery`, `david-zwirner-hong-kong`, and `white-cube-hong-kong` to public (`beta: false`) after their clean first live run. Focused config coverage locks this exact allowlist and keeps nearby Hong Kong rows beta. Production deploy passed. Targeted Art School crawl `e645a7f4-aa89-496a-b7a3-f40ab757d815` saved 2 events with 0 skips and complete English/Japanese translations; all three sources appeared in repeated live-route checks. Follow-up: its bilingual parser read `8–29 August 2026` as ending on 8 August.
+2026-07-14: Explicit approval promoted `hong-kong-art-school-gallery`, `david-zwirner-hong-kong`, and `white-cube-hong-kong` to public (`beta: false`) after their clean first live run. Focused config coverage locks this exact allowlist and keeps nearby Hong Kong rows beta. Production deploy passed. Targeted Art School crawl `e645a7f4-aa89-496a-b7a3-f40ab757d815` saved 2 events with 0 skips and complete English/Japanese translations; all three sources appeared in repeated live-route checks. Follow-up found its shorthand English date range was misparsed; shared parser fixed 2026-07-16, targeted recrawl pending.
 
 2026-07-13: Added 21 beta Hong Kong sources from the Google My Maps purple art layer. All rows use official English exhibition/programme pages, grouped taxonomy, map coordinates, `Asia/Hong_Kong`, and machine translation for Japanese. Config validation, 164 crawler tests, 86 web tests, Python tests, formatting, and the Astro build pass. No Supabase sync or live crawl run yet; no source is approved for public display.
 

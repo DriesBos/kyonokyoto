@@ -1077,6 +1077,17 @@ function parseBilingualDateRange(dateText) {
     );
   }
 
+  match = text.match(
+    new RegExp(
+      `(\\d{1,2})\\s*-\\s*(\\d{1,2})\\s+(${ENGLISH_MONTH_PATTERN})\\.?[,]?\\s+(\\d{4})`,
+      'iu',
+    ),
+  );
+  if (match) {
+    const month = ENGLISH_MONTHS[match[3].toLowerCase()];
+    return buildParsedDateRange(match[4], month, match[1], match[4], month, match[2]);
+  }
+
   match = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/u);
   if (match) return buildParsedDateRange(match[1], match[2], match[3]);
 
