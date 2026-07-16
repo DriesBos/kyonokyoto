@@ -555,7 +555,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/event/"],
       "notes": "Official current and upcoming programme. Broad design venue taxonomy intentionally includes exhibitions, events, and workshops.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
         "listing_links": ["#feaSlide a[href*=\"/event/\"]", ".vis-labelset a[href*=\"/event/\"]"]
