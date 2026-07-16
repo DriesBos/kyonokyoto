@@ -4607,6 +4607,7 @@ function extractHongKongPalaceMuseumEvent(detailHtml, source, detailUrl) {
   );
   const event = {
     ...extractedEvent,
+    title: extractedEvent.title.replace(/^Hong Kong Palace Museum\s*\|\s*/, '').trim(),
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
   };

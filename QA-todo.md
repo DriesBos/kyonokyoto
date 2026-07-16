@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
 
+2026-07-16: Hong Kong Palace Museum title extraction now removes the source's fixed `Hong Kong Palace Museum | ` heading prefix before persistence, leaving the exhibition title unchanged otherwise. Focused source-extractor regression added; deploy and targeted VPS recrawl required before renewed title QA.
+
 2026-07-16: White Cube Hong Kong now starts from the official city-scoped exhibitions page and follows only `/gallery-exhibitions/` detail links. This prevents London, New York, Paris, Offsite, and the Hong Kong listing page from becoming false event rows. Deploy `2fbb767` passed all checks; targeted VPS sync/recrawl returned `source_ok`, saved the single Shigeo Otake detail, and archived all 5 leaked listing/city rows. Database verification found exactly 1 published event with 5 decoded image URLs; all returned JPEG `200`/`206`, and local Hong Kong HTML contains no leaked city titles or encoded White Cube image query strings. Post-crawl translation audit passed 396 published events with 0 missing EN/JA translations. Ready for renewed card/media QA.
 
 2026-07-16: Post-QA VPS recrawl of `hong-kong-palace-museum` on `eac63bb` returned `source_ok` and saved all 9 published events. Database verification found 9 events with images and 0 remaining `HKPM-MapThumbnail` URLs; the existing source-scoped extractor rule is sufficient, so no global `map` filename filter was added. Post-crawl translation audit passed 401 published events with 0 missing EN/JA translations. Ready for renewed card/media QA.
