@@ -134,7 +134,9 @@ Configured `selectors.images` keep page order and outrank generic Open Graph med
 
 Set `"skip_og_image": true` when a source's Open Graph image is a site card, flyer, or other non-event image. This does not disable configured or source-specific images.
 
-Set `"measure_image_dimensions": true` only when opaque image URLs repeatedly leak small icons. Known or suspicious small candidates are probed selectively; probe failure keeps the image rather than deleting the source's only media.
+Set `"measure_image_dimensions": true` when opaque image URLs repeatedly leak small or low-resolution media. Known or suspicious small candidates are probed selectively; probe failure keeps the image rather than deleting the source's only media. Measured event media must be at least 540px tall to support the card's maximum rendered height at 1.5x density.
+
+The existing 100px width/height guard remains separate. It rejects obvious icons and UI thumbnails using dimensions exposed by page markup; it is not a source-quality measurement. URL rules for logos, social assets, and other UI images also remain necessary because those files can be larger than 540px.
 
 `srcset` uses its largest candidate. Source-specific first-image or second-image rules remain authoritative because the final safety pass filters without reordering.
 

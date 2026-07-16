@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
+import { MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX } from '../../../packages/shared/event-media.mjs';
 import {
   assessEventTitle,
   archiveStaleEvents,
@@ -1315,6 +1316,8 @@ test('Hong Kong Palace Museum discovery reads current official eventData records
      <span class="hkpm_label_tag" data-start="2026-03-20" data-end="2027-03-17"></span>
      <p>This exhibition presents masterpieces from the Palace Museum collection.</p>
      <img src="https://www.hkpm.org.hk/media/horse.jpg">
+     <img src="https://www.hkpm.org.hk/files/record/exhibition/59/HKJC-new-logo-bi-lang--1760080418.jpg">
+     <img src="https://www.hkpm.org.hk/files/record/exhibition/59/HKJC_YOTH_Iogo-1771569582.png">
      <img src="https://www.hkpm.org.hk/files/site/info/1/HKPM-MapThumbnail-480x270-1666322965.png">`,
     {
       name: 'Hong Kong Palace Museum',
@@ -1402,6 +1405,17 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
     'https://galeriedumonde.com/exhibitions/104-tang-chang/overview/',
   );
   assert.deepEqual(duMonde.image_urls, ['https://static-assets.artlogic.net/artwork.jpg']);
+
+  const duMondePosterOnly = eventExtractors['galerie-du-monde'](
+    `<h1>Poster-only exhibition</h1>
+     <time>4 Jun - 29 Aug 2026</time>
+     <p>Useful exhibition description for Galerie du Monde Hong Kong.</p>
+     <img src="https://static-assets.artlogic.net/poster.jpg" width="500" height="500">`,
+    sourceBySlug.get('galerie-du-monde'),
+    'https://galeriedumonde.com/exhibitions/105-poster-only/overview/',
+  );
+  assert.equal(duMondePosterOnly.primary_image_url, null);
+  assert.deepEqual(duMondePosterOnly.image_urls, []);
 });
 
 test('Asia Society skips its upcoming landing page masquerading as an exhibition', async () => {
@@ -4447,7 +4461,7 @@ test('Sen-Oku title extraction drops subtitle spans without font wrapper', () =>
   assert.equal(event.title, 'Special Exhibition');
 });
 
-test('image normalization caps stored images and probes offender source dimensions', async () => {
+test('image normalization rejects measured media below 540px and caps stored images', async () => {
   const diagnostics = createCrawlDiagnostics();
   const source = {
     measure_image_dimensions: true,
@@ -4466,7 +4480,9 @@ test('image normalization caps stored images and probes offender source dimensio
   const normalized = await normalizeEventImagesForSource(event, source, {
     diagnostics,
     fetchImageDimensionsFn: async (url) =>
-      url.includes('narrow') ? { width: 320, height: 72 } : { width: 1200, height: 800 },
+      url.includes('narrow')
+        ? { width: 1200, height: MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX - 1 }
+        : { width: 1200, height: MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX },
   });
 
   assert.deepEqual(normalized.image_urls, [
@@ -4477,10 +4493,26 @@ test('image normalization caps stored images and probes offender source dimensio
   ]);
   assert.equal(normalized.primary_image_url, 'https://example.test/hero.jpg');
   assert.deepEqual(normalized.image_metadata, [
-    { url: 'https://example.test/hero.jpg', width: 1200, height: 800 },
-    { url: 'https://example.test/gallery-1.jpg', width: 1200, height: 800 },
-    { url: 'https://example.test/gallery-2.jpg', width: 1200, height: 800 },
-    { url: 'https://example.test/gallery-3.jpg', width: 1200, height: 800 },
+    {
+      url: 'https://example.test/hero.jpg',
+      width: 1200,
+      height: MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX,
+    },
+    {
+      url: 'https://example.test/gallery-1.jpg',
+      width: 1200,
+      height: MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX,
+    },
+    {
+      url: 'https://example.test/gallery-2.jpg',
+      width: 1200,
+      height: MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX,
+    },
+    {
+      url: 'https://example.test/gallery-3.jpg',
+      width: 1200,
+      height: MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX,
+    },
   ]);
   assert.equal(diagnostics.image_dimension_probe_count, 5);
   assert.equal(diagnostics.image_dimension_probe_rejected_count, 1);

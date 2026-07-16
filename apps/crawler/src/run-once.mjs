@@ -17,6 +17,7 @@ import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { buildEventDedupeKey } from '../../../packages/shared/event-dedupe.mjs';
+import { MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX } from '../../../packages/shared/event-media.mjs';
 import {
   buildScheduleFields,
   classifyEventTiming,
@@ -2009,6 +2010,11 @@ function isSmallImageCandidate(candidate, url) {
     (width && width < MIN_CONTENT_IMAGE_WIDTH_PX) ||
     (height && height < MIN_CONTENT_IMAGE_HEIGHT_PX),
   );
+}
+
+function isLowResolutionEventMedia(dimensions) {
+  const height = parsePositiveInteger(dimensions?.height);
+  return Boolean(height && height < MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX);
 }
 
 function readUInt24LE(buffer, offset) {
@@ -4603,7 +4609,7 @@ function extractHongKongPalaceMuseumEvent(detailHtml, source, detailUrl) {
     detailUrl,
   );
   const imageUrls = (extractedEvent.image_urls ?? []).filter(
-    (url) => !/\/HKPM-MapThumbnail-/i.test(url),
+    (url) => !/\/(?:HKPM-MapThumbnail-|HKJC_YOTH_Iogo-)/i.test(url),
   );
   const event = {
     ...extractedEvent,
@@ -4657,9 +4663,7 @@ function extractKiangMalingueEvent(detailHtml, source, detailUrl) {
 
 function extractGalerieDuMondeEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
-  const extractedImageUrls = event.image_urls ?? [];
-  const imageUrls =
-    extractedImageUrls.length > 1 ? extractedImageUrls.slice(1) : extractedImageUrls;
+  const imageUrls = (event.image_urls ?? []).slice(1);
 
   return {
     ...event,
@@ -8260,6 +8264,8 @@ async function normalizeEventImagesForSource(
   for (const imageUrl of [...new Set(imageUrls)]) {
     if (acceptedImageUrls.length >= MAX_IMAGES_PER_EVENT) break;
     let dimensions = getImageCandidateDimensions({}, imageUrl);
+    if (isLowResolutionEventMedia(dimensions)) continue;
+
     if (
       !shouldProbeFinalImage(imageUrl, source) ||
       probeCount >= MAX_IMAGE_DIMENSION_PROBES_PER_EVENT
@@ -8275,7 +8281,10 @@ async function normalizeEventImagesForSource(
       dimensions =
         (await fetchImageDimensionsFn(imageUrl, userAgent, env, diagnostics)) ?? dimensions;
 
-      if (dimensions && isSmallImageCandidate(dimensions, imageUrl)) {
+      if (
+        dimensions &&
+        (isSmallImageCandidate(dimensions, imageUrl) || isLowResolutionEventMedia(dimensions))
+      ) {
         if (diagnostics) diagnostics.image_dimension_probe_rejected_count += 1;
         continue;
       }

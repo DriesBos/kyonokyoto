@@ -1,4 +1,5 @@
 import { dedupeEvents } from '../../../../packages/shared/event-dedupe.mjs';
+import { filterEventMediaByMinimumHeight } from '../../../../packages/shared/event-media.mjs';
 import {
   activeOrNextScheduleSegment,
   classifyEventTiming,
@@ -131,7 +132,9 @@ export const formatEventsForLocale = ({
   today: string;
 }): ClassifiedEvent[] =>
   events.map((rawEvent) => {
-    const event = withEventMediaDelivery(localizeEvent(rawEvent, activeLocale));
+    const event = withEventMediaDelivery(
+      filterEventMediaByMinimumHeight(localizeEvent(rawEvent, activeLocale)) as EventRow,
+    );
     const sourceTruth = sourceTruthForEvent(event, configuredSources, activeLocale);
     const scheduleSegments = eventScheduleSegments(event);
     const selectedSegment = activeOrNextScheduleSegment(event, today);

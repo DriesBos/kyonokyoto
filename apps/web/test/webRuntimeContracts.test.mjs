@@ -88,6 +88,10 @@ test('event card media uses native overflow scrolling', async () => {
 
   assert.match(card, /class="event-card__media-track"/);
   assert.match(card, /overflow-x: auto/);
+  assert.match(
+    card,
+    /> \.event-card__disclosure,\s*> \.event-card__star,\s*> \.event-card__media\s*pointer-events: auto/,
+  );
   assert.match(card, /&__media-track[\s\S]*?display: flex[\s\S]*?inline-size: max-content/);
   assert.doesNotMatch(card, /touch-action|-webkit-overflow-scrolling|overscroll-behavior-x/);
   assert.doesNotMatch(controls, /mediaPointerState|setPointerCapture|\.scrollLeft\s*=/);
