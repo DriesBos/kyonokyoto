@@ -2454,6 +2454,16 @@ function extractHongKongPalaceMuseumDetailUrls(listingHtml) {
     .filter(Boolean);
 }
 
+function extractJpsHongKongDetailUrls(listingHtml, listingUrl) {
+  return [...listingHtml.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
+    .filter((match) => /\bexhibition-item\b/i.test(match[1]))
+    .filter((match) => !/\bPAST\b/i.test(match[1]))
+    .filter((match) => /exhibition-location[^>]*>\s*Hong Kong\s*</i.test(match[2]))
+    .map((match) => extractTagAttribute(`<a ${match[1]}>`, 'href'))
+    .map((href) => normalizeUrl(href, listingUrl))
+    .filter(Boolean);
+}
+
 function extractTwentyOneDetailUrls(listingHtml, listingUrl) {
   const articleStart = listingHtml.search(/<article\b[^>]*class=(["'])[^"']*\bmainArea\b[^"']*\1/i);
   const scopedHtml = articleStart === -1 ? listingHtml : listingHtml.slice(articleStart);
@@ -6435,6 +6445,7 @@ const detailUrlExtractors = {
   'hosoo-gallery': extractHosooDetailUrls,
   'hyogo-prefectural-museum-of-art': extractHyogoDetailUrls,
   'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraDetailUrls,
+  'jps-gallery-hong-kong': extractJpsHongKongDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
   'kusakabe-gallery': extractKoenKyotoDetailUrls,
   kcua: extractKcuaDetailUrls,
@@ -6536,6 +6547,9 @@ const sourceSpecificSkipMatchers = {
     return classifyEventTiming(eventData, toDateInTimeZone(new Date(), 'Asia/Hong_Kong')) === 'past'
       ? 'past event'
       : null;
+  },
+  'galerie-du-monde'(eventData) {
+    return /\b(?:gdm\s+)?Taipei\b/i.test(eventData?.title ?? '') ? 'title contains Taipei' : null;
   },
 };
 
@@ -8825,6 +8839,7 @@ export {
   extractGenericDetailUrls,
   extractGenericEvent,
   extractHongKongPalaceMuseumDetailUrls,
+  extractJpsHongKongDetailUrls,
   extractMeta,
   extractSourceSpecificDetailUrls,
   fetchRemote,

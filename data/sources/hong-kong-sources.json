@@ -443,7 +443,7 @@
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
-        "listing_links": ".list-item > a",
+        "listing_links": ".list-item a",
         "title": ".detail-page-banner-title h3",
         "date": ".social-intro p",
         "description": ".social-intro p",
@@ -475,6 +475,7 @@
       "notes": "Official homepage lists current programmes first. Keep dated exhibitions and public programmes; reject open calls and archive records.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": { "listing_links": ".masonry-item a[href^=\"/programme/\"]" },
       "crawl_hints": { "skip_patterns": ["open-call", "/vmac/", "/news/"], "max_detail_pages": 10 }
     },
     {
@@ -498,6 +499,9 @@
       "notes": "Official exhibitions index. Wix rendering and current-versus-past discovery need first-crawl QA.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": ["a[href*=\"exhibition-2026\"]", "a[href*=\"exhibition-2025\"]"]
+      },
       "crawl_hints": {
         "render_mode": "auto",
         "skip_patterns": ["past", "lightbox", "application"],
@@ -526,6 +530,7 @@
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": {
+        "render_mode": "always",
         "skip_patterns": ["cinema", "performance", "course", "visit_", "membership"],
         "max_detail_pages": 10
       }
@@ -551,7 +556,12 @@
       "notes": "Official current and upcoming programme. Broad design venue taxonomy intentionally includes exhibitions, events, and workshops.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": ["#feaSlide a[href*=\"/event/\"]", ".vis-labelset a[href*=\"/event/\"]"]
+      },
       "crawl_hints": {
+        "render_mode": "always",
+        "wait_for": "css:#tl_body--programme .vis-labelset",
         "skip_patterns": ["venue-rental", "/shop/", "/directory/"],
         "max_detail_pages": 12
       }
@@ -577,6 +587,13 @@
       "notes": "Official exhibition index uses year-number detail pages and surfaces current entries first.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": "#wsite-content a[href*=\"/20\"]",
+        "title": "#wsite-content h2.wsite-content-title",
+        "date": "#wsite-content div.paragraph",
+        "description": "#wsite-content div.paragraph",
+        "images": "#wsite-content .imageGallery img"
+      },
       "crawl_hints": {
         "skip_patterns": ["/projects.html", "/artists.html"],
         "max_detail_pages": 10
@@ -603,6 +620,7 @@
       "notes": "Official exhibition index links current-year detail pages before archive entries.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": { "listing_links": "p.td-exhibitions a[href]" },
       "crawl_hints": {
         "skip_patterns": ["exhibitions-firstdecade", "legacy.", "/events.html"],
         "max_detail_pages": 8
@@ -629,6 +647,13 @@
       "notes": "Official Wix current and upcoming exhibitions page. Reject fairs and offsite hotel projects by venue during QA.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": "[data-hook=\"events-card\"] a[data-hook=\"title\"]",
+        "title": "[data-hook=\"event-title\"]",
+        "date": "[data-hook=\"event-description\"]",
+        "description": "[data-hook=\"event-description\"]",
+        "images": "[data-hook=\"event-details\"] img"
+      },
       "crawl_hints": {
         "render_mode": "auto",
         "skip_patterns": ["pastexhibitions", "art-fair", "pullman-hotel"],
@@ -682,6 +707,7 @@
       "notes": "Official Hong Kong exhibitions page. Keep Hong Kong entries; reject Milan and offsite collaborations.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": { "listing_links": ".image-caption a[href]" },
       "crawl_hints": {
         "skip_patterns": ["/milan", "/off-site", "format=ical"],
         "max_detail_pages": 8
@@ -733,7 +759,7 @@
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": {
         "skip_patterns": ["art-basel", "/news/", "/category/"],
-        "max_detail_pages": 8
+        "max_detail_pages": 12
       }
     },
     {
@@ -806,6 +832,12 @@
       "notes": "Official Squarespace exhibition index uses year-prefixed detail slugs and surfaces current entries first.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": ["a[href^=\"/2026\"]", "a[href^=\"/2025\"]"],
+        "date": ".sqs-html-content h3",
+        "description": ".sqs-html-content p",
+        "images": "main img"
+      },
       "crawl_hints": {
         "skip_patterns": ["format=ical", "/fairs", "/contact"],
         "max_detail_pages": 8
@@ -832,6 +864,7 @@
       "notes": "Official exhibition index mixes Hong Kong and Singapore. Keep Hong Kong rows only.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": { "listing_links": "a[href*=\"-hong-kong/\"]" },
       "crawl_hints": {
         "skip_patterns": ["/art-fairs/", "/events/", "singapore"],
         "max_detail_pages": 8

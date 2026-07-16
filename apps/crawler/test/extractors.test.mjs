@@ -1321,6 +1321,37 @@ test('Para Site rejects ended exhibitions before persistence', () => {
   );
 });
 
+test('JPS discovery keeps only current Hong Kong exhibition cards', () => {
+  const listingHtml = `
+    <a class="exhibition-item UPCOMING" href="/exhibition/runway-51/">
+      <p class="exhibition-location">Hong Kong</p>
+    </a>
+    <a class="exhibition-item CURRENT" href="/exhibition/tokyo-show/">
+      <p class="exhibition-location">Tokyo</p>
+    </a>
+    <a class="exhibition-item PAST" href="/exhibition/old-hong-kong-show/">
+      <p class="exhibition-location">Hong Kong</p>
+    </a>`;
+
+  assert.deepEqual(
+    detailUrlExtractors['jps-gallery-hong-kong'](
+      listingHtml,
+      'https://jpsgallery.com/exhibitions/',
+    ),
+    ['https://jpsgallery.com/exhibition/runway-51/'],
+  );
+});
+
+test('Galerie du Monde rejects Taipei exhibitions', () => {
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: 'galerie-du-monde' },
+      { title: 'Text in the Room, Deferred : gdm Taipei' },
+    ),
+    'title contains Taipei',
+  );
+});
+
 test('generic detail extraction ignores taxonomy archive URLs', () => {
   const listingHtml = `
     <a href="/blog/categories/current-exhibitions/">Current exhibitions</a>
@@ -3194,7 +3225,7 @@ test('source config validator requires boolean media controls', () => {
 });
 
 test('city source configs are valid crawl inputs', async () => {
-  for (const city of ['osaka', 'tokyo']) {
+  for (const city of ['osaka', 'tokyo', 'hong-kong']) {
     const sources = await loadSourcesConfig({ city });
 
     assert.ok(sources.length > 0);
