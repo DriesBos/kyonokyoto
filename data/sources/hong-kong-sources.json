@@ -708,7 +708,10 @@
       "notes": "Official Hong Kong exhibitions page. Keep Hong Kong entries; reject Milan and offsite collaborations.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "selectors": { "listing_links": ".image-caption a[href]" },
+      "selectors": {
+        "listing_links": ".image-caption a[href]",
+        "date": ".sqs-html-content p"
+      },
       "crawl_hints": {
         "skip_patterns": ["/milan", "/off-site", "format=ical"],
         "max_detail_pages": 8

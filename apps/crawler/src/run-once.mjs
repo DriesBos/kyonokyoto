@@ -4587,6 +4587,33 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   return resolveEventDescription(event, source, { html: detailHtml });
 }
 
+function extractHongKongPalaceMuseumEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(
+    detailHtml,
+    { ...source, selectors: { ...source.selectors, date: [] } },
+    detailUrl,
+  );
+  const dateTag = [...detailHtml.matchAll(/<span\b[^>]*>/gi)]
+    .map((match) => match[0])
+    .find((tag) => /\bhkpm_label_tag\b/.test(extractTagAttribute(tag, 'class') ?? ''));
+  const startDate = normalizeDateOnly(extractTagAttribute(dateTag ?? '', 'data-start'));
+  const endDate = normalizeDateOnly(extractTagAttribute(dateTag ?? '', 'data-end'));
+  if (!startDate) return event;
+
+  const parsedDates = parseGenericDateRange(`${startDate} - ${endDate ?? startDate}`);
+  return {
+    ...event,
+    date_text: `${startDate} - ${endDate ?? startDate}`,
+    start_date: startDate,
+    end_date: endDate ?? startDate,
+    ...buildScheduleFields({ startDate, endDate }),
+    calendar_starts_at: parsedDates.calendarStartsAt?.replace(/\+09:00$/, '+08:00') ?? null,
+    calendar_ends_at: parsedDates.calendarEndsAt?.replace(/\+09:00$/, '+08:00') ?? null,
+    _date_origin: 'source_specific',
+    _date_parser: 'hkpm_data_attributes',
+  };
+}
+
 function extractKitanoEvent(detailHtml, source, detailUrl) {
   const eventId = new URL(detailUrl).hash.slice(1);
   const start = detailHtml.search(
@@ -6507,6 +6534,7 @@ const eventExtractors = {
   'gallery-take-two': extractGalleryTakeTwoEvent,
   'gallery-yamahon': extractGalleryYamahonEvent,
   'ginza-graphic-gallery': extractDddEvent,
+  'hong-kong-palace-museum': extractHongKongPalaceMuseumEvent,
   'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
   'hyogo-prefectural-museum-of-art': extractHyogoEvent,
@@ -8870,6 +8898,7 @@ export {
   extractGenericDetailUrls,
   extractGenericEvent,
   extractHongKongPalaceMuseumDetailUrls,
+  extractHongKongPalaceMuseumEvent,
   extractJpsHongKongDetailUrls,
   extractTenChanceryCurrentDetailUrls,
   extractVillepinCurrentDetailUrls,

@@ -1309,6 +1309,24 @@ test('Hong Kong Palace Museum discovery reads current official eventData records
     'https://www.hkpm.org.hk/en/exhibition/current-special',
     'https://www.hkpm.org.hk/en/exhibition/current-thematic',
   ]);
+
+  const event = eventExtractors['hong-kong-palace-museum'](
+    `<h1>Heavenly Horses</h1>
+     <span class="hkpm_label_tag" data-start="2026-03-20" data-end="2027-03-17"></span>
+     <p>This exhibition presents masterpieces from the Palace Museum collection.</p>
+     <img src="https://www.hkpm.org.hk/media/horse.jpg">`,
+    {
+      name: 'Hong Kong Palace Museum',
+      city: 'hong-kong',
+      timezone: 'Asia/Hong_Kong',
+      taxonomy: testTaxonomy(['museum'], ['painting'], ['exhibition']),
+    },
+    'https://www.hkpm.org.hk/en/exhibition/heavenly-horses',
+  );
+
+  assert.equal(event.start_date, '2026-03-20');
+  assert.equal(event.end_date, '2027-03-17');
+  assert.equal(event.calendar_starts_at, '2026-03-20T00:00:00+08:00');
 });
 
 test('Para Site rejects ended exhibitions before persistence', () => {
