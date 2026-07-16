@@ -1335,12 +1335,29 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
   const sources = await loadSourcesConfig({ city: 'hong-kong' });
   const sourceBySlug = new Map(sources.map((source) => [source.slug, source]));
 
+  const whiteCubeSource = sourceBySlug.get('white-cube-hong-kong');
+  assert.equal(whiteCubeSource.base_url, 'https://www.whitecube.com/exhibitions/hong-kong');
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      `<nav>
+         <a href="/exhibitions/paris">Paris</a>
+         <a href="/exhibitions/offsite">Offsite</a>
+       </nav>
+       <main>
+         <a href="/gallery-exhibitions/shigeo-otake-hong-kong-2026">Shigeo Otake</a>
+       </main>`,
+      whiteCubeSource.base_url,
+      whiteCubeSource,
+    ),
+    ['https://www.whitecube.com/gallery-exhibitions/shigeo-otake-hong-kong-2026'],
+  );
+
   const whiteCube = extractGenericEvent(
     `<h1>Shigeo Otake</h1>
      <time>10 July - 29 August 2026</time>
      <p>Useful exhibition description for White Cube Hong Kong.</p>
      <img src="https://white-cube.transforms.svdcdn.com/Flower-Girl.jpg?w=2360&amp;h=1770&amp;q=80">`,
-    sourceBySlug.get('white-cube-hong-kong'),
+    whiteCubeSource,
     'https://www.whitecube.com/gallery-exhibitions/shigeo-otake-hong-kong-2026',
   );
   assert.equal(

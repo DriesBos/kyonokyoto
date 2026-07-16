@@ -306,14 +306,15 @@
       "directions_query": "White Cube Hong Kong, 50 Connaught Road Central",
       "lat": 22.2850863,
       "lng": 114.1557708,
-      "base_url": "https://www.whitecube.com/locations/white-cube-hong-kong",
-      "start_urls": ["https://www.whitecube.com/locations/white-cube-hong-kong"],
+      "base_url": "https://www.whitecube.com/exhibitions/hong-kong",
+      "start_urls": ["https://www.whitecube.com/exhibitions/hong-kong"],
       "allowed_domains": ["www.whitecube.com", "whitecube.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/gallery-exhibitions/"],
-      "notes": "Official Hong Kong location page has a dedicated Current and Upcoming Exhibitions section.",
+      "notes": "Official Hong Kong exhibitions page lists current Hong Kong gallery exhibitions only.",
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": { "listing_links": "a[href*='/gallery-exhibitions/']" },
       "crawl_hints": { "skip_patterns": ["/exhibitions/archive"], "max_detail_pages": 5 }
     },
     {
