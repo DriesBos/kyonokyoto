@@ -18,6 +18,7 @@ See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
 
 ## Notes
 
+- Use [@Fix PR view update error](thread://019f6d24-529f-7e82-ad08-f562b59ac134) for related branch, GitHub authentication, deploy, and carousel momentum context.
 - No tool-managed agent skill folders are checked into this repo.
 - Keep repo documentation human-readable and lightweight.
 - Do not add `prefers-reduced-motion: reduce` overrides; animations are tuned directly in the design.
