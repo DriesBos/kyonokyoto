@@ -1505,6 +1505,23 @@ test('Galerie du Monde rejects Taipei exhibitions', () => {
   );
 });
 
+test('Asia Art Archive keeps only the first event image', async () => {
+  const sources = await loadSourcesConfig({ city: 'hong-kong' });
+  const source = sources.find((candidate) => candidate.slug === 'asia-art-archive');
+  const event = eventExtractors[source.slug](
+    `<h1>Hong Kong Conversations 2026</h1>
+     <time>10 July - 12 September 2026</time>
+     <p>An exhibition drawing from Asia Art Archive collections and research.</p>
+     <img src="/media/programmes/first.jpg">
+     <img src="/media/programmes/second.jpg">`,
+    source,
+    'https://aaa.org.hk/en/programmes/programmes/hong-kong-conversations-2026',
+  );
+
+  assert.equal(event.primary_image_url, 'https://aaa.org.hk/media/programmes/first.jpg');
+  assert.deepEqual(event.image_urls, ['https://aaa.org.hk/media/programmes/first.jpg']);
+});
+
 test('Sin Sin rejects ended exhibitions', () => {
   assert.equal(
     getSourceSpecificSkipReason(
@@ -1513,6 +1530,37 @@ test('Sin Sin rejects ended exhibitions', () => {
     ),
     'past event',
   );
+});
+
+test('Sin Sin uses the listing poster as its only event image', async () => {
+  const sources = await loadSourcesConfig({ city: 'hong-kong' });
+  const source = sources.find((candidate) => candidate.slug === 'sin-sin-fine-art');
+  const detailUrl = 'https://www.sinsinfineart.com/2026/form/index.html';
+  const event = eventExtractors['sin-sin-fine-art'](
+    `<h1>FORM</h1>
+     <time>10 July - 12 September 2026</time>
+     <p>A group exhibition at Sin Sin Fine Art in Wong Chuk Hang.</p>
+     <img src="images/SSFA202607-form-Header.jpg">
+     <img src="images/detail-artwork.jpg">`,
+    source,
+    detailUrl,
+    {
+      listingPages: [
+        {
+          url: 'https://www.sinsinfineart.com/exhibitions.html',
+          html: `<p class="td-exhibitions">
+            <a href="2026/form/index.html"><img src="2026/form/images/SSFA202607-form-Poster.jpg"></a>
+            <a href="2026/form/index.html"><span class="showtitle">FORM</span></a>
+          </p>`,
+        },
+      ],
+    },
+  );
+
+  const posterUrl = 'https://www.sinsinfineart.com/2026/form/images/SSFA202607-form-Poster.jpg';
+  assert.equal(source?.measure_image_dimensions, true);
+  assert.equal(event.primary_image_url, posterUrl);
+  assert.deepEqual(event.image_urls, [posterUrl]);
 });
 
 test('Kiang Malingue keeps only Hong Kong exhibition cards and parses short dates', () => {

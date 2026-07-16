@@ -4602,6 +4602,17 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   return resolveEventDescription(event, source, { html: detailHtml });
 }
 
+function extractAsiaArtArchiveEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const firstImageUrl = event.image_urls?.[0] ?? null;
+
+  return {
+    ...event,
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+}
+
 function extractHongKongPalaceMuseumEvent(detailHtml, source, detailUrl) {
   const extractedEvent = extractGenericEvent(
     detailHtml,
@@ -4669,6 +4680,34 @@ function extractGalerieDuMondeEvent(detailHtml, source, detailUrl) {
     ...event,
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
+  };
+}
+
+function extractSinSinListingPoster(sourceContext, detailUrl) {
+  for (const listingPage of sourceContext.listingPages ?? []) {
+    for (const match of listingPage.html.matchAll(/<a\b[^>]*>\s*<img\b[^>]*>/gi)) {
+      const href = normalizeUrl(extractTagAttribute(match[0], 'href'), listingPage.url);
+      if (href !== normalizeUrl(detailUrl, listingPage.url)) continue;
+
+      return normalizeUrl(extractTagAttribute(match[0], 'src'), listingPage.url);
+    }
+  }
+
+  return null;
+}
+
+function extractSinSinEvent(detailHtml, source, detailUrl, sourceContext = {}) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const imageUrl =
+    extractSinSinListingPoster(sourceContext, detailUrl) ??
+    event.image_urls?.[0] ??
+    event.primary_image_url ??
+    null;
+
+  return {
+    ...event,
+    primary_image_url: imageUrl,
+    image_urls: imageUrl ? [imageUrl] : [],
   };
 }
 
@@ -6581,6 +6620,7 @@ const detailUrlExtractors = {
 
 const eventExtractors = {
   '21-21-design-sight': extractTwentyOneEvent,
+  'asia-art-archive': extractAsiaArtArchiveEvent,
   'art-gallery-kitano': extractKitanoEvent,
   artro: extractArtroEvent,
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
@@ -6624,6 +6664,7 @@ const eventExtractors = {
   'scai-park': extractScaiEvent,
   'sen-oku-hakukokan': extractSenOkuEvent,
   sibasi: extractSibasiEvent,
+  'sin-sin-fine-art': extractSinSinEvent,
   'snow-contemporary': extractSnowContemporaryEvent,
   'standing-pine-tokyo': extractStandingPineEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
@@ -8467,7 +8508,7 @@ async function crawlSource({
       };
     }
 
-    let sourceContext = {};
+    let sourceContext = { listingPages };
     const loadSourceContext = sourceContextLoaders[source.slug];
     if (loadSourceContext) {
       const loaded = await loadSourceContext({
@@ -8478,7 +8519,7 @@ async function crawlSource({
         source,
         crawlRun,
       });
-      sourceContext = loaded?.sourceContext ?? {};
+      sourceContext = { ...sourceContext, ...(loaded?.sourceContext ?? {}) };
       pagesFetched += loaded?.pagesFetched ?? 0;
     }
 

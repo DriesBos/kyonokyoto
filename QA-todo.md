@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
 
+2026-07-16: Sin Sin Fine Art now maps each detail URL back to its poster on the already-fetched exhibitions listing and stores that poster as the event's only image. Current `FORM` poster is 1080x1350 and passes the 540px card-media minimum; source dimension measurement is enabled for future posters. Live-HTML replay returned that single poster; 175 JavaScript crawler tests, 3 Python crawler tests, and 92 web tests pass. Targeted production recrawl required.
+
 2026-07-16: Event-card media now requires 540px measured source height, matching the 20rem desktop active row at the app's 18px maximum root size and LandingSlider's 1.5x minimum density. Existing 100px page-dimension and logo/icon URL rules remain because they reject different failure modes; unknown image dimensions remain visible until source measurement is enabled or backfilled. Crawler tests passed 174 JavaScript and 3 Python checks; web tests passed 92 checks and the production build completed. Source dimension backfills remain pending.
 
 2026-07-16: Galerie du Monde now always removes the first extracted image. The previous alternate-only guard retained an unusable poster when it was the event's sole image; focused coverage now checks both multi-image and poster-only pages. Targeted production recrawl pending.

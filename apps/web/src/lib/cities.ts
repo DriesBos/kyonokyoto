@@ -54,7 +54,7 @@ export const cityConfigs: CityConfig[] = [
     brandLabel: 'Kyō-no-HongKong',
     themeColor: '#8c6500',
     timeZone: 'Asia/Hong_Kong',
-    mapCenter: { lat: 22.3193, lng: 114.1694 },
+    mapCenter: { lat: 22.28492, lng: 114.1583 },
     sourceFile: 'hong-kong-sources.json',
     permanentFile: 'hong-kong-permanent.json',
   },

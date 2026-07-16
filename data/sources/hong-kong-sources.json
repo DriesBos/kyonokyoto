@@ -632,6 +632,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/20"],
       "notes": "Official exhibition index links current-year detail pages before archive entries.",
+      "measure_image_dimensions": true,
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": { "listing_links": "p.td-exhibitions a[href]" },
