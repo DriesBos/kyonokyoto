@@ -139,7 +139,7 @@ test('approved source allowlist is public without changing nearby beta sources',
     'take-ninagawa',
     'perrotin-tokyo',
     'hong-kong-art-school-gallery',
-    'david-zwirner-hong-kong',
+    'david-zwirner',
     'white-cube-hong-kong',
   ];
   const unchangedBetaSlugs = [
@@ -1493,14 +1493,11 @@ test('Kiang Malingue keeps only Hong Kong exhibition cards and parses short date
     </article>`;
 
   assert.deepEqual(
-    detailUrlExtractors['kiang-malingue-hong-kong'](
-      listingHtml,
-      'https://kiangmalingue.com/exhibitions/',
-    ),
+    detailUrlExtractors['kiang-malingue'](listingHtml, 'https://kiangmalingue.com/exhibitions/'),
     ['https://kiangmalingue.com/exhibitions/hong-kong-show/'],
   );
 
-  const event = eventExtractors['kiang-malingue-hong-kong'](
+  const event = eventExtractors['kiang-malingue'](
     `<h1 class="Page-title">Dwelling in Mirrors</h1>
      <p>[26.06.26 – 22.08.26]</p>
      <p class="p1">Kiang Malingue presents a solo exhibition at its Hong Kong location.</p>
@@ -4461,6 +4458,12 @@ test('image normalization caps stored images and probes offender source dimensio
     'https://example.test/gallery-3.jpg',
   ]);
   assert.equal(normalized.primary_image_url, 'https://example.test/hero.jpg');
+  assert.deepEqual(normalized.image_metadata, [
+    { url: 'https://example.test/hero.jpg', width: 1200, height: 800 },
+    { url: 'https://example.test/gallery-1.jpg', width: 1200, height: 800 },
+    { url: 'https://example.test/gallery-2.jpg', width: 1200, height: 800 },
+    { url: 'https://example.test/gallery-3.jpg', width: 1200, height: 800 },
+  ]);
   assert.equal(diagnostics.image_dimension_probe_count, 5);
   assert.equal(diagnostics.image_dimension_probe_rejected_count, 1);
 });

@@ -6551,7 +6551,7 @@ const detailUrlExtractors = {
   'hyogo-prefectural-museum-of-art': extractHyogoDetailUrls,
   'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraDetailUrls,
   'jps-gallery-hong-kong': extractJpsHongKongDetailUrls,
-  'kiang-malingue-hong-kong': extractKiangMalingueHongKongDetailUrls,
+  'kiang-malingue': extractKiangMalingueHongKongDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
   'kusakabe-gallery': extractKoenKyotoDetailUrls,
   kcua: extractKcuaDetailUrls,
@@ -6590,7 +6590,7 @@ const eventExtractors = {
   'galerie-du-monde': extractGalerieDuMondeEvent,
   'ginza-graphic-gallery': extractDddEvent,
   'hong-kong-palace-museum': extractHongKongPalaceMuseumEvent,
-  'kiang-malingue-hong-kong': extractKiangMalingueEvent,
+  'kiang-malingue': extractKiangMalingueEvent,
   'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
   'hyogo-prefectural-museum-of-art': extractHyogoEvent,
@@ -6629,7 +6629,7 @@ const eventExtractors = {
 function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, source) {
   if (!detailUrlExtractor || !listingPages.length) return [];
 
-  const pages = ['21-21-design-sight', 'kiang-malingue-hong-kong'].includes(source?.slug)
+  const pages = ['21-21-design-sight', 'kiang-malingue'].includes(source?.slug)
     ? listingPages
     : listingPages.slice(0, 1);
 
@@ -8209,13 +8209,17 @@ function getEventImageCandidates(eventData) {
   ];
 }
 
-function withNormalizedEventImages(eventData, imageUrls) {
+function withNormalizedEventImages(eventData, imageUrls, imageMetadata = []) {
   const normalizedImageUrls = imageUrls.slice(0, MAX_IMAGES_PER_EVENT);
+  const normalizedImageUrlSet = new Set(normalizedImageUrls);
 
   return {
     ...eventData,
     primary_image_url: normalizedImageUrls[0] ?? null,
     image_urls: normalizedImageUrls,
+    image_metadata: imageMetadata
+      .filter((image) => normalizedImageUrlSet.has(image.url))
+      .slice(0, MAX_IMAGES_PER_EVENT),
   };
 }
 
@@ -8249,22 +8253,26 @@ async function normalizeEventImagesForSource(
     .filter((imageUrl) => !isUnsafeImageUrl(imageUrl))
     .filter((imageUrl) => !isSmallImageCandidate({}, imageUrl));
   const acceptedImageUrls = [];
+  const acceptedImageMetadata = [];
   let probeCount = 0;
 
   for (const imageUrl of [...new Set(imageUrls)]) {
     if (acceptedImageUrls.length >= MAX_IMAGES_PER_EVENT) break;
+    let dimensions = getImageCandidateDimensions({}, imageUrl);
     if (
       !shouldProbeFinalImage(imageUrl, source) ||
       probeCount >= MAX_IMAGE_DIMENSION_PROBES_PER_EVENT
     ) {
       acceptedImageUrls.push(imageUrl);
+      acceptedImageMetadata.push({ url: imageUrl, ...dimensions });
       continue;
     }
 
     try {
       probeCount += 1;
       if (diagnostics) diagnostics.image_dimension_probe_count += 1;
-      const dimensions = await fetchImageDimensionsFn(imageUrl, userAgent, env, diagnostics);
+      dimensions =
+        (await fetchImageDimensionsFn(imageUrl, userAgent, env, diagnostics)) ?? dimensions;
 
       if (dimensions && isSmallImageCandidate(dimensions, imageUrl)) {
         if (diagnostics) diagnostics.image_dimension_probe_rejected_count += 1;
@@ -8272,13 +8280,15 @@ async function normalizeEventImagesForSource(
       }
 
       acceptedImageUrls.push(imageUrl);
+      acceptedImageMetadata.push({ url: imageUrl, ...dimensions });
     } catch {
       if (diagnostics) diagnostics.image_dimension_probe_failed_count += 1;
       acceptedImageUrls.push(imageUrl);
+      acceptedImageMetadata.push({ url: imageUrl, ...dimensions });
     }
   }
 
-  return withNormalizedEventImages(eventData, acceptedImageUrls);
+  return withNormalizedEventImages(eventData, acceptedImageUrls, acceptedImageMetadata);
 }
 
 async function crawlSource({

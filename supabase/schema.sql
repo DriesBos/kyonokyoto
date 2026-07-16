@@ -120,6 +120,7 @@ create table if not exists public.events (
   -- Media and source links
   primary_image_url text,
   image_urls jsonb not null default '[]'::jsonb,
+  image_metadata jsonb not null default '[]'::jsonb,
   source_url text not null,
 
   -- Editorial / pipeline metadata
@@ -138,6 +139,9 @@ create table if not exists public.events (
   ),
   constraint events_occurrence_dates_array_check check (
     jsonb_typeof(occurrence_dates) = 'array'
+  ),
+  constraint events_image_metadata_array_check check (
+    jsonb_typeof(image_metadata) = 'array'
   )
 );
 

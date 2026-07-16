@@ -1,10 +1,10 @@
-<<<<<<< HEAD
-=======
 # Source QA Todo
 
 Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
+
+2026-07-16: Landing slider hardening now measures every configured landing-source image during crawls and persists dimensions for viewport-specific quality gating. Fullscreen slides require at least 1.5 source pixels per rendered CSS pixel, target up to 2x density, and use exact-size Netlify Image CDN cover transforms. Images can qualify on mobile while being rejected on desktop; undersized/unknown candidates fall back to the solid landing. Database migration and targeted recrawls of the nine landing sources are required before visual QA.
 
 2026-07-16: Targeted media tuning for six Hong Kong sources. White Cube now decodes HTML-escaped signed image query strings before persistence; Palace Museum removes its shared map thumbnail regardless of image order; David Zwirner skips duplicate OG media; Asia Society rejects the `/exhibitions/upcoming` pseudo-event (`Plan Your Visit`); Whitestone uses HTTPS hero/artwork media instead of its HTTP OG image; Galerie du Monde drops its first poster when alternate media exists. Focused tests added and read-only replay checks run; clean recrawls and card/media QA pending.
 
@@ -282,4 +282,3 @@ After future crawl, add each source under one of:
 - Needs JSON tuning
 - Looks close
 - Approved
->>>>>>> 33e4e11 (feat: Update Hong Kong sources and event extraction logic)

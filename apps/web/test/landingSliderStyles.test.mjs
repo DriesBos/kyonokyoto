@@ -24,6 +24,17 @@ test('landing slider styles target JS-created elements globally', async () => {
   }
 });
 
+test('landing slider serves only dimension-qualified Netlify image transforms', async () => {
+  const script = await readFile(scriptPath, 'utf8');
+
+  assert.match(script, /const minimumCoverDensity = 1\.5/);
+  assert.match(script, /const maximumCoverDensity = 2/);
+  assert.match(script, /\/\.netlify\/images/);
+  assert.match(script, /fit: 'cover'/);
+  assert.match(script, /image\.fetchPriority = index === 0 \? 'high' : 'low'/);
+  assert.match(script, /image\.decode\(\)/);
+});
+
 test('landing shutter fill covers from bottom without moving its content coordinates', async () => {
   const component = await readFile(componentPath, 'utf8');
   const script = await readFile(scriptPath, 'utf8');

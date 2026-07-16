@@ -5,14 +5,24 @@ import {
   landingSliderSourceSlugsByCity,
   landingSlidesForEvents,
 } from '../src/lib/landingSlides.ts';
+import { coverDensityFor, resolveLandingSlides } from '../src/scripts/landingSlider.ts';
+import { loadAllSourcesConfig } from '../../../data/sources/source-config.mjs';
 
-const event = (overrides) => ({
-  id: overrides.id,
-  title: overrides.title ?? overrides.id,
-  timing: overrides.timing ?? 'upcoming',
-  image_urls: overrides.image_urls ?? [],
-  primary_image_url: overrides.primary_image_url ?? null,
-});
+const event = (overrides) => {
+  const imageUrls = overrides.image_urls ?? [];
+  const primaryImageUrl = overrides.primary_image_url ?? null;
+  const allImageUrls = [...new Set([primaryImageUrl, ...imageUrls].filter(Boolean))];
+
+  return {
+    id: overrides.id,
+    title: overrides.title ?? overrides.id,
+    timing: overrides.timing ?? 'upcoming',
+    image_urls: imageUrls,
+    primary_image_url: primaryImageUrl,
+    image_metadata:
+      overrides.image_metadata ?? allImageUrls.map((url) => ({ url, width: 2400, height: 1600 })),
+  };
+};
 
 test('landingSlidesForEvents keeps configured city source order from events and caps unique images', () => {
   const events = [
@@ -73,32 +83,32 @@ test('landingSlidesForEvents keeps configured city source order from events and 
     }),
     [
       {
-        src: 'https://example.test/nmoa-1.jpg',
+        images: [{ src: 'https://example.test/nmoa-1.jpg', width: 2400, height: 1600 }],
         title: 'NMOA first',
         sourceSlug: 'national-museum-of-art-osaka',
       },
       {
-        src: 'https://example.test/abeno-1.jpg',
+        images: [{ src: 'https://example.test/abeno-1.jpg', width: 2400, height: 1600 }],
         title: 'ABENO fallback',
         sourceSlug: 'abeno-harukas-art-museum',
       },
       {
-        src: 'https://example.test/abeno-extra-0.jpg',
+        images: [{ src: 'https://example.test/abeno-extra-0.jpg', width: 2400, height: 1600 }],
         title: 'abeno-extra-0',
         sourceSlug: 'abeno-harukas-art-museum',
       },
       {
-        src: 'https://example.test/abeno-extra-1.jpg',
+        images: [{ src: 'https://example.test/abeno-extra-1.jpg', width: 2400, height: 1600 }],
         title: 'abeno-extra-1',
         sourceSlug: 'abeno-harukas-art-museum',
       },
       {
-        src: 'https://example.test/abeno-extra-2.jpg',
+        images: [{ src: 'https://example.test/abeno-extra-2.jpg', width: 2400, height: 1600 }],
         title: 'abeno-extra-2',
         sourceSlug: 'abeno-harukas-art-museum',
       },
       {
-        src: 'https://example.test/abeno-extra-3.jpg',
+        images: [{ src: 'https://example.test/abeno-extra-3.jpg', width: 2400, height: 1600 }],
         title: 'abeno-extra-3',
         sourceSlug: 'abeno-harukas-art-museum',
       },
@@ -113,6 +123,77 @@ test('landing slider uses configured Tokyo museum sources', () => {
   ]);
 });
 
-test('landing slider uses David Zwirner in Hong Kong', () => {
-  assert.deepEqual(landingSliderSourceSlugsByCity['hong-kong'], ['david-zwirner-hong-kong']);
+test('landing slider uses configured Hong Kong galleries', () => {
+  assert.deepEqual(landingSliderSourceSlugsByCity['hong-kong'], [
+    'david-zwirner',
+    'kiang-malingue',
+    'gallery-exit',
+  ]);
+});
+
+test('every landing source measures image dimensions during crawls', async () => {
+  const sourceBySlug = new Map(
+    (await loadAllSourcesConfig()).map((source) => [source.slug, source]),
+  );
+
+  for (const slug of Object.values(landingSliderSourceSlugsByCity).flat()) {
+    assert.equal(sourceBySlug.get(slug)?.measure_image_dimensions, true, slug);
+  }
+});
+
+test('landing slides require measured dimensions from current event media', () => {
+  const slides = landingSlidesForEvents({
+    city: 'kyoto',
+    events: [
+      event({
+        id: 'unknown',
+        image_urls: ['https://example.test/unknown.jpg'],
+        image_metadata: [],
+      }),
+      event({
+        id: 'stale',
+        image_urls: ['https://example.test/current.jpg'],
+        image_metadata: [{ url: 'https://example.test/stale.jpg', width: 3000, height: 2000 }],
+      }),
+    ],
+    sourceSlugByEventId: new Map([
+      ['unknown', 'kcua'],
+      ['stale', 'artro'],
+    ]),
+  });
+
+  assert.deepEqual(slides, []);
+});
+
+test('cover density allows a portrait image on mobile but rejects it on desktop', () => {
+  const portrait = { width: 1000, height: 1414 };
+  assert.ok(coverDensityFor(portrait, 390, 844) >= 1.5);
+  assert.ok(coverDensityFor(portrait, 1440, 900) < 1.5);
+
+  const slides = [
+    {
+      images: [{ src: 'https://www.nmao.go.jp/poster.jpg', ...portrait }],
+      title: 'Portrait exhibition',
+      sourceSlug: 'national-museum-of-art-osaka',
+    },
+  ];
+
+  assert.equal(
+    resolveLandingSlides({ slides, viewportWidth: 1440, viewportHeight: 900, devicePixelRatio: 2 })
+      .length,
+    0,
+  );
+  const [mobile] = resolveLandingSlides({
+    slides,
+    viewportWidth: 390,
+    viewportHeight: 844,
+    devicePixelRatio: 2,
+  });
+  const url = new URL(mobile.src, 'https://example.test');
+  assert.equal(url.pathname, '/.netlify/images');
+  assert.equal(url.searchParams.get('url'), 'https://www.nmao.go.jp/poster.jpg');
+  assert.equal(url.searchParams.get('fit'), 'cover');
+  assert.equal(url.searchParams.get('q'), '82');
+  assert.ok(Number(url.searchParams.get('w')) <= portrait.width);
+  assert.ok(Number(url.searchParams.get('h')) <= portrait.height);
 });

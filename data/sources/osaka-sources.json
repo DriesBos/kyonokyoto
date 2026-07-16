@@ -25,6 +25,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/future/", "/exhibition/now/"],
       "notes": "Purple art marker from Google My Maps. Official exhibition index is Japanese-first and contains current/future exhibition detail links.",
+      "measure_image_dimensions": true,
       "selectors": {
         "title": "p.name[itemprop=\"name\"]",
         "images": ".exhibition .figure img"
@@ -255,6 +256,7 @@
         "/exhibitions/"
       ],
       "notes": "Purple art marker from Google My Maps. Official current/upcoming exhibitions page.",
+      "measure_image_dimensions": true,
       "selectors": {
         "listing_links": ".ex_poster a"
       },

@@ -35,6 +35,12 @@ export type EventScheduleSegmentRow = {
   timezone: string;
 };
 
+export type EventImageMetadata = {
+  url: string;
+  width: number | null;
+  height: number | null;
+};
+
 export type EventRow = {
   id: string;
   source_id: string;
@@ -54,6 +60,7 @@ export type EventRow = {
   is_all_day: boolean;
   primary_image_url: string | null;
   image_urls: string[] | null;
+  image_metadata: EventImageMetadata[] | null;
   source_url: string;
   description: string | null;
   updated_at?: string | null;
@@ -75,7 +82,7 @@ export type DisplayEvent = Omit<ClassifiedEvent, 'timing'> & {
 };
 
 export const eventSelect =
-  'id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, lat, lng, start_date, end_date, calendar_starts_at, calendar_ends_at, is_all_day, primary_image_url, image_urls, source_url, description, updated_at, schedule_type, occurrence_dates, schedule_segments:event_schedule_segments(ordinal, is_all_day, start_date, end_date, starts_at, ends_at, timezone)';
+  'id, source_id, title, categories, date_text, institution_name, venue_name, address_text, directions_query, lat, lng, start_date, end_date, calendar_starts_at, calendar_ends_at, is_all_day, primary_image_url, image_urls, image_metadata, source_url, description, updated_at, schedule_type, occurrence_dates, schedule_segments:event_schedule_segments(ordinal, is_all_day, start_date, end_date, starts_at, ends_at, timezone)';
 
 export const eventTranslationSelect = 'event_translations(locale, title, description)';
 export const eventSourceSelect = 'sources(slug)';

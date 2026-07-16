@@ -10,6 +10,19 @@
   NODE_VERSION = "22.22.0"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
 
+[images]
+  remote_images = [
+    "https://gallery\\.kcua\\.ac\\.jp/.*",
+    "https://artro\\.jp/.*",
+    "https://www\\.aham\\.jp/.*",
+    "https://www\\.nmao\\.go\\.jp/.*",
+    "https://www\\.mori\\.art\\.museum/.*",
+    "https://topmuseum\\.jp/.*",
+    "https://cdn\\.sanity\\.io/.*",
+    "https://www\\.galleryexit\\.com/.*",
+    "https://kiangmalingue\\.com/.*",
+  ]
+
 [[headers]]
   for = "/*"
   [headers.values]

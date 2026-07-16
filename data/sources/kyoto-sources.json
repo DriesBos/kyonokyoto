@@ -1000,6 +1000,7 @@
       "event_page_patterns": ["/en/archives/", "/archives/"],
       "notes": "The EN/JA language selector is in the site menu; open the menu to switch localized versions.",
       "skip_og_image": true,
+      "measure_image_dimensions": true,
       "selectors": {
         "listing_links": ".exhCont a",
         "title": ".exhDTtl",
@@ -1115,6 +1116,7 @@
       "event_page_patterns": ["/exhibition/"],
       "notes": "English-only site. Use the dedicated exhibition listing page.",
       "skip_og_image": true,
+      "measure_image_dimensions": true,
       "selectors": {
         "listing_links": ".section__colImageSingle a",
         "images": "main.main img"

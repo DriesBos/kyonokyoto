@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-import type { LandingSlide } from '../lib/landingSlides';
+import type { LandingSlide, LandingSlideImage } from '../lib/landingSlides';
 
 type LandingSliderWindow = Window &
   typeof globalThis & {
@@ -19,30 +19,128 @@ const imageHoldSeconds = 1.5;
 const coverSeconds = 0.75;
 const rowStaggerSeconds = 0.02;
 const rowOverlapPixels = 1;
+const minimumCoverDensity = 1.5;
+const maximumCoverDensity = 2;
+const imageQuality = 82;
 const coveredClipPath = 'inset(0% 0 0 0)';
 const collapsedTopClipPath = 'inset(0 0 100% 0)';
 const collapsedBottomClipPath = 'inset(100% 0 0 0)';
 
-const sliderWindow = window as LandingSliderWindow;
+type ResolvedLandingSlide = LandingSlide & {
+  src: string;
+  width: number;
+  height: number;
+};
+
+const isLandingSlideImage = (image: unknown): image is LandingSlideImage => {
+  if (!image || typeof image !== 'object') return false;
+  const candidate = image as Partial<LandingSlideImage>;
+  return (
+    typeof candidate.src === 'string' &&
+    candidate.src.length > 0 &&
+    Number.isFinite(candidate.width) &&
+    Number.isFinite(candidate.height) &&
+    Number(candidate.width) > 0 &&
+    Number(candidate.height) > 0
+  );
+};
 
 const parseSlides = (payload: Element | null): LandingSlide[] => {
   if (!(payload instanceof HTMLScriptElement)) return [];
 
   try {
     const parsed = JSON.parse(payload.textContent ?? '[]');
-    return Array.isArray(parsed)
-      ? parsed.filter((slide) => typeof slide?.src === 'string' && slide.src)
-      : [];
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.flatMap((slide) => {
+      if (
+        !slide ||
+        typeof slide !== 'object' ||
+        typeof slide.title !== 'string' ||
+        typeof slide.sourceSlug !== 'string'
+      ) {
+        return [];
+      }
+
+      const images = Array.isArray(slide.images) ? slide.images.filter(isLandingSlideImage) : [];
+      return images.length > 0 ? [{ ...slide, images }] : [];
+    });
   } catch {
     return [];
   }
+};
+
+export const coverDensityFor = (
+  image: Pick<LandingSlideImage, 'width' | 'height'>,
+  viewportWidth: number,
+  viewportHeight: number,
+) => Math.min(image.width / viewportWidth, image.height / viewportHeight);
+
+const netlifyImageUrl = (src: string, width: number, height: number) => {
+  try {
+    if (!src.startsWith('/') && new URL(src).protocol !== 'https:') return null;
+  } catch {
+    return null;
+  }
+
+  if (import.meta.env?.DEV) return src;
+
+  const params = new URLSearchParams({
+    url: src,
+    w: String(width),
+    h: String(height),
+    fit: 'cover',
+    position: 'center',
+    q: String(imageQuality),
+  });
+  return `/.netlify/images?${params}`;
+};
+
+export const resolveLandingSlides = ({
+  slides,
+  viewportWidth,
+  viewportHeight,
+  devicePixelRatio = 1,
+}: {
+  slides: LandingSlide[];
+  viewportWidth: number;
+  viewportHeight: number;
+  devicePixelRatio?: number;
+}): ResolvedLandingSlide[] => {
+  if (viewportWidth <= 0 || viewportHeight <= 0) return [];
+
+  const preferredDensity = Math.min(
+    maximumCoverDensity,
+    Math.max(minimumCoverDensity, devicePixelRatio),
+  );
+
+  return slides.flatMap((slide) => {
+    const image = slide.images.find(
+      (candidate) =>
+        coverDensityFor(candidate, viewportWidth, viewportHeight) >= minimumCoverDensity,
+    );
+    if (!image) return [];
+
+    const density = Math.min(
+      preferredDensity,
+      coverDensityFor(image, viewportWidth, viewportHeight),
+    );
+    const width = Math.floor(viewportWidth * density);
+    const height = Math.floor(viewportHeight * density);
+    const src = netlifyImageUrl(image.src, width, height);
+    return src ? [{ ...slide, src, width, height }] : [];
+  });
 };
 
 const preloadImage = (src: string) =>
   new Promise<boolean>((resolve) => {
     const image = new Image();
     image.decoding = 'async';
-    image.onload = () => resolve(true);
+    image.onload = () =>
+      image.decode().then(
+        () => resolve(true),
+        () => resolve(true),
+      );
     image.onerror = () => resolve(false);
     image.src = src;
   });
@@ -67,7 +165,7 @@ const rowHeightFor = (root: HTMLElement) => {
   return toPixels(rawHeight, root) || 160;
 };
 
-const createSlideElements = (container: HTMLElement, slides: LandingSlide[]) => {
+const createSlideElements = (container: HTMLElement, slides: ResolvedLandingSlide[]) => {
   const fragment = document.createDocumentFragment();
 
   slides.forEach((slide, index) => {
@@ -81,6 +179,9 @@ const createSlideElements = (container: HTMLElement, slides: LandingSlide[]) => 
     image.alt = '';
     image.decoding = 'async';
     image.loading = index === 0 ? 'eager' : 'lazy';
+    image.fetchPriority = index === 0 ? 'high' : 'low';
+    image.width = slide.width;
+    image.height = slide.height;
     frame.append(image);
     fragment.append(frame);
   });
@@ -126,6 +227,7 @@ const createRows = (
 };
 
 export const initLandingSlider = () => {
+  const sliderWindow = window as LandingSliderWindow;
   sliderWindow.__landingSliderCleanup?.();
 
   const root = document.querySelector(rootSelector);
@@ -143,6 +245,21 @@ export const initLandingSlider = () => {
     !(content instanceof HTMLElement) ||
     slides.length === 0
   ) {
+    sliderWindow.__landingSliderCleanup = undefined;
+    return;
+  }
+
+  const { width: rootWidth, height: rootHeight } = root.getBoundingClientRect();
+  const resolvedSlides = resolveLandingSlides({
+    slides,
+    viewportWidth: rootWidth,
+    viewportHeight: rootHeight,
+    devicePixelRatio: window.devicePixelRatio,
+  });
+  if (resolvedSlides.length === 0) {
+    slidesContainer.replaceChildren();
+    shuttersContainer.replaceChildren();
+    root.removeAttribute('data-landing-slider-ready');
     sliderWindow.__landingSliderCleanup = undefined;
     return;
   }
@@ -218,18 +335,18 @@ export const initLandingSlider = () => {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
       if (stopped) return;
-      createRows(root, shuttersContainer, content, fillClipPath);
+      initLandingSlider();
     }, 120);
   };
 
   const run = async () => {
-    while (!stopped && failedIndexes.size < slides.length) {
-      const loaded = await preloadImage(slides[activeIndex].src);
+    while (!stopped && failedIndexes.size < resolvedSlides.length) {
+      const loaded = await preloadImage(resolvedSlides[activeIndex].src);
       if (stopped) return;
 
       if (!loaded) {
         failedIndexes.add(activeIndex);
-        activeIndex = (activeIndex + 1) % slides.length;
+        activeIndex = (activeIndex + 1) % resolvedSlides.length;
         continue;
       }
 
@@ -244,11 +361,11 @@ export const initLandingSlider = () => {
       if (stopped) return;
 
       await animateFills(coveredClipPath, coverSeconds, collapsedBottomClipPath);
-      activeIndex = (activeIndex + 1) % slides.length;
+      activeIndex = (activeIndex + 1) % resolvedSlides.length;
     }
   };
 
-  createSlideElements(slidesContainer, slides);
+  createSlideElements(slidesContainer, resolvedSlides);
   createRows(root, shuttersContainer, content, fillClipPath);
   root.toggleAttribute('data-landing-slider-ready', true);
   observer?.observe(root);

@@ -124,6 +124,7 @@ export const permanentEventsForLocale = ({
         calendar_ends_at: null,
         primary_image_url: highlight.primary_image_url ?? null,
         image_urls: highlight.image_urls ?? [],
+        image_metadata: [],
         media_embeds: normalizeMediaEmbeds(highlight.media_embeds),
         source_url: sourceUrl,
         description: localizedDescription(highlight.description, activeLocale),

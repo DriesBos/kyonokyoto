@@ -224,6 +224,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/jp/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Exhibition pages keep body copy and artwork images in content-main; ignore the top flyer/banner image.",
+      "measure_image_dimensions": true,
       "qa": {
         "listing_urls": {
           "ja": ["https://www.mori.art.museum/jp/exhibitions/index.html"],
@@ -484,6 +485,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/current/", "/e/contents/exhibition/", "/contents/exhibition/"],
       "notes": "Purple art marker from Google My Maps. Current page requested as beta source.",
+      "measure_image_dimensions": true,
       "beta": false,
       "locales": {
         "ja": {
