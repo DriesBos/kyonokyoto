@@ -5,7 +5,7 @@ Working list of quality additions to the existing [Google My Map](https://www.go
 ## Crawler source status
 
 - Already scheduled: M+ and HKDI Gallery.
-- Added as beta sources on 2026-07-16: Hong Kong Palace Museum, Para Site, Oi!, Videotage, 1a space, Hong Kong Arts Centre, PMQ, Gallery EXIT, Sin Sin Fine Art, 13A New Street Art Gallery, JPS Gallery, Villepin, 10 Chancery Lane Gallery, Hanart TZ Gallery, Galerie du Monde, Ora-Ora, Grotto Fine Art, Soluna Fine Art, and Kwai Fung Hin.
+- Added as beta sources on 2026-07-16: Hong Kong Palace Museum, Para Site, Oi!, Videotage, 1a space, Hong Kong Arts Centre, PMQ, Gallery EXIT, Sin Sin Fine Art, 13A New Street Art Gallery, JPS Gallery, Villepin, 10 Chancery Lane Gallery, Hanart TZ Gallery, Galerie du Monde, Ora-Ora, Grotto Fine Art, Soluna Fine Art, Kwai Fung Hin, and Kiang Malingue Hong Kong.
 - All new rows use official English programme pages and machine translation for Japanese. First sync, crawl, and card/media QA still required.
 
 ## Museums, institutions and independent spaces
@@ -37,22 +37,23 @@ Working list of quality additions to the existing [Google My Map](https://www.go
 
 ## Contemporary galleries and project spaces
 
-| Name                       | Website                                                     | Google Maps                                                                                     |
-| -------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Axel Vervoordt Gallery     | [Website](https://www.axel-vervoordt.com/gallery/hong-kong) | [Map](https://www.google.com/maps/search/?api=1&query=Axel+Vervoordt+Gallery+Hong+Kong)         |
-| PHD Group                  | [Website](https://www.phdgroup.art/)                        | [Map](https://www.google.com/maps/search/?api=1&query=PHD+Group+Hong+Kong+art)                  |
-| Thy Lab                    | [Website](https://www.thylab.com/)                          | [Map](https://www.google.com/maps/search/?api=1&query=Thy+Lab+Hong+Kong)                        |
-| Gallery EXIT               | [Website](https://www.galleryexit.com/)                     | [Map](https://www.google.com/maps/search/?api=1&query=Gallery+EXIT+Hong+Kong)                   |
-| SC Gallery                 | [Website](https://www.scgalleryhk.com/)                     | [Map](https://www.google.com/maps/search/?api=1&query=SC+Gallery+Hong+Kong)                     |
-| Antenna Space              | [Website](https://antenna-space.com/)                       | [Map](https://www.google.com/maps/search/?api=1&query=Antenna+Space+Hong+Kong)                  |
-| WURE AREA                  | [Website](https://www.wurearea.com/)                        | [Map](https://www.google.com/maps/search/?api=1&query=WURE+AREA+Hong+Kong)                      |
-| Sin Sin Fine Art           | [Website](https://www.sinsinfineart.com/)                   | [Map](https://www.google.com/maps/search/?api=1&query=Sin+Sin+Fine+Art+Hong+Kong)               |
-| To Art House               | [Website](https://www.toarthouse.com/)                      | [Map](https://www.google.com/maps/search/?api=1&query=To+Art+House+Hong+Kong)                   |
-| 13A New Street Art Gallery | [Website](https://www.13anewstreet.com/)                    | [Map](https://www.google.com/maps/search/?api=1&query=13A+New+Street+Art+Gallery+Hong+Kong)     |
-| JPS Gallery                | [Website](https://jpsgallery.com/)                          | [Map](https://www.google.com/maps/search/?api=1&query=JPS+Gallery+88+Staunton+Street+Hong+Kong) |
-| Square Street Gallery      | [Website](https://squarestreetgallery.com/)                 | [Map](https://www.google.com/maps/search/?api=1&query=Square+Street+Gallery+Hong+Kong)          |
-| Opera Gallery Hong Kong    | [Website](https://www.operagallery.com/contact/hong-kong)   | [Map](https://www.google.com/maps/search/?api=1&query=Opera+Gallery+1+Duddell+Street+Hong+Kong) |
-| Villepin                   | [Website](https://www.villepinart.com/)                     | [Map](https://www.google.com/maps/search/?api=1&query=Villepin+53-55+Hollywood+Road+Hong+Kong)  |
+| Name                       | Website                                                     | Google Maps                                                                                      |
+| -------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Axel Vervoordt Gallery     | [Website](https://www.axel-vervoordt.com/gallery/hong-kong) | [Map](https://www.google.com/maps/search/?api=1&query=Axel+Vervoordt+Gallery+Hong+Kong)          |
+| PHD Group                  | [Website](https://www.phdgroup.art/)                        | [Map](https://www.google.com/maps/search/?api=1&query=PHD+Group+Hong+Kong+art)                   |
+| Thy Lab                    | [Website](https://www.thylab.com/)                          | [Map](https://www.google.com/maps/search/?api=1&query=Thy+Lab+Hong+Kong)                         |
+| Gallery EXIT               | [Website](https://www.galleryexit.com/)                     | [Map](https://www.google.com/maps/search/?api=1&query=Gallery+EXIT+Hong+Kong)                    |
+| SC Gallery                 | [Website](https://www.scgalleryhk.com/)                     | [Map](https://www.google.com/maps/search/?api=1&query=SC+Gallery+Hong+Kong)                      |
+| Antenna Space              | [Website](https://antenna-space.com/)                       | [Map](https://www.google.com/maps/search/?api=1&query=Antenna+Space+Hong+Kong)                   |
+| WURE AREA                  | [Website](https://www.wurearea.com/)                        | [Map](https://www.google.com/maps/search/?api=1&query=WURE+AREA+Hong+Kong)                       |
+| Sin Sin Fine Art           | [Website](https://www.sinsinfineart.com/)                   | [Map](https://www.google.com/maps/search/?api=1&query=Sin+Sin+Fine+Art+Hong+Kong)                |
+| To Art House               | [Website](https://www.toarthouse.com/)                      | [Map](https://www.google.com/maps/search/?api=1&query=To+Art+House+Hong+Kong)                    |
+| 13A New Street Art Gallery | [Website](https://www.13anewstreet.com/)                    | [Map](https://www.google.com/maps/search/?api=1&query=13A+New+Street+Art+Gallery+Hong+Kong)      |
+| JPS Gallery                | [Website](https://jpsgallery.com/)                          | [Map](https://www.google.com/maps/search/?api=1&query=JPS+Gallery+88+Staunton+Street+Hong+Kong)  |
+| Square Street Gallery      | [Website](https://squarestreetgallery.com/)                 | [Map](https://www.google.com/maps/search/?api=1&query=Square+Street+Gallery+Hong+Kong)           |
+| Opera Gallery Hong Kong    | [Website](https://www.operagallery.com/contact/hong-kong)   | [Map](https://www.google.com/maps/search/?api=1&query=Opera+Gallery+1+Duddell+Street+Hong+Kong)  |
+| Villepin                   | [Website](https://www.villepinart.com/)                     | [Map](https://www.google.com/maps/search/?api=1&query=Villepin+53-55+Hollywood+Road+Hong+Kong)   |
+| Kiang Malingue Hong Kong   | [Website](https://kiangmalingue.com/)                       | [Map](https://www.google.com/maps/search/?api=1&query=Kiang+Malingue+10+Sik+On+Street+Hong+Kong) |
 
 ## Fair-derived gallery additions
 
@@ -86,4 +87,5 @@ Working list of quality additions to the existing [Google My Map](https://www.go
 - **Sotheby's Maison** and **Opera Gallery Hong Kong** — no stable Hong Kong-scoped exhibition feed found.
 - **PHD Group**, **Thy Lab**, and **Square Street Gallery** — no crawlable current exhibition listing found on official site.
 - **City Gallery** — homepage exposes dated archive pages, but proposed current-exhibitions route returns 404.
+- **Tai Kwun** — current `robots.txt` disallows all crawling for general user agents, including the official programme route.
 - Existing purple markers and previously visited locations — excluded to keep this an expansion list.

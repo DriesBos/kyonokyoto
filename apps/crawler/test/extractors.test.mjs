@@ -1411,6 +1411,47 @@ test('Sin Sin rejects ended exhibitions', () => {
   );
 });
 
+test('Kiang Malingue keeps only Hong Kong exhibition cards and parses short dates', () => {
+  const listingHtml = `
+    <article class="Archive-entry Archive-entry--full">
+      <a href="/exhibitions/hong-kong-show/"><h2>Hong Kong Show</h2><p>10 Sik On Street, Wanchai, Hong Kong</p></a>
+    </article>
+    <article class="Archive-entry Archive-entry--full">
+      <a href="/exhibitions/new-york-show/"><h2>New York Show</h2><p>50 Eldridge Street, New York, NY 10002</p></a>
+    </article>`;
+
+  assert.deepEqual(
+    detailUrlExtractors['kiang-malingue-hong-kong'](
+      listingHtml,
+      'https://kiangmalingue.com/exhibitions/',
+    ),
+    ['https://kiangmalingue.com/exhibitions/hong-kong-show/'],
+  );
+
+  const event = eventExtractors['kiang-malingue-hong-kong'](
+    `<h1 class="Page-title">Dwelling in Mirrors</h1>
+     <p>[26.06.26 – 22.08.26]</p>
+     <p class="p1">Kiang Malingue presents a solo exhibition at its Hong Kong location.</p>
+     <main class="Page"><img src="https://kiangmalingue.com/show.jpg"></main>`,
+    {
+      name: 'Kiang Malingue Hong Kong',
+      city: 'hong-kong',
+      timezone: 'Asia/Hong_Kong',
+      taxonomy: testTaxonomy(['gallery'], ['contemporary'], ['exhibition']),
+      selectors: {
+        title: '.Page-title',
+        description: 'p.p1',
+        images: 'main.Page img',
+      },
+    },
+    'https://kiangmalingue.com/exhibitions/dwelling-in-mirrors/',
+  );
+
+  assert.equal(event.start_date, '2026-06-26');
+  assert.equal(event.end_date, '2026-08-22');
+  assert.equal(event.calendar_starts_at, '2026-06-26T00:00:00+08:00');
+});
+
 test('generic detail extraction ignores taxonomy archive URLs', () => {
   const listingHtml = `
     <a href="/blog/categories/current-exhibitions/">Current exhibitions</a>

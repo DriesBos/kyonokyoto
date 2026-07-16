@@ -351,7 +351,7 @@
     },
     {
       "slug": "ben-brown-fine-arts-hong-kong",
-      "name": "Ben Brown Fine Arts Hong Kong",
+      "name": "Ben Brown",
       "taxonomy": {
         "venue_category": ["gallery"],
         "display_category": ["contemporary"],
@@ -367,7 +367,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Official exhibitions page filtered to Hong Kong, with forthcoming and past sections.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "max_detail_pages": 6 }
     },
@@ -586,7 +586,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/20"],
       "notes": "Official exhibition index uses year-number detail pages and surfaces current entries first.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
         "listing_links": "#wsite-content a[href*=\"/20\"]",
@@ -736,7 +736,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Official current and past exhibition index. Exclude art fairs and ended shows by date.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
         "listing_links": "#exhibitions-grid-current a[href*=\"/exhibitions/\"]"
@@ -771,7 +771,7 @@
     },
     {
       "slug": "galerie-du-monde",
-      "name": "gdm (Galerie du Monde)",
+      "name": "Galerie du Monde",
       "taxonomy": {
         "venue_category": ["gallery"],
         "display_category": ["contemporary", "painting"],
@@ -788,7 +788,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Official gdm exhibition index. Keep Hong Kong exhibitions only; reject Taipei and external projects.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "skip_patterns": ["/events/", "/news/", "taipei"], "max_detail_pages": 8 }
     },
@@ -877,6 +877,37 @@
         "skip_patterns": ["/art-fairs/", "/events/", "singapore"],
         "max_detail_pages": 8
       }
+    },
+    {
+      "slug": "kiang-malingue-hong-kong",
+      "name": "Kiang Malingue Hong Kong",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "10 Sik On Street, Wan Chai, Hong Kong",
+      "directions_query": "Kiang Malingue, 10 Sik On Street, Wan Chai, Hong Kong",
+      "lat": 22.2755805,
+      "lng": 114.1700665,
+      "base_url": "https://kiangmalingue.com/exhibitions/",
+      "start_urls": [
+        "https://kiangmalingue.com/exhibitions/",
+        "https://kiangmalingue.com/exhibitions/?date=future"
+      ],
+      "allowed_domains": ["kiangmalingue.com", "www.kiangmalingue.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official current and future exhibition listings mix Hong Kong and New York. Keep cards at 10 Sik On Street, Wan Chai only.",
+      "beta": true,
+      "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "title": ".Page-title",
+        "description": "p.p1",
+        "images": "main.Page img"
+      },
+      "crawl_hints": { "skip_patterns": ["?date=past", "/zh/"], "max_detail_pages": 8 }
     },
     {
       "slug": "soluna-fine-art",

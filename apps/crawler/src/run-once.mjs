@@ -2488,6 +2488,15 @@ function extractTenChanceryCurrentDetailUrls(listingHtml, listingUrl) {
     .filter((url) => /\/exhibitions\/[^/]+\/overview\/$/i.test(new URL(url).pathname));
 }
 
+function extractKiangMalingueHongKongDetailUrls(listingHtml, listingUrl) {
+  return [...listingHtml.matchAll(/<article\b[^>]*\bArchive-entry\b[^>]*>[\s\S]*?<\/article>/gi)]
+    .map((match) => match[0])
+    .filter((article) => /10 Sik On Street, Wanchai, Hong Kong/i.test(article))
+    .map((article) => extractTagAttribute(article.match(/<a\b[^>]*>/i)?.[0] ?? '', 'href'))
+    .map((href) => normalizeUrl(href, listingUrl))
+    .filter(Boolean);
+}
+
 function extractTwentyOneDetailUrls(listingHtml, listingUrl) {
   const articleStart = listingHtml.search(/<article\b[^>]*class=(["'])[^"']*\bmainArea\b[^"']*\1/i);
   const scopedHtml = articleStart === -1 ? listingHtml : listingHtml.slice(articleStart);
@@ -4614,6 +4623,29 @@ function extractHongKongPalaceMuseumEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractKiangMalingueEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const match = stripTags(detailHtml).match(
+    /\[(\d{2})\.(\d{2})\.(\d{2})\s*[–-]\s*(\d{2})\.(\d{2})\.(\d{2})\]/,
+  );
+  if (!match) return event;
+
+  const startDate = `20${match[3]}-${match[2]}-${match[1]}`;
+  const endDate = `20${match[6]}-${match[5]}-${match[4]}`;
+  const parsedDates = parseGenericDateRange(`${startDate} - ${endDate}`);
+  return {
+    ...event,
+    date_text: match[0],
+    start_date: startDate,
+    end_date: endDate,
+    ...buildScheduleFields({ startDate, endDate }),
+    calendar_starts_at: parsedDates.calendarStartsAt?.replace(/\+09:00$/, '+08:00') ?? null,
+    calendar_ends_at: parsedDates.calendarEndsAt?.replace(/\+09:00$/, '+08:00') ?? null,
+    _date_origin: 'source_specific',
+    _date_parser: 'kiang_malingue_short_dotted_range',
+  };
+}
+
 function extractKitanoEvent(detailHtml, source, detailUrl) {
   const eventId = new URL(detailUrl).hash.slice(1);
   const start = detailHtml.search(
@@ -6498,6 +6530,7 @@ const detailUrlExtractors = {
   'hyogo-prefectural-museum-of-art': extractHyogoDetailUrls,
   'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraDetailUrls,
   'jps-gallery-hong-kong': extractJpsHongKongDetailUrls,
+  'kiang-malingue-hong-kong': extractKiangMalingueHongKongDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
   'kusakabe-gallery': extractKoenKyotoDetailUrls,
   kcua: extractKcuaDetailUrls,
@@ -6535,6 +6568,7 @@ const eventExtractors = {
   'gallery-yamahon': extractGalleryYamahonEvent,
   'ginza-graphic-gallery': extractDddEvent,
   'hong-kong-palace-museum': extractHongKongPalaceMuseumEvent,
+  'kiang-malingue-hong-kong': extractKiangMalingueEvent,
   'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
   'hyogo-prefectural-museum-of-art': extractHyogoEvent,
@@ -6573,7 +6607,9 @@ const eventExtractors = {
 function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, source) {
   if (!detailUrlExtractor || !listingPages.length) return [];
 
-  const pages = source?.slug === '21-21-design-sight' ? listingPages : listingPages.slice(0, 1);
+  const pages = ['21-21-design-sight', 'kiang-malingue-hong-kong'].includes(source?.slug)
+    ? listingPages
+    : listingPages.slice(0, 1);
 
   return [
     ...new Set(
@@ -8900,6 +8936,8 @@ export {
   extractHongKongPalaceMuseumDetailUrls,
   extractHongKongPalaceMuseumEvent,
   extractJpsHongKongDetailUrls,
+  extractKiangMalingueEvent,
+  extractKiangMalingueHongKongDetailUrls,
   extractTenChanceryCurrentDetailUrls,
   extractVillepinCurrentDetailUrls,
   extractMeta,
