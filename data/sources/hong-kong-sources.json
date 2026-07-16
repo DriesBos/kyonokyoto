@@ -392,6 +392,7 @@
       "notes": "Official exhibition index separates Current and Past. Keep current and upcoming museum exhibitions only.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": { "date": ".hkpm_label--cal" },
       "crawl_hints": {
         "skip_patterns": ["/past", "/about/", "/press-release/"],
         "max_detail_pages": 14
@@ -418,7 +419,7 @@
       "notes": "Official exhibitions archive surfaces current entries first; reject ended exhibitions by date.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "selectors": { "listing_links": ".exhibitions article.exhibition a" },
+      "selectors": { "listing_links": "article.exhibition a" },
       "crawl_hints": { "skip_patterns": ["/programmes/", "/residencies/"], "max_detail_pages": 12 }
     },
     {
@@ -531,7 +532,7 @@
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": {
         "render_mode": "always",
-        "skip_patterns": ["cinema", "performance", "course", "visit_", "membership"],
+        "skip_patterns": ["cinema", "performance", "course", "visit_", "membership", "value["],
         "max_detail_pages": 10
       }
     },
@@ -734,6 +735,9 @@
       "notes": "Official current and past exhibition index. Exclude art fairs and ended shows by date.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": "#exhibitions-grid-current a[href*=\"/exhibitions/\"]"
+      },
       "crawl_hints": { "skip_patterns": ["/art-fairs/", "/viewing-room/"], "max_detail_pages": 8 }
     },
     {
@@ -834,6 +838,7 @@
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
         "listing_links": ["a[href^=\"/2026\"]", "a[href^=\"/2025\"]"],
+        "title": ".sqs-html-content h3",
         "date": ".sqs-html-content h3",
         "description": ".sqs-html-content p",
         "images": "main img"

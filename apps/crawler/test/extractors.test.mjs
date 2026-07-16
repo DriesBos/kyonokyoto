@@ -1342,6 +1342,37 @@ test('JPS discovery keeps only current Hong Kong exhibition cards', () => {
   );
 });
 
+test('Villepin discovery stops before past exhibitions', () => {
+  const listingHtml = `
+    <p>Current Exhibitions</p>
+    <div class="image-caption"><a href="/as-the-ground-holds">Current</a></div>
+    <p>Past Exhibitions</p>
+    <div class="image-caption"><a href="/ted-gahl-roam">Past</a></div>`;
+
+  assert.deepEqual(
+    detailUrlExtractors.villepin(listingHtml, 'https://www.villepinart.com/exhibitions'),
+    ['https://www.villepinart.com/as-the-ground-holds'],
+  );
+});
+
+test('10 Chancery Lane discovery stays inside current exhibitions', () => {
+  const listingHtml = `
+    <div id="exhibitions-grid-current">
+      <a href="/exhibitions/195-current/overview/">Current</a>
+    </div>
+    <div id="exhibitions-grid-past">
+      <a href="/exhibitions/194-past/overview/">Past</a>
+    </div>`;
+
+  assert.deepEqual(
+    detailUrlExtractors['10-chancery-lane-gallery'](
+      listingHtml,
+      'https://www.10chancerylanegallery.com/exhibitions/',
+    ),
+    ['https://www.10chancerylanegallery.com/exhibitions/195-current/overview/'],
+  );
+});
+
 test('Galerie du Monde rejects Taipei exhibitions', () => {
   assert.equal(
     getSourceSpecificSkipReason(
@@ -1349,6 +1380,16 @@ test('Galerie du Monde rejects Taipei exhibitions', () => {
       { title: 'Text in the Room, Deferred : gdm Taipei' },
     ),
     'title contains Taipei',
+  );
+});
+
+test('Sin Sin rejects ended exhibitions', () => {
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: 'sin-sin-fine-art' },
+      { start_date: '2025-01-01', end_date: '2025-01-31', timezone: 'Asia/Hong_Kong' },
+    ),
+    'past event',
   );
 });
 

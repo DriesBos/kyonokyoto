@@ -2464,6 +2464,30 @@ function extractJpsHongKongDetailUrls(listingHtml, listingUrl) {
     .filter(Boolean);
 }
 
+function extractVillepinCurrentDetailUrls(listingHtml, listingUrl) {
+  const currentStart = listingHtml.search(/Current Exhibitions/i);
+  const currentHtml = currentStart === -1 ? listingHtml : listingHtml.slice(currentStart);
+  const pastStart = currentHtml.search(/Past Exhibitions/i);
+  const scopedHtml = pastStart === -1 ? currentHtml : currentHtml.slice(0, pastStart);
+
+  return [...scopedHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean)
+    .filter((url) => new URL(url).hostname.endsWith('villepinart.com'));
+}
+
+function extractTenChanceryCurrentDetailUrls(listingHtml, listingUrl) {
+  const currentStart = listingHtml.search(/id=(["'])exhibitions-grid-current\1/i);
+  const currentHtml = currentStart === -1 ? listingHtml : listingHtml.slice(currentStart);
+  const pastStart = currentHtml.search(/id=(["'])exhibitions-grid-past\1/i);
+  const scopedHtml = pastStart === -1 ? currentHtml : currentHtml.slice(0, pastStart);
+
+  return [...scopedHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1/gi)]
+    .map((match) => normalizeUrl(match[2], listingUrl))
+    .filter(Boolean)
+    .filter((url) => /\/exhibitions\/[^/]+\/overview\/$/i.test(new URL(url).pathname));
+}
+
 function extractTwentyOneDetailUrls(listingHtml, listingUrl) {
   const articleStart = listingHtml.search(/<article\b[^>]*class=(["'])[^"']*\bmainArea\b[^"']*\1/i);
   const scopedHtml = articleStart === -1 ? listingHtml : listingHtml.slice(articleStart);
@@ -6429,6 +6453,7 @@ function extractKuramonzenEvent(detailHtml, source, detailUrl) {
 }
 
 const detailUrlExtractors = {
+  '10-chancery-lane-gallery': extractTenChanceryCurrentDetailUrls,
   '21-21-design-sight': extractTwentyOneDetailUrls,
   'art-gallery-kitano': extractKitanoDetailUrls,
   'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
@@ -6463,6 +6488,7 @@ const detailUrlExtractors = {
   'snow-contemporary': extractSnowCurrentDetailUrls,
   'sokyo-kyoto': extractSokyoDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
+  villepin: extractVillepinCurrentDetailUrls,
   zenbi: extractZenbiDetailUrls,
   'gallery-unfold': extractGalleryUnfoldDetailUrls,
 };
@@ -6550,6 +6576,11 @@ const sourceSpecificSkipMatchers = {
   },
   'galerie-du-monde'(eventData) {
     return /\b(?:gdm\s+)?Taipei\b/i.test(eventData?.title ?? '') ? 'title contains Taipei' : null;
+  },
+  'sin-sin-fine-art'(eventData) {
+    return classifyEventTiming(eventData, toDateInTimeZone(new Date(), 'Asia/Hong_Kong')) === 'past'
+      ? 'past event'
+      : null;
   },
 };
 
@@ -8840,6 +8871,8 @@ export {
   extractGenericEvent,
   extractHongKongPalaceMuseumDetailUrls,
   extractJpsHongKongDetailUrls,
+  extractTenChanceryCurrentDetailUrls,
+  extractVillepinCurrentDetailUrls,
   extractMeta,
   extractSourceSpecificDetailUrls,
   fetchRemote,
