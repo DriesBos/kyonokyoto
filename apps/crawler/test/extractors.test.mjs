@@ -1314,7 +1314,8 @@ test('Hong Kong Palace Museum discovery reads current official eventData records
     `<h1>Heavenly Horses</h1>
      <span class="hkpm_label_tag" data-start="2026-03-20" data-end="2027-03-17"></span>
      <p>This exhibition presents masterpieces from the Palace Museum collection.</p>
-     <img src="https://www.hkpm.org.hk/media/horse.jpg">`,
+     <img src="https://www.hkpm.org.hk/media/horse.jpg">
+     <img src="https://www.hkpm.org.hk/files/site/info/1/HKPM-MapThumbnail-480x270-1666322965.png">`,
     {
       name: 'Hong Kong Palace Museum',
       city: 'hong-kong',
@@ -1327,6 +1328,77 @@ test('Hong Kong Palace Museum discovery reads current official eventData records
   assert.equal(event.start_date, '2026-03-20');
   assert.equal(event.end_date, '2027-03-17');
   assert.equal(event.calendar_starts_at, '2026-03-20T00:00:00+08:00');
+  assert.deepEqual(event.image_urls, ['https://www.hkpm.org.hk/media/horse.jpg']);
+});
+
+test('Hong Kong image rules remove broken, duplicate, and poster media', async () => {
+  const sources = await loadSourcesConfig({ city: 'hong-kong' });
+  const sourceBySlug = new Map(sources.map((source) => [source.slug, source]));
+
+  const whiteCube = extractGenericEvent(
+    `<h1>Shigeo Otake</h1>
+     <time>10 July - 29 August 2026</time>
+     <p>Useful exhibition description for White Cube Hong Kong.</p>
+     <img src="https://white-cube.transforms.svdcdn.com/Flower-Girl.jpg?w=2360&amp;h=1770&amp;q=80">`,
+    sourceBySlug.get('white-cube-hong-kong'),
+    'https://www.whitecube.com/gallery-exhibitions/shigeo-otake-hong-kong-2026',
+  );
+  assert.equal(
+    whiteCube.primary_image_url,
+    'https://white-cube.transforms.svdcdn.com/Flower-Girl.jpg?w=2360&h=1770&q=80',
+  );
+
+  const davidZwirner = extractGenericEvent(
+    `<meta property="og:image" content="https://cdn.sanity.io/event.jpg?w=1200&amp;h=630">
+     <h1>Dan Flavin: Grids</h1>
+     <time>May 28 - September 12, 2026</time>
+     <p>Useful exhibition description for David Zwirner Hong Kong.</p>
+     <img src="https://cdn.sanity.io/event.jpg?w=3840">`,
+    sourceBySlug.get('david-zwirner'),
+    'https://www.davidzwirner.com/exhibitions/2026/dan-flavin-grids-hong-kong',
+  );
+  assert.deepEqual(davidZwirner.image_urls, ['https://cdn.sanity.io/event.jpg?w=3840']);
+
+  const whitestone = extractGenericEvent(
+    `<meta property="og:image" content="http://www.whitestone-gallery.com/poster.jpg">
+     <h1>Becoming Her</h1>
+     <time>2026.07.11 - 08.15</time>
+     <p>Useful exhibition description for Whitestone Gallery Hong Kong.</p>
+     <img class="wsg-gallery-exhibition-main-visual__img-desktop" src="https://cdn.shopify.com/hero.jpg">
+     <div class="wsg-gallery-exhibition-article__article"><p><img src="https://cdn.shopify.com/artwork.jpg"></p></div>`,
+    sourceBySlug.get('whitestone-gallery-hong-kong'),
+    'https://www.whitestone-gallery.com/blogs/gallery-exhibitions/hk-becoming-her-072026',
+  );
+  assert.deepEqual(whitestone.image_urls, [
+    'https://cdn.shopify.com/hero.jpg',
+    'https://cdn.shopify.com/artwork.jpg',
+  ]);
+
+  const duMonde = eventExtractors['galerie-du-monde'](
+    `<meta property="og:image" content="https://static-assets.artlogic.net/artwork.jpg">
+     <h1>Tang Chang - Into the Heart-Mind</h1>
+     <time>4 Jun - 29 Aug 2026</time>
+     <p>Useful exhibition description for Galerie du Monde Hong Kong.</p>
+     <img src="https://static-assets.artlogic.net/poster.jpg" width="500" height="500">`,
+    sourceBySlug.get('galerie-du-monde'),
+    'https://galeriedumonde.com/exhibitions/104-tang-chang/overview/',
+  );
+  assert.deepEqual(duMonde.image_urls, ['https://static-assets.artlogic.net/artwork.jpg']);
+});
+
+test('Asia Society skips its upcoming landing page masquerading as an exhibition', async () => {
+  const sources = await loadSourcesConfig({ city: 'hong-kong' });
+  const source = sources.find((candidate) => candidate.slug === 'asia-society-hong-kong');
+  const listingHtml = `
+    <a href="/hong-kong/exhibitions/upcoming">Plan Your Visit</a>
+    <a href="/hong-kong/exhibitions/singing-and-dancing-brush-and-ink-art-wesley-tongson">Exhibition</a>`;
+
+  assert.deepEqual(
+    extractGenericDetailUrls(listingHtml, 'https://asiasociety.org/hong-kong/exhibitions', source),
+    [
+      'https://asiasociety.org/hong-kong/exhibitions/singing-and-dancing-brush-and-ink-art-wesley-tongson',
+    ],
+  );
 });
 
 test('Para Site rejects ended exhibitions before persistence', () => {

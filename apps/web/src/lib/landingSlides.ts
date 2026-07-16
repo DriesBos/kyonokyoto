@@ -13,7 +13,7 @@ export const landingSliderSourceSlugsByCity = {
   kyoto: ['kcua', 'artro'],
   osaka: ['national-museum-of-art-osaka', 'abeno-harukas-art-museum'],
   tokyo: ['mori-art-museum', 'tokyo-photographic-art-museum'],
-  'hong-kong': ['david-zwirner-hong-kong'],
+  'hong-kong': ['david-zwirner', 'kiang-malingue', 'gallery-exit'],
 } satisfies Record<AppCity, string[]>;
 
 type LandingSlideEvent = Pick<

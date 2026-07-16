@@ -1855,7 +1855,7 @@ function parseGenericDateRange(dateText) {
 
 function normalizeUrl(value, baseUrl) {
   try {
-    const sanitizedValue = value.replaceAll('\u0000', '').replaceAll('＆', '&');
+    const sanitizedValue = decodeHtml(value).replaceAll('\u0000', '').replaceAll('＆', '&');
     const url = new URL(sanitizedValue, baseUrl);
     url.hash = '';
     return url.toString();
@@ -4597,11 +4597,19 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
 }
 
 function extractHongKongPalaceMuseumEvent(detailHtml, source, detailUrl) {
-  const event = extractGenericEvent(
+  const extractedEvent = extractGenericEvent(
     detailHtml,
     { ...source, selectors: { ...source.selectors, date: [] } },
     detailUrl,
   );
+  const imageUrls = (extractedEvent.image_urls ?? []).filter(
+    (url) => !/\/HKPM-MapThumbnail-/i.test(url),
+  );
+  const event = {
+    ...extractedEvent,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+  };
   const dateTag = [...detailHtml.matchAll(/<span\b[^>]*>/gi)]
     .map((match) => match[0])
     .find((tag) => /\bhkpm_label_tag\b/.test(extractTagAttribute(tag, 'class') ?? ''));
@@ -4643,6 +4651,19 @@ function extractKiangMalingueEvent(detailHtml, source, detailUrl) {
     calendar_ends_at: parsedDates.calendarEndsAt?.replace(/\+09:00$/, '+08:00') ?? null,
     _date_origin: 'source_specific',
     _date_parser: 'kiang_malingue_short_dotted_range',
+  };
+}
+
+function extractGalerieDuMondeEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const extractedImageUrls = event.image_urls ?? [];
+  const imageUrls =
+    extractedImageUrls.length > 1 ? extractedImageUrls.slice(1) : extractedImageUrls;
+
+  return {
+    ...event,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
   };
 }
 
@@ -6566,6 +6587,7 @@ const eventExtractors = {
   'gallery-baiken': extractBaikenEvent,
   'gallery-take-two': extractGalleryTakeTwoEvent,
   'gallery-yamahon': extractGalleryYamahonEvent,
+  'galerie-du-monde': extractGalerieDuMondeEvent,
   'ginza-graphic-gallery': extractDddEvent,
   'hong-kong-palace-museum': extractHongKongPalaceMuseumEvent,
   'kiang-malingue-hong-kong': extractKiangMalingueEvent,
