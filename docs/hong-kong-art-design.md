@@ -74,7 +74,7 @@ Working list of quality additions to the existing [Google My Map](https://www.go
 - [Tatler Asia — artistic Hong Kong](https://www.tatlerasia.com/lifestyle/arts/discover-the-artistic-side-of-hong-kong)
 - [Art Basel Hong Kong](https://www.artbasel.com/hong-kong)
 - [Frieze — fairs and galleries](https://www.frieze.com/fairs)
-- [Wallpaper* — local guide by Art Basel Hong Kong director Angelle Siyang-Le](https://www.wallpaper.com/travel/locals-guide-hong-kong-angelle-siyang-le)
+- [Wallpaper\* — local guide by Art Basel Hong Kong director Angelle Siyang-Le](https://www.wallpaper.com/travel/locals-guide-hong-kong-angelle-siyang-le)
 
 ## Held back
 
