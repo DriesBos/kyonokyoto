@@ -23,6 +23,7 @@ import {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractHongKongPalaceMuseumDetailUrls,
   extractMeta,
   extractBestDateText,
   extractSourceSpecificDetailUrls,
@@ -1285,6 +1286,38 @@ test('generic detail extraction can use configured listing link selectors', () =
   assert.deepEqual(
     extractGenericDetailUrls(listingHtml, 'https://example.test/events/', source, 4),
     ['https://example.test/events/selected/'],
+  );
+});
+
+test('Hong Kong Palace Museum discovery reads current official eventData records only', () => {
+  const listingHtml = `
+    <script>
+      eventData['special'] = [
+        {"url":"https://www.hkpm.org.hk/en/exhibition/current-special","end":"2099-10-19"},
+        {"url":"https://www.hkpm.org.hk/en/exhibition/ended-special","end":"2000-01-01"}
+      ];
+      eventData['thematic'] = [
+        {"url":"https://www.hkpm.org.hk/en/exhibition/current-thematic","end":"2099-11-23"}
+      ];
+      eventData['travelling'] = [
+        {"url":"https://www.hkpm.org.hk/en/exhibition/offsite-show","end":"2099-12-31"}
+      ];
+    </script>
+  `;
+
+  assert.deepEqual(extractHongKongPalaceMuseumDetailUrls(listingHtml), [
+    'https://www.hkpm.org.hk/en/exhibition/current-special',
+    'https://www.hkpm.org.hk/en/exhibition/current-thematic',
+  ]);
+});
+
+test('Para Site rejects ended exhibitions before persistence', () => {
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: 'para-site' },
+      { start_date: '2000-01-01', end_date: '2000-01-02', timezone: 'Asia/Hong_Kong' },
+    ),
+    'past event',
   );
 });
 

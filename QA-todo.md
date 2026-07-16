@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
 
+2026-07-16: First targeted VPS pass began after deploy `c37ee0f`. Source sync upserted all 35 rows without pruning. `hong-kong-palace-museum` followed 14 navigation pages and saved 0; `oi-art-space` followed broad site links and saved invalid `Web Content Display` / `Lightbox Prompt` rows; `para-site` found real exhibition pages but hit its detail cap and included ended shows. Tuned Palace Museum discovery to its official inline `eventData` current/upcoming records, scoped Oi! to programme cards with exact title/date/copy/media selectors, and scoped Para Site to exhibition cards with ended-show rejection. Targeted recrawls pending. Manual VPS loop stopped when scheduled Kyoto cycle acquired shared production lock.
+
 2026-07-16: Synced all 35 configured Hong Kong sources after source-batch and date-parser commits reached `main`. Upserted 35 rows. Sync identified five obsolete prune candidates (`tai-kwun`, `de-sarthe-gallery`, `jockey-club-creative-arts-centre`, `perrotin-hong-kong`, and `pace-gallery-hong-kong`) but removed nothing because `--prune` was not requested. New 19-source crawl and card/media QA remain pending.
 
 2026-07-16: Fixed shared English date parsing for same-month shorthand such as Hong Kong Art School's live `8 - 29 August 2026`; it now resolves to `2026-08-08` through `2026-08-29` instead of collapsing to one date. Focused regression added; database row still needs targeted recrawl.

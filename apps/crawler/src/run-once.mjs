@@ -2436,6 +2436,24 @@ function extractGenericDetailUrls(listingHtml, listingUrl, source, limit = 8) {
   return finalUrls.length ? finalUrls : [listingUrl];
 }
 
+function extractHongKongPalaceMuseumDetailUrls(listingHtml) {
+  const today = toDateInTimeZone(new Date(), 'Asia/Hong_Kong');
+  const eventGroups = [
+    ...listingHtml.matchAll(/eventData\[['"](?:special|thematic)['"]\]\s*=\s*(\[[\s\S]*?\]);/g),
+  ].flatMap((match) => {
+    try {
+      return JSON.parse(match[1]);
+    } catch {
+      return [];
+    }
+  });
+
+  return eventGroups
+    .filter((event) => normalizeDateOnly(event?.end) >= today)
+    .map((event) => event?.url)
+    .filter(Boolean);
+}
+
 function extractTwentyOneDetailUrls(listingHtml, listingUrl) {
   const articleStart = listingHtml.search(/<article\b[^>]*class=(["'])[^"']*\bmainArea\b[^"']*\1/i);
   const scopedHtml = articleStart === -1 ? listingHtml : listingHtml.slice(articleStart);
@@ -6412,6 +6430,7 @@ const detailUrlExtractors = {
   'gallery-take-two': extractGalleryTakeTwoDetailUrls,
   'gallery-yamahon': extractGalleryYamahonDetailUrls,
   'ginza-graphic-gallery': extractDddDetailUrls,
+  'hong-kong-palace-museum': extractHongKongPalaceMuseumDetailUrls,
   'hosomi-museum': extractHosomiMuseumDetailUrls,
   'hosoo-gallery': extractHosooDetailUrls,
   'hyogo-prefectural-museum-of-art': extractHyogoDetailUrls,
@@ -6512,6 +6531,11 @@ const sourceSpecificSkipMatchers = {
   },
   momak(eventData) {
     return /\bcalendar\b/i.test(eventData?.title ?? '') ? 'title contains calendar' : null;
+  },
+  'para-site'(eventData) {
+    return classifyEventTiming(eventData, toDateInTimeZone(new Date(), 'Asia/Hong_Kong')) === 'past'
+      ? 'past event'
+      : null;
   },
 };
 
@@ -8800,6 +8824,7 @@ export {
   extractChushinEvent,
   extractGenericDetailUrls,
   extractGenericEvent,
+  extractHongKongPalaceMuseumDetailUrls,
   extractMeta,
   extractSourceSpecificDetailUrls,
   fetchRemote,

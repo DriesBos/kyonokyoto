@@ -418,7 +418,8 @@
       "notes": "Official exhibitions archive surfaces current entries first; reject ended exhibitions by date.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "skip_patterns": ["/programmes/", "/residencies/"], "max_detail_pages": 8 }
+      "selectors": { "listing_links": ".exhibitions article.exhibition a" },
+      "crawl_hints": { "skip_patterns": ["/programmes/", "/residencies/"], "max_detail_pages": 12 }
     },
     {
       "slug": "oi-art-space",
@@ -441,6 +442,13 @@
       "notes": "Official Oi! projects and programmes page. Exclude venue, archive, application, and general information pages.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": ".list-item > a",
+        "title": ".detail-page-banner-title h3",
+        "date": ".social-intro p",
+        "description": ".social-intro p",
+        "images": "#oi-detail-banner .slider-items img.d-none"
+      },
       "crawl_hints": {
         "skip_patterns": ["oi.html", "archive", "application", "important-notes", "contact"],
         "max_detail_pages": 10
