@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Hong Kong Sources
 
+2026-07-16: Synced all 35 configured Hong Kong sources after source-batch and date-parser commits reached `main`. Upserted 35 rows. Sync identified five obsolete prune candidates (`tai-kwun`, `de-sarthe-gallery`, `jockey-club-creative-arts-centre`, `perrotin-hong-kong`, and `pace-gallery-hong-kong`) but removed nothing because `--prune` was not requested. New 19-source crawl and card/media QA remain pending.
+
 2026-07-16: Fixed shared English date parsing for same-month shorthand such as Hong Kong Art School's live `8 - 29 August 2026`; it now resolves to `2026-08-08` through `2026-08-29` instead of collapsing to one date. Focused regression added; database row still needs targeted recrawl.
 
 2026-07-16: Added 19 beta Hong Kong sources from `docs/hong-kong-art-design.md`: Hong Kong Palace Museum, Para Site, Oi!, Videotage, 1a space, Hong Kong Arts Centre, PMQ, Gallery EXIT, Sin Sin Fine Art, 13A New Street Art Gallery, JPS Gallery, Villepin, 10 Chancery Lane Gallery, Hanart TZ Gallery, Galerie du Monde, Ora-Ora, Grotto Fine Art, Soluna Fine Art, and Kwai Fung Hin. Rows use official English programme pages, verified venue addresses/map coordinates, grouped taxonomy, and machine translation for Japanese. Robots policies allow configured public routes. Config validation, 164 crawler tests, 3 Python tests, and 87 web tests pass. No sync, live crawl, database write, or card/media approval yet.
