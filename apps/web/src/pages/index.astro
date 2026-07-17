@@ -7,7 +7,6 @@ export const prerender = false;
 
 const locale = resolveLocale({
   cookieLocale: Astro.cookies.get(LOCALE_COOKIE)?.value,
-  acceptLanguage: Astro.request.headers.get('accept-language'),
 });
 const city = normalizeCity(Astro.cookies.get(CITY_COOKIE)?.value) ?? 'kyoto';
 
@@ -17,7 +16,7 @@ return new Response(null, {
     Location: routePathFor({ city, locale }),
     'Cache-Control': 'no-store',
     'Netlify-CDN-Cache-Control': 'no-store',
-    Vary: 'Cookie, Accept-Language',
+    Vary: 'Cookie',
   },
 });
 ---

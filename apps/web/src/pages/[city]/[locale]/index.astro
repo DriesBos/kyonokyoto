@@ -21,7 +21,13 @@ import {
   normalizeCity,
   type AppCity,
 } from '../../../lib/cities';
-import { LOCALE_COOKIE, normalizeLocale, resolveLocale, uiText } from '../../../lib/i18n';
+import {
+  LOCALE_COOKIE,
+  normalizeLocale,
+  resolveLocale,
+  shouldShowLanguageOption,
+  uiText,
+} from '../../../lib/i18n';
 import { routePathFor } from '../../../lib/routeState';
 import { cleanDisplayText, googleCalendarUrl, mapsUrl } from '../../../lib/calendar';
 import {
@@ -54,13 +60,13 @@ Astro.response.headers.set(
   'Netlify-CDN-Cache-Control',
   'public, s-maxage=300, stale-while-revalidate=86400',
 );
+Astro.response.headers.set('Netlify-Vary', 'country=jp,language=ja');
 
 const routeCity = cityConfigFor(Astro.params.city);
 const routeLocale = normalizeLocale(Astro.params.locale);
 const fallbackCity = normalizeCity(Astro.cookies.get(CITY_COOKIE)?.value) ?? 'kyoto';
 const fallbackLocale = resolveLocale({
   cookieLocale: Astro.cookies.get(LOCALE_COOKIE)?.value,
-  acceptLanguage: Astro.request.headers.get('accept-language'),
 });
 const city = routeCity?.slug ?? fallbackCity;
 const locale = routeLocale ?? fallbackLocale;
@@ -68,6 +74,11 @@ if (!routeCity || !routeLocale) return Astro.redirect(routePathFor({ city, local
 if (Astro.params.city !== city || Astro.params.locale !== routeLocale) {
   return Astro.redirect(routePathFor({ city, locale }), 302);
 }
+const showLanguageOption = shouldShowLanguageOption({
+  countryCode: Astro.locals.netlify.context.geo.country.code,
+  acceptLanguage: Astro.request.headers.get('accept-language'),
+  locale,
+});
 
 const copy = uiText.en;
 const metaCopy = uiText[locale];
@@ -182,7 +193,12 @@ const excerpt = (value: string | null) => {
     />
     <div class="content-container" data-content-container data-main-content>
       <section class="events-section" data-events-section>
-        <Header categories={categories} city={city} locale={locale} />
+        <Header
+          categories={categories}
+          city={city}
+          locale={locale}
+          showLanguageOption={showLanguageOption}
+        />
 
         <div class="empty-state empty-state--filtered" data-filter-empty hidden>
           <h3>{copy.noEvents}</h3>

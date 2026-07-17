@@ -1,7 +1,7 @@
 /// <reference types="astro/client" />
 
 declare namespace App {
-  interface Locals {
+  interface Locals extends import('@astrojs/netlify').NetlifyLocals {
     cspNonce: string;
   }
 }

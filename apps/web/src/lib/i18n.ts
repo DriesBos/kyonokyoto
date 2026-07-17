@@ -86,12 +86,26 @@ export function localeFromAcceptLanguage(value: string | null | undefined): AppL
 
 export function resolveLocale({
   cookieLocale,
-  acceptLanguage,
   fallback = 'en',
 }: {
   cookieLocale?: string | null;
-  acceptLanguage?: string | null;
   fallback?: AppLocale;
 }): AppLocale {
-  return normalizeLocale(cookieLocale) ?? localeFromAcceptLanguage(acceptLanguage) ?? fallback;
+  return normalizeLocale(cookieLocale) ?? fallback;
+}
+
+export function shouldShowLanguageOption({
+  countryCode,
+  acceptLanguage,
+  locale,
+}: {
+  countryCode?: string | null;
+  acceptLanguage?: string | null;
+  locale: AppLocale;
+}): boolean {
+  return (
+    locale === 'ja' ||
+    countryCode?.trim().toUpperCase() === 'JP' ||
+    localeFromAcceptLanguage(acceptLanguage) === 'ja'
+  );
 }

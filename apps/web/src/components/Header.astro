@@ -16,6 +16,7 @@ type Props = {
   compact?: boolean;
   city?: AppCity;
   locale?: AppLocale;
+  showLanguageOption?: boolean;
 };
 
 const {
@@ -26,6 +27,7 @@ const {
   compact = false,
   city = 'kyoto',
   locale = 'en',
+  showLanguageOption = false,
 } = Astro.props;
 const copy = uiText.en;
 const homeHref = routePathFor({ city, locale });
@@ -94,6 +96,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
           aria-controls="map-section"
         />
         <GeneralButton
+          edge={showLanguageOption ? undefined : 'last'}
           verticalPadding="full"
           href={routePathFor({ city: nextCity.slug, locale })}
           label={currentCityLabel}
@@ -101,14 +104,18 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
           data-city-toggle
           data-city-option={nextCity.slug}
         />
-        <GeneralButton
-          edge="last"
-          verticalPadding="full"
-          href={localePathFor(nextLocale)}
-          label={languageLabels[locale]}
-          aria-label={`${copy.languageAria}: ${languageLabels[nextLocale]}`}
-          hreflang={nextLocale}
-        />
+        {
+          showLanguageOption ? (
+            <GeneralButton
+              edge="last"
+              verticalPadding="full"
+              href={localePathFor(nextLocale)}
+              label={languageLabels[nextLocale]}
+              aria-label={`${copy.languageAria}: ${languageLabels[nextLocale]}`}
+              hreflang={nextLocale}
+            />
+          ) : null
+        }
       </div>
       {
         showFilterControls ? (

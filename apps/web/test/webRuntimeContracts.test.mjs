@@ -21,9 +21,14 @@ test('event SSR query filters city and requested locale without schema fallback 
 test('locale switch uses route navigation and viewport keeps browser zoom', async () => {
   const header = await readWebFile('src/components/Header.astro');
   const layout = await readWebFile('src/layouts/BaseLayout.astro');
+  const page = await readWebFile('src/pages/[city]/[locale]/index.astro');
 
   assert.match(header, /href=\{localePathFor\(nextLocale\)\}/);
+  assert.match(header, /showLanguageOption \? \(/);
+  assert.match(header, /label=\{languageLabels\[nextLocale\]\}/);
+  assert.match(header, /edge=\{showLanguageOption \? undefined : 'last'\}/);
   assert.doesNotMatch(header, /initLocaleToggle|data-locale-option/);
+  assert.match(page, /Astro\.response\.headers\.set\('Netlify-Vary', 'country=jp,language=ja'\)/);
   assert.match(layout, /width=device-width, initial-scale=1, viewport-fit=cover/);
   assert.doesNotMatch(layout, /maximum-scale|user-scalable/);
 });
