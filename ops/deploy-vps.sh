@@ -5,10 +5,10 @@ repo=/srv/kyo-no-kyoto
 lock=/run/lock/kyo-no-kyoto-crawl.lock
 export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH"
 
-command=${SSH_ORIGINAL_COMMAND:-}
-if [[ -z "$command" ]] && ! IFS= read -r command; then
-  command=deploy
+if ! IFS= read -r command; then
+  command=${SSH_ORIGINAL_COMMAND:-deploy}
 fi
+echo "VPS command: $command"
 
 exec 9>"$lock"
 flock -w 3600 9
