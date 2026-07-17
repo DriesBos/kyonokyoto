@@ -4185,7 +4185,7 @@ function extractGenericTitleInfo(detailHtml, source, detailUrl = null) {
     })),
     { value: decodeHtml(extractMeta(detailHtml, 'og:title') ?? ''), origin: 'og_title' },
     {
-      value: stripTags(detailHtml.match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
+      value: stripTags(detailHtml.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
       origin: 'document_title',
     },
   ]
@@ -4618,6 +4618,71 @@ function extractFirstImageEvent(detailHtml, source, detailUrl) {
     primary_image_url: firstImageUrl,
     image_urls: firstImageUrl ? [firstImageUrl] : [],
   };
+}
+
+function extractOiDateInfo(detailHtml) {
+  const socialText = selectorTextValues(detailHtml, ['.social-intro p']).join(' ');
+  const pageText = socialText || stripTags(detailHtml).replace(/\s+/g, ' ').trim();
+  const match = pageText.match(
+    /(?:Date|Exhibition period)\s*[:：]\s*(?:(From)\s+)?(\d{1,2})\.(\d{1,2})\.(20\d{2})(?:\s*[-–—]\s*(\d{1,2})\.(\d{1,2})\.(20\d{2})|\s+(onward))?/iu,
+  );
+  if (!match) return null;
+
+  const [, fromLabel, startDay, startMonth, startYear, endDay, endMonth, endYear, onward] = match;
+  const parsed = buildParsedDateRange(startYear, startMonth, startDay, endYear, endMonth, endDay);
+  if (!parsed) return null;
+
+  return {
+    dateText: match[0],
+    startDate: parsed.startDate,
+    endDate: fromLabel || onward ? null : parsed.endDate,
+    openEnded: Boolean(fromLabel || onward),
+  };
+}
+
+function extractOiEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const title = cleanTitleCandidate(
+    stripTags(detailHtml.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? ''),
+    source,
+  );
+  const dateInfo = extractOiDateInfo(detailHtml);
+  const firstImageUrl = event.image_urls?.[0] ?? null;
+  const extractedEvent = {
+    ...event,
+    title: title || event.title,
+    date_text: dateInfo?.dateText ?? event.date_text,
+    start_date: dateInfo?.startDate ?? event.start_date,
+    end_date: dateInfo ? dateInfo.endDate : event.end_date,
+    ...(dateInfo
+      ? {
+          ...buildScheduleFields({
+            startDate: dateInfo.startDate,
+            endDate: dateInfo.endDate,
+          }),
+          ...(dateInfo.openEnded
+            ? {
+                schedule_type: 'open_ended',
+                schedule_segments: [
+                  {
+                    is_all_day: true,
+                    start_date: dateInfo.startDate,
+                    end_date: null,
+                  },
+                ],
+              }
+            : {}),
+          calendar_starts_at: null,
+          calendar_ends_at: null,
+          _date_origin: 'source_specific_extractor',
+          _date_parser: 'extractOiDateInfo',
+        }
+      : {}),
+    primary_image_url: firstImageUrl,
+    image_urls: firstImageUrl ? [firstImageUrl] : [],
+  };
+
+  return resolveEventDescription(extractedEvent, source, { html: detailHtml });
 }
 
 function extractHongKongPalaceMuseumEvent(detailHtml, source, detailUrl) {
@@ -6658,7 +6723,7 @@ const eventExtractors = {
   'kusakabe-gallery': extractKusakabeEvent,
   'leica-gallery-kyoto': extractLeicaKyotoEvent,
   'nakanoshima-museum-of-art-osaka': extractSamacEvent,
-  'oi-art-space': extractFirstImageEvent,
+  'oi-art-space': extractOiEvent,
   'osaka-geidai-whatsnew': extractSamacEvent,
   'parco-hall-shinsaibashi': extractParcoHallEvent,
   'pola-museum-annex': extractPolaMuseumAnnexEvent,

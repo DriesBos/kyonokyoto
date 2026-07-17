@@ -1391,9 +1391,12 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
     'https://www.apo.hk/en/web/apo/here_projects_and_programmes.html',
   );
   const oi = eventExtractors['oi-art-space'](
-    `<h1>Art n GOs 3</h1>
-     <time>10 July - 29 August 2026</time>
-     <p>Useful programme description for Oi! Hong Kong.</p>
+    `<title _tag="common_meta_en">Art n GOs 3 — A Joyful Encounter with Intangible Cultural Heritage</title>
+     <div class="social-intro"><p>
+       This programme brings images by Hong Kong artists into everyday community life.
+       Date：From 26.5.2026<br>
+       Location：Tseung Kwan O Government Offices
+     </p></div>
      <div id="oi-detail-banner"><div class="slider-items">
        <img class="d-none d-md-block" src="/image/apohere/first.jpg">
        <img class="d-none d-md-block" src="/image/apohere/second.jpg">
@@ -1401,7 +1404,46 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
     oiSource,
     'https://www.apo.hk/en/web/apo/here_art_n_gos3_joyful_encounter_with_ich.html',
   );
+  assert.equal(oi.title, 'Art n GOs 3 — A Joyful Encounter with Intangible Cultural Heritage');
+  assert.equal(oi.start_date, '2026-05-26');
+  assert.equal(oi.end_date, null);
+  assert.equal(oi.schedule_type, 'open_ended');
+  assert.deepEqual(oi.schedule_segments, [
+    { is_all_day: true, start_date: '2026-05-26', end_date: null },
+  ]);
   assert.deepEqual(oi.image_urls, ['https://www.apo.hk/image/apohere/first.jpg']);
+
+  const oiRange = eventExtractors['oi-art-space'](
+    `<title>Art n GOs 2 — Living Heritage</title>
+     <div class="social-intro"><p>
+       This exhibition connects residents with art and culture in everyday life.
+       Exhibition period: 1.6.2024 – 24.10.2026
+     </p></div>
+     <div id="oi-detail-banner"><div class="slider-items">
+       <img class="d-none d-md-block" src="/image/apohere/living-heritage.jpg">
+     </div></div>`,
+    oiSource,
+    'https://www.apo.hk/en/web/apo/here_art_n_gos_living_heritage.html',
+  );
+  assert.equal(oiRange.start_date, '2024-06-01');
+  assert.equal(oiRange.end_date, '2026-10-24');
+  assert.equal(oiRange.schedule_type, 'range');
+
+  const oiOnward = eventExtractors['oi-art-space'](
+    `<title>Art n GOs — Transience</title>
+     <div class="social-intro">
+       <p>This public artwork explores change in everyday life.</p>
+       <p>Exhibition period: 6.5.2021 onward</p>
+     </div>
+     <div id="oi-detail-banner"><div class="slider-items">
+       <img class="d-none d-md-block" src="/image/apohere/transience.jpg">
+     </div></div>`,
+    oiSource,
+    'https://www.apo.hk/en/web/apo/art_n_gos_transience.html',
+  );
+  assert.equal(oiOnward.start_date, '2021-05-06');
+  assert.equal(oiOnward.end_date, null);
+  assert.equal(oiOnward.schedule_type, 'open_ended');
 
   const whitestone = extractGenericEvent(
     `<meta property="og:image" content="http://www.whitestone-gallery.com/poster.jpg">

@@ -458,7 +458,7 @@
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
         "listing_links": ".list-item a",
-        "title": ".detail-page-banner-title h3",
+        "title": "title",
         "date": ".social-intro p",
         "description": ".social-intro p",
         "images": "#oi-detail-banner .slider-items img.d-none"
