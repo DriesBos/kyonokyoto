@@ -25,6 +25,8 @@ import {
   extractGenericDetailUrls,
   extractGenericEvent,
   extractHongKongPalaceMuseumDetailUrls,
+  extractMplusDetailUrls,
+  extractMplusEvent,
   extractMeta,
   extractBestDateText,
   extractSourceSpecificDetailUrls,
@@ -150,7 +152,6 @@ test('approved source allowlist is public without changing nearby beta sources',
     'tokyo-opera-city-art-gallery',
     'taro-okamoto-memorial-museum',
     'gyre-gallery',
-    'm-plus',
     'gagosian-hong-kong',
     'whitestone-gallery-hong-kong',
   ];
@@ -1483,6 +1484,54 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
   );
   assert.equal(duMondePosterOnly.primary_image_url, null);
   assert.deepEqual(duMondePosterOnly.image_urls, []);
+});
+
+test('M+ keeps current and upcoming exhibitions with exact title and schedule', async () => {
+  const source = (await loadSourcesConfig({ city: 'hong-kong' })).find(
+    (candidate) => candidate.slug === 'm-plus',
+  );
+  const listingUrl = 'https://www.mplus.org.hk/en/exhibitions/';
+  const listingHtml = `
+    <div id="current">
+      <a href="/en/exhibitions/current-show/" class="CommonExhibitionsItem current">Current</a>
+    </div>
+    <div id="future">
+      <a href="/en/exhibitions/upcoming-show/" class="CommonExhibitionsItem">Upcoming</a>
+    </div>
+    <div id="online">
+      <a href="/en/exhibitions/online-show/" class="CommonExhibitionsItem online">Online</a>
+    </div>
+    <div id="past">
+      <a href="/en/exhibitions/past-show/" class="CommonExhibitionsItem past">Past</a>
+    </div>`;
+
+  assert.equal(source?.beta, false);
+  assert.equal(source?.crawl_hints?.max_detail_pages, 30);
+  assert.deepEqual(extractMplusDetailUrls(listingHtml, listingUrl), [
+    'https://www.mplus.org.hk/en/exhibitions/current-show/',
+    'https://www.mplus.org.hk/en/exhibitions/upcoming-show/',
+  ]);
+
+  const event = extractMplusEvent(
+    `<main>
+       <h1><span class="CommonTitleColors-titleMain">M+ Sigg Collection:<br>Inner Worlds</span></h1>
+       <span class="CommonTitleColors-titleAlternative">M+希克藏品：心靈圖景</span>
+       <div class="CommonDetails-title">27 Jun 2025<br>Ongoing</div>
+       <p>This exhibition provides an in-depth perspective on contemporary Chinese art and its emotional expression.</p>
+       <meta property="og:image" content="https://www.mplus.org.hk/api/images/10190/width-1200|format-png/">
+     </main>`,
+    source,
+    'https://www.mplus.org.hk/en/exhibitions/m-sigg-collection-inner-worlds/',
+  );
+
+  assert.equal(event.title, 'M+ Sigg Collection: Inner Worlds');
+  assert.equal(event.date_text, '27 Jun 2025 - Ongoing');
+  assert.equal(event.start_date, '2025-06-27');
+  assert.equal(event.end_date, null);
+  assert.equal(event.schedule_type, 'open_ended');
+  assert.deepEqual(event.schedule_segments, [
+    { is_all_day: true, start_date: '2025-06-27', end_date: null },
+  ]);
 });
 
 test('Asia Society skips its upcoming landing page masquerading as an exhibition', async () => {

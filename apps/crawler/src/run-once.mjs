@@ -2467,6 +2467,21 @@ function extractHongKongPalaceMuseumDetailUrls(listingHtml) {
     .filter(Boolean);
 }
 
+function extractMplusDetailUrls(listingHtml, listingUrl) {
+  const currentStart = listingHtml.search(/\bid=(["'])current\1/i);
+  const onlineStart = listingHtml.search(/\bid=(["'])online\1/i);
+  if (currentStart === -1 || onlineStart <= currentStart) {
+    throw new Error('Could not find M+ current/upcoming exhibition sections');
+  }
+
+  return [...listingHtml.slice(currentStart, onlineStart).matchAll(/<a\b[^>]*>/gi)]
+    .filter((match) =>
+      (extractTagAttribute(match[0], 'class') ?? '').split(/\s+/).includes('CommonExhibitionsItem'),
+    )
+    .map((match) => normalizeUrl(extractTagAttribute(match[0], 'href'), listingUrl))
+    .filter(Boolean);
+}
+
 function extractJpsHongKongDetailUrls(listingHtml, listingUrl) {
   return [...listingHtml.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
     .filter((match) => /\bexhibition-item\b/i.test(match[1]))
@@ -4620,6 +4635,38 @@ function extractFirstImageEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractMplusEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const dateHtml = selectElements(detailHtml, '.CommonDetails-title')[0] ?? '';
+  const dateText = stripTags(dateHtml.replace(/<br\s*\/?>/gi, ' - '));
+  const parsedDates = parseGenericDateRange(dateText);
+  const isOngoing = /\bongoing\b/i.test(dateText);
+
+  return {
+    ...event,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: isOngoing ? null : parsedDates.endDate,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: isOngoing ? null : parsedDates.endDate,
+    }),
+    ...(isOngoing
+      ? {
+          schedule_type: 'open_ended',
+          occurrence_dates: [],
+          schedule_segments: [
+            { is_all_day: true, start_date: parsedDates.startDate, end_date: null },
+          ],
+        }
+      : {}),
+    calendar_starts_at: null,
+    calendar_ends_at: null,
+    _date_origin: 'source_specific_extractor',
+    _date_parser: 'extractMplusEvent',
+  };
+}
+
 function extractOiDateInfo(detailHtml) {
   const socialText = selectorTextValues(detailHtml, ['.social-intro p']).join(' ');
   const pageText = socialText || stripTags(detailHtml).replace(/\s+/g, ' ').trim();
@@ -6669,6 +6716,7 @@ const detailUrlExtractors = {
   'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraDetailUrls,
   'jps-gallery-hong-kong': extractJpsHongKongDetailUrls,
   'kiang-malingue': extractKiangMalingueHongKongDetailUrls,
+  'm-plus': extractMplusDetailUrls,
   'koen-kyoto': extractKoenKyotoDetailUrls,
   'kusakabe-gallery': extractKoenKyotoDetailUrls,
   kcua: extractKcuaDetailUrls,
@@ -6723,6 +6771,7 @@ const eventExtractors = {
   kuramonzen: extractKuramonzenEvent,
   'kusakabe-gallery': extractKusakabeEvent,
   'leica-gallery-kyoto': extractLeicaKyotoEvent,
+  'm-plus': extractMplusEvent,
   'nakanoshima-museum-of-art-osaka': extractSamacEvent,
   'oi-art-space': extractOiEvent,
   'osaka-geidai-whatsnew': extractSamacEvent,
@@ -9095,6 +9144,8 @@ export {
   extractJpsHongKongDetailUrls,
   extractKiangMalingueEvent,
   extractKiangMalingueHongKongDetailUrls,
+  extractMplusDetailUrls,
+  extractMplusEvent,
   extractTenChanceryCurrentDetailUrls,
   extractVillepinCurrentDetailUrls,
   extractMeta,

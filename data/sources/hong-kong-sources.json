@@ -68,9 +68,10 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/"],
       "notes": "Replaces obsolete M+ Pavilion marker. Official listing exposes On Now and Upcoming exhibitions; exclude Online and Past sections.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "skip_patterns": ["/online/", "/press/", "/past"], "max_detail_pages": 12 }
+      "selectors": { "title": ".CommonTitleColors-titleMain" },
+      "crawl_hints": { "skip_patterns": ["/online/", "/press/", "/past"], "max_detail_pages": 30 }
     },
     {
       "slug": "asia-society-hong-kong",
