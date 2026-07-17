@@ -91,7 +91,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/hong-kong/exhibitions/"],
       "notes": "Official Hong Kong exhibitions route. Index is intermittently sparse and needs a beta crawl before promotion.",
-      "beta": false,
+      "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": {
         "skip_patterns": ["/events/", "/press/", "/exhibitions/upcoming"],
@@ -185,7 +185,7 @@
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/exhibition/", "/current/"],
       "notes": "Official gallery homepage exposes Current, Previous, and Archive. Keep Current only.",
-      "beta": false,
+      "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "skip_patterns": ["/archive/", "/previous/"], "max_detail_pages": 3 }
     },
@@ -283,7 +283,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blogs/gallery-exhibitions/hk-"],
       "notes": "Official current Hong Kong exhibition index. Coordinates follow the M Place map embedded on Whitestone’s official Hong Kong location page.",
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
         "images": [
@@ -634,7 +634,7 @@
       "event_page_patterns": ["/20"],
       "notes": "Official exhibition index links current-year detail pages before archive entries.",
       "measure_image_dimensions": true,
-      "beta": true,
+      "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": { "listing_links": "p.td-exhibitions a[href]" },
       "crawl_hints": {
