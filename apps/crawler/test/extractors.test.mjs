@@ -1312,7 +1312,8 @@ test('Hong Kong Palace Museum discovery reads current official eventData records
   ]);
 
   const event = eventExtractors['hong-kong-palace-museum'](
-    `<h1>Hong Kong Palace Museum | Heavenly Horses</h1>
+    `<meta property="og:image" content="https://www.hkpm.org.hk/assets/img/og_image.jpg">
+     <h1>Hong Kong Palace Museum | Heavenly Horses</h1>
      <span class="hkpm_label_tag" data-start="2026-03-20" data-end="2027-03-17"></span>
      <p>This exhibition presents masterpieces from the Palace Museum collection.</p>
      <img src="https://www.hkpm.org.hk/media/horse.jpg">
@@ -1324,6 +1325,7 @@ test('Hong Kong Palace Museum discovery reads current official eventData records
       city: 'hong-kong',
       timezone: 'Asia/Hong_Kong',
       taxonomy: testTaxonomy(['museum'], ['painting'], ['exhibition']),
+      skip_og_image: true,
     },
     'https://www.hkpm.org.hk/en/exhibition/heavenly-horses',
   );
@@ -1338,6 +1340,8 @@ test('Hong Kong Palace Museum discovery reads current official eventData records
 test('Hong Kong image rules remove broken, duplicate, and poster media', async () => {
   const sources = await loadSourcesConfig({ city: 'hong-kong' });
   const sourceBySlug = new Map(sources.map((source) => [source.slug, source]));
+
+  assert.equal(sourceBySlug.get('hong-kong-palace-museum').skip_og_image, true);
 
   const whiteCubeSource = sourceBySlug.get('white-cube-hong-kong');
   assert.equal(whiteCubeSource.base_url, 'https://www.whitecube.com/exhibitions/hong-kong');
@@ -1374,11 +1378,30 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
      <h1>Dan Flavin: Grids</h1>
      <time>May 28 - September 12, 2026</time>
      <p>Useful exhibition description for David Zwirner Hong Kong.</p>
-     <img src="https://cdn.sanity.io/event.jpg?w=3840">`,
+     <img src="https://cdn.sanity.io/event.jpg?w=3840">
+     <img alt="Black background, no image" src="https://cdn.sanity.io/black-divider.jpg?w=3840">`,
     sourceBySlug.get('david-zwirner'),
     'https://www.davidzwirner.com/exhibitions/2026/dan-flavin-grids-hong-kong',
   );
   assert.deepEqual(davidZwirner.image_urls, ['https://cdn.sanity.io/event.jpg?w=3840']);
+
+  const oiSource = sourceBySlug.get('oi-art-space');
+  assert.equal(
+    oiSource.base_url,
+    'https://www.apo.hk/en/web/apo/here_projects_and_programmes.html',
+  );
+  const oi = eventExtractors['oi-art-space'](
+    `<h1>Art n GOs 3</h1>
+     <time>10 July - 29 August 2026</time>
+     <p>Useful programme description for Oi! Hong Kong.</p>
+     <div id="oi-detail-banner"><div class="slider-items">
+       <img class="d-none d-md-block" src="/image/apohere/first.jpg">
+       <img class="d-none d-md-block" src="/image/apohere/second.jpg">
+     </div></div>`,
+    oiSource,
+    'https://www.apo.hk/en/web/apo/here_art_n_gos3_joyful_encounter_with_ich.html',
+  );
+  assert.deepEqual(oi.image_urls, ['https://www.apo.hk/image/apohere/first.jpg']);
 
   const whitestone = extractGenericEvent(
     `<meta property="og:image" content="http://www.whitestone-gallery.com/poster.jpg">

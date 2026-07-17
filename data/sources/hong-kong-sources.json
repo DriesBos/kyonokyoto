@@ -404,6 +404,7 @@
       "notes": "Official exhibition index separates Current and Past. Keep current and upcoming museum exhibitions only.",
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "skip_og_image": true,
       "selectors": { "date": ".hkpm_label--cal" },
       "crawl_hints": {
         "skip_patterns": ["/past", "/about/", "/press-release/"],
@@ -447,12 +448,12 @@
       "directions_query": "Oi! Art Space, 12 Oil Street, North Point, Hong Kong",
       "lat": 22.2890247,
       "lng": 114.1930287,
-      "base_url": "https://www.apo.hk/en/web/apo/oi_projects_and_programmes.html",
-      "start_urls": ["https://www.apo.hk/en/web/apo/oi_projects_and_programmes.html"],
+      "base_url": "https://www.apo.hk/en/web/apo/here_projects_and_programmes.html",
+      "start_urls": ["https://www.apo.hk/en/web/apo/here_projects_and_programmes.html"],
       "allowed_domains": ["www.apo.hk", "apo.hk"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/web/apo/"],
-      "notes": "Official Oi! projects and programmes page. Exclude venue, archive, application, and general information pages.",
+      "notes": "Official Art Promotion Office Here projects and programmes page. Exclude venue, archive, application, and general information pages.",
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {

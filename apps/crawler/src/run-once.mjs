@@ -1961,6 +1961,7 @@ function imageCandidateFromTag(tagHtml, source = 'img') {
       null,
     width,
     height: dimensions.height,
+    alt: attributes.alt ?? null,
     source: attributes['data-crawl4ai-media'] ? 'crawl4ai-media' : source,
   };
 }
@@ -2239,7 +2240,13 @@ function finalizeImageUrls(candidates, baseUrl, { preserveOrder = false } = {}) 
 
     const { width, height } = getImageCandidateDimensions(candidate, url);
 
-    if (isUnsafeImageUrl(url) || isSmallImageCandidate(candidate, url)) continue;
+    if (
+      isUnsafeImageUrl(url) ||
+      isSmallImageCandidate(candidate, url) ||
+      /^black background, no image$/i.test(candidate.alt ?? '')
+    ) {
+      continue;
+    }
 
     accepted.push({
       url,
@@ -4602,7 +4609,7 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   return resolveEventDescription(event, source, { html: detailHtml });
 }
 
-function extractAsiaArtArchiveEvent(detailHtml, source, detailUrl) {
+function extractFirstImageEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const firstImageUrl = event.image_urls?.[0] ?? null;
 
@@ -6620,7 +6627,7 @@ const detailUrlExtractors = {
 
 const eventExtractors = {
   '21-21-design-sight': extractTwentyOneEvent,
-  'asia-art-archive': extractAsiaArtArchiveEvent,
+  'asia-art-archive': extractFirstImageEvent,
   'art-gallery-kitano': extractKitanoEvent,
   artro: extractArtroEvent,
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
@@ -6651,6 +6658,7 @@ const eventExtractors = {
   'kusakabe-gallery': extractKusakabeEvent,
   'leica-gallery-kyoto': extractLeicaKyotoEvent,
   'nakanoshima-museum-of-art-osaka': extractSamacEvent,
+  'oi-art-space': extractFirstImageEvent,
   'osaka-geidai-whatsnew': extractSamacEvent,
   'parco-hall-shinsaibashi': extractParcoHallEvent,
   'pola-museum-annex': extractPolaMuseumAnnexEvent,
