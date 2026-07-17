@@ -4663,6 +4663,7 @@ function extractOiEvent(detailHtml, source, detailUrl) {
           ...(dateInfo.openEnded
             ? {
                 schedule_type: 'open_ended',
+                occurrence_dates: [],
                 schedule_segments: [
                   {
                     is_all_day: true,

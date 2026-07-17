@@ -1408,6 +1408,7 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
   assert.equal(oi.start_date, '2026-05-26');
   assert.equal(oi.end_date, null);
   assert.equal(oi.schedule_type, 'open_ended');
+  assert.deepEqual(oi.occurrence_dates, []);
   assert.deepEqual(oi.schedule_segments, [
     { is_all_day: true, start_date: '2026-05-26', end_date: null },
   ]);
@@ -1444,6 +1445,7 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
   assert.equal(oiOnward.start_date, '2021-05-06');
   assert.equal(oiOnward.end_date, null);
   assert.equal(oiOnward.schedule_type, 'open_ended');
+  assert.deepEqual(oiOnward.occurrence_dates, []);
 
   const whitestone = extractGenericEvent(
     `<meta property="og:image" content="http://www.whitestone-gallery.com/poster.jpg">
