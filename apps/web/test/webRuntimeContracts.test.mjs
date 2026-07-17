@@ -33,6 +33,23 @@ test('locale switch uses route navigation and viewport keeps browser zoom', asyn
   assert.doesNotMatch(layout, /maximum-scale|user-scalable/);
 });
 
+test('city control expands the full city registry using the filter disclosure behavior', async () => {
+  const header = await readWebFile('src/components/Header.astro');
+  const controls = await readWebFile('src/scripts/headerControls.ts');
+
+  assert.match(header, /data-city-disclosure/);
+  assert.match(header, /aria-controls="city-filter-options"/);
+  assert.match(header, /id="city-filter-options"[\s\S]*data-city-options[\s\S]*inert/);
+  assert.match(header, /cityConfigs\.map\(\(targetCity\)/);
+  assert.match(header, /routePathFor\(\{ city: targetCity\.slug, locale \}\)/);
+  assert.match(header, /data-city-toggle[\s\S]*data-city-button/);
+  assert.match(header, /aria-current=\{targetCity\.slug === city \? 'page' : undefined\}/);
+  assert.doesNotMatch(header, /nextCityFor/);
+  assert.match(controls, /animateDisclosure\(cityPanel, cityButtons, nextExpanded\)/);
+  assert.match(controls, /if \(nextExpanded\) closeFilterDisclosure\(\)/);
+  assert.match(controls, /closeCityDisclosure\(\)/);
+});
+
 test('keyboard focus remains visible after pointer-focus reset', async () => {
   const styles = await readWebFile('src/styles/app.sass');
 

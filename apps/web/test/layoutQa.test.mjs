@@ -18,15 +18,16 @@ test('time dividers refresh after scroller content shifts and lazy media settles
   assert.match(divider, /this\.activeScrollRoot = scrollRoot/);
 });
 
-test('footer is half a viewport tall and renders current city', async () => {
+test('footer is 66vh tall and renders current city', async () => {
   const footer = await readWebFile('src/components/Footer.astro');
   const page = await readWebFile('src/pages/[city]/[locale]/index.astro');
 
   assert.match(footer, /cityLabel\?: string/);
   assert.match(footer, /<p>Enjoy \{cityLabel\} Culture<\/p>/);
-  assert.match(footer, /\.site-footer\s*\n(?:    .+\n)*?    flex: 0 0 50vh/);
-  assert.match(footer, /\.site-footer\s*\n(?:    .+\n)*?    height: 50vh/);
+  assert.match(footer, /\.site-footer\s*\n(?:    .+\n)*?    flex: 0 0 66vh/);
+  assert.match(footer, /\.site-footer\s*\n(?:    .+\n)*?    height: 66vh/);
   assert.match(footer, /\.site-footer__credit\s*\n\s+padding-left: var\(--page-padding-x\)/);
   assert.match(footer, /background: repeating-linear-gradient/);
+  assert.match(footer, /border-bottom: var\(--stroke-width\) solid var\(--stroke\)/);
   assert.match(page, /<Footer cityLabel=\{cityConfig\.label\} \/>/);
 });

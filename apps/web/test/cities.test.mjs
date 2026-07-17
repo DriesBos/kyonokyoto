@@ -7,7 +7,6 @@ import {
   cityConfigFor,
   cityConfigs,
   dateOnlyInTimeZone,
-  nextCityFor,
   normalizeCity,
 } from '../src/lib/cities.ts';
 import {
@@ -23,7 +22,7 @@ async function readJson(path) {
   return JSON.parse(await readFile(resolve(projectRoot, path), 'utf8'));
 }
 
-test('city registry normalizes supported routes and cycles in header order', () => {
+test('city registry normalizes supported routes', () => {
   assert.equal(normalizeCity('kyoto'), 'kyoto');
   assert.equal(normalizeCity('Osaka'), 'osaka');
   assert.equal(normalizeCity('tokyo'), 'tokyo');
@@ -51,10 +50,6 @@ test('city registry normalizes supported routes and cycles in header order', () 
     sourceFile: 'hong-kong-sources.json',
     permanentFile: 'hong-kong-permanent.json',
   });
-  assert.equal(nextCityFor('kyoto').slug, 'osaka');
-  assert.equal(nextCityFor('osaka').slug, 'tokyo');
-  assert.equal(nextCityFor('tokyo').slug, 'hong-kong');
-  assert.equal(nextCityFor('hong-kong').slug, 'kyoto');
 });
 
 test('city date uses configured timezone at Hong Kong day boundary', () => {

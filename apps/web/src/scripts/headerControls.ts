@@ -24,6 +24,11 @@ export const initHeaderControls = () => {
   const buttons = [...timingButtons, ...headerCategoryButtons, starredButton].filter(Boolean);
   const disclosure = root.querySelector('[data-filter-disclosure]');
   const filterPanel = root.querySelector('[data-filter-options]');
+  const cityDisclosure = root.querySelector('[data-city-disclosure]');
+  const cityPanel = root.querySelector('[data-city-options]');
+  const cityButtons = Array.from(root.querySelectorAll('[data-city-button]')).filter(
+    (button): button is HTMLElement => button instanceof HTMLElement,
+  );
   const cards = Array.from(document.querySelectorAll('[data-event-card]'));
   const groups = Array.from(document.querySelectorAll('[data-event-group]'));
   const dividers = Array.from(document.querySelectorAll('[data-event-divider]'));
@@ -44,6 +49,7 @@ export const initHeaderControls = () => {
   let activeTiming = root instanceof HTMLElement ? root.dataset.activeTiming || '' : '';
   let activeStarred = false;
   let filterExpandedScrollOrigin: number | null = null;
+  let cityExpandedScrollOrigin: number | null = null;
   const filterButtons = buttons.filter(
     (button): button is HTMLElement => button instanceof HTMLElement,
   );
@@ -57,8 +63,10 @@ export const initHeaderControls = () => {
     return scrollRoot instanceof HTMLElement ? scrollRoot.clientHeight : window.innerHeight;
   };
 
-  const isFilterExpanded = () =>
-    disclosure instanceof HTMLElement && disclosure.getAttribute('aria-expanded') === 'true';
+  const isDisclosureExpanded = (target: Element | null) =>
+    target instanceof HTMLElement && target.getAttribute('aria-expanded') === 'true';
+  const isFilterExpanded = () => isDisclosureExpanded(disclosure);
+  const isCityExpanded = () => isDisclosureExpanded(cityDisclosure);
   const isFilteringActive = () => Boolean(activeCategories.size || activeTiming || activeStarred);
 
   const activeCategoriesByDimension = () => {
@@ -82,14 +90,16 @@ export const initHeaderControls = () => {
     disclosure.dataset.filteringActive = String(filteringActive);
   };
 
-  const setFilterPanelInteractivity = (isInteractive: boolean) => {
-    if (!(filterPanel instanceof HTMLElement)) return;
+  const setPanelInteractivity = (
+    panel: Element | null,
+    panelButtons: HTMLElement[],
+    isInteractive: boolean,
+  ) => {
+    if (!(panel instanceof HTMLElement)) return;
 
-    filterPanel.toggleAttribute('inert', !isInteractive);
-    filterPanel.setAttribute('aria-hidden', String(!isInteractive));
-    buttons.forEach((button) => {
-      if (!(button instanceof HTMLElement)) return;
-
+    panel.toggleAttribute('inert', !isInteractive);
+    panel.setAttribute('aria-hidden', String(!isInteractive));
+    panelButtons.forEach((button) => {
       if (isInteractive) {
         button.removeAttribute('tabindex');
       } else {
@@ -98,38 +108,42 @@ export const initHeaderControls = () => {
     });
   };
 
-  const animateFilterDisclosure = (nextExpanded: boolean) => {
-    if (!(filterPanel instanceof HTMLElement)) {
-      filterPanel?.toggleAttribute('data-mobile-open', nextExpanded);
+  const animateDisclosure = (
+    panel: Element | null,
+    panelButtons: HTMLElement[],
+    nextExpanded: boolean,
+  ) => {
+    if (!(panel instanceof HTMLElement)) {
+      panel?.toggleAttribute('data-mobile-open', nextExpanded);
       return;
     }
 
-    const startHeight = filterPanel.offsetHeight;
+    const startHeight = panel.offsetHeight;
 
-    killHeightTransitionTweens(filterPanel);
-    killFadeTransitionTweens(filterButtons);
-    filterPanel.style.height = `${startHeight}px`;
-    filterPanel.style.overflow = 'hidden';
-    filterPanel.toggleAttribute('data-mobile-open', nextExpanded);
-    setFilterPanelInteractivity(nextExpanded);
+    killHeightTransitionTweens(panel);
+    killFadeTransitionTweens(panelButtons);
+    panel.style.height = `${startHeight}px`;
+    panel.style.overflow = 'hidden';
+    panel.toggleAttribute('data-mobile-open', nextExpanded);
+    setPanelInteractivity(panel, panelButtons, nextExpanded);
     if (nextExpanded) {
-      setFadeHidden(filterButtons);
+      setFadeHidden(panelButtons);
     } else {
-      fadeOut(filterButtons);
+      fadeOut(panelButtons);
     }
 
-    const targetHeight = nextExpanded ? filterPanel.scrollHeight : 0;
+    const targetHeight = nextExpanded ? panel.scrollHeight : 0;
 
     const timeline = createHeightTransitionTimeline({
       onComplete: () => {
-        filterPanel.style.height = nextExpanded ? 'auto' : '0px';
-        filterPanel.style.overflow = nextExpanded ? '' : 'hidden';
+        panel.style.height = nextExpanded ? 'auto' : '0px';
+        panel.style.overflow = nextExpanded ? '' : 'hidden';
       },
     });
 
-    toHeight(timeline, filterPanel, targetHeight, nextExpanded, 0);
+    toHeight(timeline, panel, targetHeight, nextExpanded, 0);
     if (nextExpanded) {
-      fadeIn(filterButtons, { delay: 0.06 });
+      fadeIn(panelButtons, { delay: 0.06 });
     }
   };
 
@@ -139,7 +153,7 @@ export const initHeaderControls = () => {
     disclosure.setAttribute('aria-expanded', String(nextExpanded));
     syncFilterDisclosureButtonState();
     filterExpandedScrollOrigin = nextExpanded ? getScrollTop() : null;
-    animateFilterDisclosure(nextExpanded);
+    animateDisclosure(filterPanel, filterButtons, nextExpanded);
   };
 
   const closeFilterDisclosure = () => {
@@ -148,21 +162,38 @@ export const initHeaderControls = () => {
     setFilterDisclosureExpanded(false);
   };
 
-  const syncFilterPanelState = () => {
-    if (!(filterPanel instanceof HTMLElement) || !(disclosure instanceof HTMLElement)) return;
+  const syncDisclosurePanelState = (
+    targetDisclosure: Element | null,
+    panel: Element | null,
+    panelButtons: HTMLElement[],
+  ) => {
+    if (!(panel instanceof HTMLElement) || !(targetDisclosure instanceof HTMLElement)) return;
 
-    killHeightTransitionTweens(filterPanel);
+    killHeightTransitionTweens(panel);
 
-    const isExpanded = disclosure.getAttribute('aria-expanded') === 'true';
-    filterPanel.toggleAttribute('data-mobile-open', isExpanded);
-    filterPanel.style.height = isExpanded ? 'auto' : '0px';
-    filterPanel.style.overflow = isExpanded ? '' : 'hidden';
+    const isExpanded = targetDisclosure.getAttribute('aria-expanded') === 'true';
+    panel.toggleAttribute('data-mobile-open', isExpanded);
+    panel.style.height = isExpanded ? 'auto' : '0px';
+    panel.style.overflow = isExpanded ? '' : 'hidden';
     if (isExpanded) {
-      setFadeVisible(filterButtons);
+      setFadeVisible(panelButtons);
     } else {
-      setFadeHidden(filterButtons);
+      setFadeHidden(panelButtons);
     }
-    setFilterPanelInteractivity(isExpanded);
+    setPanelInteractivity(panel, panelButtons, isExpanded);
+  };
+
+  const setCityDisclosureExpanded = (nextExpanded: boolean) => {
+    if (!(cityDisclosure instanceof HTMLElement)) return;
+
+    cityDisclosure.setAttribute('aria-expanded', String(nextExpanded));
+    cityDisclosure.setAttribute('aria-pressed', String(nextExpanded));
+    cityExpandedScrollOrigin = nextExpanded ? getScrollTop() : null;
+    animateDisclosure(cityPanel, cityButtons, nextExpanded);
+  };
+
+  const closeCityDisclosure = () => {
+    if (isCityExpanded()) setCityDisclosureExpanded(false);
   };
 
   const hasStarredCards = () =>
@@ -307,11 +338,24 @@ export const initHeaderControls = () => {
   syncStarredButtonState();
 
   if (disclosure && filterPanel) {
-    syncFilterPanelState();
+    syncDisclosurePanelState(disclosure, filterPanel, filterButtons);
     filterExpandedScrollOrigin = isFilterExpanded() ? getScrollTop() : null;
 
     disclosure.addEventListener('click', () => {
-      setFilterDisclosureExpanded(!isFilterExpanded());
+      const nextExpanded = !isFilterExpanded();
+      if (nextExpanded) closeCityDisclosure();
+      setFilterDisclosureExpanded(nextExpanded);
+    });
+  }
+
+  if (cityDisclosure && cityPanel) {
+    syncDisclosurePanelState(cityDisclosure, cityPanel, cityButtons);
+    cityExpandedScrollOrigin = isCityExpanded() ? getScrollTop() : null;
+
+    cityDisclosure.addEventListener('click', () => {
+      const nextExpanded = !isCityExpanded();
+      if (nextExpanded) closeFilterDisclosure();
+      setCityDisclosureExpanded(nextExpanded);
     });
   }
 
@@ -392,6 +436,7 @@ export const initHeaderControls = () => {
         contentContainer instanceof HTMLElement && contentContainer.hasAttribute('data-map-visible')
       );
       closeFilterDisclosure();
+      closeCityDisclosure();
       setMapVisible(nextVisible);
     });
   }
@@ -412,34 +457,41 @@ export const initHeaderControls = () => {
     mainHeader.toggleAttribute('data-stuck', isStuck);
   };
 
-  const maybeCloseFilterOnScroll = () => {
-    if (filterExpandedScrollOrigin === null) return;
-
-    const scrollDelta = Math.abs(getScrollTop() - filterExpandedScrollOrigin);
-    if (scrollDelta > getScrollHeight() * 0.5) {
+  const maybeCloseDisclosuresOnScroll = () => {
+    const scrollTop = getScrollTop();
+    const threshold = getScrollHeight() * 0.5;
+    if (
+      filterExpandedScrollOrigin !== null &&
+      Math.abs(scrollTop - filterExpandedScrollOrigin) > threshold
+    )
       closeFilterDisclosure();
-    }
+    if (
+      cityExpandedScrollOrigin !== null &&
+      Math.abs(scrollTop - cityExpandedScrollOrigin) > threshold
+    )
+      closeCityDisclosure();
   };
 
   syncStickyState();
   document.addEventListener('click', (event) => {
-    if (!isFilterExpanded()) return;
     if (!(event.target instanceof Node)) return;
     if (root.contains(event.target)) return;
 
     closeFilterDisclosure();
+    closeCityDisclosure();
   });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
 
     closeFilterDisclosure();
+    closeCityDisclosure();
     setMapVisible(false);
     document.dispatchEvent(new CustomEvent('event-card:deactivate-all'));
   });
   getScrollRoot().addEventListener('scroll', syncStickyState, {
     passive: true,
   });
-  getScrollRoot().addEventListener('scroll', maybeCloseFilterOnScroll, {
+  getScrollRoot().addEventListener('scroll', maybeCloseDisclosuresOnScroll, {
     passive: true,
   });
   window.addEventListener('resize', syncStickyState);

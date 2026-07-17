@@ -1,7 +1,7 @@
 ---
 import Logo from './Logo.astro';
 import GeneralButton from './GeneralButton.astro';
-import { nextCityFor, cityConfigFor, type AppCity } from '../lib/cities';
+import { cityConfigs, cityConfigFor, type AppCity } from '../lib/cities';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
 import { routePathFor } from '../lib/routeState';
@@ -33,7 +33,6 @@ const copy = uiText.en;
 const homeHref = routePathFor({ city, locale });
 const localePathFor = (targetLocale: AppLocale) => routePathFor({ city, locale: targetLocale });
 const nextLocale: AppLocale = locale === 'en' ? 'ja' : 'en';
-const nextCity = nextCityFor(city);
 const currentCity = cityConfigFor(city);
 const currentCityLabel = currentCity?.label ?? city;
 const brandLabel = currentCity?.brandLabel ?? 'Kyō-no-Kyōto';
@@ -98,11 +97,13 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         <GeneralButton
           edge={showLanguageOption ? undefined : 'last'}
           verticalPadding="full"
-          href={routePathFor({ city: nextCity.slug, locale })}
           label={currentCityLabel}
-          aria-label={`Switch to ${nextCity.label}`}
-          data-city-toggle
-          data-city-option={nextCity.slug}
+          pressed={false}
+          showDot={true}
+          aria-label={`Choose city. Current city: ${currentCityLabel}`}
+          data-city-disclosure
+          aria-expanded="false"
+          aria-controls="city-filter-options"
         />
         {
           showLanguageOption ? (
@@ -170,6 +171,28 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
           </div>
         ) : null
       }
+      <div
+        class="category-filter__options"
+        id="city-filter-options"
+        data-city-options
+        aria-label="Cities"
+        role="group"
+        aria-hidden="true"
+        inert
+      >
+        {cityConfigs.map((targetCity) => (
+          <GeneralButton
+            href={routePathFor({ city: targetCity.slug, locale })}
+            label={targetCity.label}
+            verticalPadding="full"
+            showDot={true}
+            data-city-toggle
+            data-city-button
+            data-city-option={targetCity.slug}
+            aria-current={targetCity.slug === city ? 'page' : undefined}
+          />
+        ))}
+      </div>
     </div>
   </div>
 </header>
@@ -311,13 +334,18 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         height: 0
         pointer-events: none
 
-        :global([data-filter-button])
+        :global([data-filter-button]),
+        :global([data-city-button])
           opacity: 0
           pointer-events: none
 
       &__options[data-mobile-open]
         pointer-events: auto
 
-        :global([data-filter-button])
+        :global([data-filter-button]),
+        :global([data-city-button])
           pointer-events: auto
+
+  :global([data-city-option][aria-current='page'] .general-button__dot)
+    opacity: 1
 </style>

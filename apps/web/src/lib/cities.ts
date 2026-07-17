@@ -73,10 +73,5 @@ export function cityConfigFor(value: unknown): CityConfig | null {
   return cityConfigs.find((config) => config.slug === city) ?? null;
 }
 
-export function nextCityFor(city: AppCity): CityConfig {
-  const index = cityConfigs.findIndex((config) => config.slug === city);
-  return cityConfigs[(index + 1) % cityConfigs.length];
-}
-
 export const dateOnlyInTimeZone = (value: Date, timeZone: string) =>
   new Intl.DateTimeFormat('sv-SE', { timeZone }).format(value);
