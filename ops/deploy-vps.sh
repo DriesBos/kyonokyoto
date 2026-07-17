@@ -5,6 +5,11 @@ repo=/srv/kyo-no-kyoto
 lock=/run/lock/kyo-no-kyoto-crawl.lock
 export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH"
 
+command=${SSH_ORIGINAL_COMMAND:-}
+if [[ -z "$command" ]] && ! IFS= read -r command; then
+  command=deploy
+fi
+
 exec 9>"$lock"
 flock -w 3600 9
 
@@ -63,10 +68,6 @@ sudo -n install -m 0755 "$repo/ops/deploy-vps.sh" /usr/local/bin/kyo-vps-deploy
 
 echo "VPS deployed $(git rev-parse --short HEAD)"
 
-command=${SSH_ORIGINAL_COMMAND:-}
-if [[ -z "$command" ]] && ! IFS= read -r command; then
-  command=deploy
-fi
 if [[ "$command" == "deploy" ]]; then
   exit 0
 fi
