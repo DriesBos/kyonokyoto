@@ -105,6 +105,7 @@
       "taxonomy": {
         "venue_category": ["gallery"],
         "display_category": ["contemporary"],
+        
         "event_category": ["exhibition"]
       },
       "language": "en",

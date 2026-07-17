@@ -189,11 +189,9 @@ const excerpt = (value: string | null) => {
     <Landing
       cityLabel={cityConfig.label}
       brandLabel={cityConfig.brandLabel}
-      heading={
-        locale === 'ja'
-          ? `${cityConfig.label}の展覧会・文化イベント`
-          : `${citySearchLabel} art exhibitions and cultural events`
-      }
+      heading={locale === 'ja'
+        ? `${cityConfig.label}の展覧会・文化イベント`
+        : `${citySearchLabel} art exhibitions and cultural events`}
       categories={categories}
       ongoingCount={ongoingEvents.length}
       upcomingCount={upcomingEvents.length}
