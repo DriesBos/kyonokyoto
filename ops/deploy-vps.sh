@@ -62,3 +62,20 @@ sudo -n systemctl enable --now \
 sudo -n install -m 0755 "$repo/ops/deploy-vps.sh" /usr/local/bin/kyo-vps-deploy
 
 echo "VPS deployed $(git rev-parse --short HEAD)"
+
+command=${SSH_ORIGINAL_COMMAND:-deploy}
+if [[ "$command" == "deploy" ]]; then
+  exit 0
+fi
+
+if [[ "$command" =~ ^crawl\ (kyoto|osaka|tokyo|hong-kong)$ ]]; then
+  city=${BASH_REMATCH[1]}
+  flock -u 9
+  status=0
+  sudo -n systemctl start "kyo-no-kyoto-crawl@${city}.service" || status=$?
+  tail -n 80 "/var/log/kyo-no-kyoto-crawl-${city}.log"
+  exit "$status"
+fi
+
+echo "Unsupported deploy command" >&2
+exit 2

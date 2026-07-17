@@ -6,6 +6,18 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      crawl_city:
+        description: Optional city crawl after deploy
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - kyoto
+          - osaka
+          - tokyo
+          - hong-kong
 
 permissions:
   contents: read
@@ -65,7 +77,7 @@ jobs:
     needs: verify
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 180
     steps:
       - name: Configure restricted SSH key
         env:
@@ -79,12 +91,18 @@ jobs:
 
       - name: Deploy current main
         env:
+          CRAWL_CITY: ${{ inputs.crawl_city || 'none' }}
           VPS_HOST: ${{ vars.VPS_HOST }}
           VPS_USER: ${{ vars.VPS_USER }}
         run: |
+          command=deploy
+          if [[ "$CRAWL_CITY" != none ]]; then
+            command="crawl $CRAWL_CITY"
+          fi
           ssh \
             -T \
             -i ~/.ssh/vps_deploy \
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
-            "$VPS_USER@$VPS_HOST"
+            "$VPS_USER@$VPS_HOST" \
+            "$command"
