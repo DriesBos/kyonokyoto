@@ -108,7 +108,7 @@ create table if not exists public.events (
   date_text text not null,
   start_date date,
   end_date date,
-  schedule_type text not null default 'unknown' check (schedule_type in ('range', 'occurrence_set', 'unknown')),
+  schedule_type text not null default 'unknown' check (schedule_type in ('single', 'range', 'occurrence_set', 'open_ended', 'unknown')),
   occurrence_dates jsonb not null default '[]'::jsonb,
   start_time_text text,
   end_time_text text,
@@ -348,7 +348,7 @@ where source.id = event.source_id
 update public.events
 set schedule_type = 'unknown'
 where schedule_type is null
-  or schedule_type not in ('range', 'occurrence_set', 'unknown');
+  or schedule_type not in ('single', 'range', 'occurrence_set', 'open_ended', 'unknown');
 
 update public.events
 set occurrence_dates = '[]'::jsonb
@@ -365,7 +365,7 @@ alter table public.events
 alter table public.events drop constraint if exists events_schedule_type_check;
 alter table public.events
   add constraint events_schedule_type_check
-  check (schedule_type in ('range', 'occurrence_set', 'unknown'));
+  check (schedule_type in ('single', 'range', 'occurrence_set', 'open_ended', 'unknown'));
 
 alter table public.events drop constraint if exists events_occurrence_dates_array_check;
 alter table public.events

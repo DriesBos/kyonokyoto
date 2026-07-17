@@ -1,9 +1,23 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import test from 'node:test';
 import {
   buildScheduleSegmentRows,
   upsertEventScheduleSegments,
 } from '../src/schedule-segments.mjs';
+
+test('database schema accepts every canonical schedule type', async () => {
+  const schema = await readFile(
+    resolve(import.meta.dirname, '../../../supabase/schema.sql'),
+    'utf8',
+  );
+
+  assert.match(
+    schema,
+    /schedule_type in \('single', 'range', 'occurrence_set', 'open_ended', 'unknown'\)/,
+  );
+});
 
 test('schedule persistence writes normalized segments before deleting stale ordinals', async () => {
   const requests = [];
