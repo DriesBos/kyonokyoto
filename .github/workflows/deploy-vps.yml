@@ -99,10 +99,9 @@ jobs:
           if [[ "$CRAWL_CITY" != none ]]; then
             command="crawl $CRAWL_CITY"
           fi
-          ssh \
+          printf '%s\n' "$command" | ssh \
             -T \
             -i ~/.ssh/vps_deploy \
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
-            "$VPS_USER@$VPS_HOST" \
-            "$command"
+            "$VPS_USER@$VPS_HOST"
