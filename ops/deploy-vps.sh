@@ -5,11 +5,6 @@ repo=/srv/kyo-no-kyoto
 lock=/run/lock/kyo-no-kyoto-crawl.lock
 export PATH="$HOME/.nvm/versions/node/v22.22.0/bin:$PATH"
 
-if ! IFS= read -r command; then
-  command=${SSH_ORIGINAL_COMMAND:-deploy}
-fi
-echo "VPS command: $command"
-
 exec 9>"$lock"
 flock -w 3600 9
 
@@ -67,19 +62,3 @@ sudo -n systemctl enable --now \
 sudo -n install -m 0755 "$repo/ops/deploy-vps.sh" /usr/local/bin/kyo-vps-deploy
 
 echo "VPS deployed $(git rev-parse --short HEAD)"
-
-if [[ "$command" == "deploy" ]]; then
-  exit 0
-fi
-
-if [[ "$command" =~ ^crawl\ (kyoto|osaka|tokyo|hong-kong)$ ]]; then
-  city=${BASH_REMATCH[1]}
-  flock -u 9
-  status=0
-  sudo -n systemctl start "kyo-no-kyoto-crawl@${city}.service" || status=$?
-  tail -n 80 "/var/log/kyo-no-kyoto-crawl-${city}.log"
-  exit "$status"
-fi
-
-echo "Unsupported deploy command" >&2
-exit 2
