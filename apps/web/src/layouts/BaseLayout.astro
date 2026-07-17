@@ -5,6 +5,7 @@ import { CITY_COOKIE, CITY_STORAGE_KEY, type AppCity } from '../lib/cities';
 import { LOCALE_COOKIE } from '../lib/i18n';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
+import { serializeInlineJson } from '../../../../packages/shared/inline-json.mjs';
 
 type Props = {
   title?: string;
@@ -25,12 +26,29 @@ const {
 } = Astro.props;
 
 const appName = 'KyōNoKyōto';
-const ogImage = new URL('/og.png', Astro.url).href;
+const siteOrigin = new URL(import.meta.env.PUBLIC_SITE_URL || Astro.url.origin).origin;
+const canonicalUrl = new URL(`/${city}/${locale}/`, siteOrigin).href;
+const ogImage = new URL('/og.png', siteOrigin).href;
+const alternateUrls = {
+  en: new URL(`/${city}/en/`, siteOrigin).href,
+  ja: new URL(`/${city}/ja/`, siteOrigin).href,
+};
+const structuredData = serializeInlineJson({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: title,
+  description,
+  url: canonicalUrl,
+  inLanguage: uiText[locale].lang,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: appName,
+    url: siteOrigin,
+  },
+});
 const shouldRegisterServiceWorker = import.meta.env.PROD;
 const themeColor = landingActive ? cityThemeColor : '#EFEFEF';
 const cspNonce = Astro.locals.cspNonce;
-
-Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
 ---
 
 <html
@@ -64,7 +82,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     <meta name="apple-mobile-web-app-title" content={appName} />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <script is:inline nonce={cspNonce}>
       history.scrollRestoration = 'manual';
     </script>
@@ -114,14 +132,25 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     </script>
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="en" href={alternateUrls.en} />
+    <link rel="alternate" hreflang="ja" href={alternateUrls.ja} />
+    <link rel="alternate" hreflang="x-default" href={alternateUrls.en} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${title} culture calendar`} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={appName} />
+    <meta property="og:locale" content={locale === 'ja' ? 'ja_JP' : 'en_US'} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    <script is:inline nonce={cspNonce} type="application/ld+json" set:html={structuredData} />
     <script
       is:inline
       nonce={cspNonce}

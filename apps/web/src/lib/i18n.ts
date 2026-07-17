@@ -5,8 +5,9 @@ export const LOCALE_COOKIE = 'kyo_locale';
 export const uiText = {
   en: {
     lang: 'en',
-    title: 'Kyō no Kyōto',
-    description: 'Enjoy Kyōto fondly with KyōNoKyōto culture calendar',
+    title: 'Kyoto Art & Culture Calendar | Kyō no Kyōto',
+    description:
+      'Discover current and upcoming art exhibitions, museum shows, and cultural events across Kyoto, with dates, venues, maps, and official links.',
     mapTitle: 'Map | Kyō no Kyōto',
     mapDescription: 'Kyoto cultural institution map from KyōNoKyōto',
     homeAria: 'KyōNoKyōto home',
@@ -34,8 +35,9 @@ export const uiText = {
   },
   ja: {
     lang: 'ja',
-    title: '京の京都',
-    description: 'KyōNoKyōto の京都カルチャーカレンダー',
+    title: '京都の展覧会・文化イベント | 京の京都',
+    description:
+      '京都で開催中・開催予定の展覧会、美術館の企画展、文化イベントを、日程・会場・地図・公式リンクとともに紹介します。',
     mapTitle: '地図 | 京の京都',
     mapDescription: 'KyōNoKyōto の京都文化施設マップ',
     homeAria: 'KyōNoKyōto ホーム',
