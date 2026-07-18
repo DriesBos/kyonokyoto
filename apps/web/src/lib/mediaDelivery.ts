@@ -1,6 +1,9 @@
 const YUTAKA_IMAGE_ORIGIN = 'https://www.yutakakikutakegallery.com';
 const YUTAKA_IMAGE_PATH_PREFIX = '/ykgg/wp-content/uploads/';
 const YUTAKA_IMAGE_PROXY_PATH = '/api/yutaka-image';
+const GALLERY_EXIT_IMAGE_ORIGIN = 'https://www.galleryexit.com';
+const GALLERY_EXIT_IMAGE_PATH_PREFIX = '/uploads/1/3/7/3/13731772/';
+const GALLERY_EXIT_IMAGE_WIDTH = '800';
 const MAX_YUTAKA_IMAGE_BYTES = 12 * 1024 * 1024;
 const YUTAKA_IMAGE_TIMEOUT_MS = 10_000;
 
@@ -32,6 +35,31 @@ export const validatedYutakaImageUrl = (value: unknown): URL | null => {
 };
 
 export const eventMediaDeliveryUrl = (value: string | null): string | null => {
+  if (typeof value === 'string') {
+    try {
+      const url = new URL(value);
+      if (
+        url.protocol === 'https:' &&
+        url.origin === GALLERY_EXIT_IMAGE_ORIGIN &&
+        !url.username &&
+        !url.password &&
+        !url.port &&
+        url.pathname.startsWith(GALLERY_EXIT_IMAGE_PATH_PREFIX) &&
+        rasterImagePathPattern.test(url.pathname)
+      ) {
+        url.search = '';
+        url.hash = '';
+        return `/.netlify/images?${new URLSearchParams({
+          url: url.href,
+          w: GALLERY_EXIT_IMAGE_WIDTH,
+          q: '80',
+        })}`;
+      }
+    } catch {
+      // Leave invalid or unrelated URLs unchanged.
+    }
+  }
+
   const upstream = validatedYutakaImageUrl(value);
   if (!upstream) return value;
   return `${YUTAKA_IMAGE_PROXY_PATH}?url=${encodeURIComponent(upstream.href)}`;

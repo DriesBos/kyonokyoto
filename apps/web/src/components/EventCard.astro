@@ -3,6 +3,7 @@ import GeneralButton from './GeneralButton.astro';
 import YouTubeEmbed from './YouTubeEmbed.astro';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
+import { withEventMediaDelivery } from '../lib/mediaDelivery';
 import {
   calendarDetailsFor,
   calendarLocationFor,
@@ -68,9 +69,14 @@ const maxImagesPerCard = mapSourceSlug === 'tokyo-metropolitan-art-museum' ? 1 :
 const mediaEmbeds = (event.media_embeds ?? []).filter(
   (embed) => embed.type === 'youtube' && embed.video_id,
 );
-const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
+const deliveredEvent = withEventMediaDelivery(event);
+const imageUrls = (deliveredEvent.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
 const images =
-  imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
+  imageUrls.length > 0
+    ? imageUrls
+    : deliveredEvent.primary_image_url
+      ? [deliveredEvent.primary_image_url]
+      : [];
 const hasMedia = mediaEmbeds.length > 0 || images.length > 0;
 const desktopImageHeightRem = 10;
 const mobileImageHeightRem = 6;

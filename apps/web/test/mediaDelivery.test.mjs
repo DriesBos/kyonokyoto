@@ -6,6 +6,25 @@ const { eventMediaDeliveryUrl, proxyYutakaImage, withEventMediaDelivery } =
 
 const publisherImage =
   'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/Nh_260523_at-YKG-RPG_008-1200x800.jpg';
+const galleryExitImage =
+  'https://www.galleryexit.com/uploads/1/3/7/3/13731772/jul-show-artlogic-11.jpg';
+
+test('Gallery Exit images use Netlify Image CDN instead of blocked publisher delivery', () => {
+  assert.equal(
+    eventMediaDeliveryUrl(galleryExitImage),
+    `/.netlify/images?${new URLSearchParams({ url: galleryExitImage, w: '800', q: '80' })}`,
+  );
+  assert.equal(
+    eventMediaDeliveryUrl(`${galleryExitImage}?cache-bust=1#ignored`),
+    `/.netlify/images?${new URLSearchParams({ url: galleryExitImage, w: '800', q: '80' })}`,
+  );
+  assert.equal(
+    eventMediaDeliveryUrl(
+      'https://www.galleryexit.com.evil.test/uploads/1/3/7/3/13731772/work.jpg',
+    ),
+    'https://www.galleryexit.com.evil.test/uploads/1/3/7/3/13731772/work.jpg',
+  );
+});
 
 test('Yutaka publisher images use the bounded display proxy', () => {
   const proxied = eventMediaDeliveryUrl(publisherImage);
