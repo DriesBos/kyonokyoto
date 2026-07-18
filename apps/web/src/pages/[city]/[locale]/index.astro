@@ -34,6 +34,7 @@ import {
   displayEventsForLocale as buildDisplayEventsForLocale,
   fetchPublishedEvents,
 } from '../../../lib/events';
+import { groupDisplayEvents } from '../../../lib/eventSections';
 import {
   permanentEventsForLocale as buildPermanentEventsForLocale,
   type PermanentExhibitionHighlight,
@@ -128,15 +129,16 @@ const displayEvents = buildDisplayEventsForLocale({
   activeLocale: locale,
   today,
 });
-const permanentEvents = buildPermanentEventsForLocale({
+const { ongoingEvents, upcomingEvents, sourcePermanentEvents } =
+  groupDisplayEvents(displayEvents);
+const editorialPermanentEvents = buildPermanentEventsForLocale({
   highlights: permanentHighlightsPayload.items as PermanentExhibitionHighlight[],
   configuredSources,
   activeLocale: locale,
 });
-const visibleCards = [...displayEvents, ...permanentEvents];
+const permanentEvents = [...sourcePermanentEvents, ...editorialPermanentEvents];
+const visibleCards = [...ongoingEvents, ...upcomingEvents, ...permanentEvents];
 const categories = categoriesForEvents(visibleCards);
-const ongoingEvents = displayEvents.filter((event) => event.timing === 'ongoing');
-const upcomingEvents = displayEvents.filter((event) => event.timing === 'upcoming');
 const sourceSlugForDisplayEvent = (event: (typeof visibleCards)[number]) =>
   event.timing === 'permanent' ? event.source_id : sourceSlugForEvent(event, configuredSources);
 const sourceSlugByEventId = new Map(
@@ -160,7 +162,7 @@ const mapLocationIdByEventId = new Map(
 const mapSources = mapSourcesForEvents(visibleCards, sourceSlugByEventId, configuredSources);
 const landingSlides = landingSlidesForEvents({
   city,
-  events: displayEvents,
+  events: [...ongoingEvents, ...upcomingEvents],
   sourceSlugByEventId,
 });
 

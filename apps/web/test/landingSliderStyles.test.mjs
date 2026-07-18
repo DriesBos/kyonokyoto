@@ -158,7 +158,7 @@ test('landing counts include beta source events only in development', async () =
     'utf8',
   );
   const betaFilter = page.indexOf('const events = import.meta.env.DEV');
-  const timingCounts = page.indexOf('const ongoingEvents = displayEvents.filter');
+  const timingCounts = page.indexOf('groupDisplayEvents(displayEvents)');
   const landingProps = page.indexOf('ongoingCount={ongoingEvents.length}');
 
   assert.match(page, /betaSourceSlugsAll\.has\(slug\)/);
