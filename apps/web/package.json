@@ -13,7 +13,7 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@astrojs/netlify": "^7.0.13",
+    "@astrojs/netlify": "^8.1.2",
     "@astrojs/partytown": "^2.1.7",
     "@qwik.dev/partytown": "^0.13.2",
     "@supabase/supabase-js": "^2.110.2",
