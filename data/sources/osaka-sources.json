@@ -856,7 +856,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/post/"],
       "notes": "Wix exhibition page with current and past sections.",
-      "beta": true,
+      "beta": false,
       "selectors": {
         "listing_links": "a[href*='/post/']",
         "title": "h1[data-hook='post-title']"

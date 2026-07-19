@@ -129,8 +129,10 @@ const displayEvents = buildDisplayEventsForLocale({
   activeLocale: locale,
   today,
 });
-const { ongoingEvents, upcomingEvents, sourcePermanentEvents } =
-  groupDisplayEvents(displayEvents);
+const { ongoingEvents, upcomingEvents, sourcePermanentEvents } = groupDisplayEvents(
+  displayEvents,
+  today,
+);
 const editorialPermanentEvents = buildPermanentEventsForLocale({
   highlights: permanentHighlightsPayload.items as PermanentExhibitionHighlight[],
   configuredSources,

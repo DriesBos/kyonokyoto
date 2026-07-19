@@ -27,7 +27,7 @@ test('landing slider styles target JS-created elements globally', async () => {
 test('landing slider serves only dimension-qualified Netlify image transforms', async () => {
   const script = await readFile(scriptPath, 'utf8');
 
-  assert.match(script, /const minimumCoverDensity = 0\.8/);
+  assert.match(script, /const minimumCoverDensity = 1\.5/);
   assert.match(script, /const maximumCoverDensity = 2/);
   assert.match(script, /\/\.netlify\/images/);
   assert.match(script, /fit: 'cover'/);
@@ -158,7 +158,7 @@ test('landing counts include beta source events only in development', async () =
     'utf8',
   );
   const betaFilter = page.indexOf('const events = import.meta.env.DEV');
-  const timingCounts = page.indexOf('groupDisplayEvents(displayEvents)');
+  const timingCounts = page.indexOf('groupDisplayEvents(');
   const landingProps = page.indexOf('ongoingCount={ongoingEvents.length}');
 
   assert.match(page, /betaSourceSlugsAll\.has\(slug\)/);

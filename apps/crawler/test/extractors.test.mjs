@@ -4796,6 +4796,29 @@ test('Sen-Oku title extraction drops subtitle spans without font wrapper', () =>
   assert.equal(event.title, 'Special Exhibition');
 });
 
+test('Gallery Unfold rejects its measured artist-link icon', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((candidate) => candidate.slug === 'gallery-unfold');
+  const main = 'https://galleryunfold.com/img/exh/27/main%20visual.jpg';
+  const linkIcon = 'https://galleryunfold.com/img/link.png';
+  const normalized = await normalizeEventImagesForSource(
+    {
+      source_url: 'https://galleryunfold.com/archives/exh27',
+      primary_image_url: main,
+      image_urls: [main, linkIcon],
+    },
+    source,
+    {
+      fetchImageDimensionsFn: async (url) =>
+        url === linkIcon ? { width: 40, height: 40 } : { width: 1200, height: 1200 },
+    },
+  );
+
+  assert.equal(source?.measure_image_dimensions, true);
+  assert.equal(normalized.primary_image_url, main);
+  assert.deepEqual(normalized.image_urls, [main]);
+});
+
 test('image normalization rejects measured media below 540px and caps stored images', async () => {
   const diagnostics = createCrawlDiagnostics();
   const source = {

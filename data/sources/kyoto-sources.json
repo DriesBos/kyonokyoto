@@ -848,6 +848,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/archive"],
       "notes": "Language toggle does not change the URL. Both locales use the same archive URL; crawler locale handling should select Japanese or English content from page state/content. Only extract the first (most recent) item from the archive listing. Upcoming events lack images and content and should be skipped.",
+      "measure_image_dimensions": true,
       "locales": {
         "ja": {
           "start_urls": ["https://galleryunfold.com/archive"],

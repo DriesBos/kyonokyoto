@@ -78,6 +78,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Kyoto Sources
 
+2026-07-19: Gallery Unfold now measures selected image candidates before persistence. Live `Low Polygon Utopia` media inspection found the 1200x900 exhibition visual plus a 40x40 artist external-link icon at `/img/link.png`; the existing 540px media guard rejects that icon once dimensions are known. Focused Gallery Unfold and city-config checks pass. No crawl run; targeted production recrawl/backfill remains pending.
+
 2026-07-12: Post-audit VPS cycle on merged `main` commit `2e7ee9c` attempted all 50 Kyoto sources. Run totals: 22 success, 27 partial success, 1 failed; outcomes were 20 `source_ok`, 23 `source_needs_review`, 2 `source_blocked`, 2 `source_no_current_events`, 1 `source_empty`, 1 `source_degraded`, and 1 failed before an outcome. The crawler fetched 288 pages, saved 123 event results, skipped 66, inserted 1 event, updated 112 existing events, and archived 0. Translation writes inserted 1 and updated 212; the cycle-end audit found 13 gaps: 8 English on `purple-purple`, 4 Japanese on `kuramonzen`, and 1 English on `sokyo-kyoto`.
 
 - Needs JSON/extractor tuning: `taka-ishii-gallery` failed discovery; `kyoto-art-center` was degraded by unhealthy fetches; `artro` was empty; `curation-fair-kyoto` and `imura-art` returned rendered shells; `galerie16` could not verify all 3 dates; `gallery-morning-kyoto` saved 0/6 after a rendered shell; `nonaka-hill` saved 0/6; `art-gallery-kitano` and `gallery-take-two` still reused one event ID across multiple inline events; `the-terminal-kyoto` saved 1/6 with missing images.
@@ -191,7 +193,7 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 - Listing approved 2026-07-20: exhibitions-page slider; each slide links to an exhibition detail page.
 - Archived stale published `NEWS&TOPICS` row on 2026-07-20. `/news-topics` was already excluded; removed the 4-page source cap because the live slider exposes 5 valid detail links and truncated runs could not safely archive stale rows.
 - JSON tuned: concrete `/post/` exhibition pages only; blog-category and news indexes skipped.
-- Pending: detail-field visual approval; source remains beta.
+- Pending: detail-field visual approval.
 
 ### `plus-y-gallery`
 

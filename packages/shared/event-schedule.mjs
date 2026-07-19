@@ -307,6 +307,15 @@ export function eventStartDateOnly(event) {
   return null;
 }
 
+export function eventEndDateOnly(event) {
+  const ends = eventScheduleSegments(event)
+    .map((segment) => scheduleSegmentDateBounds(segment).end)
+    .filter(Boolean)
+    .sort();
+
+  return ends.at(-1) ?? null;
+}
+
 export function nextRelevantScheduleStartDateOnly(event, todayDateOnly) {
   const today = normalizeDateOnly(todayDateOnly);
   if (!isValidDateOnly(today)) return null;
