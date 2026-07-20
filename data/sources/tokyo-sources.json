@@ -1189,7 +1189,6 @@
         },
         "image_rules": "Use ordered artwork images from div.artwork; ignore past-listing and layout images. Publisher upload URLs require a site Referer when displayed off-site, so the web app rewrites only this exact upload host/path through its bounded image proxy."
       },
-      "beta": true,
       "selectors": {
         "listing_links": "ul.ex-current a, ul.ex-upcoming a",
         "title": ".ex-title",
