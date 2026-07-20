@@ -4046,13 +4046,17 @@ test('reported Osaka title leaks resolve to concrete event pages and title nodes
   );
   const jitsuzaiseiUrls = extractGenericDetailUrls(
     `
-      <a href="/post/tamashii-no-kagami">Exhibition</a>
+      <a href="/post/mirror-of-the-soul">Current exhibition</a>
+      <a href="/post/reality-in-flux">Current exhibition</a>
+      <a href="/post/luminescent-x">Next exhibition</a>
+      <a href="/post/againstthegrid">Past exhibition</a>
+      <a href="/post/pinkypop-osaka-exhibition">Past exhibition</a>
       <a href="/blog/categories/past-exhibitions">Past exhibitions</a>
       <a href="/news-topics">NEWS &amp; TOPICS</a>
     `,
     jitsuzaisei.start_urls[0],
     jitsuzaisei,
-    4,
+    getSourceDetailLimit(jitsuzaisei, 8, 50),
   );
   const nakanoshimaEvent = extractGenericEvent(
     `
@@ -4065,7 +4069,13 @@ test('reported Osaka title leaks resolve to concrete event pages and title nodes
   );
 
   assert.deepEqual(newPureUrls, ['https://newpureplus.com/17318', 'https://newpureplus.com/17349']);
-  assert.deepEqual(jitsuzaiseiUrls, ['https://www.jitsuzaisei.com/post/tamashii-no-kagami']);
+  assert.deepEqual(jitsuzaiseiUrls, [
+    'https://www.jitsuzaisei.com/post/mirror-of-the-soul',
+    'https://www.jitsuzaisei.com/post/reality-in-flux',
+    'https://www.jitsuzaisei.com/post/luminescent-x',
+    'https://www.jitsuzaisei.com/post/againstthegrid',
+    'https://www.jitsuzaisei.com/post/pinkypop-osaka-exhibition',
+  ]);
   assert.equal(nakanoshimaEvent.title, '特別展「インコ イズ カミング！」');
   assert.equal(nakanoshimaEvent._title_origin, 'configured_selector');
 });

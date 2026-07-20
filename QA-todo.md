@@ -182,8 +182,10 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 
 ### `jitsuzaisei`
 
+- Listing approved 2026-07-20: exhibitions-page slider; each slide links to an exhibition detail page.
+- Archived stale published `NEWS&TOPICS` row on 2026-07-20. `/news-topics` was already excluded; removed the 4-page source cap because the live slider exposes 5 valid detail links and truncated runs could not safely archive stale rows.
 - JSON tuned: concrete `/post/` exhibition pages only; blog-category and news indexes skipped.
-- Pending: clean recrawl and visual approval; source remains beta.
+- Pending: detail-field visual approval; source remains beta.
 
 ### `plus-y-gallery`
 

@@ -708,8 +708,15 @@
       },
       "crawl_hints": {
         "render_mode": "auto",
-        "skip_patterns": ["/blog/categories/", "/news-topics"],
-        "max_detail_pages": 4
+        "skip_patterns": ["/blog/categories/", "/news-topics"]
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.jitsuzaisei.com/exhibitions"]
+        },
+        "field_sources": {
+          "listing_links": "Exhibitions-page slider; each slide links directly to an exhibition detail page."
+        }
       }
     },
     {

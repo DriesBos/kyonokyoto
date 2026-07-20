@@ -97,7 +97,7 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         <GeneralButton
           edge={showLanguageOption ? undefined : 'last'}
           verticalPadding="full"
-          label={currentCityLabel}
+          label="cities"
           pressed={false}
           showDot={true}
           aria-label={`Choose city. Current city: ${currentCityLabel}`}
@@ -345,6 +345,9 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         :global([data-filter-button]),
         :global([data-city-button])
           pointer-events: auto
+
+  :global([data-city-button] .general-button__label)
+    text-transform: capitalize
 
   :global([data-city-option][aria-current='page'] .general-button__dot)
     opacity: 1
