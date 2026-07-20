@@ -180,18 +180,20 @@ const showFilterControls = showFilters && (categories.length > 0 || timingFilter
         aria-hidden="true"
         inert
       >
-        {cityConfigs.map((targetCity) => (
-          <GeneralButton
-            href={routePathFor({ city: targetCity.slug, locale })}
-            label={targetCity.label}
-            verticalPadding="full"
-            showDot={true}
-            data-city-toggle
-            data-city-button
-            data-city-option={targetCity.slug}
-            aria-current={targetCity.slug === city ? 'page' : undefined}
-          />
-        ))}
+        {
+          cityConfigs.map((targetCity) => (
+            <GeneralButton
+              href={routePathFor({ city: targetCity.slug, locale })}
+              label={targetCity.label}
+              verticalPadding="full"
+              showDot={true}
+              data-city-toggle
+              data-city-button
+              data-city-option={targetCity.slug}
+              aria-current={targetCity.slug === city ? 'page' : undefined}
+            />
+          ))
+        }
       </div>
     </div>
   </div>
