@@ -4011,10 +4011,41 @@ test('noisy generic sources pin event title and discovery fields', async () => {
     plusY,
     'https://www.plus-y-gallery.com/2026-example/',
   );
+  const artcourtUrls = extractGenericDetailUrls(
+    `<section class="ex-sec"><h2>Current Exhibitions</h2>
+      <article><a href="/eng/exhibitions/14290/">Current one</a></article>
+      <article><a href="/eng/exhibitions/14008/">Current two</a></article>
+    </section>
+    <section class="ex-sec ex-sec_past"><h2>Past Exhibitions</h2>
+      <article><a href="/eng/exhibitions/14239/">Past</a></article>
+    </section>`,
+    artcourt.start_urls[0],
+    artcourt,
+    8,
+  );
+  const artcourtEvent = extractGenericEvent(
+    `<div class="ex-header-text"><h1>Current show</h1><p>2026. 7. 11 [sat] - 8.29 [sat]</p></div>
+    <ul id="mvSlider"><li><img src="/eng/wp-content/uploads/sites/2/current.jpg"></li></ul>
+    <section class="ex-contents-about"><p>Current exhibition description with enough useful detail for visitors.</p></section>`,
+    artcourt,
+    'https://www.artcourtgallery.com/eng/exhibitions/14290/',
+  );
 
   assert.equal(plusYEvent.title, '北辻 良央 展');
   assert.equal(plusYEvent._title_origin, 'configured_selector');
+  assert.equal(artcourt.start_urls[0], 'https://www.artcourtgallery.com/eng/exhibitions/');
+  assert.deepEqual(artcourtUrls, [
+    'https://www.artcourtgallery.com/eng/exhibitions/14290/',
+    'https://www.artcourtgallery.com/eng/exhibitions/14008/',
+  ]);
   assert.equal(artcourt?.selectors?.title, '.ex-header-text h1');
+  assert.equal(artcourtEvent.start_date, '2026-07-11');
+  assert.equal(artcourtEvent.end_date, '2026-08-29');
+  assert.equal(artcourtEvent._description_origin, 'configured_selector');
+  assert.equal(
+    artcourtEvent.primary_image_url,
+    'https://www.artcourtgallery.com/eng/wp-content/uploads/sites/2/current.jpg',
+  );
   assert.equal(tobikan?.selectors?.listing_links, '.exhibition-item');
   assert.equal(tobikan?.selectors?.title, '.exhibition-header-title');
   assert.equal(opera?.selectors?.listing_links, "main a[href*='/ag/exh/']");
@@ -4025,6 +4056,136 @@ test('noisy generic sources pin event title and discovery fields', async () => {
     '.l-exhibition-intro__content p',
   ]);
   assert.equal(kouichi?.selectors?.description, '.HTML__Container-sc-1im40xc-0 p');
+});
+
+test('new Osaka gallery sources discover concrete exhibition details', async () => {
+  const sources = await loadAllSourcesConfig();
+  const artAndSpace = sources.find((source) => source.slug === 'art-and-space-gallery');
+  const iGallery = sources.find((source) => source.slug === 'i-gallery-osaka');
+  const ichion = sources.find((source) => source.slug === 'ichion-contemporary');
+
+  assert.ok(artAndSpace);
+  assert.ok(iGallery);
+  assert.ok(ichion);
+  assert.equal(artAndSpace.beta, true);
+  assert.equal(iGallery.beta, true);
+  assert.equal(ichion.beta, true);
+
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      `<div class="archive_card_layout">
+        <article class="archive_card"><a href="/exhibition/fix/">FIX</a></article>
+        <article class="archive_card"><a href="/exhibition/older/">Older</a></article>
+      </div>`,
+      artAndSpace.start_urls[0],
+      artAndSpace,
+      8,
+    ),
+    ['https://art.andspace.net/exhibition/fix/', 'https://art.andspace.net/exhibition/older/'],
+  );
+  const artAndSpaceEvent = extractGenericEvent(
+    `<main>
+      <div class="single_thumbnail"><img src="/wp/uploads/fix.jpg" alt="FIX"></div>
+      <h1 class="single_main_title">FIX</h1>
+      <p class="single_info"><span class="date">2026.06.26-07.24</span></p>
+      <div class="single_body"><p>Substantive exhibition description for the current ART AND SPACE show.</p></div>
+    </main>`,
+    artAndSpace,
+    'https://art.andspace.net/exhibition/fix/',
+  );
+  assert.equal(artAndSpaceEvent.title, 'FIX');
+  assert.equal(artAndSpaceEvent.start_date, '2026-06-26');
+  assert.equal(artAndSpaceEvent.end_date, '2026-07-24');
+  assert.equal(artAndSpaceEvent.primary_image_url, 'https://art.andspace.net/wp/uploads/fix.jpg');
+
+  const iGalleryUrls = [
+    ...new Set(
+      [
+        `<main><a href="/liakimura-i-gallery-osaka">Learn More</a></main>`,
+        `<main>
+          <a href="/archive-2025">2025</a>
+          <a href="/tokyobuild-iteration"><img src="/tokyobuild.jpg"></a>
+          <a href="/aiyoshida-floating"><img src="/floating.jpg"></a>
+        </main>`,
+      ].flatMap((html, index) =>
+        extractGenericDetailUrls(html, iGallery.start_urls[index], iGallery, 8),
+      ),
+    ),
+  ];
+  assert.deepEqual(iGalleryUrls, [
+    'https://www.igallery-osaka.com/liakimura-i-gallery-osaka',
+    'https://www.igallery-osaka.com/tokyobuild-iteration',
+    'https://www.igallery-osaka.com/aiyoshida-floating',
+  ]);
+  const iGalleryEvent = eventExtractors['i-gallery-osaka'](
+    `<main>
+      <h2>リア・キムラ</h2><h2>Remnants</h2>
+      <p>i GALLERY OSAKAでは、リア・キムラによる個展「Remnants」を開催いたします。</p>
+      <p>本展では、像が消失へ向かう途中に生まれる存在の気配に焦点を当てます。</p>
+      <p>2026年7月4日(土) - 8月3日(月)</p>
+      <img src="https://static.wixstatic.com/media/remnants.jpg" width="980" height="587">
+    </main>`,
+    iGallery,
+    'https://www.igallery-osaka.com/liakimura-i-gallery-osaka',
+  );
+  assert.equal(iGalleryEvent.title, 'リア・キムラ — Remnants');
+  assert.equal(iGalleryEvent.start_date, '2026-07-04');
+  assert.equal(iGalleryEvent.end_date, '2026-08-03');
+  assert.match(iGalleryEvent.description, /個展「Remnants」/u);
+  assert.equal(iGalleryEvent.primary_image_url, 'https://static.wixstatic.com/media/remnants.jpg');
+
+  const iGalleryOldEvent = eventExtractors['i-gallery-osaka'](
+    `<main>
+      <p>吉田 愛</p><p>浮遊</p><p>2026年4月10日 - 27日</p>
+      <p>本展「浮遊」において、吉田愛は自然環境の中で生成された作品を都市へ導入します。</p>
+      <img src="https://static.wixstatic.com/media/floating.jpg" width="980" height="587">
+    </main>`,
+    iGallery,
+    'https://www.igallery-osaka.com/aiyoshida-floating',
+  );
+  assert.equal(iGalleryOldEvent.title, '吉田 愛 — 浮遊');
+  assert.equal(iGalleryOldEvent.start_date, '2026-04-10');
+  assert.equal(iGalleryOldEvent.end_date, '2026-04-27');
+
+  const ichionListingHtml = `<div class="ExhibitionList">
+    <div class="exhibition">
+      <h3 class="title"><span>Landscape</span><span>水の記憶 交差する視線</span></h3>
+      <p class="date">2026.06.29 Mon. - 2026.07.31 Fri.</p>
+      <div class="lernMore"><a class="TextLink" href="/exhibition/xm8ojagre0-0">Learn More</a></div>
+    </div>
+  </div>`;
+  const ichionUrls = extractGenericDetailUrls(ichionListingHtml, ichion.start_urls[0], ichion, 8);
+  assert.deepEqual(ichionUrls, ['https://ichion-contemporary.com/exhibition/xm8ojagre0-0']);
+  const ichionEvent = eventExtractors['ichion-contemporary'](
+    `<title>Landscape | Exhibition | ICHION CONTEMPORARY</title>
+    <main class="ExhibitionDetail">
+      <div class="kv"><img src="https://images.microcms-assets.io/landscape.jpg"></div>
+      <div class="section">
+        <p>横溝美由紀は、時間、空間、光を重要な要素とするインスタレーションを発表してきました。</p>
+        <p>近年は平面作品を組み合わせ、展示空間との関係から心象風景を立ち上げています。</p>
+      </div>
+      <div class="image"><img src="https://images.microcms-assets.io/artwork.jpg"></div>
+    </main>`,
+    ichion,
+    ichionUrls[0],
+    { listingPages: [{ html: ichionListingHtml, url: ichion.start_urls[0] }] },
+  );
+  assert.equal(ichionEvent.title, 'Landscape 水の記憶 交差する視線');
+  assert.equal(ichionEvent.start_date, '2026-06-29');
+  assert.equal(ichionEvent.end_date, '2026-07-31');
+  assert.equal(ichionEvent._date_origin, 'listing_card');
+  assert.deepEqual(ichionEvent.image_urls, [
+    'https://images.microcms-assets.io/landscape.jpg',
+    'https://images.microcms-assets.io/artwork.jpg',
+  ]);
+  const ichionEnglishEvent = eventExtractors['ichion-contemporary'](
+    `<title>Landscape Memories of Water: Intersecting Gazes | Exhibition | ICHION CONTEMPORARY</title>
+    <main><div class="section"><p>Exhibition description with enough detail for visitors to understand the current show.</p></div></main>`,
+    { ...ichion, language: 'en' },
+    'https://ichion-contemporary.com/en/exhibition/xm8ojagre0-0',
+    { listingPages: [{ html: ichionListingHtml, url: ichion.start_urls[0] }] },
+  );
+  assert.equal(ichionEnglishEvent.title, 'Landscape Memories of Water: Intersecting Gazes');
 });
 
 test('reported Osaka title leaks resolve to concrete event pages and title nodes', async () => {

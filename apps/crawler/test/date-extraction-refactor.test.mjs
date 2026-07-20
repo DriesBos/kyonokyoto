@@ -24,6 +24,19 @@ test('bracket weekdays normalize and Artizon English range parses', () => {
   );
 });
 
+test('spaced dotted Artcourt range parses', () => {
+  const raw = '2026. 7. 11 [sat] - 8.29 [sat]';
+
+  assert.equal(normalizeHumanDateText(raw), '2026.7.11 - 8.29');
+  assert.deepEqual(
+    {
+      startDate: parseGenericDateRange(raw).startDate,
+      endDate: parseGenericDateRange(raw).endDate,
+    },
+    { startDate: '2026-07-11', endDate: '2026-08-29' },
+  );
+});
+
 test('MoMAK omitted end year rolls across New Year', async () => {
   const source = (await loadSourcesConfig({ city: 'kyoto' })).find(
     (candidate) => candidate.slug === 'momak',

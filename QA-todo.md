@@ -131,6 +131,10 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
+2026-07-20: Added ART AND SPACE GALLERY and ICHION CONTEMPORARY, and retuned existing i GALLERY OSAKA. Live no-write QA used official static HTML. ART AND SPACE resolves newest-first archive cards and its current `FIX` detail to title, `2026-06-26`–`2026-07-24`, opening copy, and hero image. i GALLERY now discovers the current homepage-slider detail plus four 2026 archive details while excluding year and utility routes; current `Remnants` resolves to `2026-07-04`–`2026-08-03`, and same-month abbreviated old ranges also parse. ICHION resolves seven concrete listing links; listing-card title/date metadata supplies the date omitted by detail body markup, while detail pages supply copy and artwork. Current `Landscape 水の記憶 交差する視線` resolves to `2026-06-29`–`2026-07-31`. All three remain beta pending targeted crawls and visual approval; no crawl or database write.
+
+2026-07-20: ARTCOURT Gallery now starts from the official English exhibitions index and follows only articles in the exact `Current Exhibitions` section, excluding the Japanese index and full past archive that share the same URL pattern. Live static QA found two current details. Detail `14290` exposes stable title, day-level date, about copy, and artwork selectors; shared dotted-date normalization now parses its spaced `2026. 7. 11 - 8.29` range. Detail `14008` publishes only month precision (`2025. 11 - 2027. 4`) and remains intentionally unpublishable rather than inventing days. No crawl or database write; source remains beta pending targeted crawl and visual approval.
+
 2026-07-13: Generic-title source leaks were tightened without a crawl or database write. NEW PURE+ now follows titled detail anchors only inside live `#current-section` and `#upcoming-section` containers, rejects exhibition category indexes, and reads `h1.post-title`. JITSUZAISEI now follows only concrete `/post/` links, rejects `/blog/categories/` and `/news-topics`, and reads Wix `h1[data-hook="post-title"]`. Nakanoshima Kosetsu reads the event title from Japanese `.single__info__txtwrap--ttl` or English `.info__content--ttl`, avoiding the later `みどころ` heading. Clean recrawl and stale-row cleanup remain pending.
 
 2026-07-13: Abeno Harukas titles now come from `p.name[itemprop="name"]`, removing the museum-name document-title suffix; media comes only from `.exhibition .figure img`, excluding ticket-sale banners and other images inside `#ticket`. Live structure was checked across all six event pages; focused extractor coverage added, no crawl or database write run.
@@ -164,9 +168,9 @@ These sources need more JSON tuning before approval. Keep `beta: true` until fix
 
 ### `i-gallery-osaka`
 
-- Problem: saved `Archive` as event.
-- Crawl leak examples: `/archive-2026`.
-- Likely fix: needs render/slider handling or tighter `selectors.listing_links`; add skip for archive pages unless detail pages are known-current.
+- JSON tuned 2026-07-20: static `main` links now cover the current homepage slide and concrete current-year archive details; archive/year and utility routes are skipped.
+- Detail extraction tuned: first two title blocks, first parseable date range, substantive copy, and main-page images. Same-month abbreviated Japanese ranges are supported.
+- Pending: clean targeted crawl and visual approval. Keep beta until both pass.
 
 ### `itsuo-art-museum`
 
@@ -217,7 +221,10 @@ Review manually, then remove `beta` when approved:
 
 - `osaka-geidai-whatsnew`: tag filter worked; 6 tagged items saved.
 - `kouichi-fine-arts`: one clean exhibition saved.
-- `artcourt-gallery`: real events plus one index leak; small skip-pattern fix likely enough.
+- `artcourt-gallery`: current-section discovery and day-level date parsing pass live static QA; targeted crawl and visual approval remain.
+- `art-and-space-gallery`: current listing/detail pass live static QA; targeted crawl and visual approval remain.
+- `i-gallery-osaka`: current plus 2026 archive discovery and detail parsing pass live static QA; targeted crawl and visual approval remain.
+- `ichion-contemporary`: listing-card title/date plus detail copy/images pass live static QA; targeted crawl and visual approval remain.
 - `takeo-exhibitions`: one saved event; title generic, inspect before approval.
 
 ## Tokyo Sources

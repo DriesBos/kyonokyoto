@@ -442,34 +442,198 @@
       }
     },
     {
-      "slug": "i-gallery-osaka",
-      "name": "i GALLERY OSAKA",
+      "slug": "art-and-space-gallery",
+      "name": "ART AND SPACE GALLERY",
+      "names": {
+        "en": "ART AND SPACE GALLERY",
+        "ja": "ART AND SPACE GALLERY"
+      },
       "taxonomy": {
         "venue_category": ["gallery"],
         "display_category": [],
         "event_category": ["exhibition"]
       },
-      "language": "en",
+      "language": "ja",
+      "address_text": "3-10-17 Tenjinbashi, Kita-ku, Osaka 530-0041 Japan",
+      "directions_query": "ART AND SPACE GALLERY, 3-10-17 Tenjinbashi, Kita-ku, Osaka",
+      "lat": 34.702618,
+      "lng": 135.51236,
+      "base_url": "https://art.andspace.net/exhibition/",
+      "start_urls": ["https://art.andspace.net/exhibition/"],
+      "allowed_domains": ["art.andspace.net"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official exhibition archive is newest-first and marks each card as ongoing or ended. Detail pages expose stable title, date, description, and hero-image nodes.",
+      "selectors": {
+        "listing_links": ".archive_card a",
+        "title": ".single_main_title",
+        "date": ".single_info .date",
+        "description": ".single_body p",
+        "images": ".single_thumbnail img"
+      },
+      "beta": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://art.andspace.net/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "never",
+        "max_detail_pages": 8
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://art.andspace.net/exhibition/"]
+        },
+        "field_sources": {
+          "listing_links": "Exhibition archive cards in newest-first order.",
+          "title": "Detail-page single_main_title heading.",
+          "date": "Detail-page single_info date span.",
+          "description": "Opening paragraphs in the detail-page single_body.",
+          "images": "Detail-page single_thumbnail hero image."
+        }
+      }
+    },
+    {
+      "slug": "i-gallery-osaka",
+      "name": "i GALLERY OSAKA",
+      "names": {
+        "en": "i GALLERY OSAKA",
+        "ja": "i GALLERY OSAKA"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
       "address_text": "AC N Shinsaibashi Garden 1F, 3-8-14 Minamisemba, Chuo-ku, Osaka 542-0081 Japan",
       "directions_query": "i GALLERY OSAKA, 3-8-14 Minamisemba, Chuo-ku, Osaka",
       "lat": 34.675506,
       "lng": 135.503448,
       "base_url": "https://www.igallery-osaka.com/",
-      "start_urls": ["https://www.igallery-osaka.com/"],
+      "start_urls": [
+        "https://www.igallery-osaka.com/",
+        "https://www.igallery-osaka.com/archive-2026"
+      ],
       "allowed_domains": ["www.igallery-osaka.com", "igallery-osaka.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/", "/en/"],
-      "notes": "Current and upcoming exhibitions are exposed in the homepage slider.",
+      "event_page_patterns": ["/"],
+      "notes": "Homepage slider links the current exhibition; the current-year archive exposes the older slider exhibitions without relying on Wix client rendering.",
+      "selectors": {
+        "listing_links": "main a",
+        "images": "main img"
+      },
       "beta": true,
       "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.igallery-osaka.com/",
+            "https://www.igallery-osaka.com/archive-2026"
+          ],
+          "event_page_patterns": ["/"]
+        },
         "en": {
-          "start_urls": ["https://www.igallery-osaka.com/"],
+          "start_urls": [
+            "https://www.igallery-osaka.com/en/",
+            "https://www.igallery-osaka.com/en/archive-2026"
+          ],
           "event_page_patterns": ["/"]
         }
       },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
       "crawl_hints": {
-        "render_mode": "auto",
-        "max_detail_pages": 4
+        "render_mode": "never",
+        "skip_patterns": [
+          "/archive-",
+          "/igalleryosaka-news",
+          "/about",
+          "/contact",
+          "/cookiepolicy"
+        ],
+        "max_detail_pages": 8
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.igallery-osaka.com/", "https://www.igallery-osaka.com/archive-2026"],
+          "en": [
+            "https://www.igallery-osaka.com/en/",
+            "https://www.igallery-osaka.com/en/archive-2026"
+          ]
+        },
+        "field_sources": {
+          "listing_links": "Current homepage Learn More link plus current-year archive artwork links; year and utility routes are skipped.",
+          "title": "First two title text blocks on each Wix detail page.",
+          "date": "First parseable date range on each Wix detail page.",
+          "description": "First two substantive detail-page paragraphs.",
+          "images": "Images inside the detail-page main element."
+        }
+      }
+    },
+    {
+      "slug": "ichion-contemporary",
+      "name": "ICHION CONTEMPORARY",
+      "names": {
+        "en": "ICHION CONTEMPORARY",
+        "ja": "ICHION CONTEMPORARY"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "9-7 Nozakicho, Kita-ku, Osaka 530-0055 Japan",
+      "directions_query": "ICHION CONTEMPORARY, 9-7 Nozakicho, Kita-ku, Osaka",
+      "lat": 34.7021065,
+      "lng": 135.5060115,
+      "base_url": "https://ichion-contemporary.com/exhibition/",
+      "start_urls": ["https://ichion-contemporary.com/exhibition/"],
+      "allowed_domains": ["ichion-contemporary.com", "www.ichion-contemporary.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "SSR exhibition index links concrete details. Titles and dates come from listing cards because detail pages omit their dates from visible body markup.",
+      "selectors": {
+        "listing_links": ".lernMore a",
+        "description": ".section p",
+        "images": ".kv img, .image img"
+      },
+      "beta": true,
+      "locales": {
+        "ja": {
+          "start_urls": ["https://ichion-contemporary.com/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://ichion-contemporary.com/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "render_mode": "never",
+        "max_detail_pages": 8
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://ichion-contemporary.com/exhibition/"],
+          "en": ["https://ichion-contemporary.com/en/exhibition/"]
+        },
+        "field_sources": {
+          "listing_links": "Learn More anchors inside the primary ExhibitionList.",
+          "title": "Matching listing-card title for the detail slug.",
+          "date": "Matching listing-card date for the detail slug.",
+          "description": "Opening section paragraphs on the detail page.",
+          "images": "Detail-page key visual followed by exhibition artwork images."
+        }
       }
     },
     {
@@ -918,29 +1082,45 @@
       "directions_query": "ARTCOURT Gallery, 1-8-5 Tenmabashi, Kita-ku, Osaka",
       "lat": 34.6954677,
       "lng": 135.517976,
-      "base_url": "https://www.artcourtgallery.com/",
-      "start_urls": ["https://www.artcourtgallery.com/"],
+      "base_url": "https://www.artcourtgallery.com/eng/exhibitions/",
+      "start_urls": ["https://www.artcourtgallery.com/eng/exhibitions/"],
       "allowed_domains": ["www.artcourtgallery.com", "artcourtgallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/", "/exhibition/"],
-      "notes": "Homepage lists current exhibitions and links to exhibition detail pages.",
+      "notes": "English exhibitions index lists current shows in the first exact-class ex-sec section; the ex-sec_past section is archive-only.",
       "selectors": {
+        "listing_links": "section[class='ex-sec'] article a",
         "title": ".ex-header-text h1",
-        "date": ".ex-header-text p"
+        "date": ".ex-header-text p",
+        "description": ".ex-contents-about p",
+        "images": "#mvSlider img"
       },
       "beta": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://www.artcourtgallery.com/"],
+          "start_urls": ["https://www.artcourtgallery.com/exhibitions/"],
           "event_page_patterns": ["/exhibitions/", "/exhibition/"]
         },
         "en": {
-          "start_urls": ["https://www.artcourtgallery.com/eng/"],
+          "start_urls": ["https://www.artcourtgallery.com/eng/exhibitions/"],
           "event_page_patterns": ["/eng/exhibitions/", "/eng/exhibition/"]
         }
       },
       "crawl_hints": {
         "max_detail_pages": 8
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.artcourtgallery.com/exhibitions/"],
+          "en": ["https://www.artcourtgallery.com/eng/exhibitions/"]
+        },
+        "field_sources": {
+          "listing_links": "Articles directly below Current Exhibitions; exclude the ex-sec_past archive section.",
+          "title": "Exhibition detail header h1.",
+          "date": "Exhibition detail header period.",
+          "description": "About section on the exhibition detail page.",
+          "images": "Detail-page mvSlider artwork images."
+        }
       }
     },
     {

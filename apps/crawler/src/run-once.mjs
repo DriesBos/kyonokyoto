@@ -979,6 +979,7 @@ function normalizeHumanDateText(value) {
       /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?,?\s*/giu,
       '',
     )
+    .replace(/(\d)\s*\.\s*(?=\d)/g, '$1.')
     .replace(/\b(jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\./giu, '$1')
     .replace(/\s+to\s+/giu, ' - ')
     .replace(/\s+/g, ' ')
@@ -4635,6 +4636,126 @@ function extractFirstImageEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function normalizeIGalleryDateText(value) {
+  return normalizeHumanDateText(value).replace(
+    /(\d{4})年(\d{1,2})月(\d{1,2})日\s*-\s*(\d{1,2})日/u,
+    '$1年$2月$3日 - $1年$2月$4日',
+  );
+}
+
+function extractIGalleryOsakaEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const mainHtml = selectElements(detailHtml, 'main')[0] ?? detailHtml;
+  const headings = selectorTextValues(mainHtml, ['h1', 'h2', 'h3']);
+  const paragraphs = selectorTextValues(mainHtml, ['p']);
+  const imageUrls = finalizeImageUrls(
+    selectElements(mainHtml, 'img').map((tagHtml) => ({
+      url: extractTagAttribute(tagHtml, 'src'),
+      source: 'configured',
+    })),
+    detailUrl,
+    { preserveOrder: true },
+  );
+  const dateCandidate = [...headings, ...paragraphs]
+    .map((value) => {
+      const dateText = normalizeIGalleryDateText(value);
+      return { dateText, parsed: parseGenericDateRange(dateText) };
+    })
+    .find((candidate) => candidate.parsed.startDate && candidate.parsed.endDate);
+  const dateParagraphIndex = paragraphs.findIndex(
+    (value) => normalizeIGalleryDateText(value) === dateCandidate?.dateText,
+  );
+  const titleParts = (
+    headings.length
+      ? headings
+      : paragraphs.slice(0, dateParagraphIndex >= 0 ? dateParagraphIndex : 2)
+  )
+    .filter((value) => !parseGenericDateRange(normalizeIGalleryDateText(value)).startDate)
+    .slice(0, 2);
+  const description = paragraphs
+    .filter((value) => value.length > 40)
+    .filter((value) => !parseGenericDateRange(normalizeIGalleryDateText(value)).startDate)
+    .slice(0, 2)
+    .join('\n\n');
+
+  return {
+    ...event,
+    title: titleParts.join(' — ') || event.title,
+    _title_origin: 'source_specific_extractor',
+    description: description || event.description,
+    primary_image_url: imageUrls[0] ?? event.primary_image_url,
+    image_urls: imageUrls.length ? imageUrls : event.image_urls,
+    ...(dateCandidate
+      ? {
+          date_text: dateCandidate.dateText,
+          start_date: dateCandidate.parsed.startDate,
+          end_date: dateCandidate.parsed.endDate,
+          ...buildScheduleFields({
+            startDate: dateCandidate.parsed.startDate,
+            endDate: dateCandidate.parsed.endDate,
+          }),
+          calendar_starts_at: dateCandidate.parsed.calendarStartsAt,
+          calendar_ends_at: dateCandidate.parsed.calendarEndsAt,
+          _date_origin: 'source_specific_extractor',
+          _date_parser: dateCandidate.parsed.parserId ?? null,
+        }
+      : {}),
+  };
+}
+
+function extractIchionListingMetadata(sourceContext, detailUrl) {
+  const detailSlug = new URL(detailUrl).pathname.split('/').filter(Boolean).at(-1);
+  if (!detailSlug) return null;
+
+  for (const listingPage of sourceContext?.listingPages ?? []) {
+    const listingHtml = listingPage?.html ?? '';
+    const linkIndex = listingHtml.indexOf(`href="/exhibition/${detailSlug}"`);
+    if (linkIndex < 0) continue;
+
+    const cardStart = listingHtml.lastIndexOf('<div class="exhibition"', linkIndex);
+    if (cardStart < 0) continue;
+
+    const cardHtml = listingHtml.slice(cardStart, linkIndex);
+    const title = selectorTextValues(cardHtml, ['h3.title'])[0] ?? null;
+    const dateText = selectorTextValues(cardHtml, ['p.date'])[0] ?? null;
+    const parsed = dateText ? parseGenericDateRange(dateText) : null;
+
+    return { title, dateText, parsed };
+  }
+
+  return null;
+}
+
+function extractIchionEvent(detailHtml, source, detailUrl, sourceContext = {}) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const listing = extractIchionListingMetadata(sourceContext, detailUrl);
+  const localizedTitle =
+    source.language === 'ja'
+      ? listing?.title
+      : event.title.replace(/\s*[|｜]\s*Exhibition$/iu, '').trim();
+
+  return {
+    ...event,
+    title: localizedTitle || listing?.title || event.title,
+    _title_origin: source.language === 'ja' ? 'listing_card' : 'document_title',
+    ...(listing?.parsed?.startDate && listing?.parsed?.endDate
+      ? {
+          date_text: listing.dateText,
+          start_date: listing.parsed.startDate,
+          end_date: listing.parsed.endDate,
+          ...buildScheduleFields({
+            startDate: listing.parsed.startDate,
+            endDate: listing.parsed.endDate,
+          }),
+          calendar_starts_at: listing.parsed.calendarStartsAt,
+          calendar_ends_at: listing.parsed.calendarEndsAt,
+          _date_origin: 'listing_card',
+          _date_parser: listing.parsed.parserId ?? null,
+        }
+      : {}),
+  };
+}
+
 function extractMplusEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const dateHtml = selectElements(detailHtml, '.CommonDetails-title')[0] ?? '';
@@ -6760,6 +6881,8 @@ const eventExtractors = {
   'hakari-contemporary': extractHakariEvent,
   'hosoo-gallery': extractHosooEvent,
   'hyogo-prefectural-museum-of-art': extractHyogoEvent,
+  'i-gallery-osaka': extractIGalleryOsakaEvent,
+  'ichion-contemporary': extractIchionEvent,
   'issey-miyake-kyoto-kura': extractIsseyMiyakeKuraEvent,
   'koen-kyoto': extractKoenEvent,
   'kyoto-art-center': extractKacEvent,
