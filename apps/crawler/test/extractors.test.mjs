@@ -3574,7 +3574,7 @@ test('source config validator rejects unregistered filter categories', () => {
   );
 });
 
-test('source config validator requires boolean media controls', () => {
+test('source config validator requires boolean image and landing controls', () => {
   assert.deepEqual(
     validateSourceConfig({
       slug: 'bad-media-control',
@@ -3584,8 +3584,14 @@ test('source config validator requires boolean media controls', () => {
       lng: 135,
       capabilities: { native_locales: ['ja'] },
       skip_og_image: 'yes',
+      measure_image_dimensions: 'yes',
+      landing_slider: 'yes',
     }),
-    ['bad-media-control: skip_og_image must be boolean'],
+    [
+      'bad-media-control: skip_og_image must be boolean',
+      'bad-media-control: measure_image_dimensions must be boolean',
+      'bad-media-control: landing_slider must be boolean',
+    ],
   );
 });
 
@@ -4874,6 +4880,28 @@ test('image normalization rejects measured media below 540px and caps stored ima
   ]);
   assert.equal(diagnostics.image_dimension_probe_count, 5);
   assert.equal(diagnostics.image_dimension_probe_rejected_count, 1);
+});
+
+test('landing slider sources measure final image dimensions without a second opt-in', async () => {
+  let probes = 0;
+  const imageUrl = 'https://example.test/landing.jpg';
+  const normalized = await normalizeEventImagesForSource(
+    {
+      source_url: 'https://example.test/exhibition',
+      primary_image_url: imageUrl,
+      image_urls: [imageUrl],
+    },
+    { landing_slider: true },
+    {
+      fetchImageDimensionsFn: async () => {
+        probes += 1;
+        return { width: 2000, height: 1500 };
+      },
+    },
+  );
+
+  assert.equal(probes, 1);
+  assert.deepEqual(normalized.image_metadata, [{ url: imageUrl, width: 2000, height: 1500 }]);
 });
 
 test('final media safety filters custom UI and LQIP candidates without reordering', async () => {

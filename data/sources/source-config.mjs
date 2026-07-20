@@ -352,7 +352,7 @@ export function validateSourceConfig(source) {
   if (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng))) {
     warnings.push(`${slug}: missing lat/lng`);
   }
-  for (const field of ['skip_og_image', 'measure_image_dimensions']) {
+  for (const field of ['skip_og_image', 'measure_image_dimensions', 'landing_slider']) {
     if (source?.[field] !== undefined && typeof source[field] !== 'boolean') {
       warnings.push(`${slug}: ${field} must be boolean`);
     }

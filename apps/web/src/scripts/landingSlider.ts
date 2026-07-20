@@ -19,8 +19,13 @@ const imageHoldSeconds = 1.5;
 const coverSeconds = 0.75;
 const rowStaggerSeconds = 0.02;
 const rowOverlapPixels = 1;
-const minimumCoverDensity = 1.5;
+const landingSlideLimit = 6;
+const minimumCoverDensity = 1;
 const maximumCoverDensity = 2;
+const maximumRequiredWidth = 1920;
+const maximumRequiredHeight = 1080;
+const maximumTransformWidth = 2560;
+const maximumTransformHeight = 1440;
 const imageQuality = 82;
 const coveredClipPath = 'inset(0% 0 0 0)';
 const collapsedTopClipPath = 'inset(0 0 100% 0)';
@@ -109,27 +114,41 @@ export const resolveLandingSlides = ({
 }): ResolvedLandingSlide[] => {
   if (viewportWidth <= 0 || viewportHeight <= 0) return [];
 
+  const requiredWidth = Math.min(viewportWidth, maximumRequiredWidth);
+  const requiredHeight = Math.min(viewportHeight, maximumRequiredHeight);
   const preferredDensity = Math.min(
     maximumCoverDensity,
     Math.max(minimumCoverDensity, devicePixelRatio),
   );
+  const resolvedSlides: ResolvedLandingSlide[] = [];
+  const seenSourceSlugs = new Set<string>();
 
-  return slides.flatMap((slide) => {
+  for (const slide of slides) {
+    if (seenSourceSlugs.has(slide.sourceSlug)) continue;
+
     const image = slide.images.find(
       (candidate) =>
-        coverDensityFor(candidate, viewportWidth, viewportHeight) >= minimumCoverDensity,
+        coverDensityFor(candidate, requiredWidth, requiredHeight) >= minimumCoverDensity,
     );
-    if (!image) return [];
+    if (!image) continue;
 
     const density = Math.min(
       preferredDensity,
-      coverDensityFor(image, viewportWidth, viewportHeight),
+      coverDensityFor(image, requiredWidth, requiredHeight),
+      maximumTransformWidth / requiredWidth,
+      maximumTransformHeight / requiredHeight,
     );
-    const width = Math.floor(viewportWidth * density);
-    const height = Math.floor(viewportHeight * density);
+    const width = Math.floor(requiredWidth * density);
+    const height = Math.floor(requiredHeight * density);
     const src = netlifyImageUrl(image.src, width, height);
-    return src ? [{ ...slide, src, width, height }] : [];
-  });
+    if (!src) continue;
+
+    resolvedSlides.push({ ...slide, src, width, height });
+    seenSourceSlugs.add(slide.sourceSlug);
+    if (resolvedSlides.length >= landingSlideLimit) break;
+  }
+
+  return resolvedSlides;
 };
 
 const preloadImage = (src: string) =>

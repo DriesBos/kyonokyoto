@@ -8516,7 +8516,7 @@ function withNormalizedEventImages(eventData, imageUrls, imageMetadata = []) {
 }
 
 function shouldMeasureSourceImages(source) {
-  return source?.measure_image_dimensions === true;
+  return source?.measure_image_dimensions === true || source?.landing_slider === true;
 }
 
 function shouldProbeFinalImage(imageUrl, source) {

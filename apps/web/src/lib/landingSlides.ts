@@ -1,4 +1,3 @@
-import type { AppCity } from './cities';
 import type { ClassifiedEvent, EventImageMetadata } from './events';
 
 export type LandingSlideImage = {
@@ -12,24 +11,6 @@ export type LandingSlide = {
   title: string;
   sourceSlug: string;
 };
-
-export const landingSlideLimit = 6;
-
-export const landingSliderSourceSlugsByCity = {
-  kyoto: ['kcua', 'artro'],
-  osaka: ['national-museum-of-art-osaka', 'abeno-harukas-art-museum', 'tezukayama-gallery'],
-  tokyo: [
-    'yayoi-kusama-museum',
-    'mori-art-museum',
-    'yutaka-kikutake-gallery',
-    'national-museum-of-modern-art-tokyo',
-    'what-museum',
-    'setagaya-art-museum',
-    'university-art-museum-tokyo-geidai',
-    'sumida-hokusai-museum',
-  ],
-  'hong-kong': ['david-zwirner', 'kiang-malingue', 'gallery-exit'],
-} satisfies Record<AppCity, string[]>;
 
 type LandingSlideEvent = Pick<
   ClassifiedEvent,
@@ -58,17 +39,15 @@ const landingImagesForEvent = (event: LandingSlideEvent): LandingSlideImage[] =>
 };
 
 export const landingSlidesForEvents = ({
-  city,
   events,
+  landingSourceSlugs,
   sourceSlugByEventId,
-  limit = landingSlideLimit,
 }: {
-  city: AppCity;
   events: LandingSlideEvent[];
+  landingSourceSlugs: string[];
   sourceSlugByEventId: Map<string, string | null>;
-  limit?: number;
 }): LandingSlide[] => {
-  const selectedSourceSlugs = new Set(landingSliderSourceSlugsByCity[city]);
+  const selectedSourceSlugs = new Set(landingSourceSlugs);
   const seenImages = new Set<string>();
   const slides: LandingSlide[] = [];
 
@@ -83,8 +62,6 @@ export const landingSlidesForEvents = ({
 
     images.forEach((image) => seenImages.add(image.src));
     slides.push({ images, title: event.title, sourceSlug });
-
-    if (slides.length >= limit) break;
   }
 
   return slides;

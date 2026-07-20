@@ -1000,6 +1000,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/archives/", "/archives/"],
       "notes": "The EN/JA language selector is in the site menu; open the menu to switch localized versions.",
+      "landing_slider": true,
       "skip_og_image": true,
       "measure_image_dimensions": true,
       "selectors": {
@@ -1116,6 +1117,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "English-only site. Use the dedicated exhibition listing page.",
+      "landing_slider": true,
       "skip_og_image": true,
       "measure_image_dimensions": true,
       "selectors": {

@@ -24,11 +24,15 @@ test('landing slider styles target JS-created elements globally', async () => {
   }
 });
 
-test('landing slider serves only dimension-qualified Netlify image transforms', async () => {
+test('landing slider caps dimension-qualified Netlify image transforms', async () => {
   const script = await readFile(scriptPath, 'utf8');
 
-  assert.match(script, /const minimumCoverDensity = 1\.5/);
+  assert.match(script, /const minimumCoverDensity = 1/);
   assert.match(script, /const maximumCoverDensity = 2/);
+  assert.match(script, /const maximumRequiredWidth = 1920/);
+  assert.match(script, /const maximumRequiredHeight = 1080/);
+  assert.match(script, /const maximumTransformWidth = 2560/);
+  assert.match(script, /const maximumTransformHeight = 1440/);
   assert.match(script, /\/\.netlify\/images/);
   assert.match(script, /fit: 'cover'/);
   assert.match(script, /image\.fetchPriority = index === 0 \? 'high' : 'low'/);

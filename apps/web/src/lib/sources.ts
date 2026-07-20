@@ -37,6 +37,7 @@ export type SourceConfig = {
   }[];
   is_active?: boolean;
   beta?: boolean;
+  landing_slider?: boolean;
   map_visibility?: boolean;
 };
 

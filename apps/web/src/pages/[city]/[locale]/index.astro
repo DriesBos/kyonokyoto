@@ -163,8 +163,10 @@ const mapLocationIdByEventId = new Map(
 );
 const mapSources = mapSourcesForEvents(visibleCards, sourceSlugByEventId, configuredSources);
 const landingSlides = landingSlidesForEvents({
-  city,
   events: [...ongoingEvents, ...upcomingEvents],
+  landingSourceSlugs: configuredSources
+    .filter((source) => source.landing_slider)
+    .map((source) => source.slug),
   sourceSlugByEventId,
 });
 

@@ -224,6 +224,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/jp/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Exhibition pages keep body copy and artwork images in content-main; ignore the top flyer/banner image.",
+      "landing_slider": true,
       "measure_image_dimensions": true,
       "qa": {
         "listing_urls": {
@@ -368,6 +369,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
       "notes": "Purple art marker from Google My Maps.",
+      "landing_slider": true,
       "selectors": {
         "description": "#section-01 p"
       },
@@ -519,6 +521,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/modules/Exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
+      "landing_slider": true,
       "locales": {
         "ja": {
           "start_urls": ["https://hokusai-museum.jp/modules/Exhibition/exhibitions"],
@@ -552,6 +555,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
       "notes": "Purple art marker from Google My Maps.",
+      "landing_slider": true,
       "locales": {
         "ja": {
           "start_urls": ["https://yayoikusamamuseum.jp/exhibition/current/"],
@@ -814,6 +818,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Purple art marker from Google My Maps.",
+      "landing_slider": true,
       "capabilities": {
         "native_locales": ["ja", "en"],
         "machine_translate_missing_locales": true
@@ -841,6 +846,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibit/", "/exhibit/"],
       "notes": "Purple art marker from Google My Maps.",
+      "landing_slider": true,
       "locales": {
         "ja": {
           "start_urls": ["https://museum.geidai.ac.jp/exhibit/"],
@@ -874,6 +880,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/special/", "/exhibition/special/"],
       "notes": "Purple art marker from Google My Maps. Special exhibition page requested as beta source.",
+      "landing_slider": true,
       "qa": {
         "listing_urls": {
           "ja": ["https://www.setagayaartmuseum.or.jp/exhibition/special/"],
@@ -1174,6 +1181,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Official Yutaka Kikutake Gallery exhibitions page. Beta source; gallery also has Kyobashi space. Listing selector reads CURRENT and UPCOMING only; PAST is ignored.",
+      "landing_slider": true,
       "qa": {
         "listing_urls": {
           "ja": ["https://www.yutakakikutakegallery.com/ja/exhibitions/"],

@@ -255,8 +255,8 @@ Set `url_year` to `"current"` for annual source URLs. Loader replaces any four-d
 
 Keep these. They are runtime fields:
 
-- crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `capabilities`
-- web/map truth: `name`, `names`, `taxonomy`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`
+- crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `landing_slider`, `capabilities`
+- web/map truth: `name`, `names`, `taxonomy`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`, `landing_slider`
 
 Metadata-only today:
 
