@@ -986,6 +986,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Current and future status pages are authoritative and link to exhibition detail pages. Details expose title, date, description, then a gallery whose anchor hrefs are the full-resolution images.",
+      "measure_image_dimensions": true,
       "beta": false,
       "selectors": {
         "listing_links": ".p-archive-event-item__container",

@@ -116,6 +116,32 @@ test('landingSlidesForEvents keeps configured city source order from events and 
   );
 });
 
+test('Osaka landing slider accepts Tezukayama landscape images on desktop', () => {
+  const slides = landingSlidesForEvents({
+    city: 'osaka',
+    events: [
+      event({
+        id: 'tezukayama-current',
+        image_urls: ['https://www.tezukayama-g.com/exhibition.jpg'],
+        image_metadata: [
+          {
+            url: 'https://www.tezukayama-g.com/exhibition.jpg',
+            width: 1280,
+            height: 905,
+          },
+        ],
+      }),
+    ],
+    sourceSlugByEventId: new Map([['tezukayama-current', 'tezukayama-gallery']]),
+  });
+
+  assert.equal(
+    resolveLandingSlides({ slides, viewportWidth: 1440, viewportHeight: 900, devicePixelRatio: 2 })
+      .length,
+    1,
+  );
+});
+
 test('landing slider uses configured Tokyo museum sources', () => {
   assert.deepEqual(landingSliderSourceSlugsByCity.tokyo, [
     'mori-art-museum',

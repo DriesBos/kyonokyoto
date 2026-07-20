@@ -17,7 +17,7 @@ export const landingSlideLimit = 6;
 
 export const landingSliderSourceSlugsByCity = {
   kyoto: ['kcua', 'artro'],
-  osaka: ['national-museum-of-art-osaka', 'abeno-harukas-art-museum'],
+  osaka: ['national-museum-of-art-osaka', 'abeno-harukas-art-museum', 'tezukayama-gallery'],
   tokyo: ['mori-art-museum', 'tokyo-photographic-art-museum'],
   'hong-kong': ['david-zwirner', 'kiang-malingue', 'gallery-exit'],
 } satisfies Record<AppCity, string[]>;

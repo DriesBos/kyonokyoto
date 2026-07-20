@@ -27,7 +27,7 @@ test('landing slider styles target JS-created elements globally', async () => {
 test('landing slider serves only dimension-qualified Netlify image transforms', async () => {
   const script = await readFile(scriptPath, 'utf8');
 
-  assert.match(script, /const minimumCoverDensity = 1\.5/);
+  assert.match(script, /const minimumCoverDensity = 0\.8/);
   assert.match(script, /const maximumCoverDensity = 2/);
   assert.match(script, /\/\.netlify\/images/);
   assert.match(script, /fit: 'cover'/);
