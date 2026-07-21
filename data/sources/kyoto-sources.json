@@ -1816,6 +1816,111 @@
       }
     },
     {
+      "slug": "arts-science-kyoto",
+      "name": "ARTS&SCIENCE Kyoto",
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design"],
+        "event_category": ["event"]
+      },
+      "language": "ja",
+      "address_text": "京都府中京区樋ノ口町459番地",
+      "directions_query": "HIN / Arts & Science, Nijodori Kyoto",
+      "lat": 35.01332012518145,
+      "lng": 135.7701159730148,
+      "base_url": "https://arts-science.com/events/",
+      "start_urls": [
+        "https://arts-science.com/wp-json/wp/v2/events?_fields=acf,link,title&orderby=menu_order&order=asc&per_page=100"
+      ],
+      "allowed_domains": ["arts-science.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/events/"],
+      "notes": "Use the official event feed, then keep only current/upcoming records whose event-detail data contains KYOTO. Parse dates only from the Kyoto event-detail row because one page can contain separate Tokyo and Kyoto schedules.",
+      "selectors": {
+        "title": ".hero__title",
+        "description": ".hero__lead",
+        "images": ".hero__image"
+      },
+      "venue_locations": [
+        {
+          "name": "A&S Kyoto",
+          "match": ["A&S Kyoto"],
+          "address_text": "京都府京都市中京区東生洲町482番地3角",
+          "directions_query": "A&S Kyoto",
+          "lat": 35.01309816170107,
+          "lng": 135.77071480123996
+        },
+        {
+          "name": "&SHOP Kyoto",
+          "match": ["&SHOP Kyoto"],
+          "address_text": "京都府京都市中京区東生洲町482-3",
+          "directions_query": "&SHOP Kyoto",
+          "lat": 35.013171009953304,
+          "lng": 135.770816790803
+        },
+        {
+          "name": "HIN / Arts & Science, Nijodori Kyoto",
+          "match": ["HIN / Arts & Science, Nijodori Kyoto"],
+          "address_text": "京都府中京区樋ノ口町459番地",
+          "directions_query": "HIN / Arts & Science, Nijodori Kyoto",
+          "lat": 35.01332012518145,
+          "lng": 135.7701159730148
+        },
+        {
+          "name": "A&S Aneyakoji Kyoto",
+          "match": ["A&S Aneyakoji Kyoto"],
+          "address_text": "京都府京都市中京区丸屋町334-1",
+          "directions_query": "A&S Aneyakoji Kyoto",
+          "lat": 35.0097656,
+          "lng": 135.7666769
+        },
+        {
+          "name": "CORNER",
+          "match": ["CORNER"],
+          "address_text": "京都府京都市中京区樋之口町465-2",
+          "directions_query": "ARTS&SCIENCE CORNER Kyoto",
+          "lat": 35.01310163205217,
+          "lng": 135.77040079936432
+        }
+      ],
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://arts-science.com/wp-json/wp/v2/events?_fields=acf,link,title&orderby=menu_order&order=asc&per_page=100"
+          ],
+          "event_page_patterns": ["/events/"]
+        },
+        "en": {
+          "start_urls": [
+            "https://arts-science.com/en/wp-json/wp/v2/events?_fields=acf,link,title&orderby=menu_order&order=asc&per_page=100"
+          ],
+          "event_page_patterns": ["/en/events/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://arts-science.com/events/"],
+          "en": ["https://arts-science.com/en/events/"]
+        },
+        "language_url_pattern": "English event pages add /en/ before events; Japanese pages omit it.",
+        "field_sources": {
+          "listing_links": "Official WordPress event feed, filtered by current/upcoming Kyoto period and KYOTO in event-detail data.",
+          "title": "Detail-page .hero__title.",
+          "date": "KYOTO event-detail row only.",
+          "description": "Detail-page .hero__lead.",
+          "images": "Detail-page .hero__image."
+        },
+        "image_rules": "Use the detail-page hero image only."
+      },
+      "beta": true
+    },
+    {
       "slug": "issey-miyake-kyoto-kura",
       "name": "ISSEY MIYAKE KYOTO | KURA",
       "taxonomy": {

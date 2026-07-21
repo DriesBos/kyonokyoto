@@ -968,7 +968,7 @@ function normalizeHumanDateText(value) {
     .replace(/令和(元|\d+)年/gu, (_, year) => `${2018 + (year === '元' ? 1 : Number(year))}年`)
     .replace(/[‐‑‒–—―−－〜～~]/g, '-')
     .replace(
-      /\s*[（(](?:(?:月|火|水|木|金|土|日)(?:曜日)?|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?[）)]/giu,
+      /\s*[（(](?:(?:月|火|水|木|金|土|日)(?:曜日)?|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?[）)]/giu,
       ' ',
     )
     .replace(
@@ -979,6 +979,7 @@ function normalizeHumanDateText(value) {
       /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?,?\s*/giu,
       '',
     )
+    .replace(/(\d{1,2})(?:st|nd|rd|th)\b/giu, '$1')
     .replace(/(\d)\s*\.\s*(?=\d)/g, '$1.')
     .replace(/\b(jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\./giu, '$1')
     .replace(/\s+to\s+/giu, ' - ')
@@ -2976,6 +2977,44 @@ function extractKcuaDetailUrls(listingHtml, listingUrl) {
 
 function extractHosomiMuseumDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
+}
+
+function extractArtsScienceKyotoDetailUrls(listingHtml) {
+  let events;
+  try {
+    events = JSON.parse(listingHtml);
+  } catch {
+    throw new Error('Could not parse ARTS&SCIENCE event API response');
+  }
+  if (!Array.isArray(events)) throw new Error('ARTS&SCIENCE event API did not return an array');
+
+  const today = toJapanDate(new Date());
+  return events
+    .filter((event) =>
+      /(?:\bKyoto\b|京都)/iu.test(
+        JSON.stringify(event?.acf?.event_details?.repeater_event_details ?? []),
+      ),
+    )
+    .filter((event) =>
+      (event?.acf?.period ?? []).some((period) => {
+        const registeredLocation =
+          period?.location && typeof period.location === 'object'
+            ? period.location.post_title
+            : null;
+        const unregisteredLocation =
+          period?.location_unregistration && typeof period.location_unregistration === 'object'
+            ? period.location_unregistration.title
+            : null;
+        const endDate = normalizeDateOnly(period?.endday);
+
+        return (
+          /(?:\bKyoto\b|京都)/iu.test(registeredLocation ?? unregisteredLocation ?? '') &&
+          (!endDate || endDate >= today)
+        );
+      }),
+    )
+    .map((event) => normalizeUrl(event?.link, 'https://arts-science.com/events/'))
+    .filter(Boolean);
 }
 
 function extractKitanoDetailUrls(listingHtml, listingUrl) {
@@ -5193,6 +5232,49 @@ function extractTwentyOneEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractArtsScienceKyotoEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const rows = [
+    ...detailHtml.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi),
+  ].map((match) => ({
+    heading: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
+    html: match[2],
+    text: stripTags(match[2]).replace(/\s+/g, ' ').trim(),
+  }));
+  const kyotoRow =
+    rows.find((row) => /^KYOTO$/iu.test(row.heading)) ??
+    rows.find((row) => /(?:\bKyoto\b|京都)/iu.test(row.text));
+
+  if (!kyotoRow) {
+    return {
+      ...event,
+      _source_truth_warnings: [...(event._source_truth_warnings ?? []), 'venue_city_mismatch'],
+    };
+  }
+
+  const dateText = kyotoRow.text;
+  const parsedDates = parseGenericDateRange(dateText);
+  const venueName =
+    stripTags(kyotoRow.html.match(/<a\b[^>]*>([\s\S]*?)<\/a>/i)?.[1] ?? '') || source.name;
+
+  return {
+    ...event,
+    venue_name: venueName,
+    address_text: venueName,
+    directions_query: `${venueName}, Kyoto`,
+    date_text: dateText,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+    }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    extraction_confidence: parsedDates.startDate ? 0.8 : event.extraction_confidence,
+  };
+}
+
 function parseScaiOpenEndedDateRange(dateText, detailUrl) {
   const inferredYear = extractYearFromUrl(detailUrl);
   const cleaned = decodeHtml(dateText)
@@ -6822,6 +6904,7 @@ const detailUrlExtractors = {
   '21-21-design-sight': extractTwentyOneDetailUrls,
   'art-gallery-kitano': extractKitanoDetailUrls,
   'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
+  'arts-science-kyoto': extractArtsScienceKyotoDetailUrls,
   'chushin-bijutsu': extractChushinDetailUrls,
   'curation-fair-kyoto': extractCurationFairDetailUrls,
   'curation-fair-tokyo': extractCurationFairDetailUrls,
@@ -6866,6 +6949,7 @@ const eventExtractors = {
   'art-gallery-kitano': extractKitanoEvent,
   artro: extractArtroEvent,
   'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
+  'arts-science-kyoto': extractArtsScienceKyotoEvent,
   'chushin-bijutsu': extractChushinEvent,
   'curation-fair-kyoto': extractCurationFairEvent,
   'curation-fair-tokyo': extractCurationFairEvent,
@@ -6933,6 +7017,9 @@ function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, sourc
 }
 
 const sourceSpecificSkipMatchers = {
+  'arts-science-kyoto'(eventData) {
+    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past' ? 'past event' : null;
+  },
   kankakari(eventData) {
     return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past' ? 'past event' : null;
   },

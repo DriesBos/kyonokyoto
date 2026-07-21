@@ -3643,6 +3643,108 @@ test('CURATION FAIR sources discover only current-year announcement news', async
   assert.equal(event.end_date, '2026-11-08');
 });
 
+test('ARTS&SCIENCE keeps current Kyoto details and reads only Kyoto schedule', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'arts-science-kyoto');
+  const kyotoUrl = 'https://arts-science.com/events/kyoto-and-tokyo/';
+  const listingJson = JSON.stringify([
+    {
+      link: kyotoUrl,
+      acf: {
+        period: [
+          {
+            location: { post_title: 'HIN / Arts & Science, Nijodori Kyoto' },
+            startday: '2099-07-10',
+            endday: '2099-07-27',
+          },
+          {
+            location: { post_title: 'HIN / Arts & Science, Aoyama' },
+            startday: '2099-07-31',
+            endday: '2099-08-11',
+          },
+        ],
+        event_details: {
+          repeater_event_details: [
+            { event_detail_heading: 'KYOTO', event_detail_text: '<p>Kyoto schedule</p>' },
+            { event_detail_heading: 'TOKYO', event_detail_text: '<p>Tokyo schedule</p>' },
+          ],
+        },
+      },
+    },
+    {
+      link: 'https://arts-science.com/events/tokyo-only/',
+      acf: {
+        period: [
+          {
+            location: { post_title: 'HIN / Arts & Science, Aoyama' },
+            startday: '2099-07-31',
+            endday: '2099-08-11',
+          },
+        ],
+        event_details: {
+          repeater_event_details: [
+            { event_detail_heading: 'TOKYO', event_detail_text: '<p>Tokyo schedule</p>' },
+          ],
+        },
+      },
+    },
+    {
+      link: 'https://arts-science.com/events/past-kyoto/',
+      acf: {
+        period: [
+          {
+            location: { post_title: 'A&S Kyoto' },
+            startday: '2020-01-01',
+            endday: '2020-01-02',
+          },
+        ],
+        event_details: {
+          repeater_event_details: [
+            { event_detail_heading: 'STORES', event_detail_text: '<p>A&S Kyoto</p>' },
+          ],
+        },
+      },
+    },
+  ]);
+
+  assert.ok(source);
+  assert.equal(source.beta, true);
+  assert.deepEqual(detailUrlExtractors[source.slug](listingJson), [kyotoUrl]);
+
+  const event = eventExtractors[source.slug](
+    `<main class="eventsDetail">
+      <h1 class="hero__title">KITAWORKS Exhibition vol.4</h1>
+      <p class="hero__lead">Useful description of the furniture exhibition and participating maker.</p>
+      <img class="hero__image" src="https://arts-science.com/wp/uploads/kitaworks.jpg">
+      <dl>
+        <dt class="event__heading">KYOTO</dt>
+        <dd class="event__detail"><p><a href="/stores/hin/">HIN / Arts &amp; Science, Nijodori Kyoto</a><br>2026年7月10日（金） — 7月27日（月） / 12:00 – 18:00</p></dd>
+        <dt class="event__heading">TOKYO</dt>
+        <dd class="event__detail"><p><a href="/stores/hin-aoyama/">HIN / Arts &amp; Science, Aoyama</a><br>2026年7月31日（金） — 8月11日（火） / 11:00 – 19:00</p></dd>
+      </dl>
+    </main>`,
+    source,
+    kyotoUrl,
+  );
+
+  assert.equal(event.title, 'KITAWORKS Exhibition vol.4');
+  assert.equal(event.venue_name, 'HIN / Arts & Science, Nijodori Kyoto');
+  assert.equal(event.start_date, '2026-07-10');
+  assert.equal(event.end_date, '2026-07-27');
+  assert.equal(event.primary_image_url, 'https://arts-science.com/wp/uploads/kitaworks.jpg');
+
+  const englishEvent = eventExtractors[source.slug](
+    `<h1 class="hero__title">KITAWORKS Exhibition vol.4</h1>
+     <p class="hero__lead">Useful English exhibition description for visitors.</p>
+     <img class="hero__image" src="https://arts-science.com/wp/uploads/kitaworks.jpg">
+     <dl><dt class="event__heading">KYOTO</dt><dd class="event__detail"><p><a>HIN / Arts &amp; Science, Nijodori Kyoto</a><br>July 10th (Friday) — July 27th (Monday) 2026 / 12:00 – 18:00</p></dd></dl>`,
+    source,
+    'https://arts-science.com/en/events/kyoto-and-tokyo/',
+  );
+  assert.equal(englishEvent.start_date, '2026-07-10');
+  assert.equal(englishEvent.end_date, '2026-07-27');
+});
+
 test('source config includes Imura Art exhibition tabs', async () => {
   const payload = JSON.parse(
     await readFile(
