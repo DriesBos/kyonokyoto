@@ -24,6 +24,10 @@ import {
   normalizeDateOnly,
   validateScheduleSegments,
 } from '../../../packages/shared/event-schedule.mjs';
+import {
+  crawlBatchExitCode,
+  normalizeCrawlTriggerType,
+} from '../../../scripts/crawl-cycle-utils.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(__dirname, '..');
@@ -40,6 +44,7 @@ const missingDateCanMeanNoCurrentEventSources = new Set(['sibasi']);
 const emptyDetailUrlsMeanNoCurrentEventSources = new Set([
   'curation-fair-kyoto',
   'curation-fair-tokyo',
+  'kyoto-art-center',
 ]);
 
 function applyEnvToProcess(env) {
@@ -2874,15 +2879,13 @@ function extractDefinitionValue(html, term) {
 }
 
 function extractKacDetailUrls(listingHtml, listingUrl) {
-  const matches = [
-    ...listingHtml.matchAll(/https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/\d+\//g),
-  ].map((match) => new URL(match[0], listingUrl).toString());
-
-  if (!matches.length) {
-    throw new Error('Could not find Kyoto Art Center event detail URLs on the listing page');
-  }
-
-  return [...new Set(matches)];
+  return [
+    ...new Set(
+      [...listingHtml.matchAll(/https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/\d+\//g)].map(
+        (match) => new URL(match[0], listingUrl).toString(),
+      ),
+    ),
+  ];
 }
 
 function extractFukudaDetailUrls(listingHtml, listingUrl) {
@@ -8044,7 +8047,7 @@ async function getSourceBySlug(env, slug) {
   return rows[0];
 }
 
-async function createCrawlRun(env, sourceId) {
+async function createCrawlRun(env, sourceId, triggerType) {
   const rows = await supabaseRequest({
     env,
     path: 'crawl_runs',
@@ -8053,7 +8056,7 @@ async function createCrawlRun(env, sourceId) {
       {
         source_id: sourceId,
         status: 'running',
-        trigger_type: 'manual',
+        trigger_type: triggerType,
         started_at: new Date().toISOString(),
       },
     ],
@@ -8682,6 +8685,7 @@ async function crawlSource({
   sourceOverrides,
   genericDetailLimit,
   renderMode,
+  triggerType,
 }) {
   let source = null;
   let crawlRun = null;
@@ -8718,7 +8722,7 @@ async function crawlSource({
         }`,
       );
     }
-    crawlRun = await createCrawlRun(env, source.id);
+    crawlRun = await createCrawlRun(env, source.id, triggerType);
     const crawlContext = {
       diagnostics,
       allowedDomains: crawlSourceConfig.allowed_domains ?? [],
@@ -9258,6 +9262,7 @@ async function main() {
   const sourceSlug = getArg('source', 'kyoto-art-center');
   const userAgent = env.CRAWLER_USER_AGENT ?? 'kyo-no-kyoto-bot/0.1';
   const genericDetailLimit = getNumberArg('generic-limit', 8);
+  const triggerType = normalizeCrawlTriggerType(getArg('trigger', 'manual'));
   const renderMode = getCrawl4AiRenderMode(env);
   const configuredSources = await loadSourcesConfig({ city });
   const sourceOverrides = Object.fromEntries(
@@ -9287,6 +9292,7 @@ async function main() {
       sourceOverrides,
       genericDetailLimit,
       renderMode,
+      triggerType,
     });
     results.push(result);
     console.log(JSON.stringify(result, null, 2));
@@ -9305,7 +9311,7 @@ async function main() {
     console.log(
       JSON.stringify(
         {
-          status: unhealthy.length ? 'partial_success' : 'success',
+          status: failed.length ? 'failed' : degraded.length ? 'partial_success' : 'success',
           city,
           sources_total: results.length,
           sources_succeeded: healthy.length,
@@ -9325,7 +9331,8 @@ async function main() {
         2,
       ),
     );
-    if (unhealthy.length) process.exitCode = 2;
+    const exitCode = crawlBatchExitCode(results);
+    if (exitCode) process.exitCode = exitCode;
   }
 }
 

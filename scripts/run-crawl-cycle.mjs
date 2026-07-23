@@ -3,7 +3,11 @@ import { resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { parseEnv } from 'node:util';
 import { normalizeCity } from '../data/sources/source-config.mjs';
-import { cycleStatus, parseGitDivergence } from './crawl-cycle-utils.mjs';
+import {
+  cycleStatus,
+  normalizeCrawlTriggerType,
+  parseGitDivergence,
+} from './crawl-cycle-utils.mjs';
 
 const projectRoot = process.cwd();
 const crawlerEnvPath = resolve(projectRoot, 'apps/crawler/.env');
@@ -34,13 +38,13 @@ async function runStep(label, cmd, args, options = {}) {
 
     child.on('exit', (code) => {
       if (code === 0) {
-        resolvePromise(true);
+        resolvePromise(0);
         return;
       }
 
       if (options.allowFailure) {
         console.warn(`${label} reported exit code ${code ?? 'unknown'}; continuing.`);
-        resolvePromise(false);
+        resolvePromise(code ?? 1);
         return;
       }
 
@@ -119,6 +123,7 @@ const skipCrawl = hasFlag('--skip-crawl');
 const skipUpdate = hasFlag('--skip-update');
 const strictTranslations = hasFlag('--strict-translations');
 const genericLimit = getArg('generic-limit', '6');
+const triggerType = normalizeCrawlTriggerType(getArg('trigger', 'manual'));
 const city = normalizeCity(getArg('city', 'kyoto'));
 if (!city) {
   throw new Error(`Unsupported source city "${getArg('city')}"`);
@@ -137,10 +142,10 @@ try {
     await runStep('Sync sources', 'node', ['scripts/sync-sources.mjs', `--city=${city}`]);
   }
 
-  let crawlPassed = true;
+  let crawlExitCode = 0;
   if (!skipCrawl) {
     currentStep = 'crawl_sources';
-    crawlPassed = await runStep(
+    crawlExitCode = await runStep(
       'Crawl all sources',
       'node',
       [
@@ -148,22 +153,25 @@ try {
         '--source=all',
         `--city=${city}`,
         `--generic-limit=${genericLimit}`,
+        `--trigger=${triggerType}`,
       ],
       { allowFailure: true },
     );
   }
 
   currentStep = 'check_translations';
-  const translationsPassed = await runStep(
-    'Check translations',
-    'npm',
-    ['--prefix', 'apps/crawler', 'run', 'translations:check'],
-    { allowFailure: true },
-  );
+  const translationsPassed =
+    (await runStep(
+      'Check translations',
+      'npm',
+      ['--prefix', 'apps/crawler', 'run', 'translations:check'],
+      { allowFailure: true },
+    )) === 0;
 
-  const status = cycleStatus({ crawlPassed, translationsPassed });
+  const status = cycleStatus({ crawlExitCode, translationsPassed });
   const reasons = [
-    ...(!crawlPassed ? ['source crawl failures'] : []),
+    ...(crawlExitCode === 2 ? ['source crawl review outcomes'] : []),
+    ...(crawlExitCode !== 0 && crawlExitCode !== 2 ? ['source crawl failures'] : []),
     ...(!translationsPassed ? ['missing translations'] : []),
   ];
   const payload = {
@@ -178,7 +186,7 @@ try {
   await postStatus(status === 'success' ? heartbeatUrl : alertWebhookUrl, payload);
   console.log(`\n${city} crawl cycle ${status}.`);
 
-  if (!crawlPassed || (strictTranslations && !translationsPassed)) {
+  if (status === 'failed' || (strictTranslations && !translationsPassed)) {
     process.exitCode = 2;
   }
 } catch (error) {

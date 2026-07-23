@@ -141,9 +141,9 @@ test('approved source allowlist is public without changing nearby beta sources',
     'tokyo-metropolitan-art-museum',
     'take-ninagawa',
     'perrotin-tokyo',
-    'hong-kong-art-school-gallery',
     'david-zwirner',
     'white-cube-hong-kong',
+    'whitestone-gallery-hong-kong',
   ];
   const unchangedBetaSlugs = [
     'i-gallery-osaka',
@@ -153,7 +153,7 @@ test('approved source allowlist is public without changing nearby beta sources',
     'taro-okamoto-memorial-museum',
     'gyre-gallery',
     'gagosian-hong-kong',
-    'whitestone-gallery-hong-kong',
+    'hong-kong-art-school-gallery',
   ];
 
   for (const slug of approvedSlugs) {
@@ -2499,6 +2499,17 @@ test('Taka Ishii detail extraction keeps only Kyoto location events', () => {
   );
 });
 
+test('Taka Ishii uses the English Kyoto location listing', async () => {
+  const source = (await loadSourcesConfig({ city: 'kyoto' })).find(
+    ({ slug }) => slug === 'taka-ishii-gallery',
+  );
+
+  assert.equal(source.language, 'en');
+  assert.deepEqual(withSourceLocaleConfig(source, source.language).start_urls, [
+    'https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/',
+  ]);
+});
+
 test('Taka Ishii event extraction uses heading02 detail title', () => {
   const detailHtml = `
     <h2 class="site-heading">EXHIBITIONS</h2>
@@ -4496,6 +4507,23 @@ test('source locale config applies localized source names', async () => {
 
   assert.equal(event.institution_name, '京都芸術センター');
   assert.equal(event.venue_name, '京都芸術センター');
+});
+
+test('Kyoto Art Center empty listing means no current events', () => {
+  const detailUrls = detailUrlExtractors['kyoto-art-center'](
+    '<p>該当するイベントはありません</p>',
+    'https://www.kac.or.jp/events/',
+  );
+
+  assert.deepEqual(detailUrls, []);
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls,
+      diagnostics: createCrawlDiagnostics(),
+      sourceSlug: 'kyoto-art-center',
+    }),
+    'source_no_current_events',
+  );
 });
 
 test('source-specific skip rule drops MOMAK calendar pages', () => {

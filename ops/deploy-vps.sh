@@ -61,4 +61,5 @@ sudo -n systemctl enable --now \
   kyo-no-kyoto-crawl@hong-kong.timer
 sudo -n install -m 0755 "$repo/ops/deploy-vps.sh" /usr/local/bin/kyo-vps-deploy
 
-echo "VPS deployed $(git rev-parse --short HEAD)"
+echo "VPS deployed $(git rev-parse HEAD)"
+sudo -n systemctl list-timers --all 'kyo-no-kyoto-crawl@*.timer' --no-pager

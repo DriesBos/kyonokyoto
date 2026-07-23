@@ -2,7 +2,13 @@
 
 Update this file whenever source JSON changes or test crawls run.
 
+## Operations
+
+2026-07-23: Restored the VPS deploy gate by fixing the Netlify locals type declaration, source formatting, and stale Hong Kong visibility expectations. Scheduled services and fallback cron now record `trigger_type: scheduled`; manual commands remain `manual`. Review-only partial source outcomes stay degraded and alert without failing systemd, while actual `source_failed` outcomes remain non-zero. Deploy output now includes full SHA and timer state. Formatting, 190 crawler JavaScript tests, 3 crawler Python tests, 98 web tests, all source configs, source-sync safety, shell syntax, and the Astro production build pass.
+
 ## Hong Kong Sources
+
+2026-07-23: Aligned the public-source contract with commit `7ba1f6b`: `hong-kong-art-school-gallery` remains beta and `whitestone-gallery-hong-kong` remains public. Removed one whitespace-only formatting defect in the Hong Kong source JSON. Full repository validation passes; no crawl or database write.
 
 2026-07-20: Landing eligibility moved from a duplicated web city allowlist into source-owned `landing_slider: true` flags for the existing Kyoto, Osaka, Tokyo, and Hong Kong selections. Landing candidates are now viewport-filtered before the one-per-source six-slide cap; source eligibility stops growing at 1920×1080 and image transforms stop at 2560×1440 so 4K/5K monitors retain the slider. Local Tokyo SSR includes WHAT Museum and MOMAT candidates that the former pre-viewport cap missed. All 98 web tests, 3 crawler Python tests, focused landing crawler coverage, and the production build pass. Full crawler JavaScript run passes 181/182; unrelated existing `hong-kong-art-school-gallery` beta/test drift remains. Tokyo's eight selected sources still need targeted production recrawls to backfill deterministic image dimensions; no crawl, deploy, or database write performed yet.
 
@@ -79,6 +85,8 @@ Update this file whenever source JSON changes or test crawls run.
 2026-07-12: Complete sequential VPS crawl on `main` commit `900398c` synced and attempted all 119 sources: Kyoto 49/50, Osaka 29/29, Tokyo 40/40. Outcomes were 100 `source_ok`, 11 `source_no_current_events`, 4 `source_needs_review`, 3 `source_empty`, and 1 `source_failed`. `taka-ishii-gallery` failed because its listing returned no Kyoto detail URLs. Empty sources were `imura-art`, `yod-gallery`, and `congres-square-grand-green-osaka`. Review sources were `hill-top-gallery`, `atelier-muji-ginza`, `ota-fine-arts`, and `play-museum`. Translation audit checked 320 events and found 9 existing gaps: 7 English rows on `purple-purple`, 1 English row on `sokyo-kyoto`, and 1 Japanese row on `kuramonzen`. Crawls ran one source at a time under one VPS lock with five-minute city cooldowns; peak observed swap stayed below 500 MiB. One final Netlify rebuild returned 200 and the crawl lock was released. Enabled city timers are queued to reactivate before the next 36-hour cycle instead of immediately repeating this crawl.
 
 ## Kyoto Sources
+
+2026-07-23: Live no-write static crawler QA found Kyoto Art Center's healthy listing returns zero details and Taka Ishii Gallery's English Kyoto listing returns 12 location-filtered archive details. Kyoto Art Center empty discovery now records `source_no_current_events` instead of throwing. Taka Ishii now uses the English Kyoto location listing because the Japanese page currently exposes only other locations. Focused and full repository validation pass; no database write.
 
 2026-07-23: Added Leica Gallery Kyoto, Sokyo Kyoto, Gallery Yamahon, hakari contemporary, and ZENBI to the source-owned landing slider allowlist. Their next crawls automatically measure selected event images for viewport eligibility. Two focused crawler tests, all 51 Kyoto source configs, all 98 web tests, and the Astro production build pass. No crawl or database write; targeted production recrawls remain needed to backfill deterministic image dimensions.
 
