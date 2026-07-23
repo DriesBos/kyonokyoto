@@ -5037,6 +5037,19 @@ test('requested Tokyo sources are landing slider sources', async () => {
   }
 });
 
+test('requested Osaka sources are landing slider sources', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+
+  for (const slug of [
+    'tezukayama-gallery',
+    'yoshimi-arts',
+    'hyogo-prefectural-museum-of-art',
+    'abeno-harukas-art-museum',
+  ]) {
+    assert.equal(sources.find((source) => source.slug === slug)?.landing_slider, true, slug);
+  }
+});
+
 test('final media safety filters custom UI and LQIP candidates without reordering', async () => {
   const normalized = await normalizeEventImagesForSource(
     {

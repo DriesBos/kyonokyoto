@@ -139,6 +139,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Osaka Sources
 
+2026-07-23: Added Yoshimi Arts and Hyogo Prefectural Museum of Art to the source-owned landing slider allowlist, completing requested Osaka set with existing Tezukayama Gallery and ABENO HARUKAS opt-ins. Two focused crawler tests, all 31 Osaka source configs, 19 landing web tests, and the Astro production build pass. No crawl or database write.
+
 2026-07-20: Tezukayama Gallery is approved as an Osaka landing source, now keeps image-dimension measurement enabled, and its image host is allowed through Netlify Image CDN. Current production rows already contain measured 1280px-wide gallery images; no crawl run or database write.
 
 2026-07-20: Added ART AND SPACE GALLERY and ICHION CONTEMPORARY, and retuned existing i GALLERY OSAKA. Live no-write QA used official static HTML. ART AND SPACE resolves newest-first archive cards and its current `FIX` detail to title, `2026-06-26`–`2026-07-24`, opening copy, and hero image. i GALLERY now discovers the current homepage-slider detail plus four 2026 archive details while excluding year and utility routes; current `Remnants` resolves to `2026-07-04`–`2026-08-03`, and same-month abbreviated old ranges also parse. ICHION resolves seven concrete listing links; listing-card title/date metadata supplies the date omitted by detail body markup, while detail pages supply copy and artwork. Current `Landscape 水の記憶 交差する視線` resolves to `2026-06-29`–`2026-07-31`. All three remain beta pending targeted crawls and visual approval; no crawl or database write.

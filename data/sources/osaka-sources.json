@@ -206,6 +206,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition", "/exhibition"],
       "notes": "Purple art marker from Google My Maps. Official exhibition page includes Osaka and Tokyo sections; crawler should prefer Osaka venue text. Detail pages place the event date immediately after the featured image and include parenthesized weekday abbreviations.",
+      "landing_slider": true,
       "qa": {
         "field_sources": {
           "date": "Event information block immediately after the featured image."
@@ -417,6 +418,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Official Japanese annual schedule is authoritative. Treat every `.exhibition-item` as an event, infer omitted years from the schedule heading, and keep only ongoing/upcoming date ranges. Some upcoming cards have no detail link.",
+      "landing_slider": true,
       "beta": false,
       "locales": {
         "ja": {
