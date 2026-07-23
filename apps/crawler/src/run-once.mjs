@@ -472,6 +472,24 @@ function hasExplicitVenueCityMismatch(eventData, source) {
     .toLowerCase();
   if (!explicitVenueCityPatterns.has(sourceCity)) return false;
 
+  const configuredLocationText = [
+    source?.address_text,
+    source?.directions_query,
+    ...(source?.venue_locations ?? []).flatMap((location) => [
+      location?.name,
+      location?.address_text,
+      location?.directions_query,
+    ]),
+  ]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .join('\n');
+  const allowedCities = new Set([
+    sourceCity,
+    ...[...explicitVenueCityPatterns]
+      .filter(([, pattern]) => pattern.test(configuredLocationText))
+      .map(([city]) => city),
+  ]);
+
   const scrapedLocationText = [
     eventData?.venue_name,
     eventData?.address_text,
@@ -485,7 +503,7 @@ function hasExplicitVenueCityMismatch(eventData, source) {
       .map(([city]) => city),
   );
 
-  return detectedCities.size > 0 && !detectedCities.has(sourceCity);
+  return detectedCities.size > 0 && ![...detectedCities].some((city) => allowedCities.has(city));
 }
 
 function getSourceTruthSkipReason(eventData) {
@@ -3057,7 +3075,15 @@ function extractSokyoDetailUrls(listingHtml, listingUrl) {
           ...section.matchAll(/<a\b[^>]*href=(['"])([^'"]*\/exhibitions\/[^'"]+\/overview\/)\1/gi),
         ])
         .map((match) => normalizeUrl(match[2], listingUrl))
-        .filter(Boolean),
+        .filter(Boolean)
+        .map((url) => {
+          const parsed = new URL(url);
+          parsed.pathname = parsed.pathname.replace(
+            /(\/exhibitions\/\d+)(?:-[^/]+)?\/overview\/$/i,
+            '$1/overview/',
+          );
+          return parsed.toString();
+        }),
     ),
   ];
 }
@@ -3582,6 +3608,50 @@ function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     source_url: detailUrl,
+  };
+}
+
+function extractSokyoEvent(detailHtml, source, detailUrl) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const sourceDateText =
+    stripTags(
+      detailHtml.match(
+        /<span\b[^>]*class=(['"])[^'"]*\bsubtitle_date\b[^'"]*\1[^>]*>([\s\S]*?)<\/span>/i,
+      )?.[2] ?? '',
+    ) ||
+    selectorTextValues(detailHtml, selectorsFor(source, 'date'))[0] ||
+    '';
+  const compactEnglishRange = sourceDateText.match(
+    /^(\d{1,2})\s*-\s*(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})$/,
+  );
+  const parsedEnglishRange = compactEnglishRange
+    ? parseGenericDateRange(
+        `${compactEnglishRange[3]} ${compactEnglishRange[1]} - ${compactEnglishRange[3]} ${compactEnglishRange[2]}, ${compactEnglishRange[4]}`,
+      )
+    : null;
+  const artistDescription = [...detailHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+    .find((text) => /^(?:出展作家|Artists?)\s*[：:]/iu.test(text));
+  const primaryImageUrl = normalizeUrl(extractMeta(detailHtml, 'og:image'), detailUrl);
+
+  return {
+    ...event,
+    description: artistDescription ?? event.description,
+    primary_image_url: primaryImageUrl ?? event.primary_image_url,
+    image_urls: primaryImageUrl ? [primaryImageUrl] : event.image_urls,
+    ...(parsedEnglishRange?.startDate
+      ? {
+          date_text: sourceDateText,
+          start_date: parsedEnglishRange.startDate,
+          end_date: parsedEnglishRange.endDate,
+          ...buildScheduleFields({
+            startDate: parsedEnglishRange.startDate,
+            endDate: parsedEnglishRange.endDate,
+          }),
+          calendar_starts_at: parsedEnglishRange.calendarStartsAt,
+          calendar_ends_at: parsedEnglishRange.calendarEndsAt,
+        }
+      : {}),
   };
 }
 
@@ -6999,6 +7069,7 @@ const eventExtractors = {
   sibasi: extractSibasiEvent,
   'sin-sin-fine-art': extractSinSinEvent,
   'snow-contemporary': extractSnowContemporaryEvent,
+  'sokyo-kyoto': extractSokyoEvent,
   'standing-pine-tokyo': extractStandingPineEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
   'tezukayama-gallery': extractTezukayamaEvent,

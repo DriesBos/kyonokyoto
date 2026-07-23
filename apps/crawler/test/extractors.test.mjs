@@ -941,6 +941,18 @@ test('source truth flags explicit scraped venue city contradictions before overw
   );
   assert.equal(getSourceTruthSkipReason(hongKongMismatch), 'venue_city_mismatch');
   assert.equal(getSourceTruthSkipReason(hongKongMatch), null);
+
+  const configuredRegionalMatch = assignEventCoordinates(
+    { venue_name: 'Hyogo Prefectural Museum of Art', address_text: 'Kobe, Japan' },
+    {
+      city: 'osaka',
+      name: 'Hyogo Prefectural Museum of Art',
+      taxonomy: testTaxonomy(['museum']),
+      address_text: 'Kobe, Japan',
+    },
+  );
+  assert.equal(getSourceTruthSkipReason(configuredRegionalMatch), null);
+
   const diagnostics = createCrawlDiagnostics();
   recordSkippedEvent(diagnostics, getSourceTruthSkipReason(mismatched));
   assert.equal(diagnostics.skipped_other_count, 1);
@@ -5490,7 +5502,7 @@ test('Issey Kura discovery keeps only ON VIEW cards', () => {
 
 test('Sokyo discovery excludes Past cards', () => {
   const html = `
-    <div id="exhibitions-grid-current"><a href="/exhibitions/1/overview/">Current</a></div>
+    <div id="exhibitions-grid-current"><a href="/exhibitions/1-current-title/overview/">Current</a></div>
     <div id="exhibitions-grid-upcoming"><a href="/exhibitions/2/overview/">Upcoming</a></div>
     <div id="exhibitions-grid-past"><a href="/exhibitions/3/overview/">Past</a></div>`;
 
@@ -5501,6 +5513,53 @@ test('Sokyo discovery excludes Past cards', () => {
       'https://sokyogallery.com/exhibitions/2/overview/',
     ],
   );
+});
+
+test('Sokyo extraction keeps authoritative artist copy as description', () => {
+  const source = {
+    slug: 'sokyo-kyoto',
+    name: 'Sokyo Kyoto',
+    taxonomy: testTaxonomy(['gallery']),
+    selectors: {
+      title: '#hero_heading .title',
+      date: '#hero_heading .subtitle_date',
+      description: '.content_module .description',
+      images: '.restricted-image-container img',
+    },
+  };
+  const html = `
+    <meta property="og:image" content="https://static-assets.artlogic.net/w_1200,h_630,c_fill/white.jpg">
+    <div id="hero_heading">
+      <div class="title">白</div>
+      <span class="subtitle_date">2026年7月4日 - 7月25日</span>
+    </div>
+    <div class="content_module"><div class="description">
+      <p>会期：2026年7月4日（土）〜 7月25日（土）</p>
+      <p>出展作家：大谷哲也、岡田理、黒田泰蔵</p>
+    </div></div>
+    <div class="restricted-image-container"><img src="/uploads/white.jpg"></div>`;
+  const event = eventExtractors['sokyo-kyoto'](html, source, 'https://sokyo.test/overview/');
+  const resolved = resolveEventDescription(withSourceSpecificDescriptionOrigin(event), source, {
+    html,
+  });
+
+  assert.equal(event.description, '出展作家：大谷哲也、岡田理、黒田泰蔵');
+  assert.equal(
+    event.primary_image_url,
+    'https://static-assets.artlogic.net/w_1200,h_630,c_fill/white.jpg',
+  );
+  assert.equal(hasValidEventDescription(resolved), true);
+
+  const englishEvent = eventExtractors['sokyo-kyoto'](
+    html
+      .replace('白</div>', 'The White</div>')
+      .replace('2026年7月4日 - 7月25日', '4 - 25 July 2026')
+      .replace('出展作家：大谷哲也、岡田理、黒田泰蔵', 'Artists: Otani, Okada, Kuroda'),
+    source,
+    'https://sokyo.test/en/overview/',
+  );
+  assert.equal(englishEvent.start_date, '2026-07-04');
+  assert.equal(englishEvent.end_date, '2026-07-25');
 });
 
 test('source-specific crawler registries only reference configured source slugs', async () => {
