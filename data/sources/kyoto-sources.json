@@ -342,6 +342,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Use the exhibitions page cards. Current and upcoming sections may be empty; when that happens, the crawler should find detail pages and skip past events. Extract exhibition prose separately from event information and omit the first two poster images from event media.",
+      "landing_slider": true,
       "qa": {
         "listing_urls": {
           "ja": ["https://hakari.art/exhibitions/"]
@@ -393,6 +394,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/"],
       "notes": "Use the dedicated Kyoto exhibition page. The page starts with Japanese content and repeats the current exhibition in English lower down; prefer the English heading and description.",
+      "landing_slider": true,
       "locales": {
         "ja": {
           "start_urls": ["https://gallery-yamahon.com/?page_id=1396"],
@@ -652,6 +654,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Exhibitions are listed on the dedicated exhibition index. Prefer current and upcoming exhibition cards and ignore linked news posts surfaced inside exhibition pages.",
+      "landing_slider": true,
       "locales": {
         "ja": {
           "start_urls": ["https://zenbi.kagizen.com/exhibition/"],
@@ -1044,6 +1047,7 @@
         "/ja-JP/event/leica-gallery-kyoto/"
       ],
       "notes": "The filtered Leica events page includes galleries across Japan. Follow only Leica Gallery Kyoto event links.",
+      "landing_slider": true,
       "selectors": {
         "listing_links": "a[href*=\"/en-US/event/leica-gallery-kyoto/\"]",
         "title": ".headline.h1",
@@ -1316,6 +1320,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
       "notes": "Use Current and Upcoming exhibition cards only. Japanese URLs remove the /en/ prefix; Past cards are excluded from discovery.",
+      "landing_slider": true,
       "selectors": {
         "listing_links": [
           "#exhibitions-grid-current a[href*=\"/exhibitions/\"][href$=\"/overview/\"]",

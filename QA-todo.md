@@ -80,6 +80,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Kyoto Sources
 
+2026-07-23: Added Leica Gallery Kyoto, Sokyo Kyoto, Gallery Yamahon, hakari contemporary, and ZENBI to the source-owned landing slider allowlist. Their next crawls automatically measure selected event images for viewport eligibility. Two focused crawler tests, all 51 Kyoto source configs, all 98 web tests, and the Astro production build pass. No crawl or database write; targeted production recrawls remain needed to backfill deterministic image dimensions.
+
 2026-07-21: Added beta `arts-science-kyoto` from the official ARTS&SCIENCE events feed. Discovery keeps only current/upcoming records whose event-detail data contains `KYOTO`; detail extraction reads date and venue from the Kyoto row so mixed Tokyo/Kyoto pages cannot publish Tokyo dates. Official hero title, lead, image, native JA/EN pages, and five Kyoto store locations are configured. Live no-write JA/EN replay found current `KITAWORKS Exhibition vol.4` at HIN Nijodori Kyoto through July 27. Focused coverage and 3 crawler Python tests pass; full crawler JavaScript run passes 182/183 with only unrelated existing `hong-kong-art-school-gallery` beta/test drift. No crawl or database write.
 
 2026-07-19: Gallery Unfold now measures selected image candidates before persistence. Live `Low Polygon Utopia` media inspection found the 1200x900 exhibition visual plus a 40x40 artist external-link icon at `/img/link.png`; the existing 540px media guard rejects that icon once dimensions are known. Focused Gallery Unfold and city-config checks pass. No crawl run; targeted production recrawl/backfill remains pending.

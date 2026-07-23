@@ -5006,6 +5006,20 @@ test('landing slider sources measure final image dimensions without a second opt
   assert.deepEqual(normalized.image_metadata, [{ url: imageUrl, width: 2000, height: 1500 }]);
 });
 
+test('requested Kyoto sources are landing slider sources', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+
+  for (const slug of [
+    'leica-gallery-kyoto',
+    'sokyo-kyoto',
+    'gallery-yamahon',
+    'hakari-contemporary',
+    'zenbi',
+  ]) {
+    assert.equal(sources.find((source) => source.slug === slug)?.landing_slider, true, slug);
+  }
+});
+
 test('final media safety filters custom UI and LQIP candidates without reordering', async () => {
   const normalized = await normalizeEventImagesForSource(
     {
