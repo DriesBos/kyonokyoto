@@ -4,7 +4,9 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Operations
 
-2026-07-23: Restored the VPS deploy gate by fixing the Netlify locals type declaration, source formatting, and stale Hong Kong visibility expectations. Scheduled services and fallback cron now record `trigger_type: scheduled`; manual commands remain `manual`. Review-only partial source outcomes stay degraded and alert without failing systemd, while actual `source_failed` outcomes remain non-zero. Deploy output now includes full SHA and timer state. Formatting, 190 crawler JavaScript tests, 3 crawler Python tests, 98 web tests, all source configs, source-sync safety, shell syntax, and the Astro production build pass.
+2026-07-23: Restored the VPS deploy gate by fixing the Netlify locals type declaration, source formatting, and stale Hong Kong visibility expectations. Scheduled services and fallback cron now record `trigger_type: scheduled`; manual commands remain `manual`. Review-only partial source outcomes stay degraded and alert without failing systemd, while actual `source_failed` outcomes remain non-zero. Deploy script now includes full SHA and timer-state output. Formatting, 190 crawler JavaScript tests, 3 crawler Python tests, 98 web tests, all source configs, source-sync safety, shell syntax, and the Astro production build pass.
+
+2026-07-23: GitHub deploy runs `29978018212` and `29978077033` both passed on `df8e148`; second run confirmed an up-to-date VPS checkout. Forced SSH deploy output still showed only the short SHA, so remote full-SHA and timer-table observability remains unverified. Targeted production retries used the static crawler path without a renderer. Kyoto Art Center run `04f8a8f2-4db4-4c65-b303-ddb2b62735eb` completed `source_no_current_events` and archived 3 stale rows. Taka Ishii Gallery run `a8a00274-cbe3-4e10-9fa3-c7cb03e8b258` completed review-only `partial_success`: 12 Kyoto details found, 9 old events skipped, 3 missing-image events skipped, 0 events archived, and no hard source failure.
 
 ## Hong Kong Sources
 
