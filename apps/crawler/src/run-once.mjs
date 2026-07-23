@@ -7029,6 +7029,9 @@ const sourceSpecificSkipMatchers = {
   'koen-kyoto'(eventData) {
     return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past' ? 'past event' : null;
   },
+  'taka-ishii-gallery'(eventData) {
+    return classifyEventTiming(eventData, toJapanDate(new Date())) === 'past' ? 'past event' : null;
+  },
   'kyoto-city-kyocera-museum-of-art'(eventData) {
     return /(\bCollection Room\b|コレクションルーム)/iu.test(eventData?.title ?? '')
       ? 'title contains Collection Room'

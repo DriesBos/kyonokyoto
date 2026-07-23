@@ -2534,6 +2534,23 @@ test('Taka Ishii event extraction uses heading02 detail title', () => {
   assert.equal(event.title, 'Martin Margiela');
 });
 
+test('Taka Ishii skips past Kyoto exhibitions before media QA', () => {
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: 'taka-ishii-gallery' },
+      { start_date: '2026-06-06', end_date: '2026-07-04' },
+    ),
+    'past event',
+  );
+  assert.equal(
+    getSourceSpecificSkipReason(
+      { slug: 'taka-ishii-gallery' },
+      { start_date: '2099-06-06', end_date: '2099-07-04' },
+    ),
+    null,
+  );
+});
+
 test('locale URL extraction finds alternate links in header and metadata', () => {
   const html = `
     <html>

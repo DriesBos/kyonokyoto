@@ -88,6 +88,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Kyoto Sources
 
+2026-07-23: Taka Ishii Gallery live QA confirmed the English exhibition index links directly to the `Kyoto (Yada-cho)` filter and that the filtered listing also contains past exhibitions. Existing source scope already uses that Kyoto-only URL. Added a source-specific timing gate so ended Kyoto exhibitions are skipped before media QA; an archive entry with no image can no longer turn a healthy `source_no_current_events` crawl into review-only status. No production crawl or database write.
+
 2026-07-23: Live no-write static crawler QA found Kyoto Art Center's healthy listing returns zero details and Taka Ishii Gallery's English Kyoto listing returns 12 location-filtered archive details. Kyoto Art Center empty discovery now records `source_no_current_events` instead of throwing. Taka Ishii now uses the English Kyoto location listing because the Japanese page currently exposes only other locations. Focused and full repository validation pass; no database write.
 
 2026-07-23: Added Leica Gallery Kyoto, Sokyo Kyoto, Gallery Yamahon, hakari contemporary, and ZENBI to the source-owned landing slider allowlist. Their next crawls automatically measure selected event images for viewport eligibility. Two focused crawler tests, all 51 Kyoto source configs, all 98 web tests, and the Astro production build pass. No crawl or database write; targeted production recrawls remain needed to backfill deterministic image dimensions.
