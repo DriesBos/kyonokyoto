@@ -590,6 +590,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
       "notes": "Purple art marker from Google My Maps. Homepage exhibition dropdown links current/upcoming detail pages by location; source-specific extractor reads the SCAI THE BATHHOUSE submenu.",
+      "landing_slider": true,
       "qa": {
         "listing_urls": {
           "ja": ["https://www.scaithebathhouse.com/ja/"],

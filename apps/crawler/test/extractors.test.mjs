@@ -5020,6 +5020,23 @@ test('requested Kyoto sources are landing slider sources', async () => {
   }
 });
 
+test('requested Tokyo sources are landing slider sources', async () => {
+  const sources = await loadSourcesConfig({ city: 'tokyo' });
+
+  for (const slug of [
+    'yayoi-kusama-museum',
+    'sumida-hokusai-museum',
+    'university-art-museum-tokyo-geidai',
+    'what-museum',
+    'mori-art-museum',
+    'scai-the-bathhouse',
+    'yutaka-kikutake-gallery',
+    'setagaya-art-museum',
+  ]) {
+    assert.equal(sources.find((source) => source.slug === slug)?.landing_slider, true, slug);
+  }
+});
+
 test('final media safety filters custom UI and LQIP candidates without reordering', async () => {
   const normalized = await normalizeEventImagesForSource(
     {

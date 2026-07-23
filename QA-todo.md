@@ -239,6 +239,8 @@ Review manually, then remove `beta` when approved:
 
 ## Tokyo Sources
 
+2026-07-23: Added SCAI The Bathhouse to the source-owned landing slider allowlist, completing requested Tokyo set with existing Yayoi Kusama Museum, Sumida Hokusai Museum, Tokyo University of the Arts, WHAT MUSEUM, Mori Art Museum, Yutaka Kikutake Gallery, and Setagaya Art Museum opt-ins. Two focused crawler tests, all 40 Tokyo source configs, 19 landing web tests, and the Astro production build pass. No crawl or database write.
+
 2026-07-13: Tokyo Metropolitan Art Museum now extracts only `.exhibition-poster` and skips its duplicate Open Graph poster. Web cards cap existing stored rows to one image immediately. Focused crawler and web tests added; no crawl or database write run.
 
 2026-07-13: Explicit approval promoted `sumida-hokusai-museum`, `yayoi-kusama-museum`, `what-museum`, `university-art-museum-tokyo-geidai`, `yamatane-museum-of-art`, `national-museum-of-modern-art-tokyo`, `tokyo-node`, `tokyo-metropolitan-art-museum`, `take-ninagawa`, and `perrotin-tokyo` to public (`beta: false`). Focused config coverage locks this exact allowlist and guards nearby beta sources. No crawl or database write run.
