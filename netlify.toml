@@ -12,8 +12,13 @@
 
 [images]
   remote_images = [
+    "https://hakari\\.art/.*",
+    "https://gallery-yamahon\\.com/.*",
+    "https://zenbi\\.kagizen\\.com/.*",
     "https://gallery\\.kcua\\.ac\\.jp/.*",
+    "https://leica-camera\\.com/.*",
     "https://artro\\.jp/.*",
+    "https://sokyogallery\\.com/.*",
     "https://www\\.aham\\.jp/.*",
     "https://www\\.nmao\\.go\\.jp/.*",
     "https://www\\.tezukayama-g\\.com/.*",

@@ -1,8 +1,28 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import test from 'node:test';
 
 import { landingSlidesForEvents } from '../src/lib/landingSlides.ts';
 import { coverDensityFor, resolveLandingSlides } from '../src/scripts/landingSlider.ts';
+
+const repositoryRoot = resolve(import.meta.dirname, '../../..');
+
+test('Kyoto landing source domains are allowed by Netlify Image CDN', () => {
+  const sourceConfig = JSON.parse(
+    readFileSync(resolve(repositoryRoot, 'data/sources/kyoto-sources.json'), 'utf8'),
+  );
+  const netlifyConfig = readFileSync(resolve(repositoryRoot, 'netlify.toml'), 'utf8');
+
+  for (const source of sourceConfig.sources.filter((candidate) => candidate.landing_slider)) {
+    const hostname = new URL(source.base_url).hostname;
+    const remoteImagePattern = `https://${hostname.replaceAll('.', '\\\\.')}/.*`;
+    assert.ok(
+      netlifyConfig.includes(remoteImagePattern),
+      `${source.slug} landing images require ${remoteImagePattern} in netlify.toml`,
+    );
+  }
+});
 
 const event = (overrides) => {
   const imageUrls = overrides.image_urls ?? [];
