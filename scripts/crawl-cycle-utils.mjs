@@ -40,7 +40,7 @@ export async function pruneRawPages(env, fetchImpl = fetch) {
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
     },
-    body: '{}',
+    body: JSON.stringify({ p_older_than: '7 days' }),
     signal: AbortSignal.timeout(30000),
   });
 

@@ -54,7 +54,7 @@ test('raw page retention calls its default RPC and rejects failures', async () =
         apikey: 'test-key',
         Authorization: 'Bearer test-key',
       },
-      body: '{}',
+      body: JSON.stringify({ p_older_than: '7 days' }),
       signal: requests[0].options.signal,
     },
   });
