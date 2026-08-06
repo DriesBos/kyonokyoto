@@ -15,6 +15,9 @@ dist/
 **/dist/
 .astro/
 **/.astro/
+.next/
+**/.next/
+next-env.d.ts
 .npm/
 .pnpm-store/
 .yarn/

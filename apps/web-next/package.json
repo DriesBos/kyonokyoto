@@ -1,0 +1,26 @@
+{
+  "name": "kyo-no-kyoto-web-next",
+  "private": true,
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "sass": "^1.101.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "^5"
+  }
+}
