@@ -7,6 +7,7 @@ import {
   cycleStatus,
   normalizeCrawlTriggerType,
   parseGitDivergence,
+  pruneRawPages,
 } from './crawl-cycle-utils.mjs';
 
 const projectRoot = process.cwd();
@@ -157,6 +158,9 @@ try {
       ],
       { allowFailure: true },
     );
+
+    currentStep = 'prune_raw_pages';
+    console.log(`Pruned ${await pruneRawPages(env)} raw pages.`);
   }
 
   currentStep = 'check_translations';

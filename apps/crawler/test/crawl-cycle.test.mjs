@@ -6,6 +6,7 @@ import {
   cycleStatus,
   normalizeCrawlTriggerType,
   parseGitDivergence,
+  pruneRawPages,
 } from '../../../scripts/crawl-cycle-utils.mjs';
 
 test('crawl cycle parses Git ahead and behind counts', () => {
@@ -31,4 +32,31 @@ test('crawl cycle keeps degraded reviews separate from hard failures', () => {
   assert.equal(cycleStatus({ crawlExitCode: 2, translationsPassed: true }), 'degraded');
   assert.equal(cycleStatus({ crawlExitCode: 1, translationsPassed: true }), 'failed');
   assert.equal(cycleStatus({ crawlExitCode: 0, translationsPassed: false }), 'degraded');
+});
+
+test('raw page retention calls its default RPC and rejects failures', async () => {
+  const requests = [];
+  const env = { SUPABASE_URL: 'https://database.example', SUPABASE_SERVICE_ROLE_KEY: 'test-key' };
+  const fetchImpl = async (url, options) => {
+    requests.push({ url, options });
+    return new Response(requests.length === 1 ? '12' : 'denied', {
+      status: requests.length === 1 ? 200 : 403,
+    });
+  };
+
+  assert.equal(await pruneRawPages(env, fetchImpl), 12);
+  assert.deepEqual(requests[0], {
+    url: 'https://database.example/rest/v1/rpc/prune_raw_pages',
+    options: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: 'test-key',
+        Authorization: 'Bearer test-key',
+      },
+      body: '{}',
+      signal: requests[0].options.signal,
+    },
+  });
+  await assert.rejects(pruneRawPages(env, fetchImpl), /Raw page retention failed \(403\): denied/);
 });

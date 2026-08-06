@@ -31,3 +31,22 @@ export function cycleStatus({ crawlExitCode, translationsPassed }) {
   if (crawlExitCode !== 0 && crawlExitCode !== 2) return 'failed';
   return crawlExitCode === 2 || !translationsPassed ? 'degraded' : 'success';
 }
+
+export async function pruneRawPages(env, fetchImpl = fetch) {
+  const response = await fetchImpl(`${env.SUPABASE_URL}/rest/v1/rpc/prune_raw_pages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+    body: '{}',
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Raw page retention failed (${response.status}): ${await response.text()}`);
+  }
+
+  return response.json();
+}
