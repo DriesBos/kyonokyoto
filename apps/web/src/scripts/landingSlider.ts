@@ -193,8 +193,6 @@ const createSlideElements = (container: HTMLElement, slides: ResolvedLandingSlid
 
     frame.className = 'landing__slide';
     frame.dataset.landingSlideIndex = String(index);
-    frame.toggleAttribute('data-active', index === 0);
-    image.src = slide.src;
     image.alt = '';
     image.decoding = 'async';
     image.loading = index === 0 ? 'eager' : 'lazy';
@@ -286,6 +284,7 @@ export const initLandingSlider = () => {
   let stopped = false;
   let visible = true;
   let activeTween: gsap.core.Tween | null = null;
+  let fillTweenActive = false;
   let activeIndex = 0;
   let fillClipPath = coveredClipPath;
   const failedIndexes = new Set<number>();
@@ -311,6 +310,7 @@ export const initLandingSlider = () => {
     new Promise<void>((resolve) => {
       const targets = fills();
       if (fromClipPath) gsap.set(targets, { clipPath: fromClipPath });
+      fillTweenActive = true;
       activeTween = gsap.to(targets, {
         clipPath,
         duration,
@@ -318,6 +318,7 @@ export const initLandingSlider = () => {
         stagger: rowStaggerSeconds,
         onComplete: () => {
           fillClipPath = clipPath;
+          fillTweenActive = false;
           activeTween = null;
           resolve();
         },
@@ -328,13 +329,19 @@ export const initLandingSlider = () => {
   const setActiveSlide = (index: number) => {
     activeIndex = index;
     slidesContainer.querySelectorAll('.landing__slide').forEach((slide, slideIndex) => {
+      if (slideIndex === index) {
+        const image = slide.querySelector('img');
+        if (image && !image.hasAttribute('src')) image.src = resolvedSlides[index].src;
+      }
       slide.toggleAttribute('data-active', slideIndex === index);
     });
+    root.toggleAttribute('data-landing-slider-ready', true);
   };
 
   const stop = () => {
     stopped = true;
     activeTween?.kill();
+    fillTweenActive = false;
     activeTween = null;
   };
 
@@ -350,11 +357,19 @@ export const initLandingSlider = () => {
       : null;
 
   let resizeTimer = 0;
+  let resizePending = false;
+  const rebuildRows = () => {
+    if (stopped || fillTweenActive) {
+      resizePending = !stopped;
+      return;
+    }
+    resizePending = false;
+    createRows(root, shuttersContainer, content, fillClipPath);
+  };
   const handleResize = () => {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
-      if (stopped) return;
-      initLandingSlider();
+      rebuildRows();
     }, 120);
   };
 
@@ -374,19 +389,20 @@ export const initLandingSlider = () => {
       if (stopped) return;
 
       await animateFills(collapsedTopClipPath, revealSeconds);
+      if (resizePending) rebuildRows();
       if (stopped) return;
 
       await wait(imageHoldSeconds);
       if (stopped) return;
 
       await animateFills(coveredClipPath, coverSeconds, collapsedBottomClipPath);
+      if (resizePending) rebuildRows();
       activeIndex = (activeIndex + 1) % resolvedSlides.length;
     }
   };
 
   createSlideElements(slidesContainer, resolvedSlides);
   createRows(root, shuttersContainer, content, fillClipPath);
-  root.toggleAttribute('data-landing-slider-ready', true);
   observer?.observe(root);
   window.addEventListener('resize', handleResize);
   window.addEventListener(exitEventName, stop);

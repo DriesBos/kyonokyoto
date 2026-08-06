@@ -72,6 +72,18 @@ test('landing uses an odd row count so no shutter boundary cuts the centered log
 test('landing text blends over images and stays white over animated shutters', async () => {
   const component = await readFile(componentPath, 'utf8');
   const script = await readFile(scriptPath, 'utf8');
+  const createSlides = script.slice(
+    script.indexOf('const createSlideElements'),
+    script.indexOf('const createRows'),
+  );
+  const activateSlide = script.slice(
+    script.indexOf('const setActiveSlide'),
+    script.indexOf('const stop'),
+  );
+  const run = script.slice(script.indexOf('const run = async'), script.indexOf('createSlideElements('));
+  const assignSource = activateSlide.indexOf('image.src = resolvedSlides[index].src');
+  const activateFrame = activateSlide.indexOf("slide.toggleAttribute('data-active'");
+  const markReady = activateSlide.indexOf("root.toggleAttribute('data-landing-slider-ready'");
 
   assert.match(
     component,
@@ -83,12 +95,23 @@ test('landing text blends over images and stays white over animated shutters', a
   assert.match(component, /\.landing__shutters\s*\n\s+z-index: 3/);
   assert.match(script, /content\.cloneNode\(true\)/);
   assert.match(script, /fill\.append\(whiteContent\)/);
-  assert.match(
-    script,
-    /createRows\(root, shuttersContainer, content, fillClipPath\);\s+root\.toggleAttribute\('data-landing-slider-ready', true\)/,
-  );
+  assert.doesNotMatch(createSlides, /image\.src\s*=|data-active/);
+  assert.ok(assignSource >= 0 && assignSource < activateFrame && activateFrame < markReady);
+  assert.ok(run.indexOf('await preloadImage(') < run.indexOf('setActiveSlide(activeIndex)'));
   assert.match(script, /root\.removeAttribute\('data-landing-slider-ready'\)/);
   assert.doesNotMatch(script, /mixBlendMode/);
+});
+
+test('landing resize preserves slider state and defers row rebuilds during fill animation', async () => {
+  const script = await readFile(scriptPath, 'utf8');
+  const resize = script.slice(script.indexOf('let resizeTimer'), script.indexOf('const run = async'));
+
+  assert.match(resize, /const rebuildRows = \(\) =>/);
+  assert.match(resize, /if \(stopped \|\| fillTweenActive\)/);
+  assert.match(resize, /createRows\(root, shuttersContainer, content, fillClipPath\)/);
+  assert.match(resize, /window\.setTimeout\(\(\) => \{\s+rebuildRows\(\)/);
+  assert.doesNotMatch(resize, /initLandingSlider\(\)/);
+  assert.equal(script.match(/if \(resizePending\) rebuildRows\(\)/g)?.length, 2);
 });
 
 test('landing is a fixed overlay dismissed without layout scroll', async () => {
@@ -105,7 +128,7 @@ test('landing is a fixed overlay dismissed without layout scroll', async () => {
   assert.match(scrollScript, /landing\.inert = true/);
 });
 
-test('landing reappears swiftly after city cycling and only resets on page entry', async () => {
+test('landing resets on page entry, city cycling, or BFCache restore only', async () => {
   const script = await readFile(
     resolve(import.meta.dirname, '../src/scripts/landingScroll.ts'),
     'utf8',
@@ -117,6 +140,11 @@ test('landing reappears swiftly after city cycling and only resets on page entry
   assert.match(script, /sessionStorage\.removeItem\(cityCycleLandingKey\)/);
   assert.match(script, /yPercent: -100/);
   assert.match(script, /revealDurationSeconds/);
+  assert.match(
+    script,
+    /window\.addEventListener\('pageshow', \(event\) => \{\s+if \(event\.persisted\) resetLanding/,
+  );
+  assert.doesNotMatch(script, /astro:page-load/);
 });
 
 test('city-cycle landing reveal blocks touch and click during animation', async () => {
