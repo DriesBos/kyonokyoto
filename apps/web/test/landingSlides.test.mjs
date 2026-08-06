@@ -45,6 +45,32 @@ test('Astro Image CDN config permits only explicit source protocols and hosts', 
   );
 });
 
+test('Netlify Image CDN allowlist covers every Astro remote host', async () => {
+  const { imageRemotePatterns } = await import('../astro.config.mjs');
+  const netlifyConfig = readFileSync(resolve(repositoryRoot, 'netlify.toml'), 'utf8');
+  const remoteImages = netlifyConfig.match(
+    /\[images\][\s\S]*?remote_images\s*=\s*\[(?<patterns>[\s\S]*?)\]/,
+  )?.groups?.patterns;
+
+  assert.ok(remoteImages, 'netlify.toml requires [images].remote_images');
+  const allowedPatterns = [...remoteImages.matchAll(/"((?:\\.|[^"])*)"/g)].map((match) =>
+    JSON.parse(`"${match[1]}"`),
+  );
+
+  for (const { protocol, hostname } of imageRemotePatterns) {
+    const imageUrl = `${protocol}://${hostname}/image.jpg`;
+    assert.ok(
+      allowedPatterns.some((pattern) => new RegExp(pattern).test(imageUrl)),
+      `${imageUrl} is missing from Netlify images.remote_images`,
+    );
+  }
+
+  assert.equal(
+    allowedPatterns.some((pattern) => new RegExp(pattern).test('https://evil.test/image.jpg')),
+    false,
+  );
+});
+
 const event = (overrides) => {
   const imageUrls = overrides.image_urls ?? [];
   const primaryImageUrl = overrides.primary_image_url ?? null;
