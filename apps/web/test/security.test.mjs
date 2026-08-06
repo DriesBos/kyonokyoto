@@ -38,7 +38,6 @@ test('Netlify and SSR responses carry baseline security headers', async () => {
   ]);
 
   for (const header of [
-    'Content-Security-Policy',
     'Permissions-Policy',
     'Referrer-Policy',
     'Strict-Transport-Security',
@@ -49,6 +48,8 @@ test('Netlify and SSR responses carry baseline security headers', async () => {
     assert.match(middleware, new RegExp(header));
   }
 
+  assert.doesNotMatch(netlifyConfig, /Content-Security-Policy/);
+  assert.match(middleware, /Content-Security-Policy/);
   assert.match(middleware, /'nonce-\$\{nonce\}'/);
   assert.doesNotMatch(middleware, /script-src[^;]*'unsafe-inline'/);
 });

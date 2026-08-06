@@ -118,3 +118,10 @@ test('event card media uses native overflow scrolling', async () => {
   assert.doesNotMatch(card, /touch-action|-webkit-overflow-scrolling|overscroll-behavior-x/);
   assert.doesNotMatch(controls, /mediaPointerState|setPointerCapture|\.scrollLeft\s*=/);
 });
+
+test('service worker leaves Netlify Image CDN variants in CDN cache', async () => {
+  const serviceWorker = await readWebFile('public/sw.js');
+
+  assert.match(serviceWorker, /url\.pathname === '\/\.netlify\/images'/);
+  assert.match(serviceWorker, /if \(url\.pathname === '\/\.netlify\/images'\) \{\s+return;/);
+});

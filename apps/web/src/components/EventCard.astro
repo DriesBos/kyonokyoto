@@ -3,7 +3,7 @@ import GeneralButton from './GeneralButton.astro';
 import YouTubeEmbed from './YouTubeEmbed.astro';
 import type { AppLocale } from '../lib/i18n';
 import { uiText } from '../lib/i18n';
-import { withEventMediaDelivery } from '../lib/mediaDelivery';
+import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '../lib/mediaDelivery';
 import {
   calendarDetailsFor,
   calendarLocationFor,
@@ -28,6 +28,7 @@ type EventRow = {
   is_all_day: boolean;
   primary_image_url: string | null;
   image_urls: string[] | null;
+  image_metadata?: { url: string; width: number | null; height: number | null }[] | null;
   media_embeds?:
     | {
         type: 'youtube';
@@ -69,14 +70,24 @@ const maxImagesPerCard = mapSourceSlug === 'tokyo-metropolitan-art-museum' ? 1 :
 const mediaEmbeds = (event.media_embeds ?? []).filter(
   (embed) => embed.type === 'youtube' && embed.video_id,
 );
-const deliveredEvent = withEventMediaDelivery(event);
-const imageUrls = (deliveredEvent.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
-const images =
-  imageUrls.length > 0
-    ? imageUrls
-    : deliveredEvent.primary_image_url
-      ? [deliveredEvent.primary_image_url]
-      : [];
+const imageUrls = (event.image_urls ?? []).filter(Boolean).slice(0, maxImagesPerCard);
+const sourceImages =
+  imageUrls.length > 0 ? imageUrls : event.primary_image_url ? [event.primary_image_url] : [];
+const images = sourceImages
+  .map((sourceUrl) => {
+    const src = eventMediaDeliveryUrl(sourceUrl);
+    const srcset = eventMediaDeliverySrcSet(sourceUrl);
+    const metadata = event.image_metadata?.find(
+      (image) =>
+        image.url === sourceUrl &&
+        Number.isFinite(image.width) &&
+        Number.isFinite(image.height) &&
+        Number(image.width) > 0 &&
+        Number(image.height) > 0,
+    );
+    return src && srcset ? { src, srcset, width: metadata?.width, height: metadata?.height } : null;
+  })
+  .filter((image): image is NonNullable<typeof image> => image !== null);
 const hasMedia = mediaEmbeds.length > 0 || images.length > 0;
 const desktopImageHeightRem = 10;
 const mobileImageHeightRem = 6;
@@ -244,11 +255,15 @@ const cardTitleId = `event-card-title-${event.id}`;
           {mediaEmbeds.map((embed) => (
             <YouTubeEmbed videoId={embed.video_id} title={`${event.title} video`} />
           ))}
-          {images.map((imageUrl, index) => (
+          {images.map((image, index) => (
             <span class="event-card__image-frame">
               <img
                 class="event-card__image"
-                src={imageUrl}
+                src={image.src}
+                srcset={image.srcset}
+                sizes="(max-width: 767px) 100vw, 66vw"
+                width={image.width ?? undefined}
+                height={image.height ?? undefined}
                 alt={index === 0 ? event.title : ''}
                 loading="lazy"
                 decoding="async"

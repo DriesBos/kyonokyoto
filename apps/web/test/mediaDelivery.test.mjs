@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const { eventMediaDeliveryUrl, proxyYutakaImage, withEventMediaDelivery } =
+const { eventMediaDeliveryUrl, eventMediaDeliverySrcSet, proxyYutakaImage } =
   await import('../src/lib/mediaDelivery.ts');
 
 const publisherImage =
@@ -9,67 +9,34 @@ const publisherImage =
 const galleryExitImage =
   'https://www.galleryexit.com/uploads/1/3/7/3/13731772/jul-show-artlogic-11.jpg';
 
-test('Gallery Exit images use Netlify Image CDN instead of blocked publisher delivery', () => {
-  assert.equal(
-    eventMediaDeliveryUrl(galleryExitImage),
-    `/.netlify/images?${new URLSearchParams({ url: galleryExitImage, w: '800', q: '80' })}`,
-  );
+const imageCdnUrl = (url, width = 640) =>
+  `/.netlify/images?${new URLSearchParams({ url, w: String(width), q: '60' })}`;
+
+test('event images use Netlify Image CDN at quality 60', () => {
+  assert.equal(eventMediaDeliveryUrl(galleryExitImage), imageCdnUrl(galleryExitImage));
   assert.equal(
     eventMediaDeliveryUrl(`${galleryExitImage}?cache-bust=1#ignored`),
-    `/.netlify/images?${new URLSearchParams({ url: galleryExitImage, w: '800', q: '80' })}`,
+    imageCdnUrl(`${galleryExitImage}?cache-bust=1`),
   );
   assert.equal(
-    eventMediaDeliveryUrl(
-      'https://www.galleryexit.com.evil.test/uploads/1/3/7/3/13731772/work.jpg',
-    ),
-    'https://www.galleryexit.com.evil.test/uploads/1/3/7/3/13731772/work.jpg',
+    eventMediaDeliverySrcSet(galleryExitImage),
+    [320, 640, 960].map((width) => `${imageCdnUrl(galleryExitImage, width)} ${width}w`).join(', '),
   );
 });
 
 test('Yutaka publisher images use the bounded display proxy', () => {
   const proxied = eventMediaDeliveryUrl(publisherImage);
 
-  assert.equal(proxied, `/api/yutaka-image?url=${encodeURIComponent(publisherImage)}`);
+  const proxiedSource = `/api/yutaka-image?url=${encodeURIComponent(publisherImage)}`;
+  assert.equal(proxied, imageCdnUrl(proxiedSource));
   assert.equal(
     eventMediaDeliveryUrl(`${publisherImage}?cache-bust=1#ignored`),
-    `/api/yutaka-image?url=${encodeURIComponent(publisherImage)}`,
+    imageCdnUrl(proxiedSource),
   );
-  assert.equal(
-    eventMediaDeliveryUrl('http://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/work.jpg'),
-    'http://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/work.jpg',
-  );
-  assert.equal(
-    eventMediaDeliveryUrl('https://www.yutakakikutakegallery.com/other/work.jpg'),
-    'https://www.yutakakikutakegallery.com/other/work.jpg',
-  );
-  assert.equal(
-    eventMediaDeliveryUrl('https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/work.svg'),
-    'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/work.svg',
-  );
-  assert.equal(
-    eventMediaDeliveryUrl(
-      'https://www.yutakakikutakegallery.com.evil.test/ykgg/wp-content/uploads/work.jpg',
-    ),
-    'https://www.yutakakikutakegallery.com.evil.test/ykgg/wp-content/uploads/work.jpg',
-  );
-});
-
-test('event media delivery rewrites existing primary and gallery image rows', () => {
-  assert.deepEqual(
-    withEventMediaDelivery({
-      id: 'event-1',
-      primary_image_url: publisherImage,
-      image_urls: [publisherImage, 'https://images.example/art.jpg'],
-    }),
-    {
-      id: 'event-1',
-      primary_image_url: `/api/yutaka-image?url=${encodeURIComponent(publisherImage)}`,
-      image_urls: [
-        `/api/yutaka-image?url=${encodeURIComponent(publisherImage)}`,
-        'https://images.example/art.jpg',
-      ],
-    },
-  );
+  assert.equal(eventMediaDeliveryUrl('data:image/png;base64,AAAA'), null);
+  assert.equal(eventMediaDeliveryUrl('javascript:alert(1)'), null);
+  assert.equal(eventMediaDeliveryUrl('https://user:pass@example.test/image.jpg'), null);
+  assert.equal(eventMediaDeliveryUrl('https://example.test:8443/image.jpg'), null);
 });
 
 test('Yutaka proxy sends publisher Referer and returns durable CDN caching', async () => {

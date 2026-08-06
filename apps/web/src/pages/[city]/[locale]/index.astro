@@ -59,7 +59,7 @@ Astro.response.headers.set(
 );
 Astro.response.headers.set(
   'Netlify-CDN-Cache-Control',
-  'public, s-maxage=300, stale-while-revalidate=86400',
+  'public, durable, s-maxage=300, stale-while-revalidate=86400',
 );
 Astro.response.headers.set('Netlify-Vary', 'country=jp,language=ja');
 

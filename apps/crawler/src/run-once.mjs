@@ -568,6 +568,24 @@ function sanitizePostgresText(value) {
   return typeof value === 'string' ? value.replace(/\u0000/g, '') : value;
 }
 
+function stripInlineImageData(value) {
+  if (typeof value !== 'string') return value;
+
+  return value
+    .replace(
+      /(["'])data:image\/[a-z0-9.+-]+(?:;[a-z0-9!#$&^_.+-]+=[^;,]*)*;base64,[a-z0-9+/=_\s-]+(?=\1)/giu,
+      '$1data:,',
+    )
+    .replace(
+      /(url\(\s*)data:image\/[a-z0-9.+-]+(?:;[a-z0-9!#$&^_.+-]+=[^;,]*)*;base64,[a-z0-9+/=_\s-]+(?=\s*\))/giu,
+      '$1data:,',
+    )
+    .replace(
+      /data:image\/[a-z0-9.+-]+(?:;[a-z0-9!#$&^_.+-]+=[^;,]*)*;base64,[a-z0-9+/=_-]+/giu,
+      'data:,',
+    );
+}
+
 function sanitizePostgresJson(value) {
   if (typeof value === 'string') return sanitizePostgresText(value);
   if (Array.isArray(value)) return value.map(sanitizePostgresJson);
@@ -2232,7 +2250,7 @@ function looksLikeLowQualityImage(url) {
 }
 
 function isUnsafeImageUrl(url) {
-  return looksLikeSocialOrUiImage(url) || looksLikeLowQualityImage(url);
+  return /^data:/i.test(url) || looksLikeSocialOrUiImage(url) || looksLikeLowQualityImage(url);
 }
 
 function scoreImageCandidate(candidate) {
@@ -8170,8 +8188,8 @@ async function updateCrawlRun(env, crawlRunId, patch) {
 }
 
 async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
-  const sanitizedHtml = sanitizePostgresText(fetched.html);
-  const contentHash = createHash('sha256').update(sanitizedHtml).digest('hex');
+  const storedHtml = stripInlineImageData(sanitizePostgresText(fetched.html));
+  const contentHash = createHash('sha256').update(storedHtml).digest('hex');
   const rows = await supabaseRequest({
     env,
     path: 'raw_pages?on_conflict=source_id,url,content_hash',
@@ -8186,8 +8204,8 @@ async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
         http_status: fetched.response.status,
         content_type: sanitizePostgresText(fetched.contentType),
         title: sanitizePostgresText(fetched.title),
-        raw_html: sanitizedHtml,
-        extracted_text: sanitizePostgresText(stripTags(sanitizedHtml).slice(0, 5000)),
+        raw_html: storedHtml,
+        extracted_text: sanitizePostgresText(stripTags(storedHtml).slice(0, 5000)),
         metadata: sanitizePostgresJson({
           ...(fetched.metadata ?? {}),
           final_url: fetched.response.url,
@@ -9479,6 +9497,7 @@ export {
   runJsonCommand,
   sanitizePostgresJson,
   sanitizePostgresText,
+  stripInlineImageData,
   extractRakuMuseumEvent,
   extractSenOkuEvent,
   sourceContextLoaders,

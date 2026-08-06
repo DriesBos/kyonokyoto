@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kyo-no-kyoto-v3';
+const CACHE_NAME = 'kyo-no-kyoto-v4';
 const APP_SHELL = [
   '/site.webmanifest',
   '/favicon.svg',
@@ -47,6 +47,10 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (url.pathname === '/.netlify/images') {
     return;
   }
 

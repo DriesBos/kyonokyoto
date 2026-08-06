@@ -1,11 +1,10 @@
 const YUTAKA_IMAGE_ORIGIN = 'https://www.yutakakikutakegallery.com';
 const YUTAKA_IMAGE_PATH_PREFIX = '/ykgg/wp-content/uploads/';
 const YUTAKA_IMAGE_PROXY_PATH = '/api/yutaka-image';
-const GALLERY_EXIT_IMAGE_ORIGIN = 'https://www.galleryexit.com';
-const GALLERY_EXIT_IMAGE_PATH_PREFIX = '/uploads/1/3/7/3/13731772/';
-const GALLERY_EXIT_IMAGE_WIDTH = '800';
 const MAX_YUTAKA_IMAGE_BYTES = 12 * 1024 * 1024;
 const YUTAKA_IMAGE_TIMEOUT_MS = 10_000;
+const EVENT_IMAGE_WIDTHS = [320, 640, 960];
+const EVENT_IMAGE_QUALITY = '60';
 
 const rasterImagePathPattern = /\.(?:avif|gif|jpe?g|png|webp)$/i;
 const allowedImageContentTypes = new Set([
@@ -34,46 +33,44 @@ export const validatedYutakaImageUrl = (value: unknown): URL | null => {
   }
 };
 
-export const eventMediaDeliveryUrl = (value: string | null): string | null => {
-  if (typeof value === 'string') {
-    try {
-      const url = new URL(value);
-      if (
-        url.protocol === 'https:' &&
-        url.origin === GALLERY_EXIT_IMAGE_ORIGIN &&
-        !url.username &&
-        !url.password &&
-        !url.port &&
-        url.pathname.startsWith(GALLERY_EXIT_IMAGE_PATH_PREFIX) &&
-        rasterImagePathPattern.test(url.pathname)
-      ) {
-        url.search = '';
-        url.hash = '';
-        return `/.netlify/images?${new URLSearchParams({
-          url: url.href,
-          w: GALLERY_EXIT_IMAGE_WIDTH,
-          q: '80',
-        })}`;
-      }
-    } catch {
-      // Leave invalid or unrelated URLs unchanged.
-    }
-  }
-
+const eventImageSource = (value: string | null): string | null => {
   const upstream = validatedYutakaImageUrl(value);
-  if (!upstream) return value;
-  return `${YUTAKA_IMAGE_PROXY_PATH}?url=${encodeURIComponent(upstream.href)}`;
+  if (upstream) return `${YUTAKA_IMAGE_PROXY_PATH}?url=${encodeURIComponent(upstream.href)}`;
+
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    if (url.username || url.password || url.port) return null;
+    url.hash = '';
+    return url.href;
+  } catch {
+    return null;
+  }
 };
 
-export const withEventMediaDelivery = <
-  T extends { primary_image_url: string | null; image_urls: string[] | null },
->(
-  event: T,
-): T => ({
-  ...event,
-  primary_image_url: eventMediaDeliveryUrl(event.primary_image_url),
-  image_urls: event.image_urls?.map((url) => eventMediaDeliveryUrl(url) ?? url) ?? null,
-});
+const netlifyImageUrl = (source: string, width: number) => {
+  if (import.meta.env?.DEV) return source;
+
+  return `/.netlify/images?${new URLSearchParams({
+    url: source,
+    w: String(width),
+    q: EVENT_IMAGE_QUALITY,
+  })}`;
+};
+
+export const eventMediaDeliveryUrl = (value: string | null): string | null => {
+  const source = eventImageSource(value);
+  return source ? netlifyImageUrl(source, 640) : null;
+};
+
+export const eventMediaDeliverySrcSet = (value: string | null): string | null => {
+  const source = eventImageSource(value);
+  if (source && import.meta.env?.DEV) return source;
+  return source
+    ? EVENT_IMAGE_WIDTHS.map((width) => `${netlifyImageUrl(source, width)} ${width}w`).join(', ')
+    : null;
+};
 
 const noStoreResponse = (body: string, status: number) =>
   new Response(body, {

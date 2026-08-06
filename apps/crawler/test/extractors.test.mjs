@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
@@ -70,6 +71,7 @@ import {
   shouldArchiveStaleEvents,
   sanitizePostgresJson,
   sanitizePostgresText,
+  stripInlineImageData,
   translateTextFields,
   upsertEvent,
   withSourceLocaleConfig,
@@ -4513,6 +4515,49 @@ test('Postgres text sanitizer removes null bytes recursively', () => {
       nested: ['CD'],
     },
   );
+});
+
+test('stored HTML strips inline base64 images without changing extraction inputs', () => {
+  const first = `
+    <meta property="og:image" content="https://cdn.example.test/event.jpg">
+    <h1>Exhibition</h1>
+    <p>Event description.</p>
+    <img src='DATA:image/png;base64,AAAA\nBBBB=='>
+    <img src=data:image/png;base64,CCCC alt=poster>
+    <div style="background:url(data:image/jpeg;base64,CCCC DDDD==)"></div>
+    <img src="https://cdn.example.test/event.jpg">
+  `;
+  const second = first
+    .replace('AAAA\nBBBB==', 'EEEE\nFFFF==')
+    .replace('CCCC DDDD==', 'GGGG HHHH==');
+  const stored = stripInlineImageData(first);
+  const source = { name: 'Example Gallery', taxonomy: testTaxonomy() };
+  const extracted = extractGenericEvent(first, source, 'https://example.test/events/exhibition');
+
+  assert.match(stored, /src='data:,'/);
+  assert.match(stored, /src=data:, alt=poster/);
+  assert.match(stored, /url\(data:,\)/);
+  assert.match(stored, /https:\/\/cdn\.example\.test\/event\.jpg/);
+  assert.doesNotMatch(stored, /base64,/i);
+  assert.equal(
+    createHash('sha256').update(stored).digest('hex'),
+    createHash('sha256').update(stripInlineImageData(second)).digest('hex'),
+  );
+  assert.equal(extracted.primary_image_url, 'https://cdn.example.test/event.jpg');
+});
+
+test('image normalization rejects data URLs', async () => {
+  const normalized = await normalizeEventImagesForSource(
+    {
+      source_url: 'https://example.test/event',
+      primary_image_url: 'data:image/png;base64,AAAA',
+      image_urls: ['data:image/png;base64,AAAA', 'https://example.test/event.jpg'],
+    },
+    {},
+  );
+
+  assert.deepEqual(normalized.image_urls, ['https://example.test/event.jpg']);
+  assert.equal(normalized.primary_image_url, 'https://example.test/event.jpg');
 });
 
 test('source locale config applies localized source names', async () => {

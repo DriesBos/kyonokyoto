@@ -8,20 +8,41 @@ import { coverDensityFor, resolveLandingSlides } from '../src/scripts/landingSli
 
 const repositoryRoot = resolve(import.meta.dirname, '../../..');
 
-test('Kyoto landing source domains are allowed by Netlify Image CDN', () => {
+test('Kyoto landing source domains are allowed by Astro Image CDN config', async () => {
   const sourceConfig = JSON.parse(
     readFileSync(resolve(repositoryRoot, 'data/sources/kyoto-sources.json'), 'utf8'),
   );
-  const netlifyConfig = readFileSync(resolve(repositoryRoot, 'netlify.toml'), 'utf8');
+  const { imageRemotePatterns } = await import('../astro.config.mjs');
 
   for (const source of sourceConfig.sources.filter((candidate) => candidate.landing_slider)) {
-    const hostname = new URL(source.base_url).hostname;
-    const remoteImagePattern = `https://${hostname.replaceAll('.', '\\\\.')}/.*`;
+    const sourceUrl = new URL(source.base_url);
+    const protocol = sourceUrl.protocol.slice(0, -1);
+    const hostname = sourceUrl.hostname;
     assert.ok(
-      netlifyConfig.includes(remoteImagePattern),
-      `${source.slug} landing images require ${remoteImagePattern} in netlify.toml`,
+      imageRemotePatterns.some(
+        (pattern) => pattern.protocol === protocol && pattern.hostname === hostname,
+      ),
+      `${source.slug} landing images require ${hostname} in Astro image.remotePatterns`,
     );
   }
+});
+
+test('Astro Image CDN config permits only explicit source protocols and hosts', async () => {
+  const { imageRemotePatterns } = await import('../astro.config.mjs');
+
+  assert.ok(imageRemotePatterns.length > 0);
+  assert.ok(imageRemotePatterns.every((pattern) => ['http', 'https'].includes(pattern.protocol)));
+  assert.ok(imageRemotePatterns.every((pattern) => /^[a-z0-9.-]+$/i.test(pattern.hostname)));
+  assert.ok(
+    imageRemotePatterns.some(
+      (pattern) => pattern.protocol === 'http' && pattern.hostname === 'www.hakusasonso.jp',
+    ),
+  );
+  assert.ok(
+    imageRemotePatterns.some(
+      (pattern) => pattern.protocol === 'http' && pattern.hostname === 'www.snowcontemporary.com',
+    ),
+  );
 });
 
 const event = (overrides) => {

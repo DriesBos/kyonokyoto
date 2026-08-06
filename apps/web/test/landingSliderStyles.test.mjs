@@ -80,7 +80,10 @@ test('landing text blends over images and stays white over animated shutters', a
     script.indexOf('const setActiveSlide'),
     script.indexOf('const stop'),
   );
-  const run = script.slice(script.indexOf('const run = async'), script.indexOf('createSlideElements('));
+  const run = script.slice(
+    script.indexOf('const run = async'),
+    script.indexOf('createSlideElements('),
+  );
   const assignSource = activateSlide.indexOf('image.src = resolvedSlides[index].src');
   const activateFrame = activateSlide.indexOf("slide.toggleAttribute('data-active'");
   const markReady = activateSlide.indexOf("root.toggleAttribute('data-landing-slider-ready'");
@@ -104,7 +107,10 @@ test('landing text blends over images and stays white over animated shutters', a
 
 test('landing resize preserves slider state and defers row rebuilds during fill animation', async () => {
   const script = await readFile(scriptPath, 'utf8');
-  const resize = script.slice(script.indexOf('let resizeTimer'), script.indexOf('const run = async'));
+  const resize = script.slice(
+    script.indexOf('let resizeTimer'),
+    script.indexOf('const run = async'),
+  );
 
   assert.match(resize, /const rebuildRows = \(\) =>/);
   assert.match(resize, /if \(stopped \|\| fillTweenActive\)/);

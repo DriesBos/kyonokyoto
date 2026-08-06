@@ -56,6 +56,8 @@ CRAWL_ALERT_WEBHOOK_URL=
 
 Production systemd sets `CRAWL4AI_PYTHON` and `CRAWL4_AI_BASE_DIRECTORY` to paths under `/srv/kyo-no-kyoto/apps/crawler`.
 
+Crawler service output goes to journald. Before deploying its unit change, check journal usage with `sudo journalctl --disk-usage` and inspect active limits with `sudo systemd-analyze cat-config systemd/journald.conf`; inspect a run with `sudo journalctl -u kyo-no-kyoto-crawl@kyoto.service --since today`.
+
 ## Database
 
 Create schema changes with Supabase CLI migrations:
