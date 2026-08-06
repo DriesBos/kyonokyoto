@@ -10,7 +10,7 @@ is_duplicate_kyoto_cron() {
   awk '
     /^[[:space:]]*[0-9*\/,-]+[[:space:]]+3[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+/ &&
     /run-crawl-cycle\.mjs/ &&
-    /--city=kyoto([[:space:]]|$)/ &&
+    (!/--city=/ || /--city=kyoto([[:space:]]|$)/) &&
     !/--trigger=scheduled([[:space:]]|$)/
   '
 }
@@ -75,7 +75,7 @@ remove_duplicate_kyoto_cron() {
     awk '
       !(/^[[:space:]]*[0-9*\/,-]+[[:space:]]+3[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+/ &&
         /run-crawl-cycle\.mjs/ &&
-        /--city=kyoto([[:space:]]|$)/ &&
+        (!/--city=/ || /--city=kyoto([[:space:]]|$)/) &&
         !/--trigger=scheduled([[:space:]]|$)/)
     ' "$cron_file" >"$filtered"
     if [[ "$target" == ubuntu ]]; then
