@@ -2,8 +2,8 @@
 Description=Run Osaka crawl cycle every 36 hours
 
 [Timer]
-OnActiveSec=2h40m
-OnUnitActiveSec=36h
+OnActiveSec=10y
+OnUnitActiveSec=10y
 Unit=kyo-no-kyoto-crawl@osaka.service
 
 [Install]
