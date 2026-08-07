@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import '@/styles/globals.sass';
+import '@/styles/typography.sass';
 
 export const metadata: Metadata = {
   title: 'Kyo no Kyoto',
