@@ -2,10 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
+import { localesForCity } from '../../../data/sources/source-config.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = resolve(__dirname, '..', '.env');
-const requiredLocales = ['en', 'ja'];
 
 function getEnvNumber(env, name, fallback) {
   const parsed = Number(env[name]);
@@ -42,7 +42,7 @@ if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
 
 const rows = await supabaseRequest({
   env,
-  path: 'events?status=eq.published&select=id,title,sources(slug),event_translations(locale)&limit=1000',
+  path: 'events?status=eq.published&select=id,title,sources(slug,city),event_translations(locale)&limit=1000',
 });
 
 const missing = (rows ?? [])
@@ -54,7 +54,7 @@ const missing = (rows ?? [])
       id: row.id,
       title: row.title,
       source: row.sources?.slug ?? null,
-      missing: requiredLocales.filter((locale) => !locales.has(locale)),
+      missing: localesForCity(row.sources?.city).filter((locale) => !locales.has(locale)),
     };
   })
   .filter((row) => row.missing.length > 0);

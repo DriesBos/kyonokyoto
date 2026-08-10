@@ -1,0 +1,132 @@
+.detail
+  display: grid
+  gap: 1rem
+
+  > p
+    margin: 0
+    display: -webkit-box
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 5
+    overflow: hidden
+
+.media
+  --media-peek: 3rem
+  overflow: hidden
+  pointer-events: none
+
+  &[data-expanded='true']
+    overflow-x: auto
+    overflow-y: hidden
+    pointer-events: auto
+    scrollbar-width: thin
+
+  &[data-overflow='true'] .frame,
+  &[data-overflow='true'] .embed
+    flex-basis: calc(100% - var(--media-peek))
+
+  &:focus-visible
+    outline: 2px solid currentColor
+    outline-offset: -2px
+
+.mediaTrack
+  display: flex
+  flex-wrap: nowrap
+  gap: .5rem
+  width: 100%
+
+.frame,
+.embed
+  flex: 0 0 100%
+  min-width: 0
+  margin: 0
+  border: 0
+
+.embed
+  aspect-ratio: 16 / 9
+
+.frame
+  overflow: hidden
+
+.media[data-lead-aspect-ratio] .frame,
+.media[data-lead-aspect-ratio] .embed
+  aspect-ratio: var(--media-lead-aspect-ratio)
+
+.frame img
+  display: block
+  width: 100%
+  max-width: none
+  height: auto
+
+.media[data-lead-aspect-ratio] .frame img
+  height: 100%
+  object-fit: contain
+
+.links
+  --action-stroke-width: 2px
+  display: flex
+  flex-wrap: wrap
+  column-gap: 0
+  row-gap: 0
+  margin-left: -.5rem
+  overflow: visible
+  pointer-events: auto
+
+  @media (any-pointer: coarse)
+    --action-stroke-width: 2.5px
+
+.links a,
+.links button
+  position: relative
+  isolation: isolate
+  display: inline-flex
+  align-items: center
+  justify-content: flex-start
+  padding: .5rem 0
+  border: 0
+  appearance: none
+  -webkit-tap-highlight-color: transparent
+  background: transparent
+  color: inherit
+  font: inherit
+  font-size: var(--type-body-size, 1rem)
+  letter-spacing: 0
+  line-height: 1
+  text-decoration: none
+  cursor: pointer
+  overflow: visible
+
+  &:first-child
+    padding-left: .5rem
+
+  &:last-child
+    padding-right: .5rem
+
+  &:focus-visible
+    outline: 2px solid currentColor
+    outline-offset: -2px
+
+.actionContent
+  position: relative
+  z-index: 1
+  display: inline-flex
+  align-items: center
+  justify-content: flex-start
+  gap: 4px
+  padding: calc(var(--action-stroke-width) + 3px) .5rem 0
+  text-transform: lowercase
+  overflow: visible
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: .5rem
+    right: .5rem
+    border-top: var(--action-stroke-width) solid currentColor
+    pointer-events: none
+
+.icon
+  display: block
+  flex: 0 0 auto
+  width: 1em
+  height: 1em

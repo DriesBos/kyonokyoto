@@ -1,10 +1,33 @@
-@use './variables' as *
+:root
+  --type-body-size: 1rem
+  --type-meta-size: calc(var(--type-body-size) * .875)
+  --type-title-size: 1.618rem
+  --type-body-letter-spacing: 0
+  --type-title-letter-spacing: 0
+  --font-body: var(--font-gt-walsheim), 'Helvetica Neue', Helvetica, Arial, sans-serif
 
-$type-scale-base: 1rem
-$type-scale-ratio: 1.618
+html
+  font-size: clamp(12px, calc(7.4286px + .5952vw), 16px)
 
 body
-  font-family: system-ui, sans-serif
-  font-size: $type-scale-base
-  line-height: 1.5
-  color: $color-text
+  font-family: var(--font-body)
+  font-size: var(--type-body-size)
+  line-height: 1.4
+  letter-spacing: var(--type-body-letter-spacing)
+  text-rendering: optimizeLegibility
+
+button,
+input,
+select,
+textarea
+  font: inherit
+
+h1,
+h2,
+h3,
+h4
+  margin: 0
+  font-size: var(--type-title-size)
+  font-weight: 400
+  line-height: 1.2
+  letter-spacing: var(--type-title-letter-spacing)

@@ -1,4 +1,4 @@
-const supportedLocales = ['en', 'ja'];
+import { localesForCity } from '../../../data/sources/source-config.mjs';
 
 export function buildCrawlQaReport({
   source,
@@ -15,7 +15,7 @@ export function buildCrawlQaReport({
     ]),
   );
   const missingTranslations = Object.fromEntries(
-    supportedLocales.map((locale) => [
+    localesForCity(source?.city).map((locale) => [
       locale,
       savedEvents.filter((event) => !event.translations?.includes(locale)).length,
     ]),

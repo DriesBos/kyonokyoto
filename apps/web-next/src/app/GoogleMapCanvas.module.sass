@@ -1,0 +1,185 @@
+.canvas
+  position: relative
+  width: 100%
+  height: 100%
+  min-height: 0
+  overflow: hidden
+  background: var(--color-background)
+  color: var(--color-text)
+
+.viewport
+  position: absolute
+  inset: 0
+
+.placeholder
+  position: absolute
+  inset: 0
+  z-index: 1
+  display: grid
+  place-content: center
+  gap: .25rem
+  padding: 2rem
+  background: var(--color-background)
+  text-align: center
+
+  &[hidden]
+    display: none
+
+  p
+    margin: 0
+
+.controls
+  position: absolute
+  right: 0
+  bottom: 0
+  z-index: 2
+  display: flex
+  flex-direction: column
+  align-items: flex-end
+  gap: .25rem
+  pointer-events: none
+
+.findMe
+  padding: 1rem
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom))
+  border: 0
+  background: transparent
+  color: inherit
+  font: inherit
+  font-size: 13px
+  line-height: 1
+  cursor: pointer
+  pointer-events: auto
+
+  span
+    display: block
+    padding: 3px 6px
+    border: 1px solid var(--color-background)
+    border-radius: 1000px
+    background: var(--color-text)
+    color: var(--color-background)
+
+  &:disabled
+    opacity: .55
+
+  &:focus-visible
+    outline: 2px solid currentColor
+    outline-offset: -3px
+
+.status
+  max-width: 12rem
+  margin: 0
+  padding: 1px
+  border: 1px solid var(--color-background)
+  border-radius: 4px
+  background: var(--color-background)
+  font-size: 13px
+  line-height: 1.15
+  text-align: right
+
+  &:empty
+    display: none
+
+.marker
+  display: grid
+  place-items: center
+  min-width: 1.25rem
+  min-height: 1.25rem
+  padding: 0
+  border: 0
+  appearance: none
+  background: transparent
+  color: var(--color-text)
+  cursor: pointer
+  transform: translateY(-.25rem)
+
+  &[data-hidden]
+    display: none
+
+.markerDot
+  width: 1.25rem
+  height: 1.25rem
+  border: 1px solid var(--color-background)
+  border-radius: 999px
+  background: var(--color-text)
+
+.markerStar
+  display: none
+  width: 1.5rem
+  height: 1.5rem
+  color: var(--color-background)
+
+  svg
+    width: 100%
+    height: 100%
+
+  path
+    fill: var(--color-text)
+    stroke: currentColor
+    stroke-width: 1
+    stroke-linejoin: round
+
+.marker[data-starred]:not([data-highlighted]) .markerDot,
+.marker[data-highlighted] .markerDot
+  display: none
+
+.marker[data-starred]:not([data-highlighted]) .markerStar
+  display: block
+
+.markerLabel
+  display: none
+  max-width: 10rem
+  padding: 3px 6px
+  border: 1px solid var(--color-background)
+  border-radius: 1000px
+  background: var(--color-text)
+  color: var(--color-background)
+  font-size: 13px
+  line-height: 1
+  overflow: hidden
+  text-align: center
+  text-overflow: ellipsis
+  white-space: nowrap
+
+.marker[data-highlighted] .markerLabel
+  display: block
+
+.userMarker
+  --map-user-heading: 0deg
+  position: relative
+  box-sizing: border-box
+  width: 1.25rem
+  height: 1.25rem
+  border: 1px solid var(--color-background)
+  border-radius: 999px
+  background: var(--color-text)
+
+.userPointer
+  position: absolute
+  top: -.55rem
+  left: 50%
+  width: 0
+  height: 0
+  border-right: .28rem solid transparent
+  border-bottom: .65rem solid var(--color-text)
+  border-left: .28rem solid transparent
+  transform: translateX(-50%) rotate(var(--map-user-heading))
+  transform-origin: 50% calc(100% + .65rem)
+
+.userRing
+  position: absolute
+  inset: -.38rem
+  border: 1px solid var(--color-text)
+  border-radius: 999px
+  animation: ring 1.6s ease-out infinite
+
+.userRingSecond
+  animation-delay: .25s
+
+@keyframes ring
+  from
+    opacity: 1
+    transform: scale(.75)
+  to
+    opacity: 0
+    transform: scale(1.75)

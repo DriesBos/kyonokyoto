@@ -9,6 +9,7 @@ import { parseEnv, TextDecoder } from 'node:util';
 import {
   applySourceOverride,
   currentYearInTokyo,
+  localesForCity,
   loadSourcesConfig,
   normalizeCity,
   timeZoneForCity,
@@ -38,7 +39,6 @@ let googleTranslationClientPromise = null;
 let missingGoogleTranslateConfigWarningShown = false;
 const domainFetchSchedule = new Map();
 const robotsPolicyCache = new Map();
-const supportedTranslationLocales = ['en', 'ja'];
 const localizedEventFields = ['title', 'description'];
 const missingDateCanMeanNoCurrentEventSources = new Set(['sibasi']);
 const emptyDetailUrlsMeanNoCurrentEventSources = new Set([
@@ -8532,7 +8532,7 @@ async function upsertEventTranslations(
 
   await upsertEventTranslation(env, savedEvent.id, sourceLocale, eventData, sourceContentHash);
 
-  for (const targetLocale of supportedTranslationLocales) {
+  for (const targetLocale of localesForCity(source.city)) {
     if (targetLocale === sourceLocale) continue;
 
     const nativeTranslation = nativeTranslations[targetLocale];
@@ -8555,6 +8555,20 @@ async function upsertEventTranslations(
         );
       }
     } else if (shouldMachineTranslateMissingLocales(source)) {
+      // Skip the Google Translate call when the stored translation already
+      // matches the current source content; stale translations are deleted
+      // here so a fresh one is written below.
+      const existingState = await reconcileUnavailableTargetTranslation(
+        env,
+        savedEvent.id,
+        targetLocale,
+        sourceContentHash,
+      );
+      if (existingState === 'preserved') {
+        savedTranslations.push(targetLocale);
+        continue;
+      }
+
       try {
         const translatedEvent = await buildMachineTranslatedEvent(
           env,
@@ -9147,7 +9161,7 @@ async function crawlSource({
       }
 
       const nativeTranslations = {};
-      for (const targetLocale of supportedTranslationLocales) {
+      for (const targetLocale of localesForCity(source.city)) {
         if (targetLocale === sourceLocale) continue;
         if (!sourceHasNativeLocale(source, targetLocale)) continue;
 
@@ -9508,6 +9522,7 @@ export {
   translateTextFields,
   upsertEvent,
   upsertEventTranslation,
+  upsertEventTranslations,
   withSourceLocaleConfig,
   withSourceSpecificDescriptionOrigin,
 };

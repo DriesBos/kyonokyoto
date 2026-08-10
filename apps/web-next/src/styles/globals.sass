@@ -10,8 +10,25 @@ body
   margin: 0
   padding: 0
 
+:root
+  --color-text: #{$color-text}
+  --color-background: #{$color-background}
+
+:root[data-theme='monochrome']
+  --color-text: #{$color-text-monochrome}
+  --color-background: #{$color-background-monochrome}
+
+:root[data-theme='dark']
+  --color-text: #{$color-text-dark}
+  --color-background: #{$color-background-dark}
+
+:root[data-theme='brown']
+  --color-text: #{$color-text-brown}
+  --color-background: #{$color-background-brown}
+
 body
-  background: $color-background
+  background: var(--color-background)
+  color: var(--color-text)
 
 img,
 video

@@ -74,6 +74,7 @@ import {
   stripInlineImageData,
   translateTextFields,
   upsertEvent,
+  upsertEventTranslations,
   withSourceLocaleConfig,
   withSourceSpecificDescriptionOrigin,
 } from '../src/run-once.mjs';
@@ -82,8 +83,10 @@ import {
   applySourceOverride,
   currentYearInCity,
   currentYearInTokyo,
+  localesForCity,
   loadAllSourcesConfig,
   loadSourcesConfig,
+  normalizeSourceConfig,
   timeZoneForCity,
   validateSourceConfig,
 } from '../../../data/sources/source-config.mjs';
@@ -821,6 +824,46 @@ test('unavailable target translation preserves current hash and deletes stale ha
       requests.map((request) => request.method ?? 'GET'),
       expectedMethods,
     );
+  }
+});
+
+test('unchanged source content skips machine translation on recrawl', async () => {
+  const eventData = { title: '日本語タイトル', description: '日本語説明' };
+  const storedHash = buildTranslationSourceContentHash(eventData);
+  const fetchCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    fetchCalls.push({ url: String(url), method: options.method ?? 'GET' });
+    return new Response(JSON.stringify([{ source_content_hash: storedHash }]), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const savedTranslations = await upsertEventTranslations(
+      {
+        SUPABASE_URL: 'https://database.example',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+        GOOGLE_TRANSLATE_PROJECT_ID: 'test-project',
+        __translationClient: {
+          async translateText() {
+            throw new Error('machine translation must not run for unchanged content');
+          },
+        },
+      },
+      { language: 'ja' },
+      { id: 'event-1' },
+      eventData,
+    );
+
+    assert.deepEqual(savedTranslations, ['ja', 'en']);
+    assert.deepEqual(
+      fetchCalls.map((call) => call.method),
+      ['POST', 'GET'],
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
 
@@ -3582,6 +3625,44 @@ test('source capabilities declare native locales and machine translation behavio
   assert.equal(sourceHasNativeLocale(source, 'ja'), true);
   assert.equal(sourceHasNativeLocale(source, 'en'), false);
   assert.equal(shouldMachineTranslateMissingLocales(source), false);
+});
+
+test('city locale registry suppresses machine translation only where no target locale exists', async () => {
+  assert.deepEqual(localesForCity('kyoto'), ['en', 'ja']);
+  assert.deepEqual(localesForCity('hong-kong'), ['en']);
+
+  assert.equal(
+    normalizeSourceConfig({
+      city: 'kyoto',
+      capabilities: { machine_translate_missing_locales: true },
+    }).capabilities.machine_translate_missing_locales,
+    true,
+  );
+  assert.equal(
+    applySourceOverride(
+      {
+        slug: 'single-locale-source',
+        name: 'Single Locale Source',
+        city: 'hong-kong',
+        taxonomy: testTaxonomy(['museum']),
+        capabilities: { machine_translate_missing_locales: false },
+      },
+      { capabilities: { machine_translate_missing_locales: true } },
+    ).capabilities.machine_translate_missing_locales,
+    false,
+  );
+
+  const hongKongSources = await loadSourcesConfig({ city: 'hong-kong' });
+  assert.ok(hongKongSources.length > 0);
+  assert.ok(hongKongSources.every((source) => source.capabilities.machine_translate_missing_locales === false));
+  assert.deepEqual(
+    buildCrawlQaReport({
+      source: { slug: 'hong-kong-source', city: 'hong-kong' },
+      sourceOutcome: 'source_ok',
+      savedEvents: [{ translations: ['en'] }],
+    }).missing_translations,
+    { en: 0 },
+  );
 });
 
 test('source config validator reports missing source truth', () => {

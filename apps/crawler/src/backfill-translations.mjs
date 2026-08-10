@@ -7,10 +7,10 @@ import {
   buildTranslationSourceContentHash,
   upsertEventTranslation,
 } from './run-once.mjs';
+import { localesForCity } from '../../../data/sources/source-config.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = resolve(__dirname, '..', '.env');
-const supportedLocales = ['en', 'ja'];
 
 function applyEnvToProcess(env) {
   for (const [key, value] of Object.entries(env)) {
@@ -118,7 +118,7 @@ function getMissingLocales(row) {
       .filter(Boolean),
   );
 
-  return supportedLocales.filter((locale) => !existingLocales.has(locale));
+  return localesForCity(row.sources?.city).filter((locale) => !existingLocales.has(locale));
 }
 
 async function main() {
@@ -132,7 +132,7 @@ async function main() {
 
   const rows = await supabaseRequest({
     env,
-    path: `events?status=eq.published&select=id,title,description,sources(slug,language),event_translations(locale,title,description)&limit=${limit}`,
+    path: `events?status=eq.published&select=id,title,description,sources(slug,language,city),event_translations(locale,title,description)&limit=${limit}`,
   });
 
   const missing = [];

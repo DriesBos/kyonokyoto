@@ -10,6 +10,12 @@ const cityTimeZones = new Map([
   ['tokyo', 'Asia/Tokyo'],
   ['hong-kong', 'Asia/Hong_Kong'],
 ]);
+const cityLocales = new Map([
+  ['kyoto', ['en', 'ja']],
+  ['osaka', ['en', 'ja']],
+  ['tokyo', ['en', 'ja']],
+  ['hong-kong', ['en']],
+]);
 const supportedCities = new Set(cityTimeZones.keys());
 const supportedLocales = new Set(['en', 'ja']);
 const supportedRenderModes = new Set(['auto', 'always', 'never']);
@@ -43,6 +49,12 @@ export function normalizeCity(value) {
   if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
   return supportedCities.has(normalized) ? normalized : null;
+}
+
+export function localesForCity(city = 'kyoto') {
+  const normalizedCity = normalizeCity(city);
+  if (!normalizedCity) throw new Error(`Unsupported source city "${city}"`);
+  return [...cityLocales.get(normalizedCity)];
 }
 
 export function sourcePathForCity(city = 'kyoto') {
@@ -111,6 +123,16 @@ function normalizeCapabilities(value = {}) {
   }
 
   return output;
+}
+
+export function normalizeSourceConfig(source = {}) {
+  const capabilities = normalizeCapabilities(source.capabilities);
+
+  if (localesForCity(source.city).length === 1) {
+    capabilities.machine_translate_missing_locales = false;
+  }
+
+  return { ...source, capabilities };
 }
 
 function normalizeSelectors(value = {}) {
@@ -340,7 +362,7 @@ export function applySourceOverride(source, override = {}) {
 
   delete output.source_type;
   delete output.source_categories;
-  return output;
+  return normalizeSourceConfig(output);
 }
 
 export function validateSourceConfig(source) {

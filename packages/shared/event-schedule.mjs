@@ -316,6 +316,19 @@ export function eventEndDateOnly(event) {
   return ends.at(-1) ?? null;
 }
 
+export function eventDisplayGroup(event, todayDateOnly) {
+  if (event?.timing === 'upcoming') return 'upcoming';
+
+  const scheduleType = inferCanonicalScheduleType(event);
+  const endDate = scheduleType === 'range' ? eventEndDateOnly(event) : null;
+  const longRunningCutoff = addMonthsDateOnly(todayDateOnly, 12);
+
+  return scheduleType === 'open_ended' ||
+    (endDate && longRunningCutoff && endDate > longRunningCutoff)
+    ? 'permanent'
+    : 'ongoing';
+}
+
 export function nextRelevantScheduleStartDateOnly(event, todayDateOnly) {
   const today = normalizeDateOnly(todayDateOnly);
   if (!isValidDateOnly(today)) return null;
