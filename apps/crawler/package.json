@@ -23,6 +23,6 @@
     "test": "node --test test/*.test.mjs && python3 -B -m unittest discover -s test -p 'test_*.py'"
   },
   "dependencies": {
-    "@google-cloud/translate": "^9.4.2"
+    "@google-cloud/translate": "^10.0.1"
   }
 }
