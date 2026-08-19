@@ -30,7 +30,11 @@ export const formatEventDateRange = (
 
   const sameYear = startDate.slice(0, 4) === endDate.slice(0, 4);
   const sameMonth = sameYear && startDate.slice(5, 7) === endDate.slice(5, 7);
-  const startText = formatDateOnly(startDate, locale, { year: !sameYear, month: !sameMonth, day: true });
+  const startText = formatDateOnly(startDate, locale, {
+    year: !sameYear,
+    month: !sameMonth,
+    day: true,
+  });
   return `${startText} – ${formatDateOnly(endDate, locale)}`;
 };
 
@@ -41,7 +45,8 @@ export const formatOngoingEventEnd = (
 ): string => {
   const endDate = normalizeDateOnly(end);
   if (!endDate) return fallback;
-  if (locale === 'ja') return `開催中 — ${formatDateOnly(endDate, locale, { month: true, day: true })}`;
+  if (locale === 'ja')
+    return `開催中 — ${formatDateOnly(endDate, locale, { month: true, day: true })}`;
   const dayMonth = formatDateOnly(endDate, locale, { month: true, day: true });
   return `ONGOING — ${dayMonth.toUpperCase()} '${endDate.slice(2, 4)}`;
 };

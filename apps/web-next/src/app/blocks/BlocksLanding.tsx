@@ -1,16 +1,7 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
-  resolveBlocksLandingSlides,
-  type BlocksLandingCandidate,
-} from '@/lib/blocksLanding';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { resolveBlocksLandingSlides, type BlocksLandingCandidate } from '@/lib/blocksLanding';
 import { landingMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import styles from './page.module.sass';
 

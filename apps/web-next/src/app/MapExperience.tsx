@@ -110,7 +110,7 @@ export default function MapExperience({
     emitLayoutUpdate();
   };
   const setMobileSize = (value: number) => {
-    const maximum = Math.max(mobileMinimum, window.innerHeight * .7);
+    const maximum = Math.max(mobileMinimum, window.innerHeight * 0.7);
     setMapPanelSize(Math.min(Math.max(value, mobileMinimum), maximum));
     emitLayoutUpdate();
   };
@@ -152,7 +152,9 @@ export default function MapExperience({
     event.preventDefault();
     const amount = event.shiftKey ? step * 3 : step;
     if (isMobile) {
-      setMobileSize((mapPanelSize ?? mobileMinimum) + (event.key === 'ArrowDown' ? amount : -amount));
+      setMobileSize(
+        (mapPanelSize ?? mobileMinimum) + (event.key === 'ArrowDown' ? amount : -amount),
+      );
     } else {
       setDesktopSize(
         (eventsPanelSize ?? desktopMinimum) + (event.key === 'ArrowRight' ? amount : -amount),

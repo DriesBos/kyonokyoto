@@ -32,7 +32,9 @@ export const eventMediaDeliveryUrl = (value: string | null): string | null => {
 export const eventMediaDeliverySrcSet = (value: string | null): string | null => {
   const source = safeEventImageSource(value);
   if (!source || !process.env.NETLIFY) return null;
-  return EVENT_IMAGE_WIDTHS.map((width) => `${netlifyImageUrl(source, width)} ${width}w`).join(', ');
+  return EVENT_IMAGE_WIDTHS.map((width) => `${netlifyImageUrl(source, width)} ${width}w`).join(
+    ', ',
+  );
 };
 
 export const landingMediaDeliveryUrl = (

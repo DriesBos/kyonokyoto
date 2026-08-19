@@ -78,9 +78,11 @@ export function EventCardMedia({
       data-expanded={expanded}
       data-overflow={hasOverflow}
       data-lead-aspect-ratio={leadAspectRatio ? 'true' : undefined}
-      style={leadAspectRatio
-        ? { '--media-lead-aspect-ratio': String(leadAspectRatio) } as CSSProperties
-        : undefined}
+      style={
+        leadAspectRatio
+          ? ({ '--media-lead-aspect-ratio': String(leadAspectRatio) } as CSSProperties)
+          : undefined
+      }
       role={hasOverflow ? 'region' : undefined}
       aria-label={hasOverflow ? `${label} media` : undefined}
       tabIndex={hasOverflow ? 0 : undefined}
@@ -99,9 +101,11 @@ export function EventCardMedia({
               fetchPriority={image.fetchPriority}
               decoding="async"
               ref={imageIndex === 0 ? syncNaturalLeadAspectRatio : undefined}
-              onLoad={imageIndex === 0
-                ? (event) => syncNaturalLeadAspectRatio(event.currentTarget)
-                : undefined}
+              onLoad={
+                imageIndex === 0
+                  ? (event) => syncNaturalLeadAspectRatio(event.currentTarget)
+                  : undefined
+              }
             />
           </figure>
         ))}
@@ -159,7 +163,12 @@ function downloadAppleCalendar(event: AppleCalendarEvent) {
   const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${event.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'kyoto-event'}.ics`;
+  link.download = `${
+    event.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || 'kyoto-event'
+  }.ics`;
   document.body.append(link);
   link.click();
   link.remove();
@@ -200,7 +209,11 @@ export function EventCardActions({
         </a>
       )}
       {appleCalendar && (
-        <button data-event-card-part="link" type="button" onClick={() => downloadAppleCalendar(appleCalendar)}>
+        <button
+          data-event-card-part="link"
+          type="button"
+          onClick={() => downloadAppleCalendar(appleCalendar)}
+        >
           <span className={styles.actionContent}>
             <span>{copy.apple}</span>
             <ActionIcon name="calendar" />

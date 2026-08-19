@@ -22,6 +22,7 @@ import { MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX } from '../../../packages/shared/event
 import {
   buildScheduleFields,
   classifyEventTiming,
+  isValidDateOnly,
   normalizeDateOnly,
   validateScheduleSegments,
 } from '../../../packages/shared/event-schedule.mjs';
@@ -1686,6 +1687,20 @@ function hasVerifiedEventDate(event) {
     Array.isArray(event?.occurrence_dates) &&
     event.occurrence_dates.some((value) => normalizeDateOnly(value))
   );
+}
+
+function hasInvalidEventDate(event) {
+  const dateFields = [
+    event?.start_date,
+    event?.end_date,
+    ...(event?.occurrence_dates ?? []),
+    ...(event?.schedule_segments ?? []).flatMap((segment) =>
+      segment?.is_all_day ? [segment.start_date, segment.end_date] : [],
+    ),
+  ];
+  if (dateFields.some((value) => value != null && !isValidDateOnly(value))) return true;
+
+  return !validateScheduleSegments(event).valid;
 }
 
 function normalizeEventDatePrecision(event) {
@@ -7549,6 +7564,7 @@ function createCrawlDiagnostics(env = {}) {
     skipped_past_count: 0,
     skipped_old_count: 0,
     skipped_missing_date_count: 0,
+    skipped_invalid_date_count: 0,
     skipped_missing_description_count: 0,
     skipped_invalid_title_count: 0,
     skipped_other_count: 0,
@@ -7615,6 +7631,8 @@ function recordSkippedEvent(diagnostics, reason) {
     diagnostics.skipped_old_count += 1;
   } else if (reason === 'missing verifiable event date') {
     diagnostics.skipped_missing_date_count += 1;
+  } else if (/^invalid event date/.test(reason ?? '')) {
+    diagnostics.skipped_invalid_date_count += 1;
   } else if (reason === 'missing valid description') {
     diagnostics.skipped_missing_description_count += 1;
   } else if (/^invalid event title/.test(reason ?? '')) {
@@ -8650,6 +8668,21 @@ async function archiveStaleEvents(env, sourceId, activeDedupeKeys, request = sup
   return archivedCount;
 }
 
+async function existingEventDedupeKeys(env, sourceId, request = supabaseRequest) {
+  const rows = await request({
+    env,
+    path: `events?source_id=eq.${encodeURIComponent(sourceId)}&select=dedupe_key&limit=10000`,
+  });
+  return new Set((rows ?? []).map((row) => row.dedupe_key).filter(Boolean));
+}
+
+function crawlEventMutationCounts(savedEvents, existingDedupeKeys, archivedEvents = 0) {
+  const dedupeKeys = new Set(savedEvents.map((event) => event.dedupeKey).filter(Boolean));
+  const created = [...dedupeKeys].filter((key) => !existingDedupeKeys.has(key)).length;
+  const upserted = dedupeKeys.size - created;
+  return { created, updated: upserted + archivedEvents };
+}
+
 function hasExtractedImage(eventData) {
   return (
     Boolean(eventData?.primary_image_url) ||
@@ -8974,6 +9007,7 @@ async function crawlSource({
     const savedEvents = [];
     const skippedEvents = [];
     const activeDedupeKeys = new Set();
+    const existingDedupeKeys = await existingEventDedupeKeys(env, source.id);
     const detailCrawlContext = {
       ...crawlContext,
       targetElements: selectorsFor(crawlSourceConfig, 'description'),
@@ -9076,6 +9110,15 @@ async function crawlSource({
           detailUrl,
           title: extractedEvent.title,
           reason: 'missing verifiable event date',
+        });
+        continue;
+      }
+
+      if (hasInvalidEventDate(extractedEvent)) {
+        pushSkippedEvent(skippedEvents, diagnostics, {
+          detailUrl,
+          title: extractedEvent.title,
+          reason: 'invalid event date',
         });
         continue;
       }
@@ -9215,6 +9258,7 @@ async function crawlSource({
       savedEvents.push({
         detailUrl,
         eventId: savedEvent.id,
+        dedupeKey,
         title: savedEvent.title,
         titleOrigin: extractedEvent._title_origin,
         titleWarnings: extractedEvent._title_warnings,
@@ -9248,6 +9292,11 @@ async function crawlSource({
       skippedEvents,
       diagnostics,
     });
+    const mutationCounts = crawlEventMutationCounts(
+      savedEvents,
+      existingDedupeKeys,
+      archivedEvents,
+    );
 
     await updateCrawlRun(env, crawlRun.id, {
       status: runStatus,
@@ -9255,8 +9304,8 @@ async function crawlSource({
       pages_queued: detailUrls.length + listingPages.length,
       pages_fetched: pagesFetched,
       pages_parsed: savedEvents.length,
-      events_created: savedEvents.length,
-      events_updated: archivedEvents,
+      events_created: mutationCounts.created,
+      events_updated: mutationCounts.updated,
       logs: [
         {
           level: 'info',
@@ -9452,6 +9501,8 @@ export {
   classifyFetchResult,
   classifySourceOutcome,
   crawlRunStatusForOutcome,
+  crawlEventMutationCounts,
+  hasInvalidEventDate,
   assignEventCoordinates,
   createCrawlDiagnostics,
   detailPageCacheKey,

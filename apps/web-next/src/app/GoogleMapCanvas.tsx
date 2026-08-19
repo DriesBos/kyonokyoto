@@ -107,7 +107,7 @@ const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
       const importLibrary = mapWindow.google?.maps?.importLibrary;
       return importLibrary && importLibrary !== bootstrapImportLibrary
         ? importLibrary(libraryName)
-        : mapWindow.google?.maps ?? {};
+        : (mapWindow.google?.maps ?? {});
     });
   };
 
@@ -182,7 +182,8 @@ export default function GoogleMapCanvas({
     const showPlaceholder = (message: string, detail?: string) => {
       placeholder.hidden = false;
       placeholder.querySelector('[data-map-placeholder-message]')?.replaceChildren(message);
-      if (detail) placeholder.querySelector('[data-map-placeholder-detail]')?.replaceChildren(detail);
+      if (detail)
+        placeholder.querySelector('[data-map-placeholder-detail]')?.replaceChildren(detail);
     };
 
     if (!apiKey || !mapId) {
@@ -199,7 +200,11 @@ export default function GoogleMapCanvas({
     let hasCenteredUserLocation = false;
     let userMarker: AdvancedMarkerInstance | null = null;
     let userContent: HTMLElement | null = null;
-    const markerRecords: { marker: AdvancedMarkerInstance; source: MapSource; content: HTMLElement }[] = [];
+    const markerRecords: {
+      marker: AdvancedMarkerInstance;
+      source: MapSource;
+      content: HTMLElement;
+    }[] = [];
     const listeners: [string, EventListener][] = [];
 
     const setStatus = (message = '') => {
@@ -231,7 +236,8 @@ export default function GoogleMapCanvas({
           markerLibrary as { AdvancedMarkerElement?: AdvancedMarkerConstructor }
         )?.AdvancedMarkerElement;
         const ColorScheme = (coreLibrary as { ColorScheme?: { LIGHT?: unknown } })?.ColorScheme;
-        if (!MapConstructor || !AdvancedMarkerElement) throw new Error('Google Maps constructors unavailable.');
+        if (!MapConstructor || !AdvancedMarkerElement)
+          throw new Error('Google Maps constructors unavailable.');
 
         const map = new MapConstructor(viewport, {
           center: mapCenter,
@@ -251,13 +257,19 @@ export default function GoogleMapCanvas({
           if (!card) return;
           const events = card.closest<HTMLElement>('[data-events-section]');
           if (events && events.scrollHeight > events.clientHeight) {
-            events.scrollTo({ top: Math.max(0, card.offsetTop - events.offsetTop), behavior: 'smooth' });
+            events.scrollTo({
+              top: Math.max(0, card.offsetTop - events.offsetTop),
+              behavior: 'smooth',
+            });
           } else {
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           }
         };
 
-        const highlighted = new Map<string, { marker: AdvancedMarkerInstance; content: HTMLElement }>();
+        const highlighted = new Map<
+          string,
+          { marker: AdvancedMarkerInstance; content: HTMLElement }
+        >();
         const clearHighlight = () => {
           highlighted.forEach(({ marker, content }) => {
             content.removeAttribute('data-highlighted');
@@ -267,19 +279,26 @@ export default function GoogleMapCanvas({
         };
         const applyFilters = () => {
           const groups = activeCategoryGroups();
-          const starredOnly = document.querySelector("[data-starred-button][aria-pressed='true']") !== null;
+          const starredOnly =
+            document.querySelector("[data-starred-button][aria-pressed='true']") !== null;
           markerRecords.forEach(({ marker, source, content }) => {
             const cards = sourceCards(source.id);
             const visibleCards = cards.filter(isVisible);
-            const visible = matchesCategories(source.categories, groups)
-              && (!cards.length || visibleCards.length > 0)
-              && (!starredOnly || visibleCards.some((card) => card.dataset.starred === 'true'));
+            const visible =
+              matchesCategories(source.categories, groups) &&
+              (!cards.length || visibleCards.length > 0) &&
+              (!starredOnly || visibleCards.some((card) => card.dataset.starred === 'true'));
             marker.map = visible ? map : null;
             content.toggleAttribute('data-hidden', !visible);
-            content.toggleAttribute('data-starred', cards.some((card) => card.dataset.starred === 'true'));
+            content.toggleAttribute(
+              'data-starred',
+              cards.some((card) => card.dataset.starred === 'true'),
+            );
           });
           clearHighlight();
-          const activeCard = document.querySelector<HTMLElement>("[data-event-card][data-active='true']");
+          const activeCard = document.querySelector<HTMLElement>(
+            "[data-event-card][data-active='true']",
+          );
           const id = activeCard?.dataset.mapLocationId;
           const record = id ? markerRecords.find(({ source }) => source.id === id) : undefined;
           if (id && record && !record.content.hasAttribute('data-hidden')) {
@@ -380,7 +399,9 @@ export default function GoogleMapCanvas({
       cancelled = true;
       dispose?.();
       stopUserTracking();
-      markerRecords.forEach(({ marker }) => { marker.map = null; });
+      markerRecords.forEach(({ marker }) => {
+        marker.map = null;
+      });
       listeners.forEach(([name, listener]) => document.removeEventListener(name, listener));
     };
   }, [apiKey, copy, mapCenter, mapId, sources]);
@@ -389,7 +410,13 @@ export default function GoogleMapCanvas({
     <div className={styles.canvas} role="application" aria-label={`${cityLabel} cultural map`}>
       <div className={styles.viewport} ref={viewportRef} />
       <div className={styles.controls}>
-        <button ref={findMeButtonRef} className={styles.findMe} type="button" aria-pressed="false" aria-describedby="map-find-me-status">
+        <button
+          ref={findMeButtonRef}
+          className={styles.findMe}
+          type="button"
+          aria-pressed="false"
+          aria-describedby="map-find-me-status"
+        >
           <span>{copy.findMe}</span>
         </button>
         <p className={styles.status} id="map-find-me-status" ref={statusRef} aria-live="polite" />

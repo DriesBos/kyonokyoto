@@ -7,9 +7,10 @@ type Expansion = {
   toggle: () => void;
 };
 
-const ExpansionContext = createContext<{ activeId: string | null; setActiveId: (id: string | null) => void } | null>(
-  null,
-);
+const ExpansionContext = createContext<{
+  activeId: string | null;
+  setActiveId: (id: string | null) => void;
+} | null>(null);
 
 export function useEventCardExpansion(eventId: string): Expansion {
   const context = useContext(ExpansionContext);

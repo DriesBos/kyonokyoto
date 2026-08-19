@@ -33,49 +33,75 @@ test('V2 event mapper preserves source, calendar, image and media contracts', as
   assert.match(source, /sourceSlug: truth\.slug/);
   assert.match(source, /landingEligible: Boolean/);
   assert.match(source, /group: 'permanent'/);
-  assert.match(source, /endpoint\.search = new URLSearchParams\(\{ select: EVENT_SELECT, status: 'eq\.published', city: `eq\.\$\{city\}` \}\)/);
+  assert.match(
+    source,
+    /endpoint\.search = new URLSearchParams\(\{ select: EVENT_SELECT, status: 'eq\.published', city: `eq\.\$\{city\}` \}\)/,
+  );
   assert.match(source, /translationFor\(event, locale\)/);
   assert.match(source, /dateOnlyInTimeZone/);
   assert.match(source, /events\.filter\(\(event\) => event\.group === 'ongoing'\)/);
   assert.match(source, /lat: truth\.lat/);
   assert.match(source, /lng: truth\.lng/);
-  assert.match(source, /\.\.\.events\.filter\(\(event\) => event\.group === 'permanent'\),\s+\.\.\.permanent/);
+  assert.match(
+    source,
+    /\.\.\.events\.filter\(\(event\) => event\.group === 'permanent'\),\s+\.\.\.permanent/,
+  );
 });
 
 test('calendar helper builds all-day, timed and open-ended actions', () => {
-  const allDay = new URL(googleCalendarUrl({
-    ...calendarEvent,
-    calendarStartsAt: '2026-08-10',
-    calendarEndsAt: '2026-08-12',
-    isAllDay: true,
-  }, '2026-08-09'));
+  const allDay = new URL(
+    googleCalendarUrl(
+      {
+        ...calendarEvent,
+        calendarStartsAt: '2026-08-10',
+        calendarEndsAt: '2026-08-12',
+        isAllDay: true,
+      },
+      '2026-08-09',
+    ),
+  );
   assert.equal(allDay.searchParams.get('dates'), '20260810/20260813');
 
-  const timed = new URL(googleCalendarUrl({
-    ...calendarEvent,
-    calendarStartsAt: '2026-08-10T10:00:00+09:00',
-    calendarEndsAt: '2026-08-10T12:00:00+09:00',
-    isAllDay: false,
-  }, '2026-08-09'));
+  const timed = new URL(
+    googleCalendarUrl(
+      {
+        ...calendarEvent,
+        calendarStartsAt: '2026-08-10T10:00:00+09:00',
+        calendarEndsAt: '2026-08-10T12:00:00+09:00',
+        isAllDay: false,
+      },
+      '2026-08-09',
+    ),
+  );
   assert.equal(timed.searchParams.get('dates'), '20260810T010000Z/20260810T030000Z');
-  assert.equal(googleCalendarUrl({
-    ...calendarEvent,
-    calendarStartsAt: '2026-08-10',
-    calendarEndsAt: null,
-    isAllDay: true,
-  }, '2026-08-09'), null);
+  assert.equal(
+    googleCalendarUrl(
+      {
+        ...calendarEvent,
+        calendarStartsAt: '2026-08-10',
+        calendarEndsAt: null,
+        isAllDay: true,
+      },
+      '2026-08-09',
+    ),
+    null,
+  );
   assert.equal(safeHttpUrl('javascript:alert(1)'), null);
 });
 
 test('Apple ICS uses exclusive all-day end and escapes text', () => {
-  const ics = buildAppleCalendarIcs({
-    title: 'Art, craft',
-    details: 'Line one\nLine two',
-    location: 'Kyoto; Japan',
-    start: '2026-08-10',
-    end: '2026-08-12',
-    isAllDay: true,
-  }, 'fixed@kyonokyoto', '20260809T000000Z');
+  const ics = buildAppleCalendarIcs(
+    {
+      title: 'Art, craft',
+      details: 'Line one\nLine two',
+      location: 'Kyoto; Japan',
+      start: '2026-08-10',
+      end: '2026-08-12',
+      isAllDay: true,
+    },
+    'fixed@kyonokyoto',
+    '20260809T000000Z',
+  );
   assert.match(ics, /DTSTART;VALUE=DATE:20260810/);
   assert.match(ics, /DTEND;VALUE=DATE:20260813/);
   assert.match(ics, /SUMMARY:Art\\, craft/);
@@ -83,12 +109,15 @@ test('Apple ICS uses exclusive all-day end and escapes text', () => {
 });
 
 test('YouTube normalization keeps valid YouTube embeds only', () => {
-  assert.deepEqual(normalizeYouTubeEmbeds([
-    { type: 'youtube', url: 'https://www.youtube.com/watch?v=abc123' },
-    { type: 'youtube', url: 'https://youtu.be/xyz789' },
-    { type: 'vimeo', url: 'https://vimeo.com/1' },
-    { type: 'youtube', url: 'not a URL' },
-  ]).map((embed) => embed.videoId), ['abc123', 'xyz789']);
+  assert.deepEqual(
+    normalizeYouTubeEmbeds([
+      { type: 'youtube', url: 'https://www.youtube.com/watch?v=abc123' },
+      { type: 'youtube', url: 'https://youtu.be/xyz789' },
+      { type: 'vimeo', url: 'https://vimeo.com/1' },
+      { type: 'youtube', url: 'not a URL' },
+    ]).map((embed) => embed.videoId),
+    ['abc123', 'xyz789'],
+  );
 });
 
 test('lead image owns media ratio and becomes the scrollable track only while open', async () => {
@@ -112,7 +141,10 @@ test('lead image owns media ratio and becomes the scrollable track only while op
   assert.match(mediaStyles, /flex-basis: calc\(100% - var\(--media-peek\)\)/);
   assert.match(mediaStyles, /aspect-ratio: var\(--media-lead-aspect-ratio\)/);
   assert.match(mediaStyles, /object-fit: contain/);
-  const eventCardBlockStyles = blockStyles.slice(0, blockStyles.indexOf(':global(html[data-blocks-landing-active])'));
+  const eventCardBlockStyles = blockStyles.slice(
+    0,
+    blockStyles.indexOf(':global(html[data-blocks-landing-active])'),
+  );
   assert.doesNotMatch(eventCardBlockStyles, /aspect-ratio: 3 \/ 2|object-fit: cover/);
   assert.match(mediaStyles, /-webkit-line-clamp: 5/);
   assert.match(blocks, /<EventsGrid events=\{events\} locale=\{locale\}/);

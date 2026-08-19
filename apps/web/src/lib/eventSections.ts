@@ -1,6 +1,4 @@
-import {
-  eventDisplayGroup,
-} from '../../../../packages/shared/event-schedule.mjs';
+import { eventDisplayGroup } from '../../../../packages/shared/event-schedule.mjs';
 import type { DisplayEvent } from './events';
 
 export const groupDisplayEvents = (events: DisplayEvent[], today: string) => {

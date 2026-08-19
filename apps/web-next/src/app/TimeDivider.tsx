@@ -42,25 +42,30 @@ export default function TimeDivider({
       if (!root.isConnected) return;
       gsap.registerPlugin(ScrollTrigger);
       const section = root.closest<HTMLElement>('[data-events-section]');
-      const scroller = section && section.scrollHeight > section.clientHeight + 1 ? section : undefined;
+      const scroller =
+        section && section.scrollHeight > section.clientHeight + 1 ? section : undefined;
       const context = gsap.context(() => {
         root.querySelectorAll<HTMLElement>('[data-time-divider-track]').forEach((track, index) => {
           const travel = Number(track.dataset.travel ?? 14);
           const start = Number(track.dataset.start ?? -travel);
           const end = Number(track.dataset.end ?? 0);
-          gsap.fromTo(track, { xPercent: start }, {
-            xPercent: end,
-            ease: 'none',
-            scrollTrigger: {
-              id: `${id}-${index}`,
-              trigger: root,
-              scroller,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: 0.33,
-              invalidateOnRefresh: true,
+          gsap.fromTo(
+            track,
+            { xPercent: start },
+            {
+              xPercent: end,
+              ease: 'none',
+              scrollTrigger: {
+                id: `${id}-${index}`,
+                trigger: root,
+                scroller,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.33,
+                invalidateOnRefresh: true,
+              },
             },
-          });
+          );
         });
       }, root);
       cleanup = () => context.revert();

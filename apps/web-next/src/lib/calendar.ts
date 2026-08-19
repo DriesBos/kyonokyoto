@@ -1,4 +1,7 @@
-import { activeOrNextScheduleSegment, normalizeDateOnly } from '../../../../packages/shared/event-schedule.mjs';
+import {
+  activeOrNextScheduleSegment,
+  normalizeDateOnly,
+} from '../../../../packages/shared/event-schedule.mjs';
 
 export type CalendarEvent = {
   title: string;
@@ -23,9 +26,14 @@ export const safeHttpUrl = (value: string | null | undefined) => {
   }
 };
 
-export const mapsUrl = (event: Pick<CalendarEvent, 'institution' | 'venue' | 'addressText' | 'directionsQuery'>) => {
+export const mapsUrl = (
+  event: Pick<CalendarEvent, 'institution' | 'venue' | 'addressText' | 'directionsQuery'>,
+) => {
   const query = event.directionsQuery ?? event.venue ?? event.addressText ?? event.institution;
-  return safeHttpUrl(query) ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  return (
+    safeHttpUrl(query) ??
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+  );
 };
 
 const addDays = (value: string, days: number) => {
@@ -39,14 +47,19 @@ const timestamp = (value: string) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? null
-    : date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+    : date
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}Z$/, 'Z');
 };
 
-export const calendarDetailsFor = (event: Pick<CalendarEvent, 'description' | 'institution' | 'venue'>) =>
-  event.description ?? `${event.institution}${event.venue ? ` — ${event.venue}` : ''}`;
+export const calendarDetailsFor = (
+  event: Pick<CalendarEvent, 'description' | 'institution' | 'venue'>,
+) => event.description ?? `${event.institution}${event.venue ? ` — ${event.venue}` : ''}`;
 
-export const calendarLocationFor = (event: Pick<CalendarEvent, 'addressText' | 'venue' | 'institution'>) =>
-  event.addressText ?? event.venue ?? event.institution;
+export const calendarLocationFor = (
+  event: Pick<CalendarEvent, 'addressText' | 'venue' | 'institution'>,
+) => event.addressText ?? event.venue ?? event.institution;
 
 export const googleCalendarUrl = (
   event: CalendarEvent,

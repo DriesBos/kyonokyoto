@@ -40,6 +40,7 @@ export function buildCrawlQaReport({
     skips: {
       missing_image: diagnostics.missing_image_count ?? 0,
       missing_date: diagnostics.skipped_missing_date_count ?? 0,
+      invalid_date: diagnostics.skipped_invalid_date_count ?? 0,
       missing_description: diagnostics.skipped_missing_description_count ?? 0,
       invalid_title: diagnostics.skipped_invalid_title_count ?? 0,
       past: diagnostics.skipped_past_count ?? 0,

@@ -29,7 +29,17 @@ test('production route renders block cards with groups, maps, and time dividers'
 });
 
 test('block controls remain accessible and legacy routes canonicalize', async () => {
-  const [panel, styles, themeStyles, themeButton, debugControls, blocks, blockStyles, legacyPage, rootPage] = await Promise.all([
+  const [
+    panel,
+    styles,
+    themeStyles,
+    themeButton,
+    debugControls,
+    blocks,
+    blockStyles,
+    legacyPage,
+    rootPage,
+  ] = await Promise.all([
     readFile(new URL('ControlPanel.tsx', app), 'utf8'),
     readFile(new URL('ControlPanel.module.sass', app), 'utf8'),
     readFile(new URL('ThemeButton.module.sass', app), 'utf8'),
@@ -75,7 +85,10 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
   assert.match(blocks, /aria-label="Show fewer items per row"/);
   assert.match(blocks, /aria-label="Show more items per row"/);
   assert.match(blocks, /style\.setProperty\('--block-cols', String\(next\)\)/);
-  assert.match(blocks, /style\.setProperty\('--block-expanded-span', String\(Math\.min\(next, 2\)\)\)/);
+  assert.match(
+    blocks,
+    /style\.setProperty\('--block-expanded-span', String\(Math\.min\(next, 2\)\)\)/,
+  );
   assert.match(blockStyles, /--cols: var\(--block-cols, 4\)/);
   assert.match(blocks, /label: 'Gap [XY]'[\s\S]*unit: 'vmin'/);
   assert.match(blockStyles, /gap: var\(--block-gap-y, 5vmin\) var\(--block-gap-x, 5vmin\)/);

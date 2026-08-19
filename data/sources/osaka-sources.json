@@ -165,7 +165,8 @@
         "image_rules": "Keep only the first extracted image for each event."
       },
       "selectors": {
-        "listing_links": ".li-list .li a"
+        "listing_links": ".li-list .li a",
+        "title": "title"
       },
       "locales": {
         "ja": {
@@ -261,7 +262,8 @@
       "landing_slider": true,
       "measure_image_dimensions": true,
       "selectors": {
-        "listing_links": ".ex_poster a"
+        "listing_links": ".ex_poster a",
+        "title": "h1"
       },
       "locales": {
         "ja": {
@@ -825,7 +827,7 @@
         "native_locales": ["ja"]
       },
       "crawl_hints": {
-        "skip_patterns": ["/category/", "/past-exhibition/", "/about", "/access"],
+        "skip_patterns": ["/category/", "/past-exhibition/", "/yotei2/", "/about", "/access"],
         "max_detail_pages": 6
       },
       "qa": {

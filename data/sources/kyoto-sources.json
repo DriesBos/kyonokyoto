@@ -1552,6 +1552,9 @@
       "qa": {
         "image_rules": "Keep only the first extracted image for each event."
       },
+      "selectors": {
+        "title": "table.exhibition_info tr:first-child td"
+      },
       "locales": {
         "ja": {
           "start_urls": [

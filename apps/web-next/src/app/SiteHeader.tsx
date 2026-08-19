@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { CITY_COOKIE, CITY_STORAGE_KEY, alternateLocaleForCity, cityConfigs, defaultLocaleForCity, type AppCity } from '@/lib/cities';
+import {
+  CITY_COOKIE,
+  CITY_STORAGE_KEY,
+  alternateLocaleForCity,
+  cityConfigs,
+  defaultLocaleForCity,
+  type AppCity,
+} from '@/lib/cities';
 import { LOCALE_COOKIE, uiText, type AppLocale } from '@/lib/i18n';
 import { routePathFor } from '@/lib/routeState';
 import styles from './SiteHeader.module.sass';
@@ -91,9 +98,19 @@ export default function SiteHeader({
     let visibleGroups = 0;
 
     cards.forEach((card) => {
-      const cardCategories = new Set((card.dataset.categories ?? '').split('|').map((item) => item.trim()).filter(Boolean));
-      const timing = card.dataset.timing ?? card.closest<HTMLElement>('[data-event-group]')?.dataset.eventGroupName ?? '';
-      const categoryMatches = Array.from(activeByDimension.values()).every((selected) => Array.from(selected).some((slug) => cardCategories.has(slug)));
+      const cardCategories = new Set(
+        (card.dataset.categories ?? '')
+          .split('|')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      );
+      const timing =
+        card.dataset.timing ??
+        card.closest<HTMLElement>('[data-event-group]')?.dataset.eventGroupName ??
+        '';
+      const categoryMatches = Array.from(activeByDimension.values()).every((selected) =>
+        Array.from(selected).some((slug) => cardCategories.has(slug)),
+      );
       const matches = categoryMatches && (!activeTiming || timing === activeTiming);
       card.toggleAttribute('hidden', !matches);
     });
@@ -103,11 +120,17 @@ export default function SiteHeader({
       if (visible) visibleGroups += 1;
     });
     document.querySelectorAll<HTMLElement>('[data-event-divider]').forEach((divider) => {
-      const before = groups.find((group) => group.dataset.eventGroupName === divider.dataset.beforeGroup);
-      const after = groups.find((group) => group.dataset.eventGroupName === divider.dataset.afterGroup);
+      const before = groups.find(
+        (group) => group.dataset.eventGroupName === divider.dataset.beforeGroup,
+      );
+      const after = groups.find(
+        (group) => group.dataset.eventGroupName === divider.dataset.afterGroup,
+      );
       divider.toggleAttribute('hidden', visibleGroups < 2 || before?.hidden || after?.hidden);
     });
-    document.querySelector<HTMLElement>('[data-filter-empty]')?.toggleAttribute('hidden', visibleGroups > 0);
+    document
+      .querySelector<HTMLElement>('[data-filter-empty]')
+      ?.toggleAttribute('hidden', visibleGroups > 0);
     document.dispatchEvent(new CustomEvent('event-filter:updated'));
   }, [activeCategories, activeTiming, categories]);
 
@@ -126,22 +149,130 @@ export default function SiteHeader({
 
   return (
     <header className={styles.header} ref={rootRef} data-category-filter data-main-header>
-      <Link className={styles.logo} href={homeHref} aria-label={`${brandLabel} home`} onClick={() => persistPreference()}>
+      <Link
+        className={styles.logo}
+        href={homeHref}
+        aria-label={`${brandLabel} home`}
+        onClick={() => persistPreference()}
+      >
         <Wordmark label={brandLabel} />
       </Link>
       <div className={styles.controls} aria-label={copy.controlsAria} role="group">
         <div className={styles.toolbar}>
-          {hasFilters && <button className={styles.control} type="button" data-filter-button aria-pressed={filterOpen || activeCategories.size > 0 || Boolean(activeTiming)} aria-expanded={filterOpen} aria-controls="site-header-filters" onClick={() => { setFilterOpen((open) => !open); setCitiesOpen(false); }}>{copy.filter}</button>}
-          <button className={styles.control} type="button" aria-pressed={mapOpen} aria-expanded={mapOpen} aria-controls="map-section" onClick={onMapToggle}>{copy.map}</button>
-          <button className={styles.control} type="button" data-city-button aria-pressed={citiesOpen} aria-expanded={citiesOpen} aria-controls="site-header-cities" onClick={() => { setCitiesOpen((open) => !open); setFilterOpen(false); }}>{copy.cities}</button>
-          {otherLocale && <Link className={styles.control} href={routePathFor({ city, locale: otherLocale })} hrefLang={otherLocale} aria-label={`Language: ${otherLocale === 'en' ? 'eng' : 'jp'}`} onClick={() => persistPreference(city, otherLocale)}>{otherLocale === 'en' ? 'eng' : 'jp'}</Link>}
+          {hasFilters && (
+            <button
+              className={styles.control}
+              type="button"
+              data-filter-button
+              aria-pressed={filterOpen || activeCategories.size > 0 || Boolean(activeTiming)}
+              aria-expanded={filterOpen}
+              aria-controls="site-header-filters"
+              onClick={() => {
+                setFilterOpen((open) => !open);
+                setCitiesOpen(false);
+              }}
+            >
+              {copy.filter}
+            </button>
+          )}
+          <button
+            className={styles.control}
+            type="button"
+            aria-pressed={mapOpen}
+            aria-expanded={mapOpen}
+            aria-controls="map-section"
+            onClick={onMapToggle}
+          >
+            {copy.map}
+          </button>
+          <button
+            className={styles.control}
+            type="button"
+            data-city-button
+            aria-pressed={citiesOpen}
+            aria-expanded={citiesOpen}
+            aria-controls="site-header-cities"
+            onClick={() => {
+              setCitiesOpen((open) => !open);
+              setFilterOpen(false);
+            }}
+          >
+            {copy.cities}
+          </button>
+          {otherLocale && (
+            <Link
+              className={styles.control}
+              href={routePathFor({ city, locale: otherLocale })}
+              hrefLang={otherLocale}
+              aria-label={`Language: ${otherLocale === 'en' ? 'eng' : 'jp'}`}
+              onClick={() => persistPreference(city, otherLocale)}
+            >
+              {otherLocale === 'en' ? 'eng' : 'jp'}
+            </Link>
+          )}
         </div>
-        <div className={styles.panel} id="site-header-filters" aria-hidden={!filterOpen} inert={!filterOpen ? true : undefined} data-open={filterOpen || undefined}>
-          {categories.map((category) => <button className={styles.control} type="button" key={`${category.dimension}:${category.slug}`} data-category-button data-category={category.slug} data-category-dimension={category.dimension} aria-pressed={activeCategories.has(category.slug)} onClick={() => toggleCategory(category.slug)}>#{category.label}</button>)}
-          {timingFilters.map((timing) => <button className={styles.control} type="button" key={timing.slug} data-timing-button data-timing={timing.slug} aria-pressed={activeTiming === timing.slug} onClick={() => setActiveTiming((current) => current === timing.slug ? '' : timing.slug)}>{timing.label}</button>)}
+        <div
+          className={styles.panel}
+          id="site-header-filters"
+          aria-hidden={!filterOpen}
+          inert={!filterOpen ? true : undefined}
+          data-open={filterOpen || undefined}
+        >
+          {categories.map((category) => (
+            <button
+              className={styles.control}
+              type="button"
+              key={`${category.dimension}:${category.slug}`}
+              data-category-button
+              data-category={category.slug}
+              data-category-dimension={category.dimension}
+              aria-pressed={activeCategories.has(category.slug)}
+              onClick={() => toggleCategory(category.slug)}
+            >
+              #{category.label}
+            </button>
+          ))}
+          {timingFilters.map((timing) => (
+            <button
+              className={styles.control}
+              type="button"
+              key={timing.slug}
+              data-timing-button
+              data-timing={timing.slug}
+              aria-pressed={activeTiming === timing.slug}
+              onClick={() =>
+                setActiveTiming((current) => (current === timing.slug ? '' : timing.slug))
+              }
+            >
+              {timing.label}
+            </button>
+          ))}
         </div>
-        <div className={styles.panel} id="site-header-cities" aria-label="Cities" aria-hidden={!citiesOpen} inert={!citiesOpen ? true : undefined} data-open={citiesOpen || undefined}>
-          {cityConfigs.map((target) => { const targetLocale = target.locales.includes(locale) ? locale : defaultLocaleForCity(target); return <Link className={styles.control} data-city-option href={routePathFor({ city: target.slug, locale: targetLocale })} key={target.slug} aria-current={target.slug === city ? 'page' : undefined} onClick={() => persistPreference(target.slug, targetLocale)}>{target.label}</Link>; })}
+        <div
+          className={styles.panel}
+          id="site-header-cities"
+          aria-label="Cities"
+          aria-hidden={!citiesOpen}
+          inert={!citiesOpen ? true : undefined}
+          data-open={citiesOpen || undefined}
+        >
+          {cityConfigs.map((target) => {
+            const targetLocale = target.locales.includes(locale)
+              ? locale
+              : defaultLocaleForCity(target);
+            return (
+              <Link
+                className={styles.control}
+                data-city-option
+                href={routePathFor({ city: target.slug, locale: targetLocale })}
+                key={target.slug}
+                aria-current={target.slug === city ? 'page' : undefined}
+                onClick={() => persistPreference(target.slug, targetLocale)}
+              >
+                {target.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </header>

@@ -14,6 +14,7 @@ import {
   buildTranslationSourceContentHash,
   classifyFetchResult,
   classifySourceOutcome,
+  crawlEventMutationCounts,
   crawlRunStatusForOutcome,
   createCrawlDiagnostics,
   decodeHtmlResponseBytes,
@@ -43,6 +44,7 @@ import {
   hasExtractedImage,
   hasValidEventDescription,
   hasValidEventTitle,
+  hasInvalidEventDate,
   hasVerifiedEventDate,
   detailPageCacheKey,
   isPublicIpAddress,
@@ -109,6 +111,32 @@ test('city year rollover and timezone use local city time', () => {
   assert.equal(currentYearInTokyo(value), '2026');
   assert.equal(currentYearInCity('hong-kong', value), '2025');
   assert.equal(timeZoneForCity('hong-kong'), 'Asia/Hong_Kong');
+});
+
+test('crawl mutation metrics distinguish inserts, upserts, and archived rows', () => {
+  assert.deepEqual(
+    crawlEventMutationCounts(
+      [{ dedupeKey: 'new' }, { dedupeKey: 'existing' }, { dedupeKey: 'existing' }],
+      new Set(['existing']),
+      2,
+    ),
+    { created: 1, updated: 3 },
+  );
+});
+
+test('invalid date skips increment dedicated diagnostics', () => {
+  const diagnostics = createCrawlDiagnostics();
+  recordSkippedEvent(diagnostics, 'invalid event date');
+  assert.equal(diagnostics.skipped_invalid_date_count, 1);
+  assert.equal(
+    hasInvalidEventDate({
+      start_date: '2026-02-30',
+      end_date: '2026-03-01',
+      schedule_type: 'range',
+      schedule_segments: [{ is_all_day: true, start_date: '2026-02-30', end_date: '2026-03-01' }],
+    }),
+    true,
+  );
 });
 
 test('named crawler scripts use registered source slugs', async () => {
@@ -1419,13 +1447,15 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
   );
 
   const whiteCube = extractGenericEvent(
-    `<h1>Shigeo Otake</h1>
+    `<title>Shigeo Otake, Hong Kong (2026) | White Cube</title>
+     <h2>Dates</h2>
      <time>10 July - 29 August 2026</time>
      <p>Useful exhibition description for White Cube Hong Kong.</p>
      <img src="https://white-cube.transforms.svdcdn.com/Flower-Girl.jpg?w=2360&amp;h=1770&amp;q=80">`,
     whiteCubeSource,
     'https://www.whitecube.com/gallery-exhibitions/shigeo-otake-hong-kong-2026',
   );
+  assert.equal(whiteCube.title, 'Shigeo Otake, Hong Kong (2026) | White Cube');
   assert.equal(
     whiteCube.primary_image_url,
     'https://white-cube.transforms.svdcdn.com/Flower-Girl.jpg?w=2360&h=1770&q=80',
@@ -1519,6 +1549,27 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
     'https://cdn.shopify.com/hero.jpg',
     'https://cdn.shopify.com/artwork.jpg',
   ]);
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      `<a href="/blogs/exhibitions/tagged/current">Current</a>
+       <a href="/blogs/news">News</a>
+       <a href="/blogs/gallery-exhibitions/hk-becoming-her-072026">Becoming Her</a>`,
+      sourceBySlug.get('whitestone-gallery-hong-kong').base_url,
+      sourceBySlug.get('whitestone-gallery-hong-kong'),
+    ),
+    ['https://www.whitestone-gallery.com/blogs/gallery-exhibitions/hk-becoming-her-072026'],
+  );
+
+  const hkac = sourceBySlug.get('hong-kong-arts-centre');
+  assert.deepEqual(
+    extractGenericDetailUrls(
+      `<a href="/en/programme_detail/?u=past-flagships">Past flagship exhibitions</a>
+       <a href="/en/calendar_programme_detail/?u=current-show">Current show</a>`,
+      hkac.base_url,
+      hkac,
+    ),
+    ['https://hkac.org.hk/en/calendar_programme_detail/?u=current-show'],
+  );
 
   const duMonde = eventExtractors['galerie-du-monde'](
     `<meta property="og:image" content="https://static-assets.artlogic.net/artwork.jpg">
@@ -1870,14 +1921,13 @@ test('Abeno Harukas keeps event title and media outside site chrome', async () =
   ]);
 });
 
-test('NAKKA extraction keeps only the first event image', () => {
-  const source = {
-    slug: 'nakanoshima-museum-of-art-osaka',
-    name: 'Nakanoshima Museum of Art',
-    taxonomy: testTaxonomy(['museum'], [], ['exhibition']),
-  };
+test('NAKKA extraction keeps document title and only the first event image', async () => {
+  const source = (await loadSourcesConfig({ city: 'osaka' })).find(
+    (candidate) => candidate.slug === 'nakanoshima-museum-of-art-osaka',
+  );
   const event = eventExtractors[source.slug](
-    `<title>Current Exhibition | NAKKA</title>
+    `<title>Karl Walser | Nakanoshima Museum of Art, Osaka</title>
+     <h1>EXHIBITION Exhibitions</h1>
      <p>2026.07.01 - 2026.09.30</p>
      <img src="https://nakka-art.jp/images/first.jpg" width="1200" height="800">
      <img src="https://nakka-art.jp/images/second.jpg" width="1200" height="800">`,
@@ -1885,7 +1935,23 @@ test('NAKKA extraction keeps only the first event image', () => {
     'https://nakka-art.jp/en/exhibition-post/current-exhibition/',
   );
 
+  assert.equal(event.title, 'Karl Walser | Nakanoshima Museum of Art, Osaka');
   assert.deepEqual(event.image_urls, ['https://nakka-art.jp/images/first.jpg']);
+});
+
+test('National Museum of Art Osaka uses detail heading instead of source fallback', async () => {
+  const source = (await loadSourcesConfig({ city: 'osaka' })).find(
+    (candidate) => candidate.slug === 'national-museum-of-art-osaka',
+  );
+  const event = extractGenericEvent(
+    `<title>The National Museum of Art, Osaka</title>
+     <h1>Aki Sasamoto's Life Laboratory</h1>
+     <p>July 1, 2026 - September 30, 2026</p>`,
+    source,
+    'https://www.nmao.go.jp/en/events/event/aki-sasamoto/',
+  );
+
+  assert.equal(event.title, "Aki Sasamoto's Life Laboratory");
 });
 
 test('Yoshimi Arts reads parenthesized-weekday dates after feature image', () => {
@@ -1956,6 +2022,7 @@ test('Hitoto uses current/upcoming listing and ordered detail fields', async () 
   const listingHtml = `
     <main>
       <article><h2 class="entry-title"><a href="https://hitoto.info/pictogram/">Pictogram</a></h2></article>
+      <article><h2 class="entry-title"><a href="https://hitoto.info/yotei2/">Exhibition schedule</a></h2></article>
       <a href="https://hitoto.info/past-exhibition/">Past exhibitions</a>
     </main>
   `;
@@ -3180,6 +3247,7 @@ test('Museum of Contemporary Art Tokyo keeps only exhibition-entry art', async (
   const detailHtml = `
     <meta property="og:image" content="https://www.mot-art-museum.jp/_assets/images/head/og-image@2x.png">
     <h1>Eric Carle Exhibition</h1>
+    <h2>{{= title }}｜MUSEUM OF CONTEMPORARY ART TOKYO</h2>
     <p>July 1, 2026 - September 30, 2026</p>
     <p>Exhibition description long enough for the generic extractor to keep as useful event copy.</p>
     <div class="l-exhibitions-entry-main__image">
@@ -3203,6 +3271,7 @@ test('Museum of Contemporary Art Tokyo keeps only exhibition-entry art', async (
   });
 
   assert.equal(source?.selectors?.images, '.l-exhibitions-entry-main__image');
+  assert.equal(event.title, 'Eric Carle Exhibition');
   assert.equal(source?.skip_og_image, true);
   assert.equal(source?.measure_image_dimensions, true);
   assert.deepEqual(event.image_urls, [artUrl]);
@@ -3654,7 +3723,11 @@ test('city locale registry suppresses machine translation only where no target l
 
   const hongKongSources = await loadSourcesConfig({ city: 'hong-kong' });
   assert.ok(hongKongSources.length > 0);
-  assert.ok(hongKongSources.every((source) => source.capabilities.machine_translate_missing_locales === false));
+  assert.ok(
+    hongKongSources.every(
+      (source) => source.capabilities.machine_translate_missing_locales === false,
+    ),
+  );
   assert.deepEqual(
     buildCrawlQaReport({
       source: { slug: 'hong-kong-source', city: 'hong-kong' },
@@ -4180,23 +4253,25 @@ test('Hakari extraction keeps prose and skips both poster images', () => {
   ]);
 });
 
-test('SAMAC extraction keeps only the first image', () => {
+test('SAMAC extraction keeps exhibition-table title and only the first image', async () => {
+  const source = (await loadSourcesConfig({ city: 'kyoto' })).find(
+    (candidate) => candidate.slug === 'samac',
+  );
   const event = eventExtractors.samac(
     `
       <title>Summer Exhibition | SAMAC</title>
+      <table class="exhibition_info"><tr><td>Go, go go! Team Okyo</td></tr></table>
+      <h2>Overview of the Exhibition</h2>
       <meta property="og:image" content="https://www.samac.jp/images/exhibition/main.jpg">
       <p>Summer exhibition description with enough text for generic extraction.</p>
       <img src="https://www.samac.jp/images/exhibition/detail-1.jpg" width="1200" height="800">
       <img src="https://www.samac.jp/images/exhibition/detail-2.jpg" width="1200" height="800">
     `,
-    {
-      slug: 'samac',
-      name: 'SAMAC',
-      taxonomy: testTaxonomy(['museum'], [], ['exhibition']),
-    },
+    source,
     'https://www.samac.jp/en/exhibition/example.php',
   );
 
+  assert.equal(event.title, 'Go, go go! Team Okyo');
   assert.equal(event.primary_image_url, 'https://www.samac.jp/images/exhibition/detail-1.jpg');
   assert.deepEqual(event.image_urls, ['https://www.samac.jp/images/exhibition/detail-1.jpg']);
 });
@@ -4507,6 +4582,7 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
         js_shell_count: 1,
         missing_image_count: 1,
         skipped_missing_date_count: 0,
+        skipped_invalid_date_count: 0,
         skipped_missing_description_count: 1,
         skipped_past_count: 0,
         skipped_old_count: 0,
@@ -4547,6 +4623,7 @@ test('crawl QA report summarizes saved events, missing translations, and diagnos
       skips: {
         missing_image: 1,
         missing_date: 0,
+        invalid_date: 0,
         missing_description: 1,
         invalid_title: 0,
         past: 0,

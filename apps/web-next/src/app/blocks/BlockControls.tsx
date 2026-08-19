@@ -19,8 +19,24 @@ const CONTROLS: Control[] = [
   { varName: '--block-dx', label: 'Offset X', min: -48, max: 48, step: 2, initial: 24, unit: 'px' },
   { varName: '--block-dy', label: 'Offset Y', min: -48, max: 48, step: 2, initial: 24, unit: 'px' },
   { varName: '--block-lift', label: 'Lift', min: 1, max: 4, step: 0.25, initial: 2, unit: '' },
-  { varName: '--block-gap-x', label: 'Gap X', min: 0, max: 10, step: 0.5, initial: 5, unit: 'vmin' },
-  { varName: '--block-gap-y', label: 'Gap Y', min: 0, max: 10, step: 0.5, initial: 5, unit: 'vmin' },
+  {
+    varName: '--block-gap-x',
+    label: 'Gap X',
+    min: 0,
+    max: 10,
+    step: 0.5,
+    initial: 5,
+    unit: 'vmin',
+  },
+  {
+    varName: '--block-gap-y',
+    label: 'Gap Y',
+    min: 0,
+    max: 10,
+    step: 0.5,
+    initial: 5,
+    unit: 'vmin',
+  },
   { varName: '--block-shade', label: 'Shade', min: 0, max: 30, step: 1, initial: 12, unit: '%' },
 ];
 
@@ -98,7 +114,10 @@ export default function BlockControls() {
             value={values[control.varName]}
             onChange={(value) => {
               setValues((current) => ({ ...current, [control.varName]: value }));
-              document.documentElement.style.setProperty(control.varName, `${value}${control.unit}`);
+              document.documentElement.style.setProperty(
+                control.varName,
+                `${value}${control.unit}`,
+              );
             }}
           />
         ))}

@@ -2,10 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const {
-  blocksLandingCandidatesForEvents,
-  resolveBlocksLandingSlides,
-} = await import('../src/lib/blocksLanding.ts');
+const { blocksLandingCandidatesForEvents, resolveBlocksLandingSlides } =
+  await import('../src/lib/blocksLanding.ts');
 const { landingMediaDeliveryUrl } = await import('../src/lib/mediaDelivery.ts');
 const { sourceSlugForEvent } = await import('../src/lib/sourceMatching.ts');
 
@@ -26,9 +24,11 @@ test('Blocks landing prioritizes curated measured events and resolves three uniq
   const candidates = blocksLandingCandidatesForEvents([
     event({ id: 'one', sourceSlug: 'one' }),
     event({ id: 'duplicate', sourceSlug: 'one' }),
-    event({ id: 'small', sourceSlug: 'small', images: [
-      { url: 'https://example.com/small.jpg', width: 600, height: 400 },
-    ] }),
+    event({
+      id: 'small',
+      sourceSlug: 'small',
+      images: [{ url: 'https://example.com/small.jpg', width: 600, height: 400 }],
+    }),
     event({ id: 'two', sourceSlug: 'two' }),
     event({ id: 'three', sourceSlug: 'three' }),
     event({ id: 'four', sourceSlug: 'four' }),
@@ -39,25 +39,15 @@ test('Blocks landing prioritizes curated measured events and resolves three uniq
     event({ id: 'kyocera', sourceSlug: 'kyoto-city-kyocera-museum-of-art' }),
     event({ id: 'not-curated', landingEligible: false }),
     event({ id: 'permanent', group: 'permanent' }),
-    event({ id: 'unmeasured', images: [
-      { url: 'https://example.com/unmeasured.jpg', width: null, height: null },
-    ] }),
+    event({
+      id: 'unmeasured',
+      images: [{ url: 'https://example.com/unmeasured.jpg', width: null, height: null }],
+    }),
   ]);
 
   assert.deepEqual(
     candidates.map((candidate) => candidate.id),
-    [
-      'one',
-      'duplicate',
-      'small',
-      'two',
-      'three',
-      'four',
-      'five',
-      'six',
-      'seven',
-      'not-curated',
-    ],
+    ['one', 'duplicate', 'small', 'two', 'three', 'four', 'five', 'six', 'seven', 'not-curated'],
   );
 
   const slides = resolveBlocksLandingSlides({
@@ -66,7 +56,10 @@ test('Blocks landing prioritizes curated measured events and resolves three uniq
     viewportHeight: 900,
     devicePixelRatio: 2,
   });
-  assert.deepEqual(slides.map((slide) => slide.id), ['one', 'small', 'two']);
+  assert.deepEqual(
+    slides.map((slide) => slide.id),
+    ['one', 'small', 'two'],
+  );
 
   const extendedSlides = resolveBlocksLandingSlides({
     candidates,
@@ -84,9 +77,10 @@ test('Blocks landing prioritizes curated measured events and resolves three uniq
 test('Blocks landing uses capped V1-style Netlify cover transforms', () => {
   const [slide] = resolveBlocksLandingSlides({
     candidates: blocksLandingCandidatesForEvents([
-      event({ id: 'large', images: [
-        { url: 'https://example.com/large.jpg', width: 8000, height: 8000 },
-      ] }),
+      event({
+        id: 'large',
+        images: [{ url: 'https://example.com/large.jpg', width: 8000, height: 8000 }],
+      }),
     ]),
     viewportWidth: 5120,
     viewportHeight: 2880,
@@ -113,7 +107,10 @@ test('Blocks landing fills all three slots when only two sources are available',
     viewportHeight: 900,
   });
 
-  assert.deepEqual(slides.map((slide) => slide.id), ['one-a', 'two', 'one-b']);
+  assert.deepEqual(
+    slides.map((slide) => slide.id),
+    ['one-a', 'two', 'one-b'],
+  );
 });
 
 test('landing source matching falls back to source URL when relation is unavailable', () => {
@@ -131,11 +128,17 @@ test('landing source matching falls back to source URL when relation is unavaila
     },
   ];
 
-  assert.equal(sourceSlugForEvent({
-    sources: null,
-    source_id: 'database-uuid',
-    source_url: 'https://gallery-yamahon.com/?page_id=1396',
-  }, sources), 'gallery-yamahon');
+  assert.equal(
+    sourceSlugForEvent(
+      {
+        sources: null,
+        source_id: 'database-uuid',
+        source_url: 'https://gallery-yamahon.com/?page_id=1396',
+      },
+      sources,
+    ),
+    'gallery-yamahon',
+  );
 });
 
 test('Blocks landing changes slides with a direct fade and no shutter rows', async () => {

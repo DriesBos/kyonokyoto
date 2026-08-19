@@ -63,8 +63,10 @@ export const sourceSlugForEvent = (event: SourceCandidate, sources: SourceConfig
   if (relationSlug && sourceSlugs.has(relationSlug)) return relationSlug;
   if (event.source_id && sourceSlugs.has(event.source_id)) return event.source_id;
 
-  return sources
-    .map((source) => ({ slug: source.slug, score: sourceMatchScore(event.source_url, source) }))
-    .filter((match) => match.score > 0)
-    .sort((left, right) => right.score - left.score)[0]?.slug ?? null;
+  return (
+    sources
+      .map((source) => ({ slug: source.slug, score: sourceMatchScore(event.source_url, source) }))
+      .filter((match) => match.score > 0)
+      .sort((left, right) => right.score - left.score)[0]?.slug ?? null
+  );
 };

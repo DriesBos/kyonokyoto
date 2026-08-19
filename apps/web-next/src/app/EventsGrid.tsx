@@ -44,7 +44,9 @@ export default function EventsGrid({
         {groupOrder.map((group, groupIndex) => {
           const groupEvents = groups[group];
           if (groupEvents.length === 0) return null;
-          const previousVisibleGroup = groupOrder.slice(0, groupIndex).findLast((candidate) => groups[candidate].length > 0);
+          const previousVisibleGroup = groupOrder
+            .slice(0, groupIndex)
+            .findLast((candidate) => groups[candidate].length > 0);
           const divider = previousVisibleGroup ? (
             <div
               className={styles.timeDivider}
@@ -74,16 +76,24 @@ export default function EventsGrid({
                   const mediaImages = event.images.flatMap((item, imageIndex) => {
                     const src = eventMediaDeliveryUrl(item.url);
                     return src
-                      ? [{
-                          src,
-                          srcSet: eventMediaDeliverySrcSet(item.url),
-                          width: item.width,
-                          height: item.height,
-                          alt: event.title,
-                          sizes: '(max-width: 767px) 90vw, 20rem',
-                          loading: imageIndex === 0 && index === 0 ? 'eager' as const : 'lazy' as const,
-                          fetchPriority: imageIndex === 0 && index === 0 ? 'high' as const : 'auto' as const,
-                        }]
+                      ? [
+                          {
+                            src,
+                            srcSet: eventMediaDeliverySrcSet(item.url),
+                            width: item.width,
+                            height: item.height,
+                            alt: event.title,
+                            sizes: '(max-width: 767px) 90vw, 20rem',
+                            loading:
+                              imageIndex === 0 && index === 0
+                                ? ('eager' as const)
+                                : ('lazy' as const),
+                            fetchPriority:
+                              imageIndex === 0 && index === 0
+                                ? ('high' as const)
+                                : ('auto' as const),
+                          },
+                        ]
                       : [];
                   });
                   const detailId = `event-card-detail-${event.id}`;
@@ -96,7 +106,12 @@ export default function EventsGrid({
                       data-categories={event.categories.join('|')}
                       data-map-location-id={mapLocationIdForEvent(event) ?? undefined}
                       key={event.id}
-                      style={{ '--block-i': groupItemIndex, viewTransitionName: `ev-${event.id}` } as React.CSSProperties}
+                      style={
+                        {
+                          '--block-i': groupItemIndex,
+                          viewTransitionName: `ev-${event.id}`,
+                        } as React.CSSProperties
+                      }
                     >
                       <div className={styles.back} />
                       <div className={`${styles.face} ${styles.faceTop}`} />

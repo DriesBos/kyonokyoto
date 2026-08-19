@@ -31,10 +31,7 @@ const maximumRequiredHeight = 1080;
 const maximumTransformWidth = 2560;
 const maximumTransformHeight = 1440;
 const defaultLandingSlideLimit = 3;
-const excludedLandingSourceSlugs = new Set([
-  'kyoto-city-kyocera-museum-of-art',
-  'momak',
-]);
+const excludedLandingSourceSlugs = new Set(['kyoto-city-kyocera-museum-of-art', 'momak']);
 
 export const blocksLandingCandidatesForEvents = (
   events: BlocksLandingEvent[],
@@ -65,14 +62,16 @@ export const blocksLandingCandidatesForEvents = (
     });
 
     return images.length > 0
-      ? [{
-          id: event.id,
-          title: event.title,
-          institution: event.institution,
-          date: event.date,
-          sourceSlug: event.sourceSlug,
-          images,
-        }]
+      ? [
+          {
+            id: event.id,
+            title: event.title,
+            institution: event.institution,
+            date: event.date,
+            sourceSlug: event.sourceSlug,
+            images,
+          },
+        ]
       : [];
   });
 };
@@ -111,11 +110,15 @@ export const resolveBlocksLandingSlides = ({
   const addCandidate = (candidate: BlocksLandingCandidate, allowRepeatedSource: boolean) => {
     if (seenIds.has(candidate.id)) return;
     if (!allowRepeatedSource && seenSources.has(candidate.sourceSlug)) return;
-    const image = candidate.images.find(
-      (item) => coverDensityFor(item, requiredWidth, requiredHeight) >= minimumCoverDensity,
-    ) ?? candidate.images.toSorted(
-      (left, right) => coverDensityFor(right, requiredWidth, requiredHeight) - coverDensityFor(left, requiredWidth, requiredHeight),
-    )[0];
+    const image =
+      candidate.images.find(
+        (item) => coverDensityFor(item, requiredWidth, requiredHeight) >= minimumCoverDensity,
+      ) ??
+      candidate.images.toSorted(
+        (left, right) =>
+          coverDensityFor(right, requiredWidth, requiredHeight) -
+          coverDensityFor(left, requiredWidth, requiredHeight),
+      )[0];
     if (!image) return;
 
     const density = Math.min(

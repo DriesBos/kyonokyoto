@@ -289,6 +289,7 @@
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
+        "listing_links": "a[href*='/blogs/gallery-exhibitions/hk-']",
         "images": [
           "img.wsg-gallery-exhibition-main-visual__img-desktop",
           ".wsg-gallery-exhibition-article__article img"
@@ -317,7 +318,10 @@
       "notes": "Official Hong Kong exhibitions page lists current Hong Kong gallery exhibitions only.",
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "selectors": { "listing_links": "a[href*='/gallery-exhibitions/']" },
+      "selectors": {
+        "listing_links": "a[href*='/gallery-exhibitions/']",
+        "title": "title"
+      },
       "crawl_hints": { "skip_patterns": ["/exhibitions/archive"], "max_detail_pages": 5 }
     },
     {
@@ -546,6 +550,9 @@
       "notes": "Official Arts at the Centre exhibition listing. Exclude cinema, performance, education, and venue pages.",
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
+      "selectors": {
+        "listing_links": "a[href*='/calendar_programme_detail/']"
+      },
       "crawl_hints": {
         "render_mode": "always",
         "skip_patterns": ["cinema", "performance", "course", "visit_", "membership", "value["],

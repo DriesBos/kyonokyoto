@@ -28,7 +28,11 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
 
 export async function generateViewport({ params }: RouteProps): Promise<Viewport> {
   const state = await routeState(params);
-  return { themeColor: state?.city.themeColor ?? '#d2d3d5', width: 'device-width', initialScale: 1 };
+  return {
+    themeColor: state?.city.themeColor ?? '#d2d3d5',
+    width: 'device-width',
+    initialScale: 1,
+  };
 }
 
 export default async function LocaleRoute({ params }: RouteProps) {
@@ -40,6 +44,7 @@ export default async function LocaleRoute({ params }: RouteProps) {
     redirect(routePathFor({ city: city.slug, locale: defaultLocaleForCity(city) }));
   }
   const state = { city, locale };
-  if (state.city.locales.length === 1) redirect(routePathFor({ city: state.city.slug, locale: state.locale }));
+  if (state.city.locales.length === 1)
+    redirect(routePathFor({ city: state.city.slug, locale: state.locale }));
   return <CityEventsPage {...state} />;
 }

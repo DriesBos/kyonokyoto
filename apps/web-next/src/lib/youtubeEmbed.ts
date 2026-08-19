@@ -17,13 +17,26 @@ export const normalizeYouTubeEmbeds = (embeds: unknown): YouTubeEmbed[] =>
       if (!embed || typeof embed !== 'object') return null;
       const value = embed as { type?: unknown; url?: unknown; video_id?: unknown };
       if (value.type !== 'youtube' || typeof value.url !== 'string') return null;
-      const videoId = typeof value.video_id === 'string' ? value.video_id : youtubeVideoIdFromUrl(value.url);
+      const videoId =
+        typeof value.video_id === 'string' ? value.video_id : youtubeVideoIdFromUrl(value.url);
       return videoId ? { type: 'youtube' as const, url: value.url, videoId } : null;
     })
     .filter((embed): embed is YouTubeEmbed => embed !== null);
 
 export const buildYouTubeEmbedSrc = (videoId: string, origin?: string) => {
-  const params = new URLSearchParams({ autoplay: '0', mute: '1', controls: '0', loop: '1', playlist: videoId, playsinline: '1', disablekb: '1', enablejsapi: '1', fs: '0', rel: '0', iv_load_policy: '3' });
+  const params = new URLSearchParams({
+    autoplay: '0',
+    mute: '1',
+    controls: '0',
+    loop: '1',
+    playlist: videoId,
+    playsinline: '1',
+    disablekb: '1',
+    enablejsapi: '1',
+    fs: '0',
+    rel: '0',
+    iv_load_policy: '3',
+  });
   if (origin) params.set('origin', origin);
   return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params}`;
 };

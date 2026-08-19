@@ -28,7 +28,8 @@ export const SEO_TEXT = {
 
 // Compatibility with the V1 Netlify environment during cutover.
 export const siteOrigin = () => {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.PUBLIC_SITE_URL ?? FALLBACK_ORIGIN;
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.PUBLIC_SITE_URL ?? FALLBACK_ORIGIN;
   try {
     return new URL(configured).origin;
   } catch {
@@ -53,16 +54,21 @@ export const buildMetadata = ({ city, locale }: { city: AppCity; locale: AppLoca
   const { title, description } = seoCopy(city, locale);
   const canonical = routeUrl(city, locale);
   const config = cityConfigFor(city)!;
-  const languages = Object.fromEntries(config.locales.map((language) => [language, routeUrl(city, language)]));
+  const languages = Object.fromEntries(
+    config.locales.map((language) => [language, routeUrl(city, language)]),
+  );
   const alternateLocales = config.locales
     .filter((language) => language !== locale)
-    .map((language) => language === 'ja' ? 'ja_JP' : 'en_US');
+    .map((language) => (language === 'ja' ? 'ja_JP' : 'en_US'));
   const image = `${siteOrigin()}/og.png`;
 
   return {
     title,
     description,
-    alternates: { canonical, languages: { ...languages, 'x-default': routeUrl(city, defaultLocaleForCity(config)) } },
+    alternates: {
+      canonical,
+      languages: { ...languages, 'x-default': routeUrl(city, defaultLocaleForCity(config)) },
+    },
     robots: 'index, follow, max-image-preview:large',
     manifest: '/site.webmanifest',
     icons: {
@@ -105,11 +111,14 @@ export const structuredData = ({ city, locale }: { city: AppCity; locale: AppLoc
   };
 };
 
-export const sitemapEntries = () => cityConfigs.flatMap((city) =>
-  city.locales.map((locale) => ({
-    city: city.slug,
-    locale,
-    url: routeUrl(city.slug, locale),
-    languages: Object.fromEntries(city.locales.map((language) => [language, routeUrl(city.slug, language)])),
-  })),
-);
+export const sitemapEntries = () =>
+  cityConfigs.flatMap((city) =>
+    city.locales.map((locale) => ({
+      city: city.slug,
+      locale,
+      url: routeUrl(city.slug, locale),
+      languages: Object.fromEntries(
+        city.locales.map((language) => [language, routeUrl(city.slug, language)]),
+      ),
+    })),
+  );

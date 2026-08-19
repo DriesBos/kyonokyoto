@@ -282,6 +282,7 @@
       },
       "selectors": {
         "listing_links": ".p-exhibitions-wrapper, .c-article-wrapper",
+        "title": "h1",
         "images": ".l-exhibitions-entry-main__image"
       },
       "locales": {

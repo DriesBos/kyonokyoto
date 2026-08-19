@@ -99,7 +99,7 @@ export default function ControlPanel({ children, onReset }: ControlPanelProps) {
           <button
             className={styles.cellButton}
             type="button"
-            onClick={() => closeDebugControls ? closeDebugControls() : setClosing(true)}
+            onClick={() => (closeDebugControls ? closeDebugControls() : setClosing(true))}
           >
             Close
           </button>

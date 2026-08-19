@@ -2,7 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import CityEventsPage from '@/app/CityEventsPage';
-import { CITY_COOKIE, cityConfigFor, cityConfigs, defaultLocaleForCity, normalizeCity } from '@/lib/cities';
+import {
+  CITY_COOKIE,
+  cityConfigFor,
+  cityConfigs,
+  defaultLocaleForCity,
+  normalizeCity,
+} from '@/lib/cities';
 import { normalizeLocale } from '@/lib/i18n';
 import { routePathFor } from '@/lib/routeState';
 import { buildMetadata } from '@/lib/seo';
@@ -19,7 +25,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: RouteProps): Promise<Metadata> {
   const city = await cityForParams(params);
-  return city?.locales.length === 1 ? buildMetadata({ city: city.slug, locale: defaultLocaleForCity(city) }) : {};
+  return city?.locales.length === 1
+    ? buildMetadata({ city: city.slug, locale: defaultLocaleForCity(city) })
+    : {};
 }
 
 export async function generateViewport({ params }: RouteProps): Promise<Viewport> {

@@ -20,7 +20,13 @@ import kyotoSourcesPayload from '../../../../data/sources/kyoto-sources.json';
 import osakaSourcesPayload from '../../../../data/sources/osaka-sources.json';
 import tokyoSourcesPayload from '../../../../data/sources/tokyo-sources.json';
 import { type AppleCalendarEvent } from './appleCalendar';
-import { calendarDetailsFor, calendarLocationFor, googleCalendarUrl, mapsUrl, safeHttpUrl } from './calendar';
+import {
+  calendarDetailsFor,
+  calendarLocationFor,
+  googleCalendarUrl,
+  mapsUrl,
+  safeHttpUrl,
+} from './calendar';
 import { cityConfigFor, dateOnlyInTimeZone, type AppCity } from './cities';
 import { formatEventDateRange, formatOngoingEventEnd } from './eventDates';
 import type { AppLocale } from './i18n';
@@ -200,11 +206,24 @@ const permanentByCity = {
   'hong-kong': hongKongPermanentPayload.items,
 } as unknown as Record<AppCity, PermanentItem[]>;
 
-const normalizedText = (value: unknown) => String(value ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
-const localized = (values: Partial<Record<AppLocale, string>> | undefined, locale: AppLocale, fallback: string) =>
-  values?.[locale] || values?.en || values?.ja || fallback;
-const taxonomyCategories = (taxonomy?: Taxonomy) =>
-  [...new Set(Object.values(taxonomy ?? {}).flat().map(normalizedText).filter(Boolean))];
+const normalizedText = (value: unknown) =>
+  String(value ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+const localized = (
+  values: Partial<Record<AppLocale, string>> | undefined,
+  locale: AppLocale,
+  fallback: string,
+) => values?.[locale] || values?.en || values?.ja || fallback;
+const taxonomyCategories = (taxonomy?: Taxonomy) => [
+  ...new Set(
+    Object.values(taxonomy ?? {})
+      .flat()
+      .map(normalizedText)
+      .filter(Boolean),
+  ),
+];
 
 const coordinatePair = (lat: unknown, lng: unknown) => {
   const parsedLat = Number(lat);
@@ -224,27 +243,57 @@ const activeSourcesFor = (city: AppCity) =>
   sourcesByCity[city].filter((source) => source.is_active !== false);
 
 const sourceTruth = (
-  event: Pick<EventRow, 'sources' | 'source_id' | 'source_url' | 'institution_name' | 'venue_name' | 'address_text' | 'directions_query' | 'lat' | 'lng' | 'title' | 'categories'>,
+  event: Pick<
+    EventRow,
+    | 'sources'
+    | 'source_id'
+    | 'source_url'
+    | 'institution_name'
+    | 'venue_name'
+    | 'address_text'
+    | 'directions_query'
+    | 'lat'
+    | 'lng'
+    | 'title'
+    | 'categories'
+  >,
   sources: SourceConfig[],
   locale: AppLocale,
 ) => {
   const slug = sourceSlugForEvent(event, sources);
   const source = slug ? sources.find((candidate) => candidate.slug === slug) : undefined;
-  const eventText = [event.venue_name, event.address_text, event.directions_query, event.source_url, event.institution_name, event.title]
+  const eventText = [
+    event.venue_name,
+    event.address_text,
+    event.directions_query,
+    event.source_url,
+    event.institution_name,
+    event.title,
+  ]
     .map(normalizedText)
     .filter(Boolean)
     .join(' ');
   const eventCoordinates = coordinatePair(event.lat, event.lng);
-  const venue = source?.venue_locations?.find((location) =>
-    (location.match ?? [location.name ?? ''])
-      .map(normalizedText)
-      .filter(Boolean)
-      .some((match) => eventText.includes(match)),
-  ) ?? source?.venue_locations?.find((location) => {
-    const pair = coordinatePair(location.lat, location.lng);
-    return eventCoordinates && pair && eventCoordinates.lat === pair.lat && eventCoordinates.lng === pair.lng;
-  });
-  const pair = coordinatePair(venue?.lat ?? source?.lat ?? event.lat, venue?.lng ?? source?.lng ?? event.lng);
+  const venue =
+    source?.venue_locations?.find((location) =>
+      (location.match ?? [location.name ?? ''])
+        .map(normalizedText)
+        .filter(Boolean)
+        .some((match) => eventText.includes(match)),
+    ) ??
+    source?.venue_locations?.find((location) => {
+      const pair = coordinatePair(location.lat, location.lng);
+      return (
+        eventCoordinates &&
+        pair &&
+        eventCoordinates.lat === pair.lat &&
+        eventCoordinates.lng === pair.lng
+      );
+    });
+  const pair = coordinatePair(
+    venue?.lat ?? source?.lat ?? event.lat,
+    venue?.lng ?? source?.lng ?? event.lng,
+  );
   const addressText = venue?.address_text ?? source?.address_text ?? event.address_text;
   return {
     slug,
@@ -252,7 +301,8 @@ const sourceTruth = (
     institution: source ? localized(source.names, locale, source.name) : event.institution_name,
     venue: venue?.name ?? event.venue_name,
     addressText,
-    directionsQuery: venue?.directions_query ?? source?.directions_query ?? event.directions_query ?? addressText,
+    directionsQuery:
+      venue?.directions_query ?? source?.directions_query ?? event.directions_query ?? addressText,
     categories: taxonomyCategories(source?.taxonomy).length
       ? taxonomyCategories(source?.taxonomy)
       : (event.categories ?? []).map(normalizedText).filter(Boolean),
@@ -261,7 +311,9 @@ const sourceTruth = (
   };
 };
 
-const imageRecords = (event: Pick<EventRow, 'image_urls' | 'primary_image_url' | 'image_metadata'>) => {
+const imageRecords = (
+  event: Pick<EventRow, 'image_urls' | 'primary_image_url' | 'image_metadata'>,
+) => {
   const urls = (event.image_urls ?? []).filter(Boolean).slice(0, 3);
   const display = urls.length ? urls : event.primary_image_url ? [event.primary_image_url] : [];
   return display.map((url) => {
@@ -301,13 +353,24 @@ const translationFor = (event: EventRow, locale: AppLocale) =>
   event.event_translations?.find((translation) => translation.locale === 'ja') ??
   null;
 
-export async function fetchCityEvents({ city, locale }: { city: AppCity; locale: AppLocale }): Promise<CityEvent[]> {
+export async function fetchCityEvents({
+  city,
+  locale,
+}: {
+  city: AppCity;
+  locale: AppLocale;
+}): Promise<CityEvent[]> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error('Missing Supabase public environment variables');
 
   const endpoint = new URL('/rest/v1/events', url);
-  endpoint.search = new URLSearchParams({ select: EVENT_SELECT, status: 'eq.published', city: `eq.${city}` }).toString();
+  endpoint.search = new URLSearchParams({
+    select: EVENT_SELECT,
+    status: 'eq.published',
+    city: `eq.${city}`,
+  }).toString();
   const response = await fetch(endpoint, { headers: { apikey: key }, next: { revalidate: 300 } });
   if (!response.ok) throw new Error(`Supabase events request failed: ${response.status}`);
 
@@ -321,7 +384,11 @@ export async function fetchCityEvents({ city, locale }: { city: AppCity; locale:
   const events = dedupeEvents((await response.json()) as EventRow[])
     .map((event) => filterEventMediaByMinimumHeight(event) as EventRow)
     .filter((event) => visibleSource(sourceSlugForEvent(event, sources)))
-    .filter((event) => ['ongoing', 'upcoming'].includes(classifyEventTiming(event, today)) && isEventWithinDisplayWindow(event, today))
+    .filter(
+      (event) =>
+        ['ongoing', 'upcoming'].includes(classifyEventTiming(event, today)) &&
+        isEventWithinDisplayWindow(event, today),
+    )
     .sort((left, right) =>
       (nextRelevantScheduleStartDateOnly(left, today) ?? '9999-12-31').localeCompare(
         nextRelevantScheduleStartDateOnly(right, today) ?? '9999-12-31',
@@ -337,23 +404,43 @@ export async function fetchCityEvents({ city, locale }: { city: AppCity; locale:
       const selected = activeOrNextScheduleSegment(event, today);
       const hasCanonical = Array.isArray(event.schedule_segments) && segments.length > 0;
       const calendarStartsAt = hasCanonical
-        ? selected?.is_all_day ? selected.start_date : selected?.starts_at
+        ? selected?.is_all_day
+          ? selected.start_date
+          : selected?.starts_at
         : (event.calendar_starts_at ?? event.start_date);
       const calendarEndsAt = hasCanonical
-        ? selected?.is_all_day ? selected.end_date : selected?.ends_at
+        ? selected?.is_all_day
+          ? selected.end_date
+          : selected?.ends_at
         : (event.calendar_ends_at ?? event.end_date ?? event.start_date);
       const isAllDay = selected?.is_all_day ?? event.is_all_day;
-      const enriched = { ...event, calendar_starts_at: calendarStartsAt, calendar_ends_at: calendarEndsAt, is_all_day: isAllDay };
+      const enriched = {
+        ...event,
+        calendar_starts_at: calendarStartsAt,
+        calendar_ends_at: calendarEndsAt,
+        is_all_day: isAllDay,
+      };
       const timing = classifyEventTiming(enriched, today);
-      const preserveDateText = segments.length > 1 || inferCanonicalScheduleType(enriched) === 'open_ended';
+      const preserveDateText =
+        segments.length > 1 || inferCanonicalScheduleType(enriched) === 'open_ended';
       const displayStart = selected?.is_all_day ? selected.start_date : event.start_date;
       const displayEnd = selected?.is_all_day ? selected.end_date : event.end_date;
       const translatedDate = translation?.date_text || event.date_text;
-      const date = timing === 'ongoing'
-        ? formatOngoingEventEnd(calendarEndsAt ?? event.end_date, locale === 'ja' ? '開催中' : 'ongoing', locale)
-        : preserveDateText
-          ? translatedDate
-          : formatEventDateRange(displayStart ?? calendarStartsAt ?? null, displayEnd ?? calendarEndsAt ?? null, translatedDate, locale);
+      const date =
+        timing === 'ongoing'
+          ? formatOngoingEventEnd(
+              calendarEndsAt ?? event.end_date,
+              locale === 'ja' ? '開催中' : 'ongoing',
+              locale,
+            )
+          : preserveDateText
+            ? translatedDate
+            : formatEventDateRange(
+                displayStart ?? calendarStartsAt ?? null,
+                displayEnd ?? calendarEndsAt ?? null,
+                translatedDate,
+                locale,
+              );
       const venue = translation?.venue_name ?? truth.venue;
       const calendarInput: CalendarInput = {
         title,
@@ -429,73 +516,110 @@ type PermanentItem = {
   media_embeds?: unknown;
 };
 
-const permanentEventsFor = ({ city, locale, sources }: { city: AppCity; locale: AppLocale; sources: SourceConfig[] }): CityEvent[] =>
+const permanentEventsFor = ({
+  city,
+  locale,
+  sources,
+}: {
+  city: AppCity;
+  locale: AppLocale;
+  sources: SourceConfig[];
+}): CityEvent[] =>
   permanentByCity[city]
-    .filter((item) => item.is_active !== false && (process.env.NODE_ENV !== 'production' || !item.beta))
+    .filter(
+      (item) => item.is_active !== false && (process.env.NODE_ENV !== 'production' || !item.beta),
+    )
     .flatMap((item) => {
       const source = sources.find((candidate) => candidate.slug === item.slug);
-      const institution = localized(source?.names ?? item.names, locale, source?.name ?? item.name ?? '');
-      const sourceUrl = safeHttpUrl(item.urls?.[locale] ?? item.urls?.en ?? item.urls?.ja ?? item.base_url ?? source?.base_url ?? null);
+      const institution = localized(
+        source?.names ?? item.names,
+        locale,
+        source?.name ?? item.name ?? '',
+      );
+      const sourceUrl = safeHttpUrl(
+        item.urls?.[locale] ??
+          item.urls?.en ??
+          item.urls?.ja ??
+          item.base_url ??
+          source?.base_url ??
+          null,
+      );
       if (!institution || !sourceUrl) return [];
-      const imageUrls = item.image_urls?.filter(Boolean).slice(0, 3) ?? (item.primary_image_url ? [item.primary_image_url] : []);
+      const imageUrls =
+        item.image_urls?.filter(Boolean).slice(0, 3) ??
+        (item.primary_image_url ? [item.primary_image_url] : []);
       const images = imageUrls.map((url) => ({ url, width: null, height: null }));
       const addressText = source?.address_text ?? item.address_text ?? null;
       const directionsQuery = source?.directions_query ?? item.directions_query ?? null;
       const pair = coordinatePair(source?.lat ?? item.lat, source?.lng ?? item.lng);
-      const description = typeof item.description === 'string'
-        ? item.description
-        : item.description?.[locale] ?? item.description?.en ?? item.description?.ja ?? null;
-      return [{
-        id: `${item.cadence ?? 'permanent'}:${item.slug}`,
-        group: 'permanent' as const,
-        sourceSlug: item.slug,
-        landingEligible: false,
-        mapVisible: source?.map_visibility !== false,
-        categories: taxonomyCategories(item.taxonomy ?? source?.taxonomy),
-        date: locale === 'ja' ? 'あわせて' : 'also visit',
-        institution,
-        venue: null,
-        title: institution,
-        description,
-        imageUrl: images[0]?.url ?? null,
-        imageUrls,
-        imageWidth: null,
-        imageHeight: null,
-        images,
-        sourceUrl,
-        mapsUrl: mapsUrl({ institution, venue: null, addressText, directionsQuery }),
-        googleCalendarUrl: null,
-        appleCalendar: null,
-        mediaEmbeds: normalizeYouTubeEmbeds(item.media_embeds),
-        addressText,
-        directionsQuery,
-        calendarStartsAt: null,
-        calendarEndsAt: null,
-        isAllDay: null,
-        lat: pair?.lat ?? null,
-        lng: pair?.lng ?? null,
-      }];
+      const description =
+        typeof item.description === 'string'
+          ? item.description
+          : (item.description?.[locale] ?? item.description?.en ?? item.description?.ja ?? null);
+      return [
+        {
+          id: `${item.cadence ?? 'permanent'}:${item.slug}`,
+          group: 'permanent' as const,
+          sourceSlug: item.slug,
+          landingEligible: false,
+          mapVisible: source?.map_visibility !== false,
+          categories: taxonomyCategories(item.taxonomy ?? source?.taxonomy),
+          date: locale === 'ja' ? 'あわせて' : 'also visit',
+          institution,
+          venue: null,
+          title: institution,
+          description,
+          imageUrl: images[0]?.url ?? null,
+          imageUrls,
+          imageWidth: null,
+          imageHeight: null,
+          images,
+          sourceUrl,
+          mapsUrl: mapsUrl({ institution, venue: null, addressText, directionsQuery }),
+          googleCalendarUrl: null,
+          appleCalendar: null,
+          mediaEmbeds: normalizeYouTubeEmbeds(item.media_embeds),
+          addressText,
+          directionsQuery,
+          calendarStartsAt: null,
+          calendarEndsAt: null,
+          isAllDay: null,
+          lat: pair?.lat ?? null,
+          lng: pair?.lng ?? null,
+        },
+      ];
     });
 
-const categoryLabel = (value: string) => value
-  .split(/[-_\s]+/)
-  .filter(Boolean)
-  .map((word) => word[0]?.toUpperCase() + word.slice(1))
-  .join(' ');
+const categoryLabel = (value: string) =>
+  value
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word[0]?.toUpperCase() + word.slice(1))
+    .join(' ');
 
-export function categoriesForEvents(events: CityEvent[], city: AppCity = 'kyoto'): CategoryOption[] {
+export function categoriesForEvents(
+  events: CityEvent[],
+  city: AppCity = 'kyoto',
+): CategoryOption[] {
   const visible = new Set(events.flatMap((event) => event.categories));
   const options = activeSourcesFor(city).flatMap((source) =>
-    (Object.entries(source.taxonomy ?? {}) as [keyof Taxonomy, string[]][]).flatMap(([dimension, values]) =>
-      values.filter((slug) => visible.has(normalizedText(slug))).map((slug) => ({
-        slug: normalizedText(slug),
-        label: categoryLabel(slug),
-        dimension,
-      })),
+    (Object.entries(source.taxonomy ?? {}) as [keyof Taxonomy, string[]][]).flatMap(
+      ([dimension, values]) =>
+        values
+          .filter((slug) => visible.has(normalizedText(slug)))
+          .map((slug) => ({
+            slug: normalizedText(slug),
+            label: categoryLabel(slug),
+            dimension,
+          })),
     ),
   );
-  return [...new Map(options.map((option) => [`${option.dimension}:${option.slug}`, option])).values()]
-    .sort((left, right) => left.dimension.localeCompare(right.dimension) || left.label.localeCompare(right.label));
+  return [
+    ...new Map(options.map((option) => [`${option.dimension}:${option.slug}`, option])).values(),
+  ].sort(
+    (left, right) =>
+      left.dimension.localeCompare(right.dimension) || left.label.localeCompare(right.label),
+  );
 }
 
 export function mapSourcesForEvents(events: CityEvent[]): MapSource[] {
@@ -517,4 +641,6 @@ export function mapSourcesForEvents(events: CityEvent[]): MapSource[] {
 }
 
 export const mapLocationIdForEvent = (event: Pick<CityEvent, 'lat' | 'lng'>) =>
-  event.lat === null || event.lng === null ? null : `${event.lat.toFixed(6)},${event.lng.toFixed(6)}`;
+  event.lat === null || event.lng === null
+    ? null
+    : `${event.lat.toFixed(6)},${event.lng.toFixed(6)}`;
