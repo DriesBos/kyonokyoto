@@ -7,7 +7,8 @@ import {
   cycleStatus,
   normalizeCrawlTriggerType,
   parseGitDivergence,
-  pruneRawPages,
+  maintainCrawlerStorage,
+  postStatus,
 } from './crawl-cycle-utils.mjs';
 
 const projectRoot = process.cwd();
@@ -103,19 +104,6 @@ async function updateCheckout() {
   return commit;
 }
 
-async function postStatus(url, payload) {
-  if (!url) return;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!response.ok) throw new Error(`Crawler status webhook failed (${response.status})`);
-}
-
 const envContents = await readFile(crawlerEnvPath, 'utf8');
 const env = parseEnv(envContents);
 
@@ -159,8 +147,19 @@ try {
       { allowFailure: true },
     );
 
-    currentStep = 'prune_raw_pages';
-    console.log(`Pruned ${await pruneRawPages(env)} raw pages.`);
+    currentStep = 'maintain_crawler_storage';
+    const storage = await maintainCrawlerStorage(env);
+    console.log(`Crawler storage: ${JSON.stringify(storage)}`);
+    if (storage.warning) {
+      currentStep = 'report_storage_warning';
+      console.warn('Database storage exceeds 400 MB; maintenance needs attention.');
+      await postStatus(alertWebhookUrl, {
+        status: 'storage_warning',
+        city,
+        ...storage,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   currentStep = 'check_translations';

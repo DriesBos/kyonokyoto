@@ -32,21 +32,34 @@ export function cycleStatus({ crawlExitCode, translationsPassed }) {
   return crawlExitCode === 2 || !translationsPassed ? 'degraded' : 'success';
 }
 
-export async function pruneRawPages(env, fetchImpl = fetch) {
-  const response = await fetchImpl(`${env.SUPABASE_URL}/rest/v1/rpc/prune_raw_pages`, {
+export async function maintainCrawlerStorage(env, fetchImpl = fetch) {
+  const response = await fetchImpl(`${env.SUPABASE_URL}/rest/v1/rpc/maintain_crawler_storage`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
     },
-    body: JSON.stringify({ p_older_than: '7 days' }),
+    body: '{}',
     signal: AbortSignal.timeout(30000),
   });
 
   if (!response.ok) {
-    throw new Error(`Raw page retention failed (${response.status}): ${await response.text()}`);
+    throw new Error(
+      `Crawler storage maintenance failed (${response.status}): ${await response.text()}`,
+    );
   }
 
   return response.json();
+}
+
+export async function postStatus(url, payload, fetchImpl = fetch) {
+  if (!url) return;
+  const response = await fetchImpl(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) throw new Error(`Crawler status webhook failed (${response.status})`);
 }

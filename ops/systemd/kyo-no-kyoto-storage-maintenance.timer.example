@@ -1,0 +1,11 @@
+[Unit]
+Description=Maintain Kyo no Kyoto storage daily
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=45m
+Persistent=true
+Unit=kyo-no-kyoto-storage-maintenance.service
+
+[Install]
+WantedBy=timers.target

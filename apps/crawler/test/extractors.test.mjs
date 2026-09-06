@@ -75,6 +75,7 @@ import {
   sanitizePostgresText,
   stripInlineImageData,
   translateTextFields,
+  upsertRawPage,
   upsertEvent,
   upsertEventTranslations,
   withSourceLocaleConfig,
@@ -4702,6 +4703,57 @@ test('stored HTML strips inline base64 images without changing extraction inputs
     createHash('sha256').update(stripInlineImageData(second)).digest('hex'),
   );
   assert.equal(extracted.primary_image_url, 'https://cdn.example.test/event.jpg');
+});
+
+test('raw page snapshots use a UTF-8 byte ceiling without truncation', async () => {
+  const requests = [];
+  const request = async (options) => {
+    requests.push(options);
+    return [{ id: `raw-${requests.length}` }];
+  };
+  const fetched = {
+    url: 'https://example.test/event',
+    response: { url: 'https://example.test/event', status: 200 },
+    contentType: 'text/html',
+    title: 'Event',
+    metadata: { fetched_via: 'static' },
+  };
+  const htmlPrefix = '<h1>Event</h1>';
+  const exactHtml = `${htmlPrefix}${'é'.repeat(
+    (1_000_000 - Buffer.byteLength(htmlPrefix, 'utf8')) / 2,
+  )}`;
+  const oversizedHtml = `${exactHtml}x`;
+  const oversizedFetched = { ...fetched, html: oversizedHtml };
+  const extractedBeforeStorage = extractGenericEvent(
+    oversizedFetched.html,
+    { name: 'Example Gallery', taxonomy: testTaxonomy() },
+    oversizedFetched.url,
+  );
+
+  await upsertRawPage({}, 'source', 'crawl', 'detail', { ...fetched, html: exactHtml }, request);
+  await upsertRawPage({}, 'source', 'crawl', 'detail', oversizedFetched, request);
+
+  const exact = requests[0].body[0];
+  const oversized = requests[1].body[0];
+  assert.equal(Buffer.byteLength(exactHtml, 'utf8'), 1_000_000);
+  assert.equal(exact.raw_html, exactHtml);
+  assert.equal(exact.extracted_text.length, 5000);
+  assert.match(exact.extracted_text, /^Event é+$/);
+  assert.equal(exact.metadata.raw_html_omitted, undefined);
+  assert.equal(oversized.raw_html, null);
+  assert.equal(oversized.extracted_text, null);
+  assert.equal(oversized.metadata.raw_html_omitted, true);
+  assert.equal(oversized.metadata.raw_html_bytes, 1_000_001);
+  assert.equal(oversized.content_hash, createHash('sha256').update(oversizedHtml).digest('hex'));
+  assert.equal(extractedBeforeStorage.title, 'Event');
+  assert.deepEqual(
+    extractGenericEvent(
+      oversizedFetched.html,
+      { name: 'Example Gallery', taxonomy: testTaxonomy() },
+      oversizedFetched.url,
+    ),
+    extractedBeforeStorage,
+  );
 });
 
 test('image normalization rejects data URLs', async () => {

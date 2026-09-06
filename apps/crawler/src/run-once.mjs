@@ -40,6 +40,7 @@ let googleTranslationClientPromise = null;
 let missingGoogleTranslateConfigWarningShown = false;
 const domainFetchSchedule = new Map();
 const robotsPolicyCache = new Map();
+const maxRawHtmlBytes = 1_000_000;
 const localizedEventFields = ['title', 'description'];
 const missingDateCanMeanNoCurrentEventSources = new Set(['sibasi']);
 const emptyDetailUrlsMeanNoCurrentEventSources = new Set([
@@ -8205,10 +8206,19 @@ async function updateCrawlRun(env, crawlRunId, patch) {
   return rows?.[0] ?? null;
 }
 
-async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
+async function upsertRawPage(
+  env,
+  sourceId,
+  crawlRunId,
+  pageKind,
+  fetched,
+  request = supabaseRequest,
+) {
   const storedHtml = stripInlineImageData(sanitizePostgresText(fetched.html));
+  const storedHtmlBytes = Buffer.byteLength(storedHtml, 'utf8');
+  const omitSnapshot = storedHtmlBytes > maxRawHtmlBytes;
   const contentHash = createHash('sha256').update(storedHtml).digest('hex');
-  const rows = await supabaseRequest({
+  const rows = await request({
     env,
     path: 'raw_pages?on_conflict=source_id,url,content_hash',
     method: 'POST',
@@ -8222,11 +8232,14 @@ async function upsertRawPage(env, sourceId, crawlRunId, pageKind, fetched) {
         http_status: fetched.response.status,
         content_type: sanitizePostgresText(fetched.contentType),
         title: sanitizePostgresText(fetched.title),
-        raw_html: storedHtml,
-        extracted_text: sanitizePostgresText(stripTags(storedHtml).slice(0, 5000)),
+        raw_html: omitSnapshot ? null : storedHtml,
+        extracted_text: omitSnapshot
+          ? null
+          : sanitizePostgresText(stripTags(storedHtml).slice(0, 5000)),
         metadata: sanitizePostgresJson({
           ...(fetched.metadata ?? {}),
           final_url: fetched.response.url,
+          ...(omitSnapshot ? { raw_html_omitted: true, raw_html_bytes: storedHtmlBytes } : {}),
         }),
         content_hash: contentHash,
         fetched_at: new Date().toISOString(),
@@ -9571,6 +9584,7 @@ export {
   shouldMachineTranslateMissingLocales,
   shouldArchiveStaleEvents,
   translateTextFields,
+  upsertRawPage,
   upsertEvent,
   upsertEventTranslation,
   upsertEventTranslations,

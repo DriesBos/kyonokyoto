@@ -1,0 +1,12 @@
+[Unit]
+Description=Maintain Kyo no Kyoto storage
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/kyo-no-kyoto
+Environment=PATH=/home/ubuntu/.nvm/versions/node/v22.22.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/flock -w 10800 /run/lock/kyo-no-kyoto-crawl.lock /usr/bin/env node scripts/maintain-storage.mjs
