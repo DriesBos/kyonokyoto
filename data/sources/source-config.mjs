@@ -368,11 +368,30 @@ export function applySourceOverride(source, override = {}) {
 export function validateSourceConfig(source) {
   const warnings = [];
   const slug = source?.slug ?? 'unknown-source';
+  const isFestivalProgramSource = source?.crawl_strategy === 'festival-program';
 
   if (!source?.name) warnings.push(`${slug}: missing name`);
   warnings.push(...taxonomyErrors(source?.taxonomy, slug));
-  if (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng))) {
+  if (
+    !isFestivalProgramSource &&
+    (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng)))
+  ) {
     warnings.push(`${slug}: missing lat/lng`);
+  }
+  if (isFestivalProgramSource) {
+    const festival = source?.festival;
+    if (!festival || typeof festival !== 'object') {
+      warnings.push(`${slug}: missing festival metadata`);
+    } else {
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(festival.slug ?? '')) {
+        warnings.push(`${slug}: invalid festival.slug`);
+      }
+      for (const field of ['title', 'external_id', 'date_text', 'start_date', 'end_date', 'source_url']) {
+        if (typeof festival[field] !== 'string' || !festival[field].trim()) {
+          warnings.push(`${slug}: missing festival.${field}`);
+        }
+      }
+    }
   }
   for (const field of ['skip_og_image', 'measure_image_dimensions', 'landing_slider']) {
     if (source?.[field] !== undefined && typeof source[field] !== 'boolean') {

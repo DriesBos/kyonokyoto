@@ -14,6 +14,8 @@ type Props = {
   cityThemeColor?: string;
   locale?: AppLocale;
   landingActive?: boolean;
+  canonicalPath?: string;
+  alternatePaths?: Partial<Record<AppLocale, string>>;
 };
 
 const {
@@ -23,15 +25,17 @@ const {
   title = uiText.en.title,
   description = uiText.en.description,
   landingActive = false,
+  canonicalPath = `/${city}/${locale}/`,
+  alternatePaths = {},
 } = Astro.props;
 
 const appName = 'KyōNoKyōto';
 const siteOrigin = new URL(import.meta.env.PUBLIC_SITE_URL || Astro.url.origin).origin;
-const canonicalUrl = new URL(`/${city}/${locale}/`, siteOrigin).href;
+const canonicalUrl = new URL(canonicalPath, siteOrigin).href;
 const ogImage = new URL('/og.png', siteOrigin).href;
 const alternateUrls = {
-  en: new URL(`/${city}/en/`, siteOrigin).href,
-  ja: new URL(`/${city}/ja/`, siteOrigin).href,
+  en: new URL(alternatePaths.en ?? `/${city}/en/`, siteOrigin).href,
+  ja: new URL(alternatePaths.ja ?? `/${city}/ja/`, siteOrigin).href,
 };
 const structuredData = serializeInlineJson({
   '@context': 'https://schema.org',

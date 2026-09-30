@@ -104,6 +104,26 @@ test('event cards use sibling disclosure control and native inert content', asyn
   assert.doesNotMatch(controls, /card\.setAttribute\('aria-pressed'/);
 });
 
+test('festival programmes replace parent cards and inherit missing edition fields', async () => {
+  const events = await readWebFile('src/lib/events.ts');
+  const card = await readWebFile('src/components/EventCard.astro');
+  const page = await readWebFile('src/pages/[city]/[locale]/index.astro');
+  const festivalPage = await readWebFile('src/pages/[city]/[locale]/festivals/[slug].astro');
+
+  assert.match(events, /\.filter\(\(row\) => row\.event_kind !== 'festival'\)/);
+  assert.match(events, /date_text: filled\(row\.date_text, festival\.date_text\)/);
+  assert.match(events, /institution_name: filled\(row\.institution_name, festival\.venue_name\)/);
+  assert.match(events, /venue_name: filled\(row\.venue_name, festival\.venue_name\) \|\| null/);
+  assert.match(events, /source_url: filled\(row\.source_url, festival\.source_url\)/);
+  assert.match(events, /description: filled\(row\.description, localizedFestival\.description\) \|\| null/);
+  assert.match(events, /primary_image_url: mediaInherited \? festival\.primary_image_url/);
+  assert.match(page, /resolveFestivalEvents\(rawEvents, locale\)/);
+  assert.match(card, /event\.festival[\s\S]*event\.festival\.title[\s\S]*venueLabel/);
+  assert.match(card, /festivalUrl \? <a class="event-card__festival-link"/);
+  assert.match(festivalPage, /sourceSlugForEvent\(festival, configuredSources\)/);
+  assert.match(festivalPage, /row\.festival_id === festival\.id/);
+});
+
 test('event card media uses native overflow scrolling', async () => {
   const card = await readWebFile('src/components/EventCard.astro');
   const controls = await readWebFile('src/scripts/eventCardControls.ts');

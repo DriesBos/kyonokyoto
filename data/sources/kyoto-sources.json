@@ -187,6 +187,258 @@
       }
     },
     {
+      "slug": "art-rhizome-kyoto",
+      "name": "Art Rhizome KYOTO",
+      "names": {
+        "en": "Art Rhizome KYOTO",
+        "ja": "Art Rhizome KYOTO"
+      },
+      "taxonomy": {
+        "venue_category": ["festival"],
+        "display_category": ["contemporary"],
+        "event_category": ["festival"]
+      },
+      "language": "ja",
+      "base_url": "https://www.city.kyoto.lg.jp/bunshi/page/0000357275.html",
+      "start_urls": ["https://www.city.kyoto.lg.jp/bunshi/page/0000357275.html"],
+      "allowed_domains": ["www.city.kyoto.lg.jp", "city.kyoto.lg.jp", "artrhizome.kyoto"],
+      "crawl_strategy": "festival-program",
+      "event_page_patterns": ["/bunshi/page/0000357275.html"],
+      "notes": "2026 beta festival QA. Parse one programme item per participating artist from the official Kyoto City announcement; each item inherits the festival date range and official website when narrower data is absent. No central venue.",
+      "beta": true,
+      "festival": {
+        "slug": "art-rhizome-kyoto-2026",
+        "title": "Art Rhizome KYOTO 2026",
+        "external_id": "2026",
+        "date_text": "September 11 - November 9, 2026",
+        "start_date": "2026-09-11",
+        "end_date": "2026-11-09",
+        "description": "Contemporary art by Kyoto-connected artists across nine unusual locations in Kyoto.",
+        "source_url": "https://artrhizome.kyoto/"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.city.kyoto.lg.jp/bunshi/page/0000357275.html"],
+          "event_page_patterns": ["/bunshi/page/0000357275.html"]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "max_detail_pages": 20
+      }
+    },
+    {
+      "slug": "kyoto-experiment",
+      "name": "KYOTO EXPERIMENT",
+      "names": {
+        "en": "KYOTO EXPERIMENT 2026",
+        "ja": "KYOTO EXPERIMENT 2026"
+      },
+      "taxonomy": {
+        "venue_category": ["festival"],
+        "display_category": ["performance"],
+        "event_category": ["festival"]
+      },
+      "language": "en",
+      "base_url": "https://kyoto-ex.jp/en/program/",
+      "start_urls": ["https://kyoto-ex.jp/en/program/"],
+      "allowed_domains": ["kyoto-ex.jp", "www.kyoto-ex.jp"],
+      "crawl_strategy": "festival-program",
+      "event_page_patterns": ["/en/program/", "/program/"],
+      "notes": "2026 beta festival QA. Crawl concrete programme detail pages and preserve their own dates and venues. No single central venue.",
+      "beta": true,
+      "festival": {
+        "slug": "kyoto-experiment-2026",
+        "title": "KYOTO EXPERIMENT 2026",
+        "external_id": "2026",
+        "date_text": "October 3 - 25, 2026",
+        "start_date": "2026-10-03",
+        "end_date": "2026-10-25",
+        "description": "Experimental performing arts, exhibitions, talks, workshops, dance, music, and installation across Kyoto.",
+        "source_url": "https://kyoto-ex.jp/en/about/festival-overview/"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://kyoto-ex.jp/program/"],
+          "event_page_patterns": ["/program/"]
+        },
+        "en": {
+          "start_urls": ["https://kyoto-ex.jp/en/program/"],
+          "event_page_patterns": ["/en/program/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 50
+      }
+    },
+    {
+      "slug": "kyoto-youme-triennale",
+      "name": "Kyōto YouMe Triennale",
+      "names": {
+        "en": "Kyōto YouMe Triennale",
+        "ja": "Kyōto YouMe Triennale"
+      },
+      "taxonomy": {
+        "venue_category": ["festival"],
+        "display_category": ["contemporary", "design"],
+        "event_category": ["festival"]
+      },
+      "language": "en",
+      "base_url": "https://you-me-kyoto.org/programme",
+      "start_urls": ["https://you-me-kyoto.org/programme"],
+      "allowed_domains": ["you-me-kyoto.org", "www.you-me-kyoto.org"],
+      "crawl_strategy": "festival-program",
+      "event_page_patterns": ["/programme"],
+      "notes": "2026 beta festival QA. Programme is published mostly as one page; extract named exhibition sections as inline programme items and inherit edition dates where item dates are absent.",
+      "beta": true,
+      "festival": {
+        "slug": "kyoto-youme-triennale-2026",
+        "title": "Kyōto YouMe Triennale 2026",
+        "external_id": "2026-manifesto",
+        "date_text": "October 9 - 18, 2026",
+        "start_date": "2026-10-09",
+        "end_date": "2026-10-18",
+        "description": "Edition Manifesto brings contemporary art, design, and craft to Shōsei-en Garden and Jūshin Kaikan.",
+        "source_url": "https://you-me-kyoto.org/about",
+        "venue_name": "Shōsei-en Garden and Jūshin Kaikan",
+        "address_text": "Higashi Hongan-ji, Kyoto",
+        "directions_query": "Shosei-en Garden, Kyoto"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://you-me-kyoto.org/ja/programme"],
+          "event_page_patterns": ["/ja/programme"]
+        },
+        "en": {
+          "start_urls": ["https://you-me-kyoto.org/programme"],
+          "event_page_patterns": ["/programme"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 20
+      }
+    },
+    {
+      "slug": "kyoto-modern-architecture-festival",
+      "name": "Kyoto Modern Architecture Festival",
+      "names": {
+        "en": "Kyoto Modern Architecture Festival",
+        "ja": "京都モダン建築祭"
+      },
+      "taxonomy": {
+        "venue_category": ["festival"],
+        "display_category": ["architecture"],
+        "event_category": ["festival"]
+      },
+      "language": "ja",
+      "base_url": "https://kyoto.kenchikusai.jp/program/",
+      "start_urls": ["https://kyoto.kenchikusai.jp/program/"],
+      "allowed_domains": ["kyoto.kenchikusai.jp", "kenchikusai.jp"],
+      "crawl_strategy": "festival-program",
+      "event_page_patterns": ["/program/"],
+      "notes": "2026 beta festival QA. Programme index may require rendering. Crawl individual building openings, tours, and events with their own dates and locations. No central venue.",
+      "beta": true,
+      "festival": {
+        "slug": "kyoto-modern-architecture-festival-2026",
+        "title": "Kyoto Modern Architecture Festival 2026",
+        "external_id": "2026",
+        "date_text": "October 31 - November 8, 2026",
+        "start_date": "2026-10-31",
+        "end_date": "2026-11-08",
+        "description": "Normally inaccessible modern buildings, guided tours, talks, and special events across Kyoto.",
+        "source_url": "https://kyoto.kenchikusai.jp/"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://kyoto.kenchikusai.jp/program/"],
+          "event_page_patterns": ["/program/"]
+        },
+        "en": {
+          "start_urls": [],
+          "event_page_patterns": []
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "requires_render": true,
+        "max_detail_pages": 50
+      }
+    },
+    {
+      "slug": "ko-gei-kyoto",
+      "name": "KO+GEI Kyoto",
+      "names": {
+        "en": "KO+GEI Kyoto",
+        "ja": "工＋藝 京都"
+      },
+      "taxonomy": {
+        "venue_category": ["festival"],
+        "display_category": ["contemporary", "ceramics", "textile"],
+        "event_category": ["festival"]
+      },
+      "language": "en",
+      "address_text": "514 Myokenjimae-cho, Kamigyo-ku, Kyoto 602-0005 Japan",
+      "directions_query": "Daihonzan Myokenji Temple, Kyoto",
+      "lat": 35.0345866,
+      "lng": 135.7546761,
+      "base_url": "https://kogeigene.com/exhibition/",
+      "start_urls": ["https://kogeigene.com/exhibition/"],
+      "allowed_domains": ["kogeigene.com", "www.kogeigene.com"],
+      "crawl_strategy": "festival-program",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "2026 beta festival QA. Current official page publishes one exhibition programme; use it as one child item until narrower programme pages appear.",
+      "beta": true,
+      "festival": {
+        "slug": "ko-gei-kyoto-2026",
+        "title": "KO+GEI Kyoto 2026",
+        "external_id": "2026",
+        "date_text": "November 6 - 8, 2026",
+        "start_date": "2026-11-06",
+        "end_date": "2026-11-08",
+        "description": "Contemporary Japanese craft presented at Daihonzan Myokenji Temple.",
+        "source_url": "https://kogeigene.com/exhibition/",
+        "venue_name": "Daihonzan Myokenji Temple",
+        "address_text": "514 Myokenjimae-cho, Kamigyo-ku, Kyoto 602-0005 Japan",
+        "directions_query": "Daihonzan Myokenji Temple, Kyoto",
+        "lat": 35.0345866,
+        "lng": 135.7546761
+      },
+      "festival_single_program": true,
+      "festival_single_program_title": "KO+GEI Kyoto Exhibition",
+      "locales": {
+        "ja": {
+          "start_urls": ["https://kogeigene.com/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://kogeigene.com/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 1
+      }
+    },
+    {
       "slug": "art-collaboration-kyoto",
       "name": "Art Collaboration Kyoto",
       "taxonomy": {
@@ -198,21 +450,43 @@
       "address_text": "Kyoto International Conference Center, Takaragaike, Sakyo-ku, Kyoto 606-0001 Japan",
       "lat": 35.0610839,
       "lng": 135.7831473,
-      "base_url": "https://a-c-k.jp/en/",
-      "start_urls": ["https://a-c-k.jp/en/"],
+      "base_url": "https://a-c-k.jp/en/whats-on/",
+      "start_urls": ["https://a-c-k.jp/en/whats-on/"],
       "allowed_domains": ["a-c-k.jp"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/"],
-      "notes": "Annual art fair. The homepage exposes the next edition dates and venue in the Visitor Information section; extract the homepage itself as the single yearly event.",
+      "crawl_strategy": "festival-program",
+      "event_page_patterns": ["/en/whats-on/", "/whats-on/"],
+      "notes": "2026 beta festival QA. Crawl current What's On items as festival programme events. External item URLs remain valid child URLs; fallback to the ACK page when missing.",
+      "beta": true,
+      "festival": {
+        "slug": "art-collaboration-kyoto-2026",
+        "title": "Art Collaboration Kyoto 2026",
+        "external_id": "2026",
+        "date_text": "November 7 - 9, 2026",
+        "start_date": "2026-11-07",
+        "end_date": "2026-11-09",
+        "description": "International contemporary-art fair and related exhibitions across Kyoto.",
+        "source_url": "https://a-c-k.jp/en/",
+        "venue_name": "Kyoto International Conference Center",
+        "address_text": "Takaragaike, Sakyo-ku, Kyoto 606-0001 Japan",
+        "directions_query": "Kyoto International Conference Center, Kyoto",
+        "lat": 35.0610839,
+        "lng": 135.7831473
+      },
       "locales": {
         "ja": {
-          "start_urls": ["https://a-c-k.jp/"],
-          "event_page_patterns": ["/"]
+          "start_urls": ["https://a-c-k.jp/whats-on/"],
+          "event_page_patterns": ["/whats-on/"]
         },
         "en": {
-          "start_urls": ["https://a-c-k.jp/en/"],
-          "event_page_patterns": ["/en/"]
+          "start_urls": ["https://a-c-k.jp/en/whats-on/"],
+          "event_page_patterns": ["/en/whats-on/"]
         }
+      },
+      "capabilities": {
+        "native_locales": ["ja", "en"]
+      },
+      "crawl_hints": {
+        "max_detail_pages": 50
       }
     },
     {
@@ -232,25 +506,42 @@
       "directions_query": "Daihonzan Myokenji Temple, Kyoto",
       "lat": 35.0345866,
       "lng": 135.7546761,
-      "base_url": "https://curation-fair.com/en/news/kyoto",
-      "start_urls": ["https://curation-fair.com/en/news/kyoto"],
+      "base_url": "https://curation-fair.com/en/kyoto2026/exhibitors",
+      "start_urls": ["https://curation-fair.com/en/kyoto2026/exhibitors"],
       "event_info_urls": {
         "ja": "https://curation-fair.com/news/release_20260706",
         "en": "https://curation-fair.com/en/news/release_20260706"
       },
       "allowed_domains": ["curation-fair.com"],
-      "crawl_strategy": "homepage-and-detail-pages",
-      "event_page_patterns": ["/en/news/", "/news/"],
-      "notes": "Annual fair with at most one event. Watch the Kyoto NEWS index and create an event only when a current-year title contains `Announcement of CURATION⇄FAIR Kyoto`; use the detailed July 2026 release for current event fields.",
+      "crawl_strategy": "festival-program",
+      "event_page_patterns": ["/en/kyoto2026/", "/kyoto2026/"],
+      "notes": "2026 beta festival QA. Official exhibitor page currently provides venue-grouped programme data rather than individual dated event pages; start with one fair programme child and retain venue groupings for later tuning.",
       "beta": true,
+      "festival": {
+        "slug": "curation-fair-kyoto-2026",
+        "title": "CURATION⇄FAIR Kyoto 2026",
+        "external_id": "2026",
+        "date_text": "November 6 - 8, 2026",
+        "start_date": "2026-11-06",
+        "end_date": "2026-11-08",
+        "description": "Contemporary art, historical art, craft, and jewellery across three historic Nishijin temples.",
+        "source_url": "https://curation-fair.com/en/kyoto2026",
+        "venue_name": "Myokenji, Myokakuji, and Honpoji Temples",
+        "address_text": "Nishijin, Kyoto",
+        "directions_query": "Daihonzan Myokenji Temple, Kyoto",
+        "lat": 35.0345866,
+        "lng": 135.7546761
+      },
+      "festival_single_program": true,
+      "festival_single_program_title": "Fair Programme",
       "locales": {
         "ja": {
-          "start_urls": ["https://curation-fair.com/news/kyoto"],
-          "event_page_patterns": ["/news/"]
+          "start_urls": ["https://curation-fair.com/kyoto2026/exhibitors"],
+          "event_page_patterns": ["/kyoto2026/"]
         },
         "en": {
-          "start_urls": ["https://curation-fair.com/en/news/kyoto"],
-          "event_page_patterns": ["/en/news/"]
+          "start_urls": ["https://curation-fair.com/en/kyoto2026/exhibitors"],
+          "event_page_patterns": ["/en/kyoto2026/"]
         }
       },
       "capabilities": {

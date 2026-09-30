@@ -398,6 +398,9 @@ export const mapCoordinatesForEvent = (
   sourceSlug: string | null,
   configuredSources: SourceConfig[],
 ) => {
+  if (event.event_kind === 'festival_program') {
+    return coordinatePairFrom(event.lat, event.lng);
+  }
   const source = sourceBySlug(configuredSources, sourceSlug);
   const venueLocation = venueLocationForEvent(source, event);
   return (

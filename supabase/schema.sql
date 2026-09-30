@@ -90,6 +90,9 @@ create table if not exists public.events (
   raw_page_id uuid references public.raw_pages(id) on delete set null,
   external_id text,
   dedupe_key text not null,
+  event_kind text not null default 'event' check (event_kind in ('event', 'festival', 'festival_program')),
+  festival_id uuid references public.events(id) on delete restrict,
+  festival_slug text,
 
   -- Core list item content
   title text not null,
@@ -97,7 +100,7 @@ create table if not exists public.events (
   description text,
 
   -- Institute / venue context
-  institution_name text not null,
+  institution_name text,
   venue_name text,
   address_text text,
   directions_query text,
@@ -105,7 +108,7 @@ create table if not exists public.events (
   lng double precision,
 
   -- Human-facing date text plus machine-readable dates for sorting/calendar
-  date_text text not null,
+  date_text text,
   start_date date,
   end_date date,
   schedule_type text not null default 'unknown' check (schedule_type in ('single', 'range', 'occurrence_set', 'open_ended', 'unknown')),
@@ -121,7 +124,7 @@ create table if not exists public.events (
   primary_image_url text,
   image_urls jsonb not null default '[]'::jsonb,
   image_metadata jsonb not null default '[]'::jsonb,
-  source_url text not null,
+  source_url text,
 
   -- Editorial / pipeline metadata
   status text not null default 'draft' check (status in ('draft', 'published', 'hidden', 'archived')),
@@ -133,6 +136,7 @@ create table if not exists public.events (
 
   constraint events_date_presence_check check (
     status <> 'published'
+    or event_kind = 'festival_program'
     or start_date is not null
     or calendar_starts_at is not null
     or jsonb_array_length(occurrence_dates) > 0
@@ -142,6 +146,18 @@ create table if not exists public.events (
   ),
   constraint events_image_metadata_array_check check (
     jsonb_typeof(image_metadata) = 'array'
+  ),
+  constraint events_festival_shape_check check (
+    (event_kind = 'event' and festival_id is null and festival_slug is null)
+    or (event_kind = 'festival' and festival_id is null and festival_slug is not null)
+    or (event_kind = 'festival_program' and festival_id is not null and festival_slug is null)
+  ),
+  constraint events_festival_slug_format_check check (
+    festival_slug is null or festival_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+  ),
+  constraint events_required_details_check check (
+    event_kind = 'festival_program'
+    or (institution_name is not null and date_text is not null and source_url is not null)
   )
 );
 
@@ -546,6 +562,11 @@ create index if not exists raw_pages_crawl_run_id_idx on public.raw_pages (crawl
 create index if not exists raw_pages_url_idx on public.raw_pages (url);
 
 create index if not exists events_source_id_idx on public.events (source_id);
+create index if not exists events_festival_id_idx on public.events (festival_id)
+  where festival_id is not null;
+create unique index if not exists events_festival_city_slug_idx
+  on public.events (city, festival_slug)
+  where event_kind = 'festival';
 create index if not exists events_raw_page_id_idx on public.events (raw_page_id);
 drop index if exists public.events_city_status_start_date_idx;
 create index if not exists events_published_city_start_date_idx
@@ -558,6 +579,40 @@ create index if not exists events_institution_name_idx on public.events (institu
 create index if not exists events_categories_gin_idx on public.events using gin (categories);
 create unique index if not exists events_dedupe_key_idx on public.events (dedupe_key);
 create index if not exists event_translations_locale_idx on public.event_translations (locale);
+
+create or replace function public.check_festival_parent()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if new.event_kind = 'festival_program' and not exists (
+    select 1 from public.events as parent
+    where parent.id = new.festival_id
+      and parent.event_kind = 'festival'
+      and parent.city = new.city
+  ) then
+    raise exception 'Festival program requires a festival edition in the same city';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    if old.event_kind = 'festival' and
+      (new.event_kind <> 'festival' or new.city <> old.city) and exists (
+        select 1 from public.events as child where child.festival_id = old.id
+      ) then
+      raise exception 'Cannot change a festival edition with linked program items';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists check_events_festival_parent on public.events;
+create trigger check_events_festival_parent
+before insert or update of event_kind, festival_id, city on public.events
+for each row execute function public.check_festival_parent();
 
 create or replace function public.set_updated_at()
 returns trigger

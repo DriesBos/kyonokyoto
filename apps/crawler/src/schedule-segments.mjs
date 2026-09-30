@@ -8,6 +8,7 @@ export function buildScheduleSegmentRows(eventId, event) {
     throw new Error(`invalid event schedule: ${schedule.errors.join('; ')}`);
   }
   if (!schedule.schedule_segments.length) {
+    if (event?.event_kind === 'festival_program') return [];
     throw new Error('published event schedule requires at least one segment');
   }
 
@@ -26,12 +27,14 @@ export function buildScheduleSegmentRows(eventId, event) {
 export async function upsertEventScheduleSegments({ env, eventId, event, request }) {
   const rows = buildScheduleSegmentRows(eventId, event);
 
-  await request({
-    env,
-    path: 'event_schedule_segments?on_conflict=event_id,ordinal',
-    method: 'POST',
-    body: rows,
-  });
+  if (rows.length) {
+    await request({
+      env,
+      path: 'event_schedule_segments?on_conflict=event_id,ordinal',
+      method: 'POST',
+      body: rows,
+    });
+  }
   await request({
     env,
     path: `event_schedule_segments?event_id=eq.${encodeURIComponent(

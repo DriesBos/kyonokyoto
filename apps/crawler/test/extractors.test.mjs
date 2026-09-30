@@ -77,6 +77,10 @@ import {
   translateTextFields,
   upsertRawPage,
   upsertEvent,
+  upsertFestivalEdition,
+  persistFestivalEditionForCrawl,
+  upsertFestivalProgram,
+  buildFestivalProgramDedupeKey,
   upsertEventTranslations,
   withSourceLocaleConfig,
   withSourceSpecificDescriptionOrigin,
@@ -674,6 +678,120 @@ test('event persistence stages draft before schedule write and publishes explici
     method: 'PATCH',
     body: { status: 'published' },
   });
+});
+
+test('festival program persistence keeps missing item fields null and uses stable parent identity', async () => {
+  const payloads = [];
+  const fetchImpl = async (_url, options) => {
+    const payload = JSON.parse(options.body)[0];
+    payloads.push(payload);
+    return new Response(JSON.stringify([{ id: payload.event_kind === 'festival' ? 'festival-1' : 'program-1', ...payload }]), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  const env = { SUPABASE_URL: 'https://database.example', SUPABASE_SERVICE_ROLE_KEY: 'test-key' };
+  const festival = await upsertFestivalEdition(env, 'source-1', 'page-1', {
+    city: 'kyoto',
+    festival_slug: 'art-rhizome-kyoto-2026',
+    title: 'Art Rhizome KYOTO 2026',
+    institution_name: 'Art Rhizome KYOTO',
+    date_text: 'Sep 11–Nov 9',
+    start_date: '2026-09-11',
+    end_date: '2026-11-09',
+    source_url: 'https://festival.example/',
+  }, fetchImpl);
+  await upsertFestivalProgram(env, 'source-1', 'page-2', festival, {
+    external_id: 'installation-1',
+    title: 'Installation One',
+  }, fetchImpl);
+
+  assert.equal(payloads[0].dedupe_key, 'festival:kyoto:art-rhizome-kyoto-2026');
+  assert.equal(payloads[1].dedupe_key, 'festival-program:festival-1:id:installation-1');
+  assert.equal(payloads[1].festival_id, 'festival-1');
+  assert.equal(payloads[1].event_kind, 'festival_program');
+  assert.equal(payloads[1].date_text, null);
+  assert.equal(payloads[1].institution_name, null);
+  assert.equal(payloads[1].source_url, null);
+  assert.equal(buildFestivalProgramDedupeKey(festival, {
+    title: 'Renamed Installation',
+    external_id: 'installation-1',
+  }), payloads[1].dedupe_key);
+});
+
+test('Kyoto festival QA sources define 2026 editions and programme crawling', async () => {
+  const payload = JSON.parse(
+    await readFile(
+      resolve(import.meta.dirname, '../../../data/sources/kyoto-sources.json'),
+      'utf8',
+    ),
+  );
+  const expected = new Map([
+    ['art-rhizome-kyoto', ['2026-09-11', '2026-11-09']],
+    ['kyoto-experiment', ['2026-10-03', '2026-10-25']],
+    ['kyoto-youme-triennale', ['2026-10-09', '2026-10-18']],
+    ['kyoto-modern-architecture-festival', ['2026-10-31', '2026-11-08']],
+    ['curation-fair-kyoto', ['2026-11-06', '2026-11-08']],
+    ['ko-gei-kyoto', ['2026-11-06', '2026-11-08']],
+    ['art-collaboration-kyoto', ['2026-11-07', '2026-11-09']],
+  ]);
+
+  for (const [slug, [startDate, endDate]] of expected) {
+    const source = payload.sources.find((item) => item.slug === slug);
+    assert.ok(source, `${slug} source missing`);
+    assert.equal(source.beta, true);
+    assert.equal(source.crawl_strategy, 'festival-program');
+    assert.equal(source.festival.start_date, startDate);
+    assert.equal(source.festival.end_date, endDate);
+    assert.match(source.festival.slug, /-2026$/);
+    assert.ok(source.festival.source_url);
+  }
+});
+
+test('festival edition persists when listing has no programme details', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'kyoto-experiment');
+  const detailUrls = detailUrlExtractors[source.slug](
+    '<html><title>Programmes coming soon</title></html>',
+    source.start_urls[0],
+    source,
+  );
+  assert.deepEqual(detailUrls, []);
+
+  const calls = [];
+  const persisted = await persistFestivalEditionForCrawl({
+    env: {},
+    source,
+    sourceId: 'source-1',
+    rawPageId: 'page-1',
+    upsertEdition: async (_env, sourceId, rawPageId, edition) => {
+      calls.push(['upsert', sourceId, rawPageId, edition.event_kind]);
+      return { id: 'festival-1', title: edition.title, event_kind: 'festival' };
+    },
+    upsertSegments: async ({ eventId }) => calls.push(['segments', eventId]),
+    upsertTranslations: async (_env, _source, festival) => {
+      calls.push(['translations', festival.id]);
+      return ['en', 'ja'];
+    },
+    publish: async (_env, eventId) => calls.push(['publish', eventId]),
+  });
+
+  assert.deepEqual(calls, [
+    ['upsert', 'source-1', 'page-1', 'festival'],
+    ['segments', 'festival-1'],
+    ['translations', 'festival-1'],
+    ['publish', 'festival-1'],
+  ]);
+  assert.equal(persisted.savedEvent.dedupeKey, 'festival:kyoto:kyoto-experiment-2026');
+  assert.equal(persisted.savedEvent.eventKind, 'festival');
+  assert.deepEqual(
+    crawlEventMutationCounts([persisted.savedEvent], new Set()),
+    { created: 1, updated: 0 },
+  );
+  assert.equal(
+    shouldArchiveStaleEvents({ sourceOutcome: classifySourceOutcome({ detailUrls, sourceSlug: source.slug }) }),
+    false,
+  );
 });
 
 test('translation helper calls Google client with source and target locales', async () => {
@@ -1842,21 +1960,23 @@ test('generic detail extraction ignores taxonomy archive URLs', () => {
   );
 });
 
-test('Art Collaboration Kyoto keeps its theme-hosted OG image', () => {
-  const event = eventExtractors['art-collaboration-kyoto'](
-    `
-      <meta property="og:image" content="/en/wp-content/themes/Art-Collaboration-Kyoto/assets/images/ogimg.png">
-      <h2 class="m-item_heading">Dates</h2>
-      <div class="m-item_body"><p>Sat. November 7−Mon. 9, 2026</p></div>
-    `,
-    { name: 'Art Collaboration Kyoto' },
-    'https://a-c-k.jp/en/',
-  );
+test('Art Collaboration Kyoto turns current What’s On rows into linked festival programmes', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'art-collaboration-kyoto');
+  const listingUrl = source.start_urls[0];
+  const listingHtml = `
+    <a href="https://gallery.example/show">Fri. November 6–Sun. November 8 A05 Current Show Artist : A Venue : Kyoto Art Center *Admission Free</a>
+    <a href="https://tokyo.example/show">Sat. November 7 F03 Tokyo Show Venue : Tokyo</a>
+  `;
+  const [detailUrl] = detailUrlExtractors[source.slug](listingHtml, listingUrl, source);
+  const event = eventExtractors[source.slug](listingHtml, source, detailUrl);
 
-  assert.equal(
-    event.primary_image_url,
-    'https://a-c-k.jp/en/wp-content/themes/Art-Collaboration-Kyoto/assets/images/ogimg.png',
-  );
+  assert.equal(detailUrl, `${listingUrl}#festival-program-0`);
+  assert.equal(event.title, 'Current Show');
+  assert.equal(event.venue_name, 'Kyoto Art Center');
+  assert.equal(event.source_url, 'https://gallery.example/show');
+  assert.equal(event.start_date, '2026-11-06');
+  assert.equal(event.end_date, '2026-11-08');
 });
 
 test('Osaka Geidai keeps art exhibition links and first event image only', async () => {
@@ -3804,22 +3924,17 @@ test('city source configs are valid crawl inputs', async () => {
   }
 });
 
-test('CURATION FAIR sources discover only current-year announcement news', async () => {
-  const year = currentYearInTokyo();
+test('CURATION FAIR Kyoto exposes its edition page as one festival programme', async () => {
   const kyotoSources = await loadSourcesConfig({ city: 'kyoto' });
   const tokyoSources = await loadSourcesConfig({ city: 'tokyo' });
   const kyoto = kyotoSources.find((item) => item.slug === 'curation-fair-kyoto');
   const tokyo = tokyoSources.find((item) => item.slug === 'curation-fair-tokyo');
-  const listingHtml = `
-    <a href="/en/news/post_20260402">Announcement of CURATION⇄FAIR Kyoto ${year}</a>
-    <a href="/en/news/release_20251106">CURATION⇄FAIR Tokyo ${year} dates announced</a>
-    <a href="/en/news/post_20250402">Announcement of CURATION⇄FAIR Tokyo ${Number(year) - 1}</a>
-  `;
+  const listingHtml = `<h1>Exhibitors</h1>`;
 
   assert.deepEqual(kyoto?.taxonomy, testTaxonomy(['fair'], ['contemporary'], ['fair']));
-  assert.deepEqual(kyoto?.start_urls, ['https://curation-fair.com/en/news/kyoto']);
+  assert.deepEqual(kyoto?.start_urls, ['https://curation-fair.com/en/kyoto2026/exhibitors']);
   assert.deepEqual(detailUrlExtractors[kyoto.slug](listingHtml, kyoto.start_urls[0], kyoto), [
-    'https://curation-fair.com/en/news/release_20260706',
+    'https://curation-fair.com/en/kyoto2026/exhibitors',
   ]);
   assert.deepEqual(tokyo?.taxonomy, testTaxonomy(['fair'], [], ['fair']));
   assert.deepEqual(tokyo?.start_urls, ['https://curation-fair.com/en/news/tokyo']);
@@ -3835,7 +3950,7 @@ test('CURATION FAIR sources discover only current-year announcement news', async
     kyoto.event_info_urls.en,
   );
 
-  assert.equal(event.title, 'CURATION⇄FAIR Kyoto');
+  assert.equal(event.title, 'Fair Programme');
   assert.equal(event.start_date, '2026-11-06');
   assert.equal(event.end_date, '2026-11-08');
 });

@@ -17,7 +17,10 @@ import {
 import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
-import { buildEventDedupeKey } from '../../../packages/shared/event-dedupe.mjs';
+import {
+  buildEventDedupeKey,
+  canonicalizeEventUrl,
+} from '../../../packages/shared/event-dedupe.mjs';
 import { MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX } from '../../../packages/shared/event-media.mjs';
 import {
   buildScheduleFields,
@@ -528,6 +531,29 @@ function normalizeEventSourceTruth(eventData, source) {
     typeof source?.address_text === 'string' && source.address_text.trim()
       ? source.address_text.trim()
       : null;
+  if (source?.crawl_strategy === 'festival-program') {
+    const sourceName = typeof source?.name === 'string' ? source.name.trim() : '';
+    const eventInstitution =
+      typeof eventData?.institution_name === 'string' && eventData.institution_name.trim() !== sourceName
+        ? eventData.institution_name.trim()
+        : null;
+    const eventVenue =
+      typeof eventData?.venue_name === 'string' && eventData.venue_name.trim() !== sourceName
+        ? eventData.venue_name.trim()
+        : null;
+
+    return {
+      ...eventData,
+      institution_name: eventInstitution,
+      venue_name: eventVenue,
+      address_text: eventData?.address_text?.trim?.() || null,
+      directions_query: eventData?.directions_query?.trim?.() || null,
+      categories: flattenTaxonomy(source?.taxonomy),
+      lat: toFiniteNumber(eventData?.lat),
+      lng: toFiniteNumber(eventData?.lng),
+      ...(sourceTruthWarnings.size ? { _source_truth_warnings: [...sourceTruthWarnings] } : {}),
+    };
+  }
   const venueName = venueLocation?.name ?? source?.name;
   const addressText = venueLocation?.address_text ?? sourceAddress ?? source?.name;
   const directionsQuery =
@@ -2984,6 +3010,179 @@ function extractSibasiDetailUrls(listingPages, genericDetailLimit = 8) {
 
 function extractArtCollaborationKyotoDetailUrls(_listingHtml, listingUrl) {
   return [listingUrl];
+}
+
+function festivalInlineProgramCandidates(html, source, pageUrl) {
+  if (source?.slug === 'art-rhizome-kyoto') {
+    return [...html.matchAll(/<li\b[^>]*>([\s\S]*?(?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)[\s\S]*?)<\/li>/giu)]
+      .map((match) => ({
+        text: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
+        html: match[1],
+        href: source.festival?.source_url ?? pageUrl,
+      }))
+      .filter((item) => item.text);
+  }
+
+  if (source?.slug === 'kyoto-youme-triennale') {
+    const ignoredHeadings = /^(?:Programme|Institutional Exhibition|Shosei-en|J\u016bshin Kaikan|Cultural Exhibition)$/i;
+    return [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2\b|$)/gi)]
+      .map((match) => ({
+        title: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
+        text: stripTags(match[2]).replace(/\s+/g, ' ').trim(),
+        html: `${match[1]}${match[2]}`,
+        offset: match.index ?? 0,
+        href: pageUrl,
+      }))
+      .filter((item) => item.title && !ignoredHeadings.test(item.title));
+  }
+
+  if (source?.slug === 'art-collaboration-kyoto') {
+    return [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
+      .map((match) => ({
+        text: stripTags(match[2]).replace(/\s+/g, ' ').trim(),
+        html: match[2],
+        href: normalizeUrl(extractTagAttribute(`<a ${match[1]}>`, 'href'), pageUrl),
+      }))
+      .filter((item) => /\b[A-E]\d{2}\b/.test(item.text) && /\bVenue\s*:/i.test(item.text));
+  }
+
+  return [];
+}
+
+function extractFestivalProgramDetailUrls(listingHtml, listingUrl, source) {
+  if (source?.festival_single_program) return [listingUrl];
+
+  const inlinePrograms = festivalInlineProgramCandidates(listingHtml, source, listingUrl);
+  if (inlinePrograms.length) {
+    return inlinePrograms.map((_, index) => `${listingUrl.split('#')[0]}#festival-program-${index}`);
+  }
+
+  return extractGenericDetailUrls(listingHtml, listingUrl, source, 100).filter(
+    (url) => canonicalizeComparableUrl(url) !== canonicalizeComparableUrl(listingUrl),
+  );
+}
+
+function festivalProgramIndex(detailUrl) {
+  const value = new URL(detailUrl).hash.match(/^#festival-program-(\d+)$/)?.[1];
+  return value === undefined ? null : Number(value);
+}
+
+function extractInlineFestivalProgram(detailHtml, source, detailUrl) {
+  const candidates = festivalInlineProgramCandidates(detailHtml, source, detailUrl.split('#')[0]);
+  const index = festivalProgramIndex(detailUrl);
+  const candidate = index === null ? null : candidates[index];
+  if (!candidate) throw new Error(`Could not extract festival programme item from ${detailUrl}`);
+
+  if (source.slug === 'art-rhizome-kyoto') {
+    const title = candidate.text.split(/[\uff08(](?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)\s*[:\uff1a]/iu)[0].trim();
+    const venueName = candidate.text
+      .match(/[\uff08(](?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)\s*[:\uff1a]\s*([^\uff09)]+)/iu)?.[1]
+      ?.trim();
+    return {
+      title,
+      external_id: `artist-${index + 1}`,
+      categories: ['contemporary', 'exhibition'],
+      description: candidate.text,
+      institution_name: venueName ?? null,
+      venue_name: venueName ?? null,
+      address_text: null,
+      directions_query: venueName ? `${venueName}, Kyoto` : null,
+      date_text: null,
+      start_date: null,
+      end_date: null,
+      is_all_day: true,
+      timezone: 'Asia/Tokyo',
+      primary_image_url: null,
+      image_urls: [],
+      source_url: candidate.href,
+      extraction_confidence: 0.65,
+    };
+  }
+
+  if (source.slug === 'kyoto-youme-triennale') {
+    const before = detailHtml.slice(0, candidate.offset);
+    const lastShoseien = Math.max(before.lastIndexOf('Shosei-en'), before.lastIndexOf('Sh\u014dsei-en'));
+    const lastJushin = Math.max(before.lastIndexOf('J\u016bshin Kaikan'), before.lastIndexOf('Jushin Kaikan'));
+    const venueName = lastJushin > lastShoseien ? 'J\u016bshin Kaikan' : 'Sh\u014dsei-en Garden';
+    const imageUrls = extractGenericImageUrls(candidate.html, detailUrl);
+    return {
+      title: candidate.title,
+      external_id: `programme-${index + 1}`,
+      categories: ['contemporary', 'design', 'exhibition'],
+      description: candidate.text,
+      institution_name: venueName,
+      venue_name: venueName,
+      address_text: 'Higashi Hongan-ji, Kyoto',
+      directions_query: `${venueName}, Kyoto`,
+      date_text: null,
+      start_date: null,
+      end_date: null,
+      is_all_day: true,
+      timezone: 'Asia/Tokyo',
+      primary_image_url: imageUrls[0] ?? null,
+      image_urls: imageUrls,
+      source_url: detailUrl.split('#')[0],
+      extraction_confidence: 0.65,
+    };
+  }
+
+  const festivalYear = source?.festival?.start_date?.slice?.(0, 4) ?? '';
+  const rawDateText = candidate.text.match(/^(.*?)(?=\s+[A-E]\d{2}\b)/)?.[1]?.trim() ?? '';
+  const parsedDates = parseGenericDateRange(
+    /\b20\d{2}\b/.test(rawDateText) ? rawDateText : `${rawDateText}, ${festivalYear}`,
+  );
+  const title = candidate.text
+    .replace(/^.*?\b[A-E]\d{2}\s+/i, '')
+    .split(/\s+(?:Artist|Venue)\s*:/i)[0]
+    .trim();
+  const venueName = candidate.text.match(/\bVenue\s*:\s*(.*?)(?:\s+\*|$)/i)?.[1]?.trim() ?? null;
+  return {
+    title,
+    external_id: `whats-on-${index + 1}`,
+    categories: ['contemporary', 'exhibition'],
+    description: candidate.text,
+    institution_name: venueName,
+    venue_name: venueName,
+    address_text: null,
+    directions_query: venueName ? `${venueName}, Kyoto` : null,
+    date_text: rawDateText || null,
+    start_date: parsedDates.startDate,
+    end_date: parsedDates.endDate,
+    ...buildScheduleFields({ startDate: parsedDates.startDate, endDate: parsedDates.endDate }),
+    calendar_starts_at: parsedDates.calendarStartsAt,
+    calendar_ends_at: parsedDates.calendarEndsAt,
+    is_all_day: true,
+    timezone: 'Asia/Tokyo',
+    primary_image_url: null,
+    image_urls: [],
+    source_url: candidate.href,
+    extraction_confidence: parsedDates.startDate ? 0.75 : 0.55,
+  };
+}
+
+function extractFestivalProgramEvent(detailHtml, source, detailUrl) {
+  if (festivalProgramIndex(detailUrl) !== null) {
+    return extractInlineFestivalProgram(detailHtml, source, detailUrl);
+  }
+
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const pageText = stripTags(detailHtml).replace(/\s+/g, ' ').trim();
+  const venueName =
+    pageText.match(/\bVenue\s*[:\uff1a]\s*(.*?)(?=\s+(?:Duration|Price|Date|Schedule|Notes)\s*[:\uff1a]|$)/i)?.[1]?.trim() ??
+    null;
+  const singleTitle =
+    typeof source?.festival_single_program_title === 'string'
+      ? source.festival_single_program_title.trim()
+      : null;
+
+  return {
+    ...event,
+    title: singleTitle || event.title,
+    external_id: source?.festival_single_program ? `${source.festival?.external_id}-programme` : event.external_id,
+    institution_name: venueName ?? event.institution_name,
+    venue_name: venueName ?? event.venue_name,
+    directions_query: venueName ? `${venueName}, Kyoto` : event.directions_query,
+  };
 }
 
 function extractCurationFairDetailUrls(listingHtml, listingUrl, source) {
@@ -7010,10 +7209,11 @@ const detailUrlExtractors = {
   '10-chancery-lane-gallery': extractTenChanceryCurrentDetailUrls,
   '21-21-design-sight': extractTwentyOneDetailUrls,
   'art-gallery-kitano': extractKitanoDetailUrls,
-  'art-collaboration-kyoto': extractArtCollaborationKyotoDetailUrls,
+  'art-collaboration-kyoto': extractFestivalProgramDetailUrls,
+  'art-rhizome-kyoto': extractFestivalProgramDetailUrls,
   'arts-science-kyoto': extractArtsScienceKyotoDetailUrls,
   'chushin-bijutsu': extractChushinDetailUrls,
-  'curation-fair-kyoto': extractCurationFairDetailUrls,
+  'curation-fair-kyoto': extractFestivalProgramDetailUrls,
   'curation-fair-tokyo': extractCurationFairDetailUrls,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddDetailUrls,
   'fukuda-art-museum': extractFukudaDetailUrls,
@@ -7034,6 +7234,10 @@ const detailUrlExtractors = {
   'kyoto-art-center': extractKacDetailUrls,
   'kyoto-national-museum': extractKyohakuDetailUrls,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraDetailUrls,
+  'kyoto-experiment': extractFestivalProgramDetailUrls,
+  'kyoto-modern-architecture-festival': extractFestivalProgramDetailUrls,
+  'kyoto-youme-triennale': extractFestivalProgramDetailUrls,
+  'ko-gei-kyoto': extractFestivalProgramDetailUrls,
   momak: extractMomakDetailUrls,
   'osaka-geidai-whatsnew': extractOsakaGeidaiDetailUrls,
   'pola-museum-annex': extractHosomiMuseumDetailUrls,
@@ -7055,10 +7259,11 @@ const eventExtractors = {
   'asia-art-archive': extractFirstImageEvent,
   'art-gallery-kitano': extractKitanoEvent,
   artro: extractArtroEvent,
-  'art-collaboration-kyoto': extractArtCollaborationKyotoEvent,
+  'art-collaboration-kyoto': extractFestivalProgramEvent,
+  'art-rhizome-kyoto': extractFestivalProgramEvent,
   'arts-science-kyoto': extractArtsScienceKyotoEvent,
   'chushin-bijutsu': extractChushinEvent,
-  'curation-fair-kyoto': extractCurationFairEvent,
+  'curation-fair-kyoto': extractFestivalProgramEvent,
   'curation-fair-tokyo': extractCurationFairEvent,
   'dnp-foundation-for-cultural-promotion-gallery-ddd': extractDddEvent,
   'fukuda-art-museum': extractFukudaEvent,
@@ -7079,6 +7284,10 @@ const eventExtractors = {
   'kyoto-art-center': extractKacEvent,
   'kyoto-national-museum': extractKyohakuEvent,
   'kyoto-city-kyocera-museum-of-art': extractKyoceraEvent,
+  'kyoto-experiment': extractFestivalProgramEvent,
+  'kyoto-modern-architecture-festival': extractFestivalProgramEvent,
+  'kyoto-youme-triennale': extractFestivalProgramEvent,
+  'ko-gei-kyoto': extractFestivalProgramEvent,
   kyotographie: extractKyotographieEvent,
   kyotophonie: extractKyotophonieEvent,
   kankakari: extractKankakariEvent,
@@ -8253,6 +8462,13 @@ async function upsertRawPage(
 async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey, fetchImpl = fetch) {
   buildScheduleSegmentRows('__preflight__', eventData);
 
+  if (eventData.event_kind === 'festival' && !eventData.festival_slug) {
+    throw new Error('Festival edition requires festival_slug');
+  }
+  if (eventData.event_kind === 'festival_program' && !eventData.festival_id) {
+    throw new Error('Festival program requires festival_id');
+  }
+
   const persistedEventData = Object.fromEntries(
     Object.entries(eventData).filter(
       ([key]) => !key.startsWith('_') && key !== 'schedule_segments',
@@ -8289,6 +8505,81 @@ async function upsertEvent(env, sourceId, rawPageId, eventData, dedupeKey, fetch
 
   const rows = await response.json();
   return rows[0];
+}
+
+function assertFestivalSlug(slug) {
+  if (typeof slug !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) {
+    throw new Error('Festival slug must contain lowercase letters, numbers, and hyphens');
+  }
+}
+
+async function upsertFestivalEdition(env, sourceId, rawPageId, eventData, fetchImpl = fetch) {
+  assertFestivalSlug(eventData.festival_slug);
+  if (!eventData.city) throw new Error('Festival edition requires city');
+
+  return upsertEvent(
+    env,
+    sourceId,
+    rawPageId,
+    { ...eventData, event_kind: 'festival', festival_id: null },
+    `festival:${eventData.city}:${eventData.festival_slug}`,
+    fetchImpl,
+  );
+}
+
+function buildFestivalProgramDedupeKey(festival, eventData) {
+  if (!festival?.id || festival.event_kind !== 'festival') {
+    throw new Error('Festival program requires a saved festival edition');
+  }
+
+  const externalId = typeof eventData.external_id === 'string'
+    ? eventData.external_id.normalize('NFKC').trim()
+    : '';
+  const programUrl = canonicalizeEventUrl(eventData.source_url);
+  const festivalUrl = canonicalizeEventUrl(festival.source_url);
+  const title = typeof eventData.title === 'string'
+    ? eventData.title.normalize('NFKC').trim()
+    : '';
+  const identity = externalId
+    ? `id:${externalId}`
+    : programUrl && programUrl !== festivalUrl
+      ? `url:${programUrl}`
+      : title
+        ? `title:${title}`
+        : null;
+
+  if (!identity) {
+    throw new Error('Festival program requires external_id, own URL, or title for identity');
+  }
+  return `festival-program:${festival.id}:${identity}`;
+}
+
+async function upsertFestivalProgram(
+  env,
+  sourceId,
+  rawPageId,
+  festival,
+  eventData,
+  fetchImpl = fetch,
+) {
+  const dedupeKey = buildFestivalProgramDedupeKey(festival, eventData);
+  return upsertEvent(
+    env,
+    sourceId,
+    rawPageId,
+    {
+      ...eventData,
+      city: festival.city,
+      event_kind: 'festival_program',
+      festival_id: festival.id,
+      festival_slug: null,
+      institution_name: eventData.institution_name ?? null,
+      date_text: eventData.date_text ?? null,
+      source_url: eventData.source_url ?? null,
+    },
+    dedupeKey,
+    fetchImpl,
+  );
 }
 
 async function assertScheduleSegmentStorage(env, request = supabaseRequest) {
@@ -8830,6 +9121,84 @@ async function normalizeEventImagesForSource(
   return withNormalizedEventImages(eventData, acceptedImageUrls, acceptedImageMetadata);
 }
 
+function festivalEditionEventFromSource(source) {
+  const festival = source?.festival;
+  if (!festival || source?.crawl_strategy !== 'festival-program') return null;
+
+  const schedule = buildScheduleFields({
+    startDate: festival.start_date,
+    endDate: festival.end_date,
+  });
+  const imageUrls = Array.isArray(festival.image_urls)
+    ? festival.image_urls.filter(Boolean)
+    : festival.primary_image_url
+      ? [festival.primary_image_url]
+      : [];
+
+  return {
+    event_kind: 'festival',
+    festival_slug: festival.slug,
+    external_id: festival.external_id,
+    city: source.city,
+    title: festival.title,
+    categories: flattenTaxonomy(source.taxonomy),
+    description: festival.description ?? null,
+    institution_name: source.name,
+    venue_name: festival.venue_name ?? null,
+    address_text: festival.address_text ?? null,
+    directions_query: festival.directions_query ?? null,
+    lat: toFiniteNumber(festival.lat),
+    lng: toFiniteNumber(festival.lng),
+    date_text: festival.date_text,
+    start_date: festival.start_date,
+    end_date: festival.end_date,
+    start_time_text: null,
+    end_time_text: null,
+    is_all_day: true,
+    timezone: source.timezone ?? timeZoneForCity(source.city),
+    ...schedule,
+    calendar_starts_at: null,
+    calendar_ends_at: null,
+    primary_image_url: imageUrls[0] ?? null,
+    image_urls: imageUrls,
+    source_url: festival.source_url,
+    extraction_confidence: 1,
+  };
+}
+
+async function persistFestivalEditionForCrawl({
+  env,
+  source,
+  sourceId,
+  rawPageId,
+  upsertEdition = upsertFestivalEdition,
+  upsertSegments = upsertEventScheduleSegments,
+  upsertTranslations = upsertEventTranslations,
+  publish = publishEvent,
+}) {
+  const editionData = festivalEditionEventFromSource(source);
+  if (!editionData) return null;
+
+  const dedupeKey = `festival:${editionData.city}:${editionData.festival_slug}`;
+  const festival = await upsertEdition(env, sourceId, rawPageId, editionData);
+  await upsertSegments({ env, eventId: festival.id, event: editionData, request: supabaseRequest });
+  const translations = await upsertTranslations(env, source, festival, editionData);
+  await publish(env, festival.id);
+
+  return {
+    festival,
+    editionData,
+    savedEvent: {
+      detailUrl: editionData.source_url,
+      eventId: festival.id,
+      dedupeKey,
+      title: festival.title,
+      eventKind: 'festival',
+      translations,
+    },
+  };
+}
+
 async function crawlSource({
   env,
   sourceSlug,
@@ -8897,8 +9266,14 @@ async function crawlSource({
       });
       pagesFetched += 1;
       recordFetchedPage(diagnostics, listingPage);
-      await upsertRawPage(env, source.id, crawlRun.id, 'listing', listingPage);
-      listingPages.push(listingPage);
+      const listingRawPage = await upsertRawPage(
+        env,
+        source.id,
+        crawlRun.id,
+        'listing',
+        listingPage,
+      );
+      listingPages.push({ ...listingPage, rawPageId: listingRawPage.id });
     }
 
     const discoveryLimit = sourceDetailLimit + 1;
@@ -8932,6 +9307,23 @@ async function crawlSource({
       detailUrls = detailUrls.slice(0, sourceDetailLimit);
     }
 
+    const savedEvents = [];
+    const skippedEvents = [];
+    const activeDedupeKeys = new Set();
+    const existingDedupeKeys = await existingEventDedupeKeys(env, source.id);
+    const persistedEdition = await persistFestivalEditionForCrawl({
+      env,
+      source: crawlSourceConfig,
+      sourceId: source.id,
+      rawPageId: listingPages[0].rawPageId,
+    });
+    const savedFestival = persistedEdition?.festival ?? null;
+    const festivalEditionData = persistedEdition?.editionData ?? null;
+    if (persistedEdition) {
+      activeDedupeKeys.add(persistedEdition.savedEvent.dedupeKey);
+      savedEvents.push(persistedEdition.savedEvent);
+    }
+
     if (!detailUrls.length) {
       const sourceOutcome = classifySourceOutcome({
         detailUrls,
@@ -8944,12 +9336,18 @@ async function crawlSource({
         diagnostics,
         discoveryComplete: detailDiscoveryComplete,
       })
-        ? await archiveStaleEvents(env, source.id, new Set())
+        ? await archiveStaleEvents(env, source.id, activeDedupeKeys)
         : 0;
+      const mutationCounts = crawlEventMutationCounts(
+        savedEvents,
+        existingDedupeKeys,
+        archivedEvents,
+      );
       const qaReport = buildCrawlQaReport({
         source,
         sourceOutcome,
         detailUrls,
+        savedEvents,
         diagnostics,
       });
       await updateCrawlRun(env, crawlRun.id, {
@@ -8957,9 +9355,9 @@ async function crawlSource({
         finished_at: new Date().toISOString(),
         pages_queued: listingPages.length,
         pages_fetched: pagesFetched,
-        pages_parsed: 0,
-        events_created: 0,
-        events_updated: archivedEvents,
+        pages_parsed: savedEvents.length,
+        events_created: mutationCounts.created,
+        events_updated: mutationCounts.updated,
         logs: [
           {
             level: 'warn',
@@ -8992,7 +9390,7 @@ async function crawlSource({
         diagnostics,
         qa: qaReport,
         detailUrls,
-        events: [],
+        events: savedEvents,
         archivedEvents,
       };
     }
@@ -9017,10 +9415,6 @@ async function crawlSource({
     const oneYearAgo = shiftDateOnlyByYears(today, -1);
     const previousYear = Number(today.slice(0, 4)) - 1;
 
-    const savedEvents = [];
-    const skippedEvents = [];
-    const activeDedupeKeys = new Set();
-    const existingDedupeKeys = await existingEventDedupeKeys(env, source.id);
     const detailCrawlContext = {
       ...crawlContext,
       targetElements: selectorsFor(crawlSourceConfig, 'description'),
@@ -9044,8 +9438,16 @@ async function crawlSource({
         pagesFetched += 1;
         recordFetchedPage(diagnostics, detailPage);
       }
+      const extractedFromPage = eventExtractor(
+        detailPage.html,
+        crawlSourceConfig,
+        detailUrl,
+        sourceContext,
+      );
       const initialNormalizedEvent = normalizeEventSourceTruth(
-        eventExtractor(detailPage.html, crawlSourceConfig, detailUrl, sourceContext),
+        savedFestival
+          ? { ...extractedFromPage, event_kind: 'festival_program' }
+          : extractedFromPage,
         crawlSourceConfig,
       );
       let extractedEvent = assessEventTitle(
@@ -9075,8 +9477,16 @@ async function crawlSource({
         if (renderedDetailPage) {
           pagesFetched += 1;
           recordFetchedPage(diagnostics, renderedDetailPage);
+          const renderedExtractedFromPage = eventExtractor(
+            renderedDetailPage.html,
+            crawlSourceConfig,
+            detailUrl,
+            sourceContext,
+          );
           const renderedNormalizedEvent = normalizeEventSourceTruth(
-            eventExtractor(renderedDetailPage.html, crawlSourceConfig, detailUrl, sourceContext),
+            savedFestival
+              ? { ...renderedExtractedFromPage, event_kind: 'festival_program' }
+              : renderedExtractedFromPage,
             crawlSourceConfig,
           );
           const renderedEvent = assessEventTitle(
@@ -9108,6 +9518,7 @@ async function crawlSource({
       );
       recordTitleExtraction(diagnostics, extractedEvent);
       recordDescriptionExtraction(diagnostics, extractedEvent);
+      const isFestivalProgram = Boolean(savedFestival);
 
       if (!hasValidEventTitle(extractedEvent)) {
         pushSkippedEvent(skippedEvents, diagnostics, {
@@ -9118,7 +9529,7 @@ async function crawlSource({
         continue;
       }
 
-      if (!hasVerifiedEventDate(extractedEvent)) {
+      if (!hasVerifiedEventDate(extractedEvent) && !isFestivalProgram) {
         pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
           title: extractedEvent.title,
@@ -9136,7 +9547,10 @@ async function crawlSource({
         continue;
       }
 
-      if (!hasValidEventDescription(extractedEvent)) {
+      if (
+        !hasValidEventDescription(extractedEvent) &&
+        !(isFestivalProgram && hasValidEventDescription(festivalEditionData))
+      ) {
         pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
           title: extractedEvent.title,
@@ -9197,7 +9611,7 @@ async function crawlSource({
         diagnostics,
       });
 
-      if (!hasExtractedImage(extractedEvent)) {
+      if (!hasExtractedImage(extractedEvent) && !isFestivalProgram) {
         pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
           title: extractedEvent.title,
@@ -9244,15 +9658,25 @@ async function crawlSource({
         nativeTranslations[targetLocale] = nativeTranslation.event;
       }
 
-      const dedupeKey = buildEventDedupeKey(extractedEvent);
+      const dedupeKey = savedFestival
+        ? buildFestivalProgramDedupeKey(savedFestival, extractedEvent)
+        : buildEventDedupeKey(extractedEvent);
       activeDedupeKeys.add(dedupeKey);
-      const savedEvent = await upsertEvent(
-        env,
-        source.id,
-        detailRawPage.id,
-        extractedEvent,
-        dedupeKey,
-      );
+      const savedEvent = savedFestival
+        ? await upsertFestivalProgram(
+            env,
+            source.id,
+            detailRawPage.id,
+            savedFestival,
+            extractedEvent,
+          )
+        : await upsertEvent(
+            env,
+            source.id,
+            detailRawPage.id,
+            extractedEvent,
+            dedupeKey,
+          );
       await upsertEventScheduleSegments({
         env,
         eventId: savedEvent.id,
@@ -9586,6 +10010,10 @@ export {
   translateTextFields,
   upsertRawPage,
   upsertEvent,
+  upsertFestivalEdition,
+  persistFestivalEditionForCrawl,
+  upsertFestivalProgram,
+  buildFestivalProgramDedupeKey,
   upsertEventTranslation,
   upsertEventTranslations,
   withSourceLocaleConfig,

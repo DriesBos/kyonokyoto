@@ -33,6 +33,7 @@ import { cleanDisplayText, googleCalendarUrl, mapsUrl } from '../../../lib/calen
 import {
   displayEventsForLocale as buildDisplayEventsForLocale,
   fetchPublishedEvents,
+  resolveFestivalEvents,
 } from '../../../lib/events';
 import { groupDisplayEvents } from '../../../lib/eventSections';
 import {
@@ -116,7 +117,7 @@ const allActiveSources = allActiveSourcesFrom(sourcesPayload.sources as SourceCo
 const today = dateOnlyInTimeZone(new Date(), cityConfig.timeZone);
 const betaSourceSlugsAll = new Set(allActiveSources.filter((s) => s.beta).map((s) => s.slug));
 const rawEvents = await fetchPublishedEvents({ city, locale });
-const cityEvents = rawEvents.filter((event) => sourceSlugForEvent(event, allActiveSources));
+const cityEvents = resolveFestivalEvents(rawEvents, locale).filter((event) => sourceSlugForEvent(event, allActiveSources));
 const events = import.meta.env.DEV
   ? cityEvents
   : cityEvents.filter((event) => {
@@ -171,11 +172,16 @@ const landingSlides = landingSlidesForEvents({
 });
 
 const mapsUrlForEvent = (event: (typeof displayEvents)[number]) => {
+  if (event.event_kind === 'festival_program' &&
+    !event.directions_query && !event.venue_name && !event.address_text &&
+    (event.lat === null || event.lng === null)) return null;
   const sourceSlug =
     sourceSlugByEventId.get(event.id) ?? sourceSlugForEvent(event, configuredSources);
   const coordinates = mapCoordinatesForEvent(event, sourceSlug, configuredSources);
   return mapsUrl(coordinates ? { ...event, ...coordinates } : event);
 };
+const festivalUrlForEvent = (event: (typeof displayEvents)[number]) =>
+  event.festival?.slug ? `/${city}/${locale}/festivals/${encodeURIComponent(event.festival.slug)}/` : null;
 
 const excerpt = (value: string | null) => {
   if (!value) return uiText.en.fallbackExcerpt;
@@ -239,6 +245,7 @@ const excerpt = (value: string | null) => {
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}
+                    festivalUrl={festivalUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event, today)}
                     excerpt={excerpt(event.description)}
                     beta={isEventBeta(event)}
@@ -274,6 +281,7 @@ const excerpt = (value: string | null) => {
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}
+                    festivalUrl={festivalUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event, today)}
                     excerpt={excerpt(event.description)}
                     beta={isEventBeta(event)}
@@ -311,6 +319,7 @@ const excerpt = (value: string | null) => {
                     mapSourceSlug={sourceSlugByEventId.get(event.id)}
                     mapLocationId={mapLocationIdByEventId.get(event.id)}
                     mapsUrl={mapsUrlForEvent(event)}
+                    festivalUrl={festivalUrlForEvent(event)}
                     googleCalendarUrl={googleCalendarUrl(event, today)}
                     excerpt={excerpt(event.description)}
                     beta={isEventBeta(event)}

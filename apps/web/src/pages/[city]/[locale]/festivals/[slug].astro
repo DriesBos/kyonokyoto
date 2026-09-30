@@ -1,0 +1,158 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Footer from '../../../../components/Footer.astro';
+import kyotoSourcesPayload from '../../../../../../../data/sources/kyoto-sources.json';
+import osakaSourcesPayload from '../../../../../../../data/sources/osaka-sources.json';
+import tokyoSourcesPayload from '../../../../../../../data/sources/tokyo-sources.json';
+import hongKongSourcesPayload from '../../../../../../../data/sources/hong-kong-sources.json';
+import { cityConfigFor, dateOnlyInTimeZone, type AppCity } from '../../../../lib/cities';
+import { normalizeLocale } from '../../../../lib/i18n';
+import { cleanDisplayText, formatEventDateRange } from '../../../../lib/calendar';
+import {
+  fetchPublishedEvents,
+  formatEventsForLocale,
+  localizeEvent,
+  resolveFestivalEvents,
+  type EventRow,
+} from '../../../../lib/events';
+import { configuredSourcesFrom, sourceSlugForEvent, type SourceConfig } from '../../../../lib/sources';
+
+export const prerender = false;
+
+const cityConfig = cityConfigFor(Astro.params.city);
+const locale = normalizeLocale(Astro.params.locale);
+const slug = Astro.params.slug;
+if (!cityConfig || !locale || !slug) return new Response('Not found', { status: 404 });
+
+const city = cityConfig.slug;
+const rawEvents = await fetchPublishedEvents({ city, locale });
+const festivalRaw = rawEvents.find((row) => row.event_kind === 'festival' && row.festival_slug === slug);
+if (!festivalRaw) return new Response('Not found', { status: 404 });
+
+const festival = localizeEvent({
+  ...festivalRaw,
+  date_text: festivalRaw.date_text ?? '',
+  institution_name: festivalRaw.institution_name ?? '',
+  source_url: festivalRaw.source_url ?? '',
+} as EventRow, locale);
+const sourcesPayloadByCity = {
+  kyoto: kyotoSourcesPayload,
+  osaka: osakaSourcesPayload,
+  tokyo: tokyoSourcesPayload,
+  'hong-kong': hongKongSourcesPayload,
+} satisfies Record<AppCity, { sources: SourceConfig[] }>;
+const configuredSources = configuredSourcesFrom(sourcesPayloadByCity[city].sources as SourceConfig[]);
+if (!sourceSlugForEvent(festival, configuredSources)) return new Response('Not found', { status: 404 });
+const today = dateOnlyInTimeZone(new Date(), cityConfig.timeZone);
+const programs = formatEventsForLocale({
+  events: resolveFestivalEvents(rawEvents, locale).filter((row) => row.festival_id === festival.id),
+  configuredSources,
+  activeLocale: locale,
+  today,
+}).sort((left, right) => (left.start_date ?? '9999-12-31').localeCompare(right.start_date ?? '9999-12-31'));
+const festivalDate = formatEventDateRange(festival.start_date, festival.end_date, festival.date_text, locale);
+const pagePath = `/${city}/${locale}/festivals/${encodeURIComponent(slug)}/`;
+const alternatePaths = {
+  en: `/${city}/en/festivals/${encodeURIComponent(slug)}/`,
+  ja: `/${city}/ja/festivals/${encodeURIComponent(slug)}/`,
+};
+const pageDescription = cleanDisplayText(festival.description ?? '');
+const festivalCopy = locale === 'ja'
+  ? { events: 'イベント', website: 'フェスティバル公式サイト', programme: 'プログラム', details: '詳細', comingSoon: 'プログラム詳細は近日公開予定です。', inheritedDates: 'フェスティバル全体の開催期間' }
+  : { events: 'events', website: 'Festival website', programme: 'Programme', details: 'Details', comingSoon: 'Programme details coming soon.', inheritedDates: 'Festival-wide dates' };
+---
+
+<BaseLayout
+  city={city}
+  cityThemeColor={cityConfig.themeColor}
+  locale={locale}
+  title={`${festival.title} | Kyō no Kyōto`}
+  description={pageDescription || `${festival.title} programme`}
+  canonicalPath={pagePath}
+  alternatePaths={alternatePaths}
+>
+  <main class="festival-page">
+    <nav aria-label="Breadcrumb"><a href={`/${city}/${locale}/`}>{cityConfig.label} {festivalCopy.events}</a></nav>
+    <header class="festival-page__header">
+      <p>{festivalDate}</p>
+      <h1>{festival.title}</h1>
+      {pageDescription ? <p>{pageDescription}</p> : null}
+      {festival.source_url ? <a href={festival.source_url} target="_blank" rel="noreferrer">{festivalCopy.website} ↗</a> : null}
+    </header>
+    <section aria-labelledby="festival-programme-heading">
+      <h2 id="festival-programme-heading">{festivalCopy.programme} <span>({programs.length})</span></h2>
+      {programs.length ? (
+        <ol class="festival-page__programmes">
+          {programs.map((program) => (
+            <li>
+              <div class="festival-page__meta">
+                <span>{program.date_text}</span>
+                {program.festival?.dateInherited ? <span>{festivalCopy.inheritedDates}</span> : null}
+                {program.venue_name || program.institution_name ? <span>{program.venue_name || program.institution_name}</span> : null}
+              </div>
+              <h3>{program.title}</h3>
+              {program.description ? <p>{cleanDisplayText(program.description)}</p> : null}
+              {program.source_url ? <a href={program.source_url} target="_blank" rel="noreferrer">{festivalCopy.details} ↗</a> : null}
+            </li>
+          ))}
+        </ol>
+      ) : <p>{festivalCopy.comingSoon}</p>}
+    </section>
+    <Footer cityLabel={cityConfig.label} />
+  </main>
+</BaseLayout>
+
+<style lang="sass">
+  .festival-page
+    max-width: 72rem
+    min-height: 100svh
+    margin: auto
+    padding: 2rem var(--page-padding-x)
+
+    nav
+      margin-bottom: clamp(3rem, 8vw, 7rem)
+
+    a
+      color: inherit
+      text-decoration: underline
+      text-underline-offset: 0.2em
+
+    &__header
+      max-width: 50rem
+      margin-bottom: clamp(4rem, 10vw, 8rem)
+
+      h1
+        font-size: clamp(3rem, 8vw, 8rem)
+        line-height: 0.95
+        margin: 1rem 0 2rem
+
+      p
+        white-space: pre-line
+        max-width: 45rem
+
+    h2
+      font-size: clamp(2rem, 5vw, 5rem)
+      margin-bottom: 2rem
+
+    &__programmes
+      list-style: none
+      padding: 0
+
+      li
+        border-top: var(--stroke-width) solid var(--stroke)
+        padding: 1rem 0 3rem
+
+      h3
+        font-size: clamp(1.5rem, 3vw, 3rem)
+        line-height: 1.1
+        margin: 1rem 0
+
+      p
+        max-width: 45rem
+        white-space: pre-line
+
+    &__meta
+      display: flex
+      flex-wrap: wrap
+      gap: 0.5rem 1.5rem
+      text-transform: uppercase

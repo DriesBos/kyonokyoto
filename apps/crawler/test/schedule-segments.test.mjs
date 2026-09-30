@@ -101,3 +101,22 @@ test('legacy range becomes one segment and missing schedule is rejected', () => 
   );
   assert.throws(() => buildScheduleSegmentRows('event-1', {}), /at least one segment/);
 });
+
+test('festival program without its own date clears stale schedule segments', async () => {
+  const requests = [];
+  const rows = await upsertEventScheduleSegments({
+    env: {},
+    eventId: 'program-1',
+    event: { event_kind: 'festival_program', schedule_type: 'unknown' },
+    request: async (input) => {
+      requests.push(input);
+      return [];
+    },
+  });
+
+  assert.deepEqual(rows, []);
+  assert.deepEqual(requests.map(({ method, path }) => ({ method, path })), [{
+    method: 'DELETE',
+    path: 'event_schedule_segments?event_id=eq.program-1&ordinal=gte.0',
+  }]);
+});

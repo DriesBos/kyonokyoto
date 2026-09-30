@@ -409,6 +409,7 @@ export const initEventCardControls = () => {
     if (!(card instanceof HTMLElement)) return;
     if (target.closest(starSelector)) return;
     if (target.closest(actionSelector)) return;
+    if (target.closest('a')) return;
 
     if (card.getAttribute('data-active') === 'true') {
       hideCardDot();
