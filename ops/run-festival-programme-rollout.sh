@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo=/srv/kyo-no-kyoto
 rollout_dir=/var/lib/kyo-no-kyoto/rollouts
-rollout_stamp="$rollout_dir/2026-10-festival-programme-v1"
+rollout_stamp="$rollout_dir/2026-10-festival-programme-v2"
 
 if [[ -f "$rollout_stamp" ]]; then
   echo "Festival programme rollout already completed."

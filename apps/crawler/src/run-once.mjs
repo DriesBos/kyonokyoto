@@ -3015,17 +3015,17 @@ function extractArtCollaborationKyotoDetailUrls(_listingHtml, listingUrl) {
 
 function festivalInlineProgramCandidates(html, source, pageUrl) {
   if (source?.slug === 'art-rhizome-kyoto') {
-    return [
-      ...html.matchAll(
-        /<li\b[^>]*>([\s\S]*?(?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)[\s\S]*?)<\/li>/giu,
-      ),
-    ]
+    return [...html.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/giu)]
       .map((match) => ({
         text: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
         html: match[1],
         href: source.festival?.source_url ?? pageUrl,
       }))
-      .filter((item) => item.text);
+      .filter(
+        (item) =>
+          item.text &&
+          /(?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)\s*[:\uff1a]/iu.test(item.text),
+      );
   }
 
   if (source?.slug === 'kyoto-youme-triennale') {
@@ -3065,9 +3065,17 @@ function extractFestivalProgramDetailUrls(listingHtml, listingUrl, source) {
     );
   }
 
-  return extractGenericDetailUrls(listingHtml, listingUrl, source, 100).filter(
+  const detailUrls = extractGenericDetailUrls(listingHtml, listingUrl, source, 100).filter(
     (url) => canonicalizeComparableUrl(url) !== canonicalizeComparableUrl(listingUrl),
   );
+
+  if (source?.slug === 'kyoto-experiment') {
+    return detailUrls.filter(
+      (url) => !/\/program\/(?:category|date|genre|page)\//i.test(new URL(url).pathname),
+    );
+  }
+
+  return detailUrls;
 }
 
 function festivalProgramIndex(detailUrl) {
@@ -3188,6 +3196,12 @@ function extractFestivalProgramEvent(detailHtml, source, detailUrl, sourceContex
   }
 
   const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const modernArchitectureTitle =
+    source?.slug === 'kyoto-modern-architecture-festival'
+      ? decodeHtml(stripTags(detailHtml.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? ''))
+          .replace(/\s+[-|]\s+京都モダン建築祭.*$/u, '')
+          .trim()
+      : null;
   const pageText = stripTags(detailHtml).replace(/\s+/g, ' ').trim();
   const venueName =
     pageText
@@ -3202,7 +3216,8 @@ function extractFestivalProgramEvent(detailHtml, source, detailUrl, sourceContex
 
   return {
     ...event,
-    title: singleTitle || event.title,
+    title: singleTitle || modernArchitectureTitle || event.title,
+    ...(modernArchitectureTitle ? { _title_origin: 'document_title' } : {}),
     external_id: source?.festival_single_program
       ? `${source.festival?.external_id}-programme`
       : event.external_id,

@@ -2025,6 +2025,55 @@ test('inline festival extraction reuses the listing snapshot that created fragme
   assert.equal(event.external_id, 'programme-10');
 });
 
+test('Art Rhizome programme discovery keeps each artist inside its own list item', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'art-rhizome-kyoto');
+  const listingUrl = source.start_urls[0];
+  const listingHtml = `
+    <ul><li>Unrelated navigation item</li></ul>
+    <ul>
+      <li><strong>井村 一登</strong>（展示会場：フォーチュンガーデン京都）<br>Biography</li>
+      <li><strong>沖見 かれん</strong>（展示会場：ホテルリングス京都）<br>Biography</li>
+    </ul>`;
+  const detailUrls = detailUrlExtractors[source.slug](listingHtml, listingUrl, source);
+  const firstEvent = eventExtractors[source.slug](listingHtml, source, detailUrls[0]);
+
+  assert.equal(detailUrls.length, 2);
+  assert.equal(firstEvent.title, '井村 一登');
+  assert.equal(firstEvent.venue_name, 'フォーチュンガーデン京都');
+});
+
+test('KYOTO EXPERIMENT discovery excludes taxonomy and pagination archives', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'kyoto-experiment');
+  const listingUrl = source.start_urls[0];
+  const listingHtml = `
+    <a href="/en/program/cia-rec/">Alice Ripoll</a>
+    <a href="/en/program/genre/dance-en/">Dance</a>
+    <a href="/en/program/category/shows-en/">Shows</a>
+    <a href="/en/program/date/2026/">2026</a>
+    <a href="/en/program/page/2/">Next</a>`;
+
+  assert.deepEqual(detailUrlExtractors[source.slug](listingHtml, listingUrl, source), [
+    'https://kyoto-ex.jp/en/program/cia-rec/',
+  ]);
+});
+
+test('Modern Architecture festival uses the building document title', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'kyoto-modern-architecture-festival');
+  const event = eventExtractors[source.slug](
+    `<title>京都御幸町教会 - 京都モダン建築祭</title>
+     <h2 class="secTtl">イベント詳細</h2>
+     <p>2026年10月31日から11月8日</p>`,
+    source,
+    'https://kyoto.kenchikusai.jp/program/S22005-000/',
+  );
+
+  assert.equal(event.title, '京都御幸町教会');
+  assert.equal(event._title_origin, 'document_title');
+});
+
 test('Osaka Geidai keeps art exhibition links and first event image only', async () => {
   const listingHtml = `
     <ul>
