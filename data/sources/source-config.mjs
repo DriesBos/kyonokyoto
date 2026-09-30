@@ -386,7 +386,14 @@ export function validateSourceConfig(source) {
       if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(festival.slug ?? '')) {
         warnings.push(`${slug}: invalid festival.slug`);
       }
-      for (const field of ['title', 'external_id', 'date_text', 'start_date', 'end_date', 'source_url']) {
+      for (const field of [
+        'title',
+        'external_id',
+        'date_text',
+        'start_date',
+        'end_date',
+        'source_url',
+      ]) {
         if (typeof festival[field] !== 'string' || !festival[field].trim()) {
           warnings.push(`${slug}: missing festival.${field}`);
         }

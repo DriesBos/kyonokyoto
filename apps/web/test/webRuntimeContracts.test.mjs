@@ -115,11 +115,14 @@ test('festival programmes replace parent cards and inherit missing edition field
   assert.match(events, /institution_name: filled\(row\.institution_name, festival\.venue_name\)/);
   assert.match(events, /venue_name: filled\(row\.venue_name, festival\.venue_name\) \|\| null/);
   assert.match(events, /source_url: filled\(row\.source_url, festival\.source_url\)/);
-  assert.match(events, /description: filled\(row\.description, localizedFestival\.description\) \|\| null/);
+  assert.match(
+    events,
+    /description: filled\(row\.description, localizedFestival\.description\) \|\| null/,
+  );
   assert.match(events, /primary_image_url: mediaInherited \? festival\.primary_image_url/);
   assert.match(page, /resolveFestivalEvents\(rawEvents, locale\)/);
   assert.match(card, /event\.festival[\s\S]*event\.festival\.title[\s\S]*venueLabel/);
-  assert.match(card, /festivalUrl \? <a class="event-card__festival-link"/);
+  assert.match(card, /festivalUrl\s*\?\s*\(\s*<a class="event-card__festival-link"/);
   assert.match(festivalPage, /sourceSlugForEvent\(festival, configuredSources\)/);
   assert.match(festivalPage, /row\.festival_id === festival\.id/);
 });

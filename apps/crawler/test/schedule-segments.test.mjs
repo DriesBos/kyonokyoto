@@ -115,8 +115,13 @@ test('festival program without its own date clears stale schedule segments', asy
   });
 
   assert.deepEqual(rows, []);
-  assert.deepEqual(requests.map(({ method, path }) => ({ method, path })), [{
-    method: 'DELETE',
-    path: 'event_schedule_segments?event_id=eq.program-1&ordinal=gte.0',
-  }]);
+  assert.deepEqual(
+    requests.map(({ method, path }) => ({ method, path })),
+    [
+      {
+        method: 'DELETE',
+        path: 'event_schedule_segments?event_id=eq.program-1&ordinal=gte.0',
+      },
+    ],
+  );
 });

@@ -685,26 +685,44 @@ test('festival program persistence keeps missing item fields null and uses stabl
   const fetchImpl = async (_url, options) => {
     const payload = JSON.parse(options.body)[0];
     payloads.push(payload);
-    return new Response(JSON.stringify([{ id: payload.event_kind === 'festival' ? 'festival-1' : 'program-1', ...payload }]), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify([
+        { id: payload.event_kind === 'festival' ? 'festival-1' : 'program-1', ...payload },
+      ]),
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      },
+    );
   };
   const env = { SUPABASE_URL: 'https://database.example', SUPABASE_SERVICE_ROLE_KEY: 'test-key' };
-  const festival = await upsertFestivalEdition(env, 'source-1', 'page-1', {
-    city: 'kyoto',
-    festival_slug: 'art-rhizome-kyoto-2026',
-    title: 'Art Rhizome KYOTO 2026',
-    institution_name: 'Art Rhizome KYOTO',
-    date_text: 'Sep 11–Nov 9',
-    start_date: '2026-09-11',
-    end_date: '2026-11-09',
-    source_url: 'https://festival.example/',
-  }, fetchImpl);
-  await upsertFestivalProgram(env, 'source-1', 'page-2', festival, {
-    external_id: 'installation-1',
-    title: 'Installation One',
-  }, fetchImpl);
+  const festival = await upsertFestivalEdition(
+    env,
+    'source-1',
+    'page-1',
+    {
+      city: 'kyoto',
+      festival_slug: 'art-rhizome-kyoto-2026',
+      title: 'Art Rhizome KYOTO 2026',
+      institution_name: 'Art Rhizome KYOTO',
+      date_text: 'Sep 11–Nov 9',
+      start_date: '2026-09-11',
+      end_date: '2026-11-09',
+      source_url: 'https://festival.example/',
+    },
+    fetchImpl,
+  );
+  await upsertFestivalProgram(
+    env,
+    'source-1',
+    'page-2',
+    festival,
+    {
+      external_id: 'installation-1',
+      title: 'Installation One',
+    },
+    fetchImpl,
+  );
 
   assert.equal(payloads[0].dedupe_key, 'festival:kyoto:art-rhizome-kyoto-2026');
   assert.equal(payloads[1].dedupe_key, 'festival-program:festival-1:id:installation-1');
@@ -713,10 +731,13 @@ test('festival program persistence keeps missing item fields null and uses stabl
   assert.equal(payloads[1].date_text, null);
   assert.equal(payloads[1].institution_name, null);
   assert.equal(payloads[1].source_url, null);
-  assert.equal(buildFestivalProgramDedupeKey(festival, {
-    title: 'Renamed Installation',
-    external_id: 'installation-1',
-  }), payloads[1].dedupe_key);
+  assert.equal(
+    buildFestivalProgramDedupeKey(festival, {
+      title: 'Renamed Installation',
+      external_id: 'installation-1',
+    }),
+    payloads[1].dedupe_key,
+  );
 });
 
 test('Kyoto festival QA sources define 2026 editions and programme crawling', async () => {
@@ -784,12 +805,14 @@ test('festival edition persists when listing has no programme details', async ()
   ]);
   assert.equal(persisted.savedEvent.dedupeKey, 'festival:kyoto:kyoto-experiment-2026');
   assert.equal(persisted.savedEvent.eventKind, 'festival');
-  assert.deepEqual(
-    crawlEventMutationCounts([persisted.savedEvent], new Set()),
-    { created: 1, updated: 0 },
-  );
+  assert.deepEqual(crawlEventMutationCounts([persisted.savedEvent], new Set()), {
+    created: 1,
+    updated: 0,
+  });
   assert.equal(
-    shouldArchiveStaleEvents({ sourceOutcome: classifySourceOutcome({ detailUrls, sourceSlug: source.slug }) }),
+    shouldArchiveStaleEvents({
+      sourceOutcome: classifySourceOutcome({ detailUrls, sourceSlug: source.slug }),
+    }),
     false,
   );
 });

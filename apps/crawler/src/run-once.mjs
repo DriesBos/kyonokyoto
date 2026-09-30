@@ -534,7 +534,8 @@ function normalizeEventSourceTruth(eventData, source) {
   if (source?.crawl_strategy === 'festival-program') {
     const sourceName = typeof source?.name === 'string' ? source.name.trim() : '';
     const eventInstitution =
-      typeof eventData?.institution_name === 'string' && eventData.institution_name.trim() !== sourceName
+      typeof eventData?.institution_name === 'string' &&
+      eventData.institution_name.trim() !== sourceName
         ? eventData.institution_name.trim()
         : null;
     const eventVenue =
@@ -3014,7 +3015,11 @@ function extractArtCollaborationKyotoDetailUrls(_listingHtml, listingUrl) {
 
 function festivalInlineProgramCandidates(html, source, pageUrl) {
   if (source?.slug === 'art-rhizome-kyoto') {
-    return [...html.matchAll(/<li\b[^>]*>([\s\S]*?(?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)[\s\S]*?)<\/li>/giu)]
+    return [
+      ...html.matchAll(
+        /<li\b[^>]*>([\s\S]*?(?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)[\s\S]*?)<\/li>/giu,
+      ),
+    ]
       .map((match) => ({
         text: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
         html: match[1],
@@ -3024,7 +3029,8 @@ function festivalInlineProgramCandidates(html, source, pageUrl) {
   }
 
   if (source?.slug === 'kyoto-youme-triennale') {
-    const ignoredHeadings = /^(?:Programme|Institutional Exhibition|Shosei-en|J\u016bshin Kaikan|Cultural Exhibition)$/i;
+    const ignoredHeadings =
+      /^(?:Programme|Institutional Exhibition|Shosei-en|J\u016bshin Kaikan|Cultural Exhibition)$/i;
     return [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2\b|$)/gi)]
       .map((match) => ({
         title: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
@@ -3054,7 +3060,9 @@ function extractFestivalProgramDetailUrls(listingHtml, listingUrl, source) {
 
   const inlinePrograms = festivalInlineProgramCandidates(listingHtml, source, listingUrl);
   if (inlinePrograms.length) {
-    return inlinePrograms.map((_, index) => `${listingUrl.split('#')[0]}#festival-program-${index}`);
+    return inlinePrograms.map(
+      (_, index) => `${listingUrl.split('#')[0]}#festival-program-${index}`,
+    );
   }
 
   return extractGenericDetailUrls(listingHtml, listingUrl, source, 100).filter(
@@ -3074,9 +3082,13 @@ function extractInlineFestivalProgram(detailHtml, source, detailUrl) {
   if (!candidate) throw new Error(`Could not extract festival programme item from ${detailUrl}`);
 
   if (source.slug === 'art-rhizome-kyoto') {
-    const title = candidate.text.split(/[\uff08(](?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)\s*[:\uff1a]/iu)[0].trim();
+    const title = candidate.text
+      .split(/[\uff08(](?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)\s*[:\uff1a]/iu)[0]
+      .trim();
     const venueName = candidate.text
-      .match(/[\uff08(](?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)\s*[:\uff1a]\s*([^\uff09)]+)/iu)?.[1]
+      .match(
+        /[\uff08(](?:\u5c55\u793a\u4f1a\u5834|Exhibition venue)\s*[:\uff1a]\s*([^\uff09)]+)/iu,
+      )?.[1]
       ?.trim();
     return {
       title,
@@ -3101,8 +3113,14 @@ function extractInlineFestivalProgram(detailHtml, source, detailUrl) {
 
   if (source.slug === 'kyoto-youme-triennale') {
     const before = detailHtml.slice(0, candidate.offset);
-    const lastShoseien = Math.max(before.lastIndexOf('Shosei-en'), before.lastIndexOf('Sh\u014dsei-en'));
-    const lastJushin = Math.max(before.lastIndexOf('J\u016bshin Kaikan'), before.lastIndexOf('Jushin Kaikan'));
+    const lastShoseien = Math.max(
+      before.lastIndexOf('Shosei-en'),
+      before.lastIndexOf('Sh\u014dsei-en'),
+    );
+    const lastJushin = Math.max(
+      before.lastIndexOf('J\u016bshin Kaikan'),
+      before.lastIndexOf('Jushin Kaikan'),
+    );
     const venueName = lastJushin > lastShoseien ? 'J\u016bshin Kaikan' : 'Sh\u014dsei-en Garden';
     const imageUrls = extractGenericImageUrls(candidate.html, detailUrl);
     return {
@@ -3168,8 +3186,11 @@ function extractFestivalProgramEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const pageText = stripTags(detailHtml).replace(/\s+/g, ' ').trim();
   const venueName =
-    pageText.match(/\bVenue\s*[:\uff1a]\s*(.*?)(?=\s+(?:Duration|Price|Date|Schedule|Notes)\s*[:\uff1a]|$)/i)?.[1]?.trim() ??
-    null;
+    pageText
+      .match(
+        /\bVenue\s*[:\uff1a]\s*(.*?)(?=\s+(?:Duration|Price|Date|Schedule|Notes)\s*[:\uff1a]|$)/i,
+      )?.[1]
+      ?.trim() ?? null;
   const singleTitle =
     typeof source?.festival_single_program_title === 'string'
       ? source.festival_single_program_title.trim()
@@ -3178,7 +3199,9 @@ function extractFestivalProgramEvent(detailHtml, source, detailUrl) {
   return {
     ...event,
     title: singleTitle || event.title,
-    external_id: source?.festival_single_program ? `${source.festival?.external_id}-programme` : event.external_id,
+    external_id: source?.festival_single_program
+      ? `${source.festival?.external_id}-programme`
+      : event.external_id,
     institution_name: venueName ?? event.institution_name,
     venue_name: venueName ?? event.venue_name,
     directions_query: venueName ? `${venueName}, Kyoto` : event.directions_query,
@@ -8532,14 +8555,11 @@ function buildFestivalProgramDedupeKey(festival, eventData) {
     throw new Error('Festival program requires a saved festival edition');
   }
 
-  const externalId = typeof eventData.external_id === 'string'
-    ? eventData.external_id.normalize('NFKC').trim()
-    : '';
+  const externalId =
+    typeof eventData.external_id === 'string' ? eventData.external_id.normalize('NFKC').trim() : '';
   const programUrl = canonicalizeEventUrl(eventData.source_url);
   const festivalUrl = canonicalizeEventUrl(festival.source_url);
-  const title = typeof eventData.title === 'string'
-    ? eventData.title.normalize('NFKC').trim()
-    : '';
+  const title = typeof eventData.title === 'string' ? eventData.title.normalize('NFKC').trim() : '';
   const identity = externalId
     ? `id:${externalId}`
     : programUrl && programUrl !== festivalUrl
@@ -9670,13 +9690,7 @@ async function crawlSource({
             savedFestival,
             extractedEvent,
           )
-        : await upsertEvent(
-            env,
-            source.id,
-            detailRawPage.id,
-            extractedEvent,
-            dedupeKey,
-          );
+        : await upsertEvent(env, source.id, detailRawPage.id, extractedEvent, dedupeKey);
       await upsertEventScheduleSegments({
         env,
         eventId: savedEvent.id,

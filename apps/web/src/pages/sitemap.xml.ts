@@ -24,7 +24,11 @@ export const GET: APIRoute = async ({ request }) => {
   const publicSourceSlugs = new Map(
     cityConfigs.map(({ slug }) => [
       slug,
-      new Set(configuredSourcesFrom(sourcePayloads[slug].sources as SourceConfig[]).map((source) => source.slug)),
+      new Set(
+        configuredSourcesFrom(sourcePayloads[slug].sources as SourceConfig[]).map(
+          (source) => source.slug,
+        ),
+      ),
     ]),
   );
   const urls = cityConfigs.flatMap(({ slug }) =>
@@ -49,7 +53,8 @@ export const GET: APIRoute = async ({ request }) => {
     .not('festival_slug', 'is', null);
   if (error) throw error;
   for (const festival of festivals ?? []) {
-    if (!festival.festival_slug || !cityConfigs.some((city) => city.slug === festival.city)) continue;
+    if (!festival.festival_slug || !cityConfigs.some((city) => city.slug === festival.city))
+      continue;
     const sourceRelation = Array.isArray(festival.sources) ? festival.sources[0] : festival.sources;
     if (!publicSourceSlugs.get(festival.city as AppCity)?.has(sourceRelation?.slug ?? '')) continue;
     const pathFor = (locale: AppLocale) =>
@@ -57,7 +62,10 @@ export const GET: APIRoute = async ({ request }) => {
     for (const locale of locales) {
       const location = new URL(pathFor(locale), origin).href;
       const alternates = locales
-        .map((alternateLocale) => `<xhtml:link rel="alternate" hreflang="${alternateLocale}" href="${escapeXml(new URL(pathFor(alternateLocale), origin).href)}" />`)
+        .map(
+          (alternateLocale) =>
+            `<xhtml:link rel="alternate" hreflang="${alternateLocale}" href="${escapeXml(new URL(pathFor(alternateLocale), origin).href)}" />`,
+        )
         .join('');
       const defaultAlternate = `<xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(new URL(pathFor('en'), origin).href)}" />`;
       urls.push(`<url><loc>${escapeXml(location)}</loc>${alternates}${defaultAlternate}</url>`);

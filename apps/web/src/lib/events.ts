@@ -111,7 +111,9 @@ export const fetchPublishedEvents = async (filters: { city: AppCity; locale: App
   if (error) throw error;
   const rows = (data ?? []) as RawEventRow[];
   return [
-    ...(dedupeEvents(rows.filter((row) => !row.event_kind || row.event_kind === 'event')) as RawEventRow[]),
+    ...(dedupeEvents(
+      rows.filter((row) => !row.event_kind || row.event_kind === 'event'),
+    ) as RawEventRow[]),
     ...rows.filter((row) => row.event_kind === 'festival' || row.event_kind === 'festival_program'),
   ];
 };
@@ -119,8 +121,13 @@ export const fetchPublishedEvents = async (filters: { city: AppCity; locale: App
 const filled = (value: string | null | undefined, fallback: string | null | undefined) =>
   value?.trim() ? value : (fallback ?? '');
 
-export const resolveFestivalEvents = (rows: RawEventRow[], activeLocale: AppLocale = 'en'): EventRow[] => {
-  const festivals = new Map(rows.filter((row) => row.event_kind === 'festival').map((row) => [row.id, row]));
+export const resolveFestivalEvents = (
+  rows: RawEventRow[],
+  activeLocale: AppLocale = 'en',
+): EventRow[] => {
+  const festivals = new Map(
+    rows.filter((row) => row.event_kind === 'festival').map((row) => [row.id, row]),
+  );
   return rows
     .filter((row) => row.event_kind !== 'festival')
     .map((row): EventRow => {
@@ -134,14 +141,18 @@ export const resolveFestivalEvents = (rows: RawEventRow[], activeLocale: AppLoca
         };
       }
 
-      const dateInherited = !row.start_date && !row.calendar_starts_at && !row.schedule_segments?.length;
+      const dateInherited =
+        !row.start_date && !row.calendar_starts_at && !row.schedule_segments?.length;
       const mediaInherited = !row.primary_image_url && !row.image_urls?.length;
-      const localizedFestival = localizeEvent({
-        ...festival,
-        date_text: festival.date_text ?? '',
-        institution_name: festival.institution_name ?? '',
-        source_url: festival.source_url ?? '',
-      }, activeLocale);
+      const localizedFestival = localizeEvent(
+        {
+          ...festival,
+          date_text: festival.date_text ?? '',
+          institution_name: festival.institution_name ?? '',
+          source_url: festival.source_url ?? '',
+        },
+        activeLocale,
+      );
       return {
         ...row,
         festival: {
