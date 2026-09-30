@@ -36,6 +36,9 @@ sudo -n systemctl enable --now \
   kyo-no-kyoto-crawl@tokyo.timer \
   kyo-no-kyoto-crawl@hong-kong.timer \
   kyo-no-kyoto-storage-maintenance.timer
+
+bash "$repo/ops/run-festival-programme-rollout.sh"
+
 sudo -n install -m 0755 "$repo/ops/deploy-vps.sh" /usr/local/bin/kyo-vps-deploy
 
 echo "VPS deployed $(git rev-parse HEAD)"
