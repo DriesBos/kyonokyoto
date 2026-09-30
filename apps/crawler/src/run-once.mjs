@@ -3178,9 +3178,13 @@ function extractInlineFestivalProgram(detailHtml, source, detailUrl) {
   };
 }
 
-function extractFestivalProgramEvent(detailHtml, source, detailUrl) {
+function extractFestivalProgramEvent(detailHtml, source, detailUrl, sourceContext = {}) {
   if (festivalProgramIndex(detailUrl) !== null) {
-    return extractInlineFestivalProgram(detailHtml, source, detailUrl);
+    const listingHtml = sourceContext.listingPages?.find(
+      (page) =>
+        canonicalizeComparableUrl(page.url) === canonicalizeComparableUrl(detailUrl.split('#')[0]),
+    )?.html;
+    return extractInlineFestivalProgram(listingHtml ?? detailHtml, source, detailUrl);
   }
 
   const event = extractGenericEvent(detailHtml, source, detailUrl);

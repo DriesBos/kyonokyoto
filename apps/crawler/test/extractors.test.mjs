@@ -2002,6 +2002,29 @@ test('Art Collaboration Kyoto turns current What’s On rows into linked festiva
   assert.equal(event.end_date, '2026-11-08');
 });
 
+test('inline festival extraction reuses the listing snapshot that created fragment URLs', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'kyoto-youme-triennale');
+  const listingUrl = source.start_urls[0];
+  const listingHtml = Array.from(
+    { length: 10 },
+    (_, index) => `<h2>Programme ${index + 1}</h2><p>Programme description ${index + 1}</p>`,
+  ).join('');
+  const detailHtml = Array.from(
+    { length: 9 },
+    (_, index) => `<h2>Rendered programme ${index + 1}</h2><p>Rendered description</p>`,
+  ).join('');
+  const detailUrls = detailUrlExtractors[source.slug](listingHtml, listingUrl, source);
+
+  const event = eventExtractors[source.slug](detailHtml, source, detailUrls[9], {
+    listingPages: [{ url: listingUrl, html: listingHtml }],
+  });
+
+  assert.equal(detailUrls.length, 10);
+  assert.equal(event.title, 'Programme 10');
+  assert.equal(event.external_id, 'programme-10');
+});
+
 test('Osaka Geidai keeps art exhibition links and first event image only', async () => {
   const listingHtml = `
     <ul>
