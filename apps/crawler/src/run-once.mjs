@@ -297,6 +297,14 @@ function getSourceDetailLimit(source, fallbackLimit, hardLimit = 50) {
   return Math.min(requestedLimit, hardLimit);
 }
 
+function getSourceInlineProgramLimit(source, fallbackLimit, hardLimit = 200) {
+  const configuredLimit = Number(source?.crawl_hints?.max_inline_programs);
+  const requestedLimit =
+    Number.isInteger(configuredLimit) && configuredLimit > 0 ? configuredLimit : fallbackLimit;
+
+  return Math.min(requestedLimit, hardLimit);
+}
+
 function sourceSkipsUrl(source, url) {
   const patterns = source?.crawl_hints?.skip_patterns;
   if (!Array.isArray(patterns) || !patterns.length) return false;
@@ -3082,6 +3090,21 @@ function festivalInlineProgramCandidates(html, source, pageUrl) {
     return [...new Map(candidates.map((item) => [item.title.toLowerCase(), item])).values()];
   }
 
+  if (source?.slug === 'kyoto-modern-architecture-festival') {
+    const candidates = [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
+      .map((match) => ({
+        text: stripTags(match[2]).replace(/\s+/g, ' ').trim(),
+        html: match[2],
+        href: normalizeUrl(extractTagAttribute(`<a ${match[1]}>`, 'href'), pageUrl),
+      }))
+      .filter(
+        (item) => item.href && /(?:^|\s)(?:ガイドツアー|特別イベント)(?:\s|$)/u.test(item.text),
+      )
+      .filter((item) => /\d{1,2}\/\d{1,2}/.test(item.text))
+      .filter((item) => !/[?&]basicFilter=/i.test(item.href));
+    return [...new Map(candidates.map((item) => [item.href, item])).values()];
+  }
+
   if (source?.slug === 'art-collaboration-kyoto') {
     return [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
       .map((match) => ({
@@ -3231,6 +3254,61 @@ function extractInlineFestivalProgram(detailHtml, source, detailUrl) {
       image_urls: imageUrls,
       source_url: detailUrl.split('#')[0],
       extraction_confidence: 0.65,
+    };
+  }
+
+  if (source.slug === 'kyoto-modern-architecture-festival') {
+    const category = candidate.text.match(/(?:^|\s)(ガイドツアー|特別イベント)(?:\s|$)/u)?.[1];
+    const categoryOffset = candidate.text.indexOf(category);
+    const content = candidate.text.slice(categoryOffset + category.length).trim();
+    const firstDateOffset = content.search(/\d{1,2}\/\d{1,2}/);
+    const title = (firstDateOffset >= 0 ? content.slice(0, firstDateOffset) : content).trim();
+    const year = source.festival?.start_date?.slice(0, 4);
+    const dates = [
+      ...new Set(
+        [...content.matchAll(/(?<!\d)(1[0-2]|0?[1-9])\/([0-3]?\d)(?!\d)/g)]
+          .map((match) =>
+            year ? `${year}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}` : null,
+          )
+          .filter((date) => date && isValidDateOnly(date)),
+      ),
+    ];
+    const startDate = dates[0] ?? null;
+    const endDate = dates.at(-1) ?? startDate;
+    const dateTokenPattern = String.raw`(?:1[0-2]|0?[1-9])\/(?:[0-3]?\d)(?:\s*[（(][^）)]*[）)])?`;
+    const hasDateRange = new RegExp(
+      `${dateTokenPattern}\s*(?:-|–|—|〜|～|to)\s*${dateTokenPattern}`,
+      'iu',
+    ).test(content);
+    const imageUrls = extractGenericImageUrls(candidate.html, detailUrl);
+    const venueName = title.match(/｜\s*([^｜]+)$/u)?.[1]?.trim() ?? null;
+    return {
+      title,
+      external_id: `programme-${createHash('sha256').update(candidate.href).digest('hex').slice(0, 16)}`,
+      categories: ['architecture', 'event'],
+      description: content,
+      institution_name: venueName,
+      venue_name: venueName,
+      address_text: null,
+      directions_query: venueName ? `${venueName}, Kyoto` : null,
+      date_text: dates
+        .map((date) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`)
+        .join(', '),
+      start_date: startDate,
+      end_date: endDate,
+      ...buildScheduleFields({
+        startDate,
+        endDate,
+        occurrenceDates: hasDateRange ? [] : dates,
+      }),
+      calendar_starts_at: startDate,
+      calendar_ends_at: endDate,
+      is_all_day: true,
+      timezone: 'Asia/Tokyo',
+      primary_image_url: imageUrls[0] ?? null,
+      image_urls: imageUrls,
+      source_url: candidate.href,
+      extraction_confidence: startDate ? 0.8 : 0.55,
     };
   }
 
@@ -9423,11 +9501,19 @@ async function crawlSource({
         sourceAllowsUrl(crawlSourceConfig, detailUrl) &&
         !sourceSkipsUrl(crawlSourceConfig, detailUrl),
     );
-    const detailDiscoveryComplete = detailUrls.length <= sourceDetailLimit;
+    const inlineProgramLimit = getSourceInlineProgramLimit(
+      crawlSourceConfig,
+      sourceDetailLimit,
+      getEnvNumber(env, 'CRAWLER_MAX_INLINE_PROGRAMS_PER_SOURCE', 200),
+    );
+    const detailLimit = detailUrls.every((detailUrl) => festivalProgramIndex(detailUrl) !== null)
+      ? inlineProgramLimit
+      : sourceDetailLimit;
+    const detailDiscoveryComplete = detailUrls.length <= detailLimit;
 
     if (!detailDiscoveryComplete) {
       diagnostics.detail_limit_hit_count += 1;
-      detailUrls = detailUrls.slice(0, sourceDetailLimit);
+      detailUrls = detailUrls.slice(0, detailLimit);
     }
 
     const savedEvents = [];
@@ -10084,6 +10170,7 @@ export {
   getRetryDelayMs,
   getInvalidRequiredEventFields,
   getSourceDetailLimit,
+  getSourceInlineProgramLimit,
   getSourceSpecificSkipReason,
   getSourceTruthSkipReason,
   hasVerifiedOpenEndedSchedule,

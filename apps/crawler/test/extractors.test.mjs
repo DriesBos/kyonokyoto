@@ -41,6 +41,7 @@ import {
   getRetryDelayMs,
   getInvalidRequiredEventFields,
   getSourceDetailLimit,
+  getSourceInlineProgramLimit,
   hasExtractedImage,
   hasValidEventDescription,
   hasValidEventTitle,
@@ -290,6 +291,8 @@ test('detail crawl limits are globally capped and fragment URLs share cache entr
   assert.equal(getSourceDetailLimit({}, 8, 50), 8);
   assert.equal(getSourceDetailLimit({ crawl_hints: { max_detail_pages: 12 } }, 8, 50), 12);
   assert.equal(getSourceDetailLimit({ crawl_hints: { max_detail_pages: 200 } }, 8, 50), 50);
+  assert.equal(getSourceInlineProgramLimit({ crawl_hints: { max_inline_programs: 200 } }, 50), 200);
+  assert.equal(getSourceInlineProgramLimit({ crawl_hints: { max_inline_programs: 500 } }, 50), 200);
   assert.equal(
     detailPageCacheKey('https://example.test/exhibition?id=1#schedule'),
     detailPageCacheKey('https://example.test/exhibition?id=1#access'),
@@ -2141,6 +2144,47 @@ test('Modern Architecture festival uses the building document title', async () =
 
   assert.equal(event.title, '京都御幸町教会');
   assert.equal(event._title_origin, 'document_title');
+});
+
+test('Modern Architecture festival keeps only Guide Tours and Special Events', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'kyoto-modern-architecture-festival');
+  const listingUrl = source.start_urls[0];
+  const listingHtml = `
+    <a href="https://teket.jp/7795/72480/">
+      <span>ガイドツアー</span>
+      <h3>【名建築に泊まる】任天堂旧本社へ</h3>
+      <p>11/4（水） 11/7（土） 河原町・五条</p>
+    </a>
+    <a href="/program/S25025-003/">
+      <span>特別イベント</span>
+      <h3>【特別イベント】武田五一スケッチ展｜1928ビル</h3>
+      <p>10/31（土）-11/8（日） 中京</p>
+    </a>
+    <a href="/program/S24033-000/">
+      <span>パスポート公開</span><h3>京都工芸繊維大学</h3><p>10/31（土）</p>
+    </a>
+    <a href="?basicFilter=guideTour">ガイドツアー</a>`;
+  const listingPages = [{ url: listingUrl, html: listingHtml }];
+  const detailUrls = detailUrlExtractors[source.slug](listingHtml, listingUrl, source);
+  const events = detailUrls.map((detailUrl) =>
+    eventExtractors[source.slug]('', source, detailUrl, { listingPages }),
+  );
+
+  assert.equal(source.crawl_hints.render_mode, 'never');
+  assert.equal(source.crawl_hints.max_inline_programs, 200);
+  assert.equal(detailUrls.length, 2);
+  assert.equal(events[0].title, '【名建築に泊まる】任天堂旧本社へ');
+  assert.equal(events[0].start_date, '2026-11-04');
+  assert.equal(events[0].end_date, '2026-11-07');
+  assert.equal(events[0].schedule_type, 'occurrence_set');
+  assert.deepEqual(events[0].occurrence_dates, ['2026-11-04', '2026-11-07']);
+  assert.equal(events[0].source_url, 'https://teket.jp/7795/72480/');
+  assert.equal(events[1].start_date, '2026-10-31');
+  assert.equal(events[1].end_date, '2026-11-08');
+  assert.equal(events[1].schedule_type, 'range');
+  assert.equal(events[1].venue_name, '1928ビル');
+  assert.deepEqual(events[1].categories, ['architecture', 'event']);
 });
 
 test('Osaka Geidai keeps art exhibition links and first event image only', async () => {

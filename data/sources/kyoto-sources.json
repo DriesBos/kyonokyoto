@@ -358,7 +358,7 @@
       "allowed_domains": ["kyoto.kenchikusai.jp", "kenchikusai.jp"],
       "crawl_strategy": "festival-program",
       "event_page_patterns": ["/program/"],
-      "notes": "2026 beta festival QA. Programme index may require rendering. Crawl individual building openings, tours, and events with their own dates and locations. No central venue.",
+      "notes": "2026 beta festival QA. Crawl only programme cards labeled Guide Tour or Special Event. Parse them inline from the static programme index; exclude passport openings, benefits, and collaboration projects.",
       "beta": true,
       "festival": {
         "slug": "kyoto-modern-architecture-festival-2026",
@@ -385,8 +385,8 @@
         "machine_translate_missing_locales": true
       },
       "crawl_hints": {
-        "requires_render": true,
-        "max_detail_pages": 50
+        "render_mode": "never",
+        "max_inline_programs": 200
       }
     },
     {

@@ -261,6 +261,10 @@ function normalizeCrawlHints(value = {}) {
   if (Number.isInteger(maxDetailPages) && maxDetailPages > 0)
     output.max_detail_pages = maxDetailPages;
 
+  const maxInlinePrograms = Number(hints.max_inline_programs);
+  if (Number.isInteger(maxInlinePrograms) && maxInlinePrograms > 0)
+    output.max_inline_programs = maxInlinePrograms;
+
   const skipPatterns = normalizeStringList(hints.skip_patterns);
   if (skipPatterns.length) output.skip_patterns = skipPatterns;
 
