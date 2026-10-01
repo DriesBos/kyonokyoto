@@ -202,9 +202,9 @@
       "base_url": "https://www.city.kyoto.lg.jp/bunshi/page/0000357275.html",
       "start_urls": ["https://www.city.kyoto.lg.jp/bunshi/page/0000357275.html"],
       "allowed_domains": ["www.city.kyoto.lg.jp", "city.kyoto.lg.jp", "artrhizome.kyoto"],
-      "crawl_strategy": "festival-program",
+      "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/bunshi/page/0000357275.html"],
-      "notes": "2026 beta festival QA. Parse one programme item per participating artist from the official Kyoto City announcement; each item inherits the festival date range and official website when narrower data is absent. No central venue.",
+      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority. No central venue.",
       "beta": true,
       "festival": {
         "slug": "art-rhizome-kyoto-2026",
@@ -214,7 +214,8 @@
         "start_date": "2026-09-11",
         "end_date": "2026-11-09",
         "description": "Contemporary art by Kyoto-connected artists across nine unusual locations in Kyoto.",
-        "source_url": "https://artrhizome.kyoto/"
+        "source_url": "https://artrhizome.kyoto/",
+        "programme_image_selectors": [".mol_imageblock_img_medium", ".mol_imageblock_img_large"]
       },
       "locales": {
         "ja": {
@@ -250,9 +251,9 @@
       "base_url": "https://kyoto-ex.jp/en/program/",
       "start_urls": ["https://kyoto-ex.jp/en/program/"],
       "allowed_domains": ["kyoto-ex.jp", "www.kyoto-ex.jp"],
-      "crawl_strategy": "festival-program",
+      "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/en/program/", "/program/"],
-      "notes": "2026 beta festival QA. Crawl concrete programme detail pages and preserve their own dates and venues. No single central venue.",
+      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority. No single central venue.",
       "beta": true,
       "festival": {
         "slug": "kyoto-experiment-2026",
@@ -300,9 +301,9 @@
         "https://you-me-kyoto.org/programme/journey"
       ],
       "allowed_domains": ["you-me-kyoto.org", "www.you-me-kyoto.org"],
-      "crawl_strategy": "festival-program",
+      "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/programme"],
-      "notes": "2026 beta festival QA. Extract unique named exhibition items from the programme page and eight dated YouMe Journey workshops from the journey page.",
+      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
       "beta": true,
       "festival": {
         "slug": "kyoto-youme-triennale-2026",
@@ -356,9 +357,9 @@
       "base_url": "https://kyoto.kenchikusai.jp/program/",
       "start_urls": ["https://kyoto.kenchikusai.jp/program/"],
       "allowed_domains": ["kyoto.kenchikusai.jp", "kenchikusai.jp"],
-      "crawl_strategy": "festival-program",
+      "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/program/"],
-      "notes": "2026 beta festival QA. Crawl only programme cards labeled Guide Tour or Special Event. Parse them inline from the static programme index; exclude passport openings, benefits, and collaboration projects.",
+      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
       "beta": true,
       "festival": {
         "slug": "kyoto-modern-architecture-festival-2026",
@@ -368,7 +369,8 @@
         "start_date": "2026-10-31",
         "end_date": "2026-11-08",
         "description": "Normally inaccessible modern buildings, guided tours, talks, and special events across Kyoto.",
-        "source_url": "https://kyoto.kenchikusai.jp/"
+        "source_url": "https://kyoto.kenchikusai.jp/",
+        "programme_image_selectors": ["img[src*='/assets/img/event/']"]
       },
       "locales": {
         "ja": {
@@ -409,9 +411,9 @@
       "base_url": "https://kogeigene.com/exhibition/",
       "start_urls": ["https://kogeigene.com/exhibition/"],
       "allowed_domains": ["kogeigene.com", "www.kogeigene.com"],
-      "crawl_strategy": "festival-program",
+      "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/exhibition/"],
-      "notes": "2026 beta festival QA. Current official page publishes one exhibition programme; use it as one child item until narrower programme pages appear.",
+      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
       "beta": true,
       "festival": {
         "slug": "ko-gei-kyoto-2026",
@@ -422,6 +424,7 @@
         "end_date": "2026-11-08",
         "description": "Contemporary Japanese craft presented at Daihonzan Myokenji Temple.",
         "source_url": "https://kogeigene.com/exhibition/",
+        "cover_image_selectors": ["img[src*='exh_art_1']"],
         "venue_name": "Daihonzan Myokenji Temple",
         "address_text": "514 Myokenjimae-cho, Kamigyo-ku, Kyoto 602-0005 Japan",
         "directions_query": "Daihonzan Myokenji Temple, Kyoto",
@@ -462,9 +465,9 @@
       "base_url": "https://a-c-k.jp/en/whats-on/",
       "start_urls": ["https://a-c-k.jp/en/whats-on/"],
       "allowed_domains": ["a-c-k.jp"],
-      "crawl_strategy": "festival-program",
+      "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/en/whats-on/", "/whats-on/"],
-      "notes": "2026 beta festival QA. Crawl current What's On items as festival programme events. External item URLs remain valid child URLs; fallback to the ACK page when missing.",
+      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
       "beta": true,
       "festival": {
         "slug": "art-collaboration-kyoto-2026",
@@ -522,9 +525,9 @@
         "en": "https://curation-fair.com/en/news/release_20260706"
       },
       "allowed_domains": ["curation-fair.com"],
-      "crawl_strategy": "festival-program",
+      "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/en/kyoto2026/", "/kyoto2026/"],
-      "notes": "2026 beta festival QA. Official exhibitor page currently provides venue-grouped programme data rather than individual dated event pages; start with one fair programme child and retain venue groupings for later tuning.",
+      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
       "beta": true,
       "festival": {
         "slug": "curation-fair-kyoto-2026",

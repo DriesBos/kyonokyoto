@@ -372,17 +372,19 @@ export function applySourceOverride(source, override = {}) {
 export function validateSourceConfig(source) {
   const warnings = [];
   const slug = source?.slug ?? 'unknown-source';
-  const isFestivalProgramSource = source?.crawl_strategy === 'festival-program';
+  const isFestivalSource = ['festival-program', 'festival-edition'].includes(
+    source?.crawl_strategy,
+  );
 
   if (!source?.name) warnings.push(`${slug}: missing name`);
   warnings.push(...taxonomyErrors(source?.taxonomy, slug));
   if (
-    !isFestivalProgramSource &&
+    !isFestivalSource &&
     (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng)))
   ) {
     warnings.push(`${slug}: missing lat/lng`);
   }
-  if (isFestivalProgramSource) {
+  if (isFestivalSource) {
     const festival = source?.festival;
     if (!festival || typeof festival !== 'object') {
       warnings.push(`${slug}: missing festival metadata`);

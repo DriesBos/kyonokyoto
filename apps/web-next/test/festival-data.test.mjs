@@ -4,66 +4,48 @@ import test from 'node:test';
 
 const lib = new URL('../src/lib/', import.meta.url);
 
-test('city event data selects festival identity and programme linkage', async () => {
+test('city listing keeps festival editions and excludes programme child rows', async () => {
   const source = await readFile(new URL('cityEvents.ts', lib), 'utf8');
   assert.match(source, /'event_kind'/);
-  assert.match(source, /'festival_id'/);
-  assert.match(source, /'festival_slug'/);
-  assert.match(source, /event\.event_kind !== 'festival'/);
   assert.match(
     source,
-    /dedupeEvents\(visibleRows\.filter\(\(event\) => event\.event_kind !== 'festival_program'\)\)/,
+    /dedupeEvents\(rows\.filter\(\(event\) => event\.event_kind !== 'festival_program'\)\)/,
   );
-  assert.match(
-    source,
-    /\.\.\.visibleRows\.filter\(\(event\) => event\.event_kind === 'festival_program'\)/,
-  );
-  assert.match(source, /festival_id: `eq\.\$\{festival\.id\}`/);
-  assert.match(source, /event_kind: 'eq\.festival_program'/);
+  assert.match(source, /eventKind: event\.event_kind === 'festival' \? 'festival' : 'event'/);
+  assert.match(source, /event\.event_kind === 'festival' && event\.festival_slug/);
+  assert.doesNotMatch(source, /filter\(\(event\) => event\.event_kind !== 'festival'\)/);
 });
 
-test('festival programmes inherit missing edition dates and expose festival links', async () => {
+test('festival detail fetches one parent record and creates date-range calendar actions', async () => {
   const source = await readFile(new URL('cityEvents.ts', lib), 'utf8');
+  const detailFunction = source.slice(source.indexOf('export async function fetchFestivalDetail'));
+  assert.match(detailFunction, /festival_slug:/);
+  assert.match(detailFunction, /event_kind: 'eq\.festival'/);
+  assert.doesNotMatch(detailFunction, /festival_id|festival_program|programsEndpoint/);
   assert.match(
-    source,
-    /const dateInherited =\s*!event\.start_date &&\s*!event\.calendar_starts_at &&\s*!event\.schedule_segments\?\.length/,
+    detailFunction,
+    /googleCalendarUrl: appleCalendar \? googleCalendarUrl\(calendarInput\) : null/,
   );
-  assert.match(source, /start_date: dateInherited \? festival\.start_date : event\.start_date/);
+  assert.match(detailFunction, /appleCalendar,/);
+  assert.match(detailFunction, /festival\.external_id/);
   assert.match(
     source,
-    /calendar_starts_at: dateInherited \? festival\.calendar_starts_at : event\.calendar_starts_at/,
-  );
-  assert.match(source, /festival:\s*event\.event_kind === 'festival_program'/);
-  assert.match(source, /festivalDateInherited: dateInherited/);
-  assert.match(
-    source,
-    /festivalSourceSlug: sources \? sourceSlugForEvent\(festival, sources\) : null/,
-  );
-  assert.match(
-    source,
-    /visibleSource\(event\.festivalSourceSlug \?\? sourceSlugForEvent\(event, sources\)\)/,
-  );
-  assert.match(source, /program\.festivalDateInherited \?\?/);
-  assert.match(source, /event\.event_kind === 'festival_program' \? event\.lat/);
-});
-
-test('festival detail lookup returns no public detail for beta sources', async () => {
-  const source = await readFile(new URL('cityEvents.ts', lib), 'utf8');
-  assert.match(source, /export async function fetchFestivalDetail/);
-  assert.match(source, /festival_slug: `eq\.\$\{slug\}`/);
-  assert.match(source, /process\.env\.NODE_ENV === 'production' && source\.beta/);
-  assert.match(
-    source,
-    /if \(!source \|\| \(process\.env\.NODE_ENV === 'production' && source\.beta\)\) return null/,
+    /imageRecords\(filterEventMediaByMinimumHeight\(festival\) as EventRow, 5\)/,
   );
 });
 
-test('festival UI omits inherited-date warning labels', async () => {
-  const [page, grid] = await Promise.all([
-    readFile(new URL('../src/app/FestivalPage.tsx', import.meta.url), 'utf8'),
-    readFile(new URL('../src/app/EventsGrid.tsx', import.meta.url), 'utf8'),
-  ]);
-
-  assert.doesNotMatch(page, /Festival-wide dates|フェスティバル全体の開催期間/);
-  assert.doesNotMatch(grid, /Festival-wide dates|フェスティバル全体の開催期間/);
+test('festival page links cover and previews to official site and exposes calendar actions', async () => {
+  const page = await readFile(new URL('../src/app/FestivalPage.tsx', import.meta.url), 'utf8');
+  assert.match(page, /festival\.name/);
+  assert.match(page, /festival\.year/);
+  assert.match(page, /festival\.date/);
+  assert.match(page, /festival\.title/);
+  assert.match(page, /festival\.description/);
+  assert.match(page, /festival\.images\.slice\(1, 5\)/);
+  assert.match(page, /eventMediaDeliveryUrl\(/);
+  assert.match(page, /eventMediaDeliverySrcSet\(/);
+  assert.match(page, /googleCalendarUrl=\{festival\.googleCalendarUrl\}/);
+  assert.match(page, /appleCalendar=\{festival\.appleCalendar\}/);
+  assert.match(page, /href=\{festival\.sourceUrl\}/);
+  assert.doesNotMatch(page, /program|programme/i);
 });

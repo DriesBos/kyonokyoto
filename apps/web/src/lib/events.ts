@@ -118,71 +118,20 @@ export const fetchPublishedEvents = async (filters: { city: AppCity; locale: App
   ];
 };
 
-const filled = (value: string | null | undefined, fallback: string | null | undefined) =>
-  value?.trim() ? value : (fallback ?? '');
-
 export const resolveFestivalEvents = (
   rows: RawEventRow[],
-  activeLocale: AppLocale = 'en',
+  _activeLocale: AppLocale = 'en',
 ): EventRow[] => {
-  const festivals = new Map(
-    rows.filter((row) => row.event_kind === 'festival').map((row) => [row.id, row]),
-  );
   return rows
-    .filter((row) => row.event_kind !== 'festival')
-    .map((row): EventRow => {
-      const festival = row.festival_id ? festivals.get(row.festival_id) : null;
-      if (!festival || row.event_kind !== 'festival_program') {
-        return {
-          ...row,
-          date_text: row.date_text ?? '',
-          institution_name: row.institution_name ?? '',
-          source_url: row.source_url ?? '',
-        };
-      }
-
-      const dateInherited =
-        !row.start_date && !row.calendar_starts_at && !row.schedule_segments?.length;
-      const mediaInherited = !row.primary_image_url && !row.image_urls?.length;
-      const localizedFestival = localizeEvent(
-        {
-          ...festival,
-          date_text: festival.date_text ?? '',
-          institution_name: festival.institution_name ?? '',
-          source_url: festival.source_url ?? '',
-        },
-        activeLocale,
-      );
-      return {
+    .filter((row) => row.event_kind !== 'festival_program')
+    .map(
+      (row): EventRow => ({
         ...row,
-        festival: {
-          title: localizedFestival.title,
-          slug: festival.festival_slug ?? '',
-          dateInherited,
-        },
-        date_text: filled(row.date_text, festival.date_text),
-        institution_name: filled(row.institution_name, festival.venue_name),
-        venue_name: filled(row.venue_name, festival.venue_name) || null,
-        address_text: filled(row.address_text, festival.address_text) || null,
-        directions_query: filled(row.directions_query, festival.directions_query) || null,
-        lat: row.lat ?? festival.lat,
-        lng: row.lng ?? festival.lng,
-        start_date: dateInherited ? festival.start_date : row.start_date,
-        end_date: dateInherited ? festival.end_date : row.end_date,
-        calendar_starts_at: dateInherited ? festival.calendar_starts_at : row.calendar_starts_at,
-        calendar_ends_at: dateInherited ? festival.calendar_ends_at : row.calendar_ends_at,
-        is_all_day: dateInherited ? festival.is_all_day : row.is_all_day,
-        schedule_type: dateInherited ? festival.schedule_type : row.schedule_type,
-        schedule_segments: dateInherited ? festival.schedule_segments : row.schedule_segments,
-        occurrence_dates: dateInherited ? festival.occurrence_dates : row.occurrence_dates,
-        primary_image_url: mediaInherited ? festival.primary_image_url : row.primary_image_url,
-        image_urls: mediaInherited ? festival.image_urls : row.image_urls,
-        image_metadata: mediaInherited ? festival.image_metadata : row.image_metadata,
-        source_url: filled(row.source_url, festival.source_url),
-        description: filled(row.description, localizedFestival.description) || null,
-        categories: row.categories?.length ? row.categories : festival.categories,
-      };
-    });
+        date_text: row.date_text ?? '',
+        institution_name: row.institution_name ?? '',
+        source_url: row.source_url ?? '',
+      }),
+    );
 };
 
 export const localizeEvent = (event: EventRow, activeLocale: AppLocale): EventRow => {

@@ -13,6 +13,8 @@ import {
 
 type EventRow = {
   id: string;
+  event_kind?: 'event' | 'festival' | 'festival_program' | null;
+  festival_slug?: string | null;
   title: string;
   categories: string[];
   date_text: string;
@@ -119,6 +121,7 @@ const ongoingEnd =
     : null;
 const cardDetailsId = `event-card-details-${event.id}`;
 const cardTitleId = `event-card-title-${event.id}`;
+const isFestivalEdition = event.event_kind === 'festival' && Boolean(festivalUrl);
 ---
 
 <article
@@ -211,7 +214,9 @@ const cardTitleId = `event-card-title-${event.id}`;
         }
       </div>
       <div class="event-card__body__title">
-        <h2 class="event-card__title" id={cardTitleId}>{event.title}</h2>
+        <h2 class="event-card__title" id={cardTitleId}>
+          {isFestivalEdition ? <a href={festivalUrl!}>{event.title}</a> : event.title}
+        </h2>
       </div>
     </div>
 

@@ -140,7 +140,10 @@ export default function EventsGrid({
                             <p className={styles.festivalMeta}>
                               {event.festival.slug ? (
                                 <a href={festivalPathFor(city, locale, event.festival.slug)}>
-                                  {event.festival.title} ↗
+                                  {[event.festival.title, event.festival.year]
+                                    .filter(Boolean)
+                                    .join(' · ')}{' '}
+                                  ↗
                                 </a>
                               ) : (
                                 <span>{event.festival.title}</span>

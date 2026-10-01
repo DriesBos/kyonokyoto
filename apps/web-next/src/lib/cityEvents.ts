@@ -55,11 +55,10 @@ type SourceRelation = { slug: string | null } | { slug: string | null }[] | null
 
 type EventRow = {
   id: string;
+  external_id?: string | null;
   event_kind?: 'event' | 'festival' | 'festival_program' | null;
   festival_id?: string | null;
   festival_slug?: string | null;
-  festivalDateInherited?: boolean;
-  festivalSourceSlug?: string | null;
   source_id: string | null;
   title: string;
   description: string | null;
@@ -151,19 +150,23 @@ export type CityEvent = {
   lat: number | null;
   lng: number | null;
   eventKind?: 'event' | 'festival' | 'festival_program';
-  festival?: { title: string; slug: string; dateInherited: boolean } | null;
+  festival?: { title: string; slug: string; year: string | null } | null;
 };
 
 export type FestivalDetail = {
   festival: {
     id: string;
+    name: string;
+    year: string | null;
     title: string;
     description: string | null;
     date: string;
     sourceUrl: string | null;
     slug: string;
+    images: { url: string; width: number | null; height: number | null }[];
+    googleCalendarUrl: string | null;
+    appleCalendar: AppleCalendarEvent | null;
   };
-  programs: CityEvent[];
 };
 
 export type CategoryOption = {
@@ -183,6 +186,7 @@ export type MapSource = {
 
 const EVENT_SELECT = [
   'id',
+  'external_id',
   'source_id',
   'event_kind',
   'festival_id',
@@ -351,8 +355,9 @@ const sourceTruth = (
 
 const imageRecords = (
   event: Pick<EventRow, 'image_urls' | 'primary_image_url' | 'image_metadata'>,
+  limit = 3,
 ) => {
-  const urls = (event.image_urls ?? []).filter(Boolean).slice(0, 3);
+  const urls = [...new Set((event.image_urls ?? []).filter(Boolean))].slice(0, limit);
   const display = urls.length ? urls : event.primary_image_url ? [event.primary_image_url] : [];
   return display.map((url) => {
     const metadata = event.image_metadata?.find((image) => image.url === url) ?? null;
@@ -420,21 +425,9 @@ export async function fetchCityEvents({
   };
 
   const rows = (await response.json()) as EventRow[];
-  const festivals = new Map(
-    rows.filter((event) => event.event_kind === 'festival').map((event) => [event.id, event]),
-  );
-  const visibleRows = rows
-    .filter((event) => event.event_kind !== 'festival')
-    .map((event) => inheritFestivalFields(event, festivals, sources));
-  const dedupedRows = [
-    ...dedupeEvents(visibleRows.filter((event) => event.event_kind !== 'festival_program')),
-    ...visibleRows.filter((event) => event.event_kind === 'festival_program'),
-  ];
-  const events = dedupedRows
+  const events = dedupeEvents(rows.filter((event) => event.event_kind !== 'festival_program'))
     .map((event) => filterEventMediaByMinimumHeight(event) as EventRow)
-    .filter((event) =>
-      visibleSource(event.festivalSourceSlug ?? sourceSlugForEvent(event, sources)),
-    )
+    .filter((event) => visibleSource(sourceSlugForEvent(event, sources)))
     .filter(
       (event) =>
         ['ongoing', 'upcoming'].includes(classifyEventTiming(event, today)) &&
@@ -449,7 +442,7 @@ export async function fetchCityEvents({
       const translation = translationFor(event, locale);
       const title = translation?.title || event.title;
       const description = translation?.description ?? event.description;
-      const truth = sourceTruth({ ...event, title }, sources, locale, event.festivalSourceSlug);
+      const truth = sourceTruth({ ...event, title }, sources, locale);
       const images = imageRecords(event);
       const segments = eventScheduleSegments(event);
       const selected = activeOrNextScheduleSegment(event, today);
@@ -511,7 +504,7 @@ export async function fetchCityEvents({
         group: eventDisplayGroup({ ...enriched, timing }, today),
         sourceSlug: truth.slug,
         landingEligible: Boolean(truth.source?.landing_slider),
-        mapVisible: truth.source?.map_visibility !== false,
+        mapVisible: event.event_kind !== 'festival' && truth.source?.map_visibility !== false,
         categories: truth.categories,
         date,
         institution: truth.institution,
@@ -524,7 +517,7 @@ export async function fetchCityEvents({
         imageHeight: images[0]?.height ?? null,
         images,
         sourceUrl: safeHttpUrl(event.source_url),
-        mapsUrl: mapsUrl(calendarInput),
+        mapsUrl: event.event_kind === 'festival' ? '' : mapsUrl(calendarInput),
         googleCalendarUrl: appleCalendar ? googleCalendarUrl(calendarInput, today) : null,
         appleCalendar,
         mediaEmbeds: [],
@@ -535,10 +528,10 @@ export async function fetchCityEvents({
         isAllDay: isAllDay ?? null,
         lat: truth.lat,
         lng: truth.lng,
-        eventKind: event.event_kind === 'festival_program' ? 'festival_program' : 'event',
+        eventKind: event.event_kind === 'festival' ? 'festival' : 'event',
         festival:
-          event.event_kind === 'festival_program' && event.festival_id
-            ? festivalLinkFor(event, festivals, locale)
+          event.event_kind === 'festival' && event.festival_slug
+            ? festivalLinkFor(event, sources, locale)
             : null,
       };
     });
@@ -552,59 +545,23 @@ export async function fetchCityEvents({
   ];
 }
 
-const inheritFestivalFields = (
-  event: EventRow,
-  festivals: Map<string, EventRow>,
-  sources?: SourceConfig[],
-): EventRow => {
-  if (event.event_kind !== 'festival_program' || !event.festival_id) return event;
-  const festival = festivals.get(event.festival_id);
-  if (!festival) return event;
-  const dateInherited =
-    !event.start_date && !event.calendar_starts_at && !event.schedule_segments?.length;
-  const mediaInherited = !event.primary_image_url && !event.image_urls?.length;
-  return {
-    ...event,
-    festivalDateInherited: dateInherited,
-    festivalSourceSlug: sources ? sourceSlugForEvent(festival, sources) : null,
-    date_text: event.date_text || festival.date_text,
-    institution_name: event.institution_name || festival.venue_name || festival.institution_name,
-    venue_name: event.venue_name || festival.venue_name,
-    address_text: event.address_text || festival.address_text,
-    directions_query: event.directions_query || festival.directions_query,
-    lat: event.lat ?? festival.lat,
-    lng: event.lng ?? festival.lng,
-    start_date: dateInherited ? festival.start_date : event.start_date,
-    end_date: dateInherited ? festival.end_date : event.end_date,
-    calendar_starts_at: dateInherited ? festival.calendar_starts_at : event.calendar_starts_at,
-    calendar_ends_at: dateInherited ? festival.calendar_ends_at : event.calendar_ends_at,
-    is_all_day: dateInherited ? festival.is_all_day : event.is_all_day,
-    schedule_type: dateInherited ? festival.schedule_type : event.schedule_type,
-    occurrence_dates: dateInherited ? festival.occurrence_dates : event.occurrence_dates,
-    schedule_segments: dateInherited ? festival.schedule_segments : event.schedule_segments,
-    primary_image_url: mediaInherited ? festival.primary_image_url : event.primary_image_url,
-    image_urls: mediaInherited ? festival.image_urls : event.image_urls,
-    image_metadata: mediaInherited ? festival.image_metadata : event.image_metadata,
-    source_url: event.source_url || festival.source_url,
-    description: event.description || festival.description,
-    categories: event.categories?.length ? event.categories : festival.categories,
-  };
-};
-
-const festivalLinkFor = (
-  program: EventRow,
-  festivals: Map<string, EventRow>,
-  locale: AppLocale,
-) => {
-  const festival = program.festival_id ? festivals.get(program.festival_id) : null;
-  if (!festival) return null;
+const festivalLinkFor = (festival: EventRow, sources: SourceConfig[], locale: AppLocale) => {
   const translated = translationFor(festival, locale);
+  const source = sources.find(
+    (candidate) => candidate.slug === sourceSlugForEvent(festival, sources),
+  );
+  const year =
+    festival.external_id?.match(/20\d{2}/)?.[0] ??
+    festival.start_date?.slice(0, 4) ??
+    festival.calendar_starts_at?.slice(0, 4) ??
+    null;
   return {
-    title: translated?.title || festival.title,
+    title: (source?.names?.[locale] || source?.name || translated?.title || festival.title).replace(
+      /\s+20\d{2}\s*$/,
+      '',
+    ),
     slug: festival.festival_slug ?? '',
-    dateInherited:
-      program.festivalDateInherited ??
-      (!program.start_date && !program.calendar_starts_at && !program.schedule_segments?.length),
+    year,
   };
 };
 
@@ -641,111 +598,36 @@ export async function fetchFestivalDetail({
   const source = sources.find((candidate) => candidate.slug === sourceSlug);
   if (!source || (process.env.NODE_ENV === 'production' && source.beta)) return null;
 
-  const programsEndpoint = new URL('/rest/v1/events', url);
-  programsEndpoint.search = new URLSearchParams({
-    select: EVENT_SELECT,
-    status: 'eq.published',
-    city: `eq.${city}`,
-    festival_id: `eq.${festival.id}`,
-    event_kind: 'eq.festival_program',
-    order: 'start_date.asc.nullslast',
-  }).toString();
-  const programsResponse = await fetch(programsEndpoint, {
-    headers: { apikey: key },
-    next: { revalidate: 300 },
-  });
-  if (!programsResponse.ok)
-    throw new Error(`Supabase festival programme request failed: ${programsResponse.status}`);
-  const rows = (await programsResponse.json()) as EventRow[];
-  const today = dateOnlyInTimeZone(new Date(), cityConfigFor(city)?.timeZone ?? 'Asia/Tokyo');
-  const programs = rows
-    .map((program) => inheritFestivalFields(program, new Map([[festival.id, festival]]), sources))
-    .map((event): CityEvent => {
-      const translation = translationFor(event, locale);
-      const title = translation?.title || event.title;
-      const description = translation?.description ?? event.description;
-      const truth = sourceTruth({ ...event, title }, sources, locale, event.festivalSourceSlug);
-      const images = imageRecords(event);
-      const segments = eventScheduleSegments(event);
-      const selected = activeOrNextScheduleSegment(event, today);
-      const hasCanonical = Array.isArray(event.schedule_segments) && segments.length > 0;
-      const calendarStartsAt = hasCanonical
-        ? selected?.is_all_day
-          ? selected.start_date
-          : selected?.starts_at
-        : (event.calendar_starts_at ?? event.start_date);
-      const calendarEndsAt = hasCanonical
-        ? selected?.is_all_day
-          ? selected.end_date
-          : selected?.ends_at
-        : (event.calendar_ends_at ?? event.end_date ?? event.start_date);
-      const isAllDay = selected?.is_all_day ?? event.is_all_day;
-      const enriched = {
-        ...event,
-        calendar_starts_at: calendarStartsAt,
-        calendar_ends_at: calendarEndsAt,
-        is_all_day: isAllDay,
-      };
-      const timing = classifyEventTiming(enriched, today);
-      const date =
-        segments.length > 1 || inferCanonicalScheduleType(enriched) === 'open_ended'
-          ? translation?.date_text || event.date_text
-          : formatEventDateRange(
-              selected?.is_all_day
-                ? selected.start_date
-                : (event.start_date ?? calendarStartsAt ?? null),
-              selected?.is_all_day ? selected.end_date : (event.end_date ?? calendarEndsAt ?? null),
-              translation?.date_text || event.date_text,
-              locale,
-            );
-      const venue = translation?.venue_name ?? truth.venue;
-      const calendarInput: CalendarInput = {
-        title,
-        description,
-        institution: truth.institution,
-        venue,
-        addressText: truth.addressText,
-        directionsQuery: truth.directionsQuery,
-        calendarStartsAt: calendarStartsAt ?? null,
-        calendarEndsAt: calendarEndsAt ?? null,
-        isAllDay: isAllDay ?? null,
-        schedule_segments: event.schedule_segments,
-      };
-      const appleCalendar = calendarFor(calendarInput);
-      return {
-        id: event.id,
-        group: eventDisplayGroup({ ...enriched, timing }, today),
-        sourceSlug: truth.slug,
-        landingEligible: Boolean(truth.source?.landing_slider),
-        mapVisible: truth.source?.map_visibility !== false,
-        categories: truth.categories,
-        date,
-        institution: truth.institution,
-        venue,
-        title,
-        description,
-        imageUrl: images[0]?.url ?? null,
-        imageUrls: images.map((image) => image.url),
-        imageWidth: images[0]?.width ?? null,
-        imageHeight: images[0]?.height ?? null,
-        images,
-        sourceUrl: safeHttpUrl(event.source_url),
-        mapsUrl: mapsUrl(calendarInput),
-        googleCalendarUrl: appleCalendar ? googleCalendarUrl(calendarInput, today) : null,
-        appleCalendar,
-        mediaEmbeds: [],
-        addressText: truth.addressText,
-        directionsQuery: truth.directionsQuery,
-        calendarStartsAt: calendarStartsAt ?? null,
-        calendarEndsAt: calendarEndsAt ?? null,
-        isAllDay: isAllDay ?? null,
-        lat: truth.lat,
-        lng: truth.lng,
-        eventKind: 'festival_program',
-        festival: festivalLinkFor(event, new Map([[festival.id, festival]]), locale),
-      };
-    });
   const localized = translationFor(festival, locale);
+  const title = localized?.title || festival.title;
+  const description = localized?.description ?? festival.description;
+  const images = imageRecords(filterEventMediaByMinimumHeight(festival) as EventRow, 5);
+  const year =
+    festival.external_id?.match(/20\d{2}/)?.[0] ??
+    festival.start_date?.slice(0, 4) ??
+    festival.calendar_starts_at?.slice(0, 4) ??
+    null;
+  const festivalName = (source?.names?.[locale] || source?.name || title).replace(
+    /\s+20\d{2}\s*$/,
+    '',
+  );
+  const calendarInput: CalendarInput = {
+    title,
+    description,
+    institution: festivalName,
+    venue: localized?.venue_name ?? festival.venue_name,
+    addressText: festival.address_text,
+    directionsQuery: festival.directions_query,
+    calendarStartsAt: festival.is_all_day
+      ? (festival.start_date ?? festival.calendar_starts_at)
+      : (festival.calendar_starts_at ?? festival.start_date),
+    calendarEndsAt: festival.is_all_day
+      ? (festival.end_date ?? festival.calendar_ends_at ?? festival.start_date)
+      : (festival.calendar_ends_at ?? festival.end_date ?? festival.start_date),
+    isAllDay: festival.is_all_day,
+    schedule_segments: festival.schedule_segments,
+  };
+  const appleCalendar = calendarFor(calendarInput);
   const parentDate = formatEventDateRange(
     festival.start_date,
     festival.end_date,
@@ -755,13 +637,17 @@ export async function fetchFestivalDetail({
   return {
     festival: {
       id: festival.id,
-      title: localized?.title || festival.title,
-      description: localized?.description ?? festival.description,
+      name: festivalName,
+      year,
+      title,
+      description,
       date: parentDate,
       sourceUrl: safeHttpUrl(festival.source_url),
       slug: festival.festival_slug ?? slug,
+      images,
+      googleCalendarUrl: appleCalendar ? googleCalendarUrl(calendarInput) : null,
+      appleCalendar,
     },
-    programs,
   };
 }
 

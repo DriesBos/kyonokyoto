@@ -22,6 +22,7 @@ import {
   buildMachineTranslatedEvent,
   detailUrlExtractors,
   eventExtractors,
+  extractFestivalEditionMedia,
   extractChushinDetailUrls,
   extractChushinEvent,
   extractGenericDetailUrls,
@@ -257,6 +258,24 @@ test('crawl outcome gates stale archival and persisted status', () => {
   );
 
   assert.equal(shouldArchiveStaleEvents({ sourceOutcome: 'source_ok' }), true);
+  assert.equal(
+    classifySourceOutcome({
+      detailUrls: ['https://festival.example/'],
+      savedEvents: [{ eventKind: 'festival' }],
+      diagnostics: {},
+    }),
+    'source_ok',
+  );
+  assert.equal(
+    shouldArchiveStaleEvents({
+      sourceOutcome: classifySourceOutcome({
+        detailUrls: ['https://festival.example/'],
+        savedEvents: [{ eventKind: 'festival' }],
+        diagnostics: {},
+      }),
+    }),
+    true,
+  );
   assert.equal(
     shouldArchiveStaleEvents({
       sourceOutcome: 'source_ok',
@@ -743,7 +762,7 @@ test('festival program persistence keeps missing item fields null and uses stabl
   );
 });
 
-test('Kyoto festival QA sources define 2026 editions and programme crawling', async () => {
+test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
   const payload = JSON.parse(
     await readFile(
       resolve(import.meta.dirname, '../../../data/sources/kyoto-sources.json'),
@@ -764,16 +783,14 @@ test('Kyoto festival QA sources define 2026 editions and programme crawling', as
     const source = payload.sources.find((item) => item.slug === slug);
     assert.ok(source, `${slug} source missing`);
     assert.equal(source.beta, true);
-    assert.equal(source.crawl_strategy, 'festival-program');
+    assert.equal(source.crawl_strategy, 'festival-edition');
+    assert.deepEqual(validateSourceConfig(source), []);
     assert.equal(source.festival.start_date, startDate);
     assert.equal(source.festival.end_date, endDate);
     assert.match(source.festival.slug, /-2026$/);
     assert.ok(source.festival.source_url);
     if (slug === 'kyoto-youme-triennale') {
       assert.ok(source.start_urls.includes('https://you-me-kyoto.org/programme/journey'));
-      assert.ok(
-        source.locales.ja.start_urls.includes('https://you-me-kyoto.org/ja/programme/journey'),
-      );
     }
   }
 });
@@ -796,6 +813,9 @@ test('festival edition persists when listing has no programme details', async ()
     rawPageId: 'page-1',
     upsertEdition: async (_env, sourceId, rawPageId, edition) => {
       calls.push(['upsert', sourceId, rawPageId, edition.event_kind]);
+      assert.equal(Object.hasOwn(edition, 'primary_image_url'), false);
+      assert.equal(Object.hasOwn(edition, 'image_urls'), false);
+      assert.equal(Object.hasOwn(edition, 'image_metadata'), false);
       return { id: 'festival-1', title: edition.title, event_kind: 'festival' };
     },
     upsertSegments: async ({ eventId }) => calls.push(['segments', eventId]),
@@ -824,6 +844,35 @@ test('festival edition persists when listing has no programme details', async ()
     }),
     false,
   );
+});
+
+test('festival edition media picks one cover and up to four distinct programme thumbnails', () => {
+  const source = {
+    festival: {
+      source_url: 'https://festival.example/',
+      cover_image_selectors: ['.hero img'],
+      programme_image_selectors: ['.program-card img'],
+    },
+  };
+  const page = {
+    url: 'https://festival.example/program/',
+    html: `<meta property="og:image" content="/cover.jpg">
+      <div class="hero"><img src="/hero.jpg" width="1200" height="800"></div>
+      <div class="program-card"><img src="/hero.jpg" width="1200" height="800"></div>
+      <div class="program-card"><img src="/one.jpg" width="900" height="600"></div>
+      <div class="program-card"><img src="/two.jpg" width="900" height="600"></div>
+      <div class="program-card"><img src="/three.jpg" width="900" height="600"></div>
+      <div class="program-card"><img src="/four.jpg" width="900" height="600"></div>
+      <div class="program-card"><img src="/five.jpg" width="900" height="600"></div>`,
+  };
+
+  assert.deepEqual(extractFestivalEditionMedia(source, [page]), [
+    'https://festival.example/hero.jpg',
+    'https://festival.example/one.jpg',
+    'https://festival.example/two.jpg',
+    'https://festival.example/three.jpg',
+    'https://festival.example/four.jpg',
+  ]);
 });
 
 test('translation helper calls Google client with source and target locales', async () => {

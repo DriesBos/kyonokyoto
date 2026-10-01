@@ -1,22 +1,25 @@
 ---
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import Footer from '../../../../components/Footer.astro';
+import GeneralButton from '../../../../components/GeneralButton.astro';
 import kyotoSourcesPayload from '../../../../../../../data/sources/kyoto-sources.json';
 import osakaSourcesPayload from '../../../../../../../data/sources/osaka-sources.json';
 import tokyoSourcesPayload from '../../../../../../../data/sources/tokyo-sources.json';
 import hongKongSourcesPayload from '../../../../../../../data/sources/hong-kong-sources.json';
 import { cityConfigFor, dateOnlyInTimeZone, type AppCity } from '../../../../lib/cities';
 import { normalizeLocale } from '../../../../lib/i18n';
-import { cleanDisplayText, formatEventDateRange } from '../../../../lib/calendar';
 import {
-  fetchPublishedEvents,
-  formatEventsForLocale,
-  localizeEvent,
-  resolveFestivalEvents,
-  type EventRow,
-} from '../../../../lib/events';
+  calendarDetailsFor,
+  calendarLocationFor,
+  cleanDisplayText,
+  formatEventDateRange,
+  googleCalendarUrl,
+} from '../../../../lib/calendar';
+import { fetchPublishedEvents, localizeEvent, type EventRow } from '../../../../lib/events';
+import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '../../../../lib/mediaDelivery';
 import {
   configuredSourcesFrom,
+  sourceDisplayNameForEvent,
   sourceSlugForEvent,
   type SourceConfig,
 } from '../../../../lib/sources';
@@ -55,101 +58,191 @@ const configuredSources = configuredSourcesFrom(
 );
 if (!sourceSlugForEvent(festival, configuredSources))
   return new Response('Not found', { status: 404 });
+
 const today = dateOnlyInTimeZone(new Date(), cityConfig.timeZone);
-const programs = formatEventsForLocale({
-  events: resolveFestivalEvents(rawEvents, locale).filter((row) => row.festival_id === festival.id),
-  configuredSources,
-  activeLocale: locale,
-  today,
-}).sort((left, right) =>
-  (left.start_date ?? '9999-12-31').localeCompare(right.start_date ?? '9999-12-31'),
-);
+const festivalName = sourceDisplayNameForEvent(festival, configuredSources, locale);
 const festivalDate = formatEventDateRange(
   festival.start_date,
   festival.end_date,
   festival.date_text,
   locale,
 );
+const festivalYear =
+  festival.start_date?.slice(0, 4) ?? festival.date_text.match(/20\d{2}/)?.[0] ?? '';
 const pagePath = `/${city}/${locale}/festivals/${encodeURIComponent(slug)}/`;
 const alternatePaths = {
   en: `/${city}/en/festivals/${encodeURIComponent(slug)}/`,
   ja: `/${city}/ja/festivals/${encodeURIComponent(slug)}/`,
 };
 const pageDescription = cleanDisplayText(festival.description ?? '');
-const festivalCopy =
+const copy =
   locale === 'ja'
     ? {
         events: 'イベント',
+        year: '年',
         website: 'フェスティバル公式サイト',
-        programme: 'プログラム',
-        details: '詳細',
-        comingSoon: 'プログラム詳細は近日公開予定です。',
+        apple: 'Appleカレンダーに追加',
+        google: 'Googleカレンダーに追加',
+        imageAlt: 'フェスティバルの画像',
       }
     : {
         events: 'events',
+        year: '',
         website: 'Festival website',
-        programme: 'Programme',
-        details: 'Details',
-        comingSoon: 'Programme details coming soon.',
+        apple: 'Add to Apple Calendar',
+        google: 'Add to Google Calendar',
+        imageAlt: 'Festival image',
       };
+
+const imageUrls = [festival.primary_image_url, ...(festival.image_urls ?? [])]
+  .filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index)
+  .slice(0, 5);
+const images = imageUrls.flatMap((sourceUrl) => {
+  const src = eventMediaDeliveryUrl(sourceUrl);
+  const srcset = eventMediaDeliverySrcSet(sourceUrl);
+  if (!src || !srcset) return [];
+  const metadata = festival.image_metadata?.find((image) => image.url === sourceUrl);
+  return [{ sourceUrl, src, srcset, width: metadata?.width, height: metadata?.height }];
+});
+const cover = images[0] ?? null;
+const previews = images.slice(1, 5);
+
+const calendarEvent = {
+  ...festival,
+  calendar_starts_at: festival.calendar_starts_at ?? festival.start_date,
+  calendar_ends_at: festival.calendar_ends_at ?? festival.end_date,
+  schedule_type: 'range' as const,
+  schedule_segments: null,
+};
+const calendarStart = calendarEvent.calendar_starts_at ?? '';
+const calendarEnd = calendarEvent.calendar_ends_at ?? '';
+const showAppleCalendar = Boolean(calendarStart && calendarEnd);
+const calendarDetails = calendarDetailsFor(calendarEvent);
+const calendarLocation = calendarLocationFor(calendarEvent);
+const googleUrl = googleCalendarUrl(calendarEvent, today);
+const pageTitle = festival.title;
 ---
 
 <BaseLayout
   city={city}
   cityThemeColor={cityConfig.themeColor}
   locale={locale}
-  title={`${festival.title} | Kyō no Kyōto`}
-  description={pageDescription || `${festival.title} programme`}
+  title={`${pageTitle} | Kyō no Kyōto`}
+  description={pageDescription || `${pageTitle} festival`}
   canonicalPath={pagePath}
   alternatePaths={alternatePaths}
 >
   <main class="festival-page">
     <nav aria-label="Breadcrumb">
-      <a href={`/${city}/${locale}/`}>{cityConfig.label} {festivalCopy.events}</a>
+      <a href={`/${city}/${locale}/`}>{cityConfig.label} {copy.events}</a>
     </nav>
     <header class="festival-page__header">
-      <p>{festivalDate}</p>
-      <h1>{festival.title}</h1>
-      {pageDescription ? <p>{pageDescription}</p> : null}
+      <p class="festival-page__name">{festivalName}</p>
       {
-        festival.source_url ? (
-          <a href={festival.source_url} target="_blank" rel="noreferrer">
-            {festivalCopy.website} ↗
-          </a>
+        festivalYear ? (
+          <p class="festival-page__year">
+            {festivalYear}
+            {copy.year}
+          </p>
         ) : null
       }
+      <p class="festival-page__date">{festivalDate}</p>
+      <h1>{festival.title}</h1>
+      {pageDescription ? <p class="festival-page__description">{pageDescription}</p> : null}
+      <div class="festival-page__actions">
+        {
+          showAppleCalendar ? (
+            <GeneralButton
+              edge="first"
+              verticalPadding="full"
+              label={copy.apple}
+              icon="calendar"
+              data-apple-calendar-button
+              data-calendar-title={festival.title}
+              data-calendar-start={calendarStart}
+              data-calendar-end={calendarEnd}
+              data-calendar-all-day={String(festival.is_all_day)}
+              data-calendar-details={calendarDetails}
+              data-calendar-location={calendarLocation}
+            />
+          ) : null
+        }
+        {
+          googleUrl ? (
+            <GeneralButton
+              edge={showAppleCalendar ? undefined : 'first'}
+              verticalPadding="full"
+              label={copy.google}
+              icon="calendar"
+              href={googleUrl}
+              target="_blank"
+              rel="noreferrer"
+            />
+          ) : null
+        }
+        {
+          festival.source_url ? (
+            <GeneralButton
+              edge="last"
+              verticalPadding="full"
+              label={copy.website}
+              icon="exit"
+              href={festival.source_url}
+              target="_blank"
+              rel="noreferrer"
+            />
+          ) : null
+        }
+      </div>
     </header>
-    <section aria-labelledby="festival-programme-heading">
-      <h2 id="festival-programme-heading">
-        {festivalCopy.programme}
-        <span>({programs.length})</span>
-      </h2>
-      {
-        programs.length ? (
-          <ol class="festival-page__programmes">
-            {programs.map((program) => (
-              <li>
-                <div class="festival-page__meta">
-                  <span>{program.date_text}</span>
-                  {program.venue_name || program.institution_name ? (
-                    <span>{program.venue_name || program.institution_name}</span>
-                  ) : null}
-                </div>
-                <h3>{program.title}</h3>
-                {program.description ? <p>{cleanDisplayText(program.description)}</p> : null}
-                {program.source_url ? (
-                  <a href={program.source_url} target="_blank" rel="noreferrer">
-                    {festivalCopy.details} ↗
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p>{festivalCopy.comingSoon}</p>
-        )
-      }
-    </section>
+
+    {
+      cover ? (
+        <section class="festival-page__gallery" aria-label={copy.imageAlt}>
+          <a
+            class="festival-page__cover"
+            href={festival.source_url || undefined}
+            target={festival.source_url ? '_blank' : undefined}
+            rel={festival.source_url ? 'noreferrer' : undefined}
+            aria-label={festival.source_url ? copy.website : undefined}
+          >
+            <img
+              src={cover.src}
+              srcset={cover.srcset}
+              sizes="(max-width: 767px) 100vw, 72rem"
+              width={cover.width ?? undefined}
+              height={cover.height ?? undefined}
+              alt={festival.title}
+              fetchpriority="high"
+              decoding="async"
+            />
+          </a>
+          {previews.length ? (
+            <div class="festival-page__previews">
+              {previews.map((image, index) => (
+                <a
+                  href={festival.source_url || undefined}
+                  target={festival.source_url ? '_blank' : undefined}
+                  rel={festival.source_url ? 'noreferrer' : undefined}
+                  aria-label={festival.source_url ? copy.website : undefined}
+                >
+                  <img
+                    src={image.src}
+                    srcset={image.srcset}
+                    sizes="(max-width: 767px) 50vw, 18rem"
+                    width={image.width ?? undefined}
+                    height={image.height ?? undefined}
+                    alt={`${festival.title} ${index + 1}`}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </a>
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null
+    }
     <Footer cityLabel={cityConfig.label} />
   </main>
 </BaseLayout>
@@ -170,42 +263,69 @@ const festivalCopy =
       text-underline-offset: 0.2em
 
     &__header
-      max-width: 50rem
-      margin-bottom: clamp(4rem, 10vw, 8rem)
+      max-width: 54rem
+      margin-bottom: clamp(3rem, 7vw, 6rem)
 
-      h1
-        font-size: clamp(3rem, 8vw, 8rem)
-        line-height: 0.95
-        margin: 1rem 0 2rem
+    &__name,
+    &__year,
+    &__date
+      margin: 0.3rem 0
+      text-transform: uppercase
 
-      p
-        white-space: pre-line
-        max-width: 45rem
+    h1
+      font-size: clamp(3rem, 8vw, 8rem)
+      line-height: 0.95
+      margin: 1rem 0 2rem
 
-    h2
-      font-size: clamp(2rem, 5vw, 5rem)
-      margin-bottom: 2rem
+    &__description
+      max-width: 45rem
+      white-space: pre-line
 
-    &__programmes
-      list-style: none
-      padding: 0
-
-      li
-        border-top: var(--stroke-width) solid var(--stroke)
-        padding: 1rem 0 3rem
-
-      h3
-        font-size: clamp(1.5rem, 3vw, 3rem)
-        line-height: 1.1
-        margin: 1rem 0
-
-      p
-        max-width: 45rem
-        white-space: pre-line
-
-    &__meta
+    &__actions
       display: flex
       flex-wrap: wrap
-      gap: 0.5rem 1.5rem
-      text-transform: uppercase
+      gap: 0.75rem
+      margin-top: 2rem
+
+    &__gallery
+      margin-bottom: clamp(4rem, 10vw, 8rem)
+
+    &__cover,
+    &__previews a
+      display: block
+      overflow: hidden
+
+    &__cover
+      aspect-ratio: 16 / 9
+      background: var(--surface, #eee)
+
+      img
+        width: 100%
+        height: 100%
+        object-fit: cover
+
+    &__previews
+      display: grid
+      grid-template-columns: repeat(4, minmax(0, 1fr))
+      gap: 0.75rem
+      margin-top: 0.75rem
+
+      a
+        aspect-ratio: 4 / 3
+        background: var(--surface, #eee)
+
+      img
+        width: 100%
+        height: 100%
+        object-fit: cover
+
+    @media (max-width: 767px)
+      &__previews
+        grid-template-columns: repeat(2, minmax(0, 1fr))
 </style>
+
+<script>
+  import { initAppleCalendar } from '../../../../scripts/appleCalendar';
+
+  initAppleCalendar();
+</script>

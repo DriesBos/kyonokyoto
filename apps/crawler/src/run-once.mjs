@@ -2275,14 +2275,17 @@ function parseImageDimensionsFromBytes(bytes, contentType = '') {
 }
 
 function looksLikeSocialOrUiImage(url) {
-  const isWpThemeExhibitionImage = /\/wp-content\/themes\/[^/]+\/img\/exhibitions\//i.test(url);
+  const isWpThemeContentImage =
+    /\/wp-content\/themes\/[^/]+\/(?:img\/exhibitions|assets\/img\/event)\//i.test(url);
 
   return (
     /data:image|spacer|sprite|logo|icon|favicon|avatar|loader|loading|blank|pixel|tracking|analytics/i.test(
       url,
     ) ||
+    /%7b|%7d|\$\{/i.test(url) ||
+    /\/css\/img\//i.test(url) ||
     /\/assets\/img\/(?:common|layout|icon)\//i.test(url) ||
-    (!isWpThemeExhibitionImage && /\/wp-content\/themes\//i.test(url)) ||
+    (!isWpThemeContentImage && /\/wp-content\/themes\//i.test(url)) ||
     /(?:^|[\/_.-])(facebook|instagram|twitter|social|sns|share|line|youtube|pinterest|linkedin)(?:[\/_.-]|$)/i.test(
       url,
     ) ||
@@ -9324,7 +9327,8 @@ async function normalizeEventImagesForSource(
 
 function festivalEditionEventFromSource(source) {
   const festival = source?.festival;
-  if (!festival || source?.crawl_strategy !== 'festival-program') return null;
+  if (!festival || !['festival-program', 'festival-edition'].includes(source?.crawl_strategy))
+    return null;
 
   const schedule = buildScheduleFields({
     startDate: festival.start_date,
@@ -9360,11 +9364,78 @@ function festivalEditionEventFromSource(source) {
     ...schedule,
     calendar_starts_at: null,
     calendar_ends_at: null,
-    primary_image_url: imageUrls[0] ?? null,
-    image_urls: imageUrls,
+    ...(imageUrls.length
+      ? { primary_image_url: imageUrls[0], image_urls: imageUrls.slice(0, MAX_IMAGES_PER_EVENT) }
+      : {}),
     source_url: festival.source_url,
     extraction_confidence: 1,
   };
+}
+
+function extractFestivalEditionMedia(source, listingPages = [], festivalHomePage = null) {
+  const festival = source?.festival ?? {};
+  const allPages = [festivalHomePage, ...listingPages].filter(Boolean);
+  const coverSelectors = festival.cover_image_selectors ?? [
+    'meta[property="og:image"]',
+    'header img',
+    '[class*="hero"] img',
+    '[class*="visual"] img',
+  ];
+  const programmeSelectors = festival.programme_image_selectors ?? [
+    'article img',
+    '[class*="program"] img',
+    '[class*="programme"] img',
+    '[class*="event"] img',
+    '[class*="exhibition"] img',
+    '[class*="card"] img',
+  ];
+  const pageCandidates = (page, selectors, includeOgImage = false) => {
+    const html = page?.html ?? '';
+    const candidates = selectors.flatMap((selector) => {
+      if (/^meta\[/i.test(selector)) {
+        const image = extractMeta(html, 'og:image');
+        return image ? [{ url: image, source: 'og:image' }] : [];
+      }
+      return selectElements(html, selector).flatMap((element) =>
+        [...element.matchAll(/<img\b[^>]*>/gi)].map((match) =>
+          imageCandidateFromTag(match[0], 'festival-selector'),
+        ),
+      );
+    });
+    if (includeOgImage) {
+      const image = extractMeta(html, 'og:image');
+      if (image && !candidates.length) candidates.push({ url: image, source: 'og:image' });
+    }
+    const documentBase = extractTagAttribute(html.match(/<base\b[^>]*>/i)?.[0] ?? '', 'href');
+    return finalizeImageUrls(candidates, documentBase ?? page?.url ?? festival.source_url, {
+      preserveOrder: true,
+    });
+  };
+
+  const configured = Array.isArray(festival.image_urls)
+    ? festival.image_urls.filter(Boolean)
+    : festival.primary_image_url
+      ? [festival.primary_image_url]
+      : [];
+  const pageCover = allPages.flatMap((page) => pageCandidates(page, coverSelectors, true))[0];
+  const cover = configured[0] ?? pageCover;
+  let programmeImages = [
+    ...configured.slice(1),
+    ...listingPages.flatMap((page) => pageCandidates(page, programmeSelectors)),
+  ];
+  if (!programmeImages.length) {
+    programmeImages = listingPages.flatMap((page) => pageCandidates(page, ['img']));
+  }
+  const secureRasterUrl = (url) =>
+    url && !/\.svg(?:\?|$)/i.test(url) ? url.replace(/^http:/i, 'https:') : null;
+  const secureCover = secureRasterUrl(cover);
+  const uniqueProgrammeImages = [...new Set(programmeImages.map(secureRasterUrl).filter(Boolean))]
+    .filter((url) => url !== secureCover)
+    .slice(0, 4);
+  return [...new Set([secureCover, ...uniqueProgrammeImages].filter(Boolean))].slice(
+    0,
+    MAX_IMAGES_PER_EVENT,
+  );
 }
 
 async function persistFestivalEditionForCrawl({
@@ -9376,9 +9447,27 @@ async function persistFestivalEditionForCrawl({
   upsertSegments = upsertEventScheduleSegments,
   upsertTranslations = upsertEventTranslations,
   publish = publishEvent,
+  listingPages = [],
+  festivalHomePage = null,
+  diagnostics = null,
+  userAgent = 'kyo-no-kyoto-bot/0.1',
 }) {
   const editionData = festivalEditionEventFromSource(source);
   if (!editionData) return null;
+
+  const imageUrls = extractFestivalEditionMedia(source, listingPages, festivalHomePage);
+  if (imageUrls.length) {
+    const normalized = await normalizeEventImagesForSource(
+      { ...editionData, primary_image_url: imageUrls[0], image_urls: imageUrls },
+      source,
+      { env, userAgent, diagnostics },
+    );
+    if (hasExtractedImage(normalized)) {
+      editionData.primary_image_url = normalized.primary_image_url;
+      editionData.image_urls = normalized.image_urls.slice(0, MAX_IMAGES_PER_EVENT);
+      editionData.image_metadata = normalized.image_metadata;
+    }
+  }
 
   const dedupeKey = `festival:${editionData.city}:${editionData.festival_slug}`;
   const festival = await upsertEdition(env, sourceId, rawPageId, editionData);
@@ -9478,23 +9567,49 @@ async function crawlSource({
     }
 
     const discoveryLimit = sourceDetailLimit + 1;
+    let festivalHomePage = null;
+    if (
+      crawlSourceConfig.crawl_strategy === 'festival-edition' &&
+      crawlSourceConfig.festival?.source_url &&
+      !listingPages.some(
+        (page) =>
+          canonicalizeComparableUrl(page.url) ===
+          canonicalizeComparableUrl(crawlSourceConfig.festival.source_url),
+      )
+    ) {
+      try {
+        festivalHomePage = await fetchHtml(crawlSourceConfig.festival.source_url, userAgent, env, {
+          renderMode: sourceRenderMode,
+          context: crawlContext,
+        });
+        pagesFetched += 1;
+        recordFetchedPage(diagnostics, festivalHomePage);
+      } catch (error) {
+        console.warn(
+          `Could not fetch festival home page for ${source.slug}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
     let detailUrls =
-      source.slug === 'sibasi'
-        ? extractSibasiDetailUrls(listingPages, discoveryLimit)
-        : detailUrlExtractor
-          ? extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, crawlSourceConfig)
-          : [
-              ...new Set(
-                listingPages.flatMap((listingPage) =>
-                  extractGenericDetailUrls(
-                    listingPage.html,
-                    listingPage.url,
-                    crawlSourceConfig,
-                    discoveryLimit,
+      crawlSourceConfig.crawl_strategy === 'festival-edition'
+        ? []
+        : source.slug === 'sibasi'
+          ? extractSibasiDetailUrls(listingPages, discoveryLimit)
+          : detailUrlExtractor
+            ? extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, crawlSourceConfig)
+            : [
+                ...new Set(
+                  listingPages.flatMap((listingPage) =>
+                    extractGenericDetailUrls(
+                      listingPage.html,
+                      listingPage.url,
+                      crawlSourceConfig,
+                      discoveryLimit,
+                    ),
                   ),
                 ),
-              ),
-            ];
+              ];
 
     detailUrls = [...new Set(detailUrls)].filter(
       (detailUrl) =>
@@ -9525,6 +9640,10 @@ async function crawlSource({
       source: crawlSourceConfig,
       sourceId: source.id,
       rawPageId: listingPages[0].rawPageId,
+      listingPages,
+      festivalHomePage,
+      diagnostics,
+      userAgent,
     });
     const savedFestival = persistedEdition?.festival ?? null;
     const festivalEditionData = persistedEdition?.editionData ?? null;
@@ -9534,11 +9653,19 @@ async function crawlSource({
     }
 
     if (!detailUrls.length) {
-      const sourceOutcome = classifySourceOutcome({
-        detailUrls,
-        diagnostics,
-        sourceSlug: source.slug,
-      });
+      const sourceOutcome =
+        persistedEdition && source.crawl_strategy === 'festival-edition'
+          ? classifySourceOutcome({
+              detailUrls: [persistedEdition.editionData.source_url],
+              savedEvents,
+              diagnostics,
+              sourceSlug: source.slug,
+            })
+          : classifySourceOutcome({
+              detailUrls,
+              diagnostics,
+              sourceSlug: source.slug,
+            });
       const runStatus = crawlRunStatusForOutcome(sourceOutcome);
       const archivedEvents = shouldArchiveStaleEvents({
         sourceOutcome,
@@ -9570,7 +9697,10 @@ async function crawlSource({
         logs: [
           {
             level: 'warn',
-            message: `No detail URLs were extracted for source "${source.slug}".`,
+            message:
+              source.crawl_strategy === 'festival-edition'
+                ? `Saved festival edition for source "${source.slug}" without programme child rows.`
+                : `No detail URLs were extracted for source "${source.slug}".`,
           },
           {
             level: 'info',
@@ -10216,6 +10346,7 @@ export {
   upsertEvent,
   upsertFestivalEdition,
   persistFestivalEditionForCrawl,
+  extractFestivalEditionMedia,
   upsertFestivalProgram,
   buildFestivalProgramDedupeKey,
   upsertEventTranslation,
