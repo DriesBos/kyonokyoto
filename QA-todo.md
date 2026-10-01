@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Operations
 
+2026-10-01: Promoted Art Rhizome and KYOTO EXPERIMENT by setting `beta: false` after explicit approval. Removed Kyoto/Kyōto/京都 from all seven festival source display names while preserving official edition titles, slugs, and external URLs.
+
 2026-10-01: Promoted CURATION⇄FAIR Kyoto, Kyoto Modern Architecture Festival, and Art Collaboration Kyoto by setting `beta: false` after explicit approval. Added deterministic official media for Art Rhizome KYOTO (one cover plus three editorial images) and KYOTO EXPERIMENT (one cover plus four programme images); frontend config fallback makes existing image-less parent rows render media before database backfill. Needs visual approval after deploy and targeted crawls to persist media.
 
 2026-10-01: Removed Kyoto Art Month from beta by explicit approval. Added deterministic official media for Kyoto Modern Architecture Festival, KO+GEI Kyoto, Art Collaboration Kyoto, and CURATION⇄FAIR Kyoto; both frontends now use configured festival media when existing parent rows have no persisted images, while crawler will persist same media on next targeted run. Festival cards now append ` — FESTIVAL` after date in both frontends. Needs visual approval after deploy and targeted crawl to backfill database media.

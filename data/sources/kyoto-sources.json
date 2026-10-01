@@ -188,10 +188,10 @@
     },
     {
       "slug": "art-rhizome-kyoto",
-      "name": "Art Rhizome KYOTO",
+      "name": "Art Rhizome",
       "names": {
-        "en": "Art Rhizome KYOTO",
-        "ja": "Art Rhizome KYOTO"
+        "en": "Art Rhizome",
+        "ja": "Art Rhizome"
       },
       "taxonomy": {
         "venue_category": ["festival"],
@@ -204,8 +204,8 @@
       "allowed_domains": ["www.city.kyoto.lg.jp", "city.kyoto.lg.jp", "artrhizome.kyoto"],
       "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/bunshi/page/0000357275.html"],
-      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority. No central venue.",
-      "beta": true,
+      "notes": "2026 festival edition. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority. No central venue.",
+      "beta": false,
       "festival": {
         "slug": "art-rhizome-kyoto-2026",
         "title": "Art Rhizome KYOTO 2026",
@@ -243,10 +243,10 @@
     },
     {
       "slug": "kyoto-experiment",
-      "name": "KYOTO EXPERIMENT",
+      "name": "EXPERIMENT",
       "names": {
-        "en": "KYOTO EXPERIMENT 2026",
-        "ja": "KYOTO EXPERIMENT 2026"
+        "en": "EXPERIMENT 2026",
+        "ja": "EXPERIMENT 2026"
       },
       "taxonomy": {
         "venue_category": ["festival"],
@@ -259,8 +259,8 @@
       "allowed_domains": ["kyoto-ex.jp", "www.kyoto-ex.jp"],
       "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/en/program/", "/program/"],
-      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority. No single central venue.",
-      "beta": true,
+      "notes": "2026 festival edition. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority. No single central venue.",
+      "beta": false,
       "festival": {
         "slug": "kyoto-experiment-2026",
         "title": "KYOTO EXPERIMENT 2026",
@@ -297,10 +297,10 @@
     },
     {
       "slug": "kyoto-youme-triennale",
-      "name": "Kyōto YouMe Triennale",
+      "name": "YouMe Triennale",
       "names": {
-        "en": "Kyōto YouMe Triennale",
-        "ja": "Kyōto YouMe Triennale"
+        "en": "YouMe Triennale",
+        "ja": "YouMe Triennale"
       },
       "taxonomy": {
         "venue_category": ["festival"],
@@ -356,10 +356,10 @@
     },
     {
       "slug": "kyoto-modern-architecture-festival",
-      "name": "Kyoto Modern Architecture Festival",
+      "name": "Modern Architecture Festival",
       "names": {
-        "en": "Kyoto Modern Architecture Festival",
-        "ja": "京都モダン建築祭"
+        "en": "Modern Architecture Festival",
+        "ja": "モダン建築祭"
       },
       "taxonomy": {
         "venue_category": ["festival"],
@@ -413,10 +413,10 @@
     },
     {
       "slug": "ko-gei-kyoto",
-      "name": "KO+GEI Kyoto",
+      "name": "KO+GEI",
       "names": {
-        "en": "KO+GEI Kyoto",
-        "ja": "工＋藝 京都"
+        "en": "KO+GEI",
+        "ja": "工＋藝"
       },
       "taxonomy": {
         "venue_category": ["festival"],
@@ -473,7 +473,7 @@
     },
     {
       "slug": "art-collaboration-kyoto",
-      "name": "Art Collaboration Kyoto",
+      "name": "Art Collaboration",
       "taxonomy": {
         "venue_category": ["fair"],
         "display_category": ["contemporary"],
@@ -530,10 +530,10 @@
     },
     {
       "slug": "curation-fair-kyoto",
-      "name": "CURATION⇄FAIR Kyoto",
+      "name": "CURATION⇄FAIR",
       "names": {
-        "en": "CURATION⇄FAIR Kyoto",
-        "ja": "CURATION⇄FAIR Kyoto"
+        "en": "CURATION⇄FAIR",
+        "ja": "CURATION⇄FAIR"
       },
       "taxonomy": {
         "venue_category": ["fair"],

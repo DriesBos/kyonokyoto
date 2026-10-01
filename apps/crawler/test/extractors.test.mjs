@@ -779,9 +779,20 @@ test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
     ['art-collaboration-kyoto', ['2026-11-07', '2026-11-09']],
   ]);
   const publicFestivalSlugs = new Set([
+    'art-rhizome-kyoto',
+    'kyoto-experiment',
     'kyoto-modern-architecture-festival',
     'curation-fair-kyoto',
     'art-collaboration-kyoto',
+  ]);
+  const festivalDisplayNames = new Map([
+    ['art-rhizome-kyoto', 'Art Rhizome'],
+    ['kyoto-experiment', 'EXPERIMENT'],
+    ['kyoto-youme-triennale', 'YouMe Triennale'],
+    ['kyoto-modern-architecture-festival', 'Modern Architecture Festival'],
+    ['ko-gei-kyoto', 'KO+GEI'],
+    ['art-collaboration-kyoto', 'Art Collaboration'],
+    ['curation-fair-kyoto', 'CURATION⇄FAIR'],
   ]);
 
   for (const [slug, [startDate, endDate]] of expected) {
@@ -794,6 +805,10 @@ test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
     assert.equal(source.festival.end_date, endDate);
     assert.match(source.festival.slug, /-2026$/);
     assert.ok(source.festival.source_url);
+    assert.equal(source.name, festivalDisplayNames.get(slug));
+    for (const displayName of Object.values(source.names ?? {})) {
+      assert.doesNotMatch(displayName, /kyoto|kyōto|京都/i);
+    }
     if (slug === 'kyoto-youme-triennale') {
       assert.ok(source.start_urls.includes('https://you-me-kyoto.org/programme/journey'));
     }
