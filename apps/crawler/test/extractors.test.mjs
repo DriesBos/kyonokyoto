@@ -778,11 +778,16 @@ test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
     ['ko-gei-kyoto', ['2026-11-06', '2026-11-08']],
     ['art-collaboration-kyoto', ['2026-11-07', '2026-11-09']],
   ]);
+  const publicFestivalSlugs = new Set([
+    'kyoto-modern-architecture-festival',
+    'curation-fair-kyoto',
+    'art-collaboration-kyoto',
+  ]);
 
   for (const [slug, [startDate, endDate]] of expected) {
     const source = payload.sources.find((item) => item.slug === slug);
     assert.ok(source, `${slug} source missing`);
-    assert.equal(source.beta, true);
+    assert.equal(source.beta, !publicFestivalSlugs.has(slug));
     assert.equal(source.crawl_strategy, 'festival-edition');
     assert.deepEqual(validateSourceConfig(source), []);
     assert.equal(source.festival.start_date, startDate);
@@ -801,6 +806,8 @@ test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
     'Kyoto Art Month should be public',
   );
   for (const slug of [
+    'art-rhizome-kyoto',
+    'kyoto-experiment',
     'kyoto-modern-architecture-festival',
     'ko-gei-kyoto',
     'art-collaboration-kyoto',
@@ -828,9 +835,12 @@ test('festival edition persists when listing has no programme details', async ()
     rawPageId: 'page-1',
     upsertEdition: async (_env, sourceId, rawPageId, edition) => {
       calls.push(['upsert', sourceId, rawPageId, edition.event_kind]);
-      assert.equal(Object.hasOwn(edition, 'primary_image_url'), false);
-      assert.equal(Object.hasOwn(edition, 'image_urls'), false);
-      assert.equal(Object.hasOwn(edition, 'image_metadata'), false);
+      assert.equal(edition.primary_image_url, source.festival.image_urls[0]);
+      assert.deepEqual(edition.image_urls, source.festival.image_urls);
+      assert.deepEqual(
+        edition.image_metadata.map((image) => image.url),
+        source.festival.image_urls,
+      );
       return { id: 'festival-1', title: edition.title, event_kind: 'festival' };
     },
     upsertSegments: async ({ eventId }) => calls.push(['segments', eventId]),

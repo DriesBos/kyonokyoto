@@ -215,7 +215,13 @@
         "end_date": "2026-11-09",
         "description": "Contemporary art by Kyoto-connected artists across nine unusual locations in Kyoto.",
         "source_url": "https://artrhizome.kyoto/",
-        "programme_image_selectors": [".mol_imageblock_img_medium", ".mol_imageblock_img_large"]
+        "image_urls": [
+          "https://storage.googleapis.com/production-os-assets/assets/4744a6cb-6c20-44ce-a728-3662757a30c1",
+          "https://www.city.kyoto.lg.jp/bunshi/cmsfiles/contents/0000357/357275/1.jpg",
+          "https://www.city.kyoto.lg.jp/bunshi/cmsfiles/contents/0000357/357275/3.jpg",
+          "https://www.city.kyoto.lg.jp/bunshi/cmsfiles/contents/0000357/357275/01.jpg"
+        ],
+        "programme_image_selectors": [".mol_imageblock_img_exlarge", ".mol_imageblock_img_large"]
       },
       "locales": {
         "ja": {
@@ -263,7 +269,14 @@
         "start_date": "2026-10-03",
         "end_date": "2026-10-25",
         "description": "Experimental performing arts, exhibitions, talks, workshops, dance, music, and installation across Kyoto.",
-        "source_url": "https://kyoto-ex.jp/en/about/festival-overview/"
+        "source_url": "https://kyoto-ex.jp/en/about/festival-overview/",
+        "image_urls": [
+          "https://kyoto-ex.jp/2026/wp-content/uploads/2026/07/1234c32abddcf15c2ae64c96df7b9499-1200x630.jpg",
+          "https://kyoto-ex.jp/2026/wp-content/uploads/2026/07/42a4083cb1efd78220cba52c9358ebf6-1500x1000.jpg",
+          "https://kyoto-ex.jp/2026/wp-content/uploads/2026/07/endomithu-1-1500x1012.png",
+          "https://kyoto-ex.jp/2026/wp-content/uploads/2026/07/96f3815130ae1e73db2a96beeff5138e-1500x1000.jpg",
+          "https://kyoto-ex.jp/2026/wp-content/uploads/2026/06/7ea49e199f517fd5f7dc4b1040af79ee-1500x1000.jpg"
+        ]
       },
       "locales": {
         "ja": {
@@ -359,8 +372,8 @@
       "allowed_domains": ["kyoto.kenchikusai.jp", "kenchikusai.jp"],
       "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/program/"],
-      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
-      "beta": true,
+      "notes": "2026 festival edition. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
+      "beta": false,
       "festival": {
         "slug": "kyoto-modern-architecture-festival-2026",
         "title": "Kyoto Modern Architecture Festival 2026",
@@ -475,8 +488,8 @@
       "allowed_domains": ["a-c-k.jp"],
       "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/en/whats-on/", "/whats-on/"],
-      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
-      "beta": true,
+      "notes": "2026 festival edition. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
+      "beta": false,
       "festival": {
         "slug": "art-collaboration-kyoto-2026",
         "title": "Art Collaboration Kyoto 2026",
@@ -541,8 +554,8 @@
       "allowed_domains": ["curation-fair.com"],
       "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/en/kyoto2026/", "/kyoto2026/"],
-      "notes": "2026 beta festival QA. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
-      "beta": true,
+      "notes": "2026 festival edition. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
+      "beta": false,
       "festival": {
         "slug": "curation-fair-kyoto-2026",
         "title": "CURATION⇄FAIR Kyoto 2026",
