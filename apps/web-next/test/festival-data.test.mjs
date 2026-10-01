@@ -13,7 +13,11 @@ test('city listing keeps festival editions and excludes programme child rows', a
   );
   assert.match(source, /eventKind: event\.event_kind === 'festival' \? 'festival' : 'event'/);
   assert.match(source, /event\.event_kind === 'festival' && event\.festival_slug/);
+  assert.match(source, /withConfiguredFestivalMedia\(event, sources\)/);
   assert.doesNotMatch(source, /filter\(\(event\) => event\.event_kind !== 'festival'\)/);
+
+  const grid = await readFile(new URL('../src/app/EventsGrid.tsx', import.meta.url), 'utf8');
+  assert.match(grid, /event\.eventKind === 'festival' \? ' — FESTIVAL' : null/);
 });
 
 test('festival detail fetches one parent record and creates date-range calendar actions', async () => {
@@ -28,10 +32,7 @@ test('festival detail fetches one parent record and creates date-range calendar 
   );
   assert.match(detailFunction, /appleCalendar,/);
   assert.match(detailFunction, /festival\.external_id/);
-  assert.match(
-    source,
-    /imageRecords\(filterEventMediaByMinimumHeight\(festival\) as EventRow, 5\)/,
-  );
+  assert.match(source, /filterEventMediaByMinimumHeight\(festivalWithMedia\) as EventRow/);
 });
 
 test('festival page links cover and previews to official site and exposes calendar actions', async () => {

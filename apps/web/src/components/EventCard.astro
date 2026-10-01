@@ -195,6 +195,7 @@ const isFestivalEdition = event.event_kind === 'festival' && Boolean(festivalUrl
               event.date_text
             )
           }
+          {event.event_kind === 'festival' ? ' — FESTIVAL' : null}
         </span>
         {
           event.festival ? (

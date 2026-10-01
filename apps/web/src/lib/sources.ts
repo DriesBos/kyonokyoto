@@ -39,6 +39,10 @@ export type SourceConfig = {
   beta?: boolean;
   landing_slider?: boolean;
   map_visibility?: boolean;
+  festival?: {
+    image_urls?: string[];
+    primary_image_url?: string | null;
+  };
 };
 
 export type MapSource = {

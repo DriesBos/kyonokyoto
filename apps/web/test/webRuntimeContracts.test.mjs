@@ -118,11 +118,18 @@ test('festival listings show parent editions and omit programme children', async
   assert.match(page, /if \(event\.event_kind === 'festival'\) return null/);
   assert.match(card, /data-apple-calendar-button/);
   assert.match(card, /isFestivalEdition/);
+  assert.match(card, /event\.event_kind === 'festival' \? ' — FESTIVAL' : null/);
   assert.match(card, /event\.source_url/);
+  assert.match(events, /configuredFestivalImages/);
+  assert.match(events, /!hasPersistedMedia/);
   assert.match(festivalPage, /sourceSlugForEvent\(festival, configuredSources\)/);
   assert.match(festivalPage, /sourceDisplayNameForEvent\(festival, configuredSources, locale\)/);
   assert.match(festivalPage, /festivalYear/);
   assert.match(festivalPage, /previews\.length/);
+  assert.match(
+    festivalPage,
+    /persistedImageUrls\.length \? persistedImageUrls : configuredImageUrls/,
+  );
   assert.match(festivalPage, /data-apple-calendar-button/);
   assert.match(festivalPage, /googleCalendarUrl\(calendarEvent, today\)/);
   assert.doesNotMatch(festivalPage, /festival_program|Programme|programme|programs/);

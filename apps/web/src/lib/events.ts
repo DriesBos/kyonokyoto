@@ -13,7 +13,7 @@ import { dateOnlyInTimeZone, type AppCity } from './cities';
 import type { AppLocale } from './i18n';
 import { formatEventDateRange } from './calendar';
 import type { SourceConfig } from './sources';
-import { sourceTruthForEvent } from './sources';
+import { sourceSlugForEvent, sourceTruthForEvent } from './sources';
 
 export type EventTranslationRow = {
   locale: AppLocale;
@@ -163,8 +163,27 @@ export const formatEventsForLocale = ({
   today: string;
 }): ClassifiedEvent[] =>
   events.map((rawEvent) => {
+    const localizedEvent = localizeEvent(rawEvent, activeLocale);
+    const source = configuredSources.find(
+      (candidate) => candidate.slug === sourceSlugForEvent(localizedEvent, configuredSources),
+    );
+    const configuredFestivalImages = [
+      ...(source?.festival?.image_urls ?? []),
+      source?.festival?.primary_image_url,
+    ].filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index);
+    const hasPersistedMedia = Boolean(
+      localizedEvent.primary_image_url || localizedEvent.image_urls?.some(Boolean),
+    );
     const event = filterEventMediaByMinimumHeight(
-      localizeEvent(rawEvent, activeLocale),
+      localizedEvent.event_kind === 'festival' &&
+        !hasPersistedMedia &&
+        configuredFestivalImages.length
+        ? {
+            ...localizedEvent,
+            primary_image_url: configuredFestivalImages[0],
+            image_urls: configuredFestivalImages,
+          }
+        : localizedEvent,
     ) as EventRow;
     const sourceTruth = sourceTruthForEvent(event, configuredSources, activeLocale);
     const isFestivalProgram = event.event_kind === 'festival_program' && Boolean(event.festival);

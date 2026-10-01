@@ -56,8 +56,9 @@ const sourcesPayloadByCity = {
 const configuredSources = configuredSourcesFrom(
   sourcesPayloadByCity[city].sources as SourceConfig[],
 );
-if (!sourceSlugForEvent(festival, configuredSources))
-  return new Response('Not found', { status: 404 });
+const sourceSlug = sourceSlugForEvent(festival, configuredSources);
+if (!sourceSlug) return new Response('Not found', { status: 404 });
+const source = configuredSources.find((candidate) => candidate.slug === sourceSlug);
 
 const today = dateOnlyInTimeZone(new Date(), cityConfig.timeZone);
 const festivalName = sourceDisplayNameForEvent(festival, configuredSources, locale);
@@ -94,7 +95,14 @@ const copy =
         imageAlt: 'Festival image',
       };
 
-const imageUrls = [festival.primary_image_url, ...(festival.image_urls ?? [])]
+const persistedImageUrls = [festival.primary_image_url, ...(festival.image_urls ?? [])].filter(
+  Boolean,
+);
+const configuredImageUrls = [
+  ...(source?.festival?.image_urls ?? []),
+  source?.festival?.primary_image_url,
+].filter(Boolean);
+const imageUrls = (persistedImageUrls.length ? persistedImageUrls : configuredImageUrls)
   .filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index)
   .slice(0, 5);
 const images = imageUrls.flatMap((sourceUrl) => {

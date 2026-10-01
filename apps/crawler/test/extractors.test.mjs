@@ -793,6 +793,21 @@ test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
       assert.ok(source.start_urls.includes('https://you-me-kyoto.org/programme/journey'));
     }
   }
+
+  const sourceBySlug = new Map(payload.sources.map((source) => [source.slug, source]));
+  assert.equal(
+    Object.hasOwn(sourceBySlug.get('kyoto-art-month'), 'beta'),
+    false,
+    'Kyoto Art Month should be public',
+  );
+  for (const slug of [
+    'kyoto-modern-architecture-festival',
+    'ko-gei-kyoto',
+    'art-collaboration-kyoto',
+    'curation-fair-kyoto',
+  ]) {
+    assert.ok(sourceBySlug.get(slug).festival.image_urls.length > 0, `${slug} needs media`);
+  }
 });
 
 test('festival edition persists when listing has no programme details', async () => {

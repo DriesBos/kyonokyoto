@@ -135,7 +135,10 @@ export default function EventsGrid({
                         />
                         <h2 className={styles.title}>{event.title}</h2>
                         <div className={styles.meta}>
-                          <p>{event.date}</p>
+                          <p>
+                            {event.date}
+                            {event.eventKind === 'festival' ? ' — FESTIVAL' : null}
+                          </p>
                           {event.festival && (
                             <p className={styles.festivalMeta}>
                               {event.festival.slug ? (

@@ -370,6 +370,13 @@
         "end_date": "2026-11-08",
         "description": "Normally inaccessible modern buildings, guided tours, talks, and special events across Kyoto.",
         "source_url": "https://kyoto.kenchikusai.jp/",
+        "image_urls": [
+          "https://kyoto.kenchikusai.jp/wp-content/uploads/2026/07/ogp.jpg",
+          "https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T22038-002_01.jpg",
+          "https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T26033-001_01.jpg",
+          "https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T22026-005_01.jpg",
+          "https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T26043-001_01.jpg"
+        ],
         "programme_image_selectors": ["img[src*='/assets/img/event/']"]
       },
       "locales": {
@@ -424,6 +431,7 @@
         "end_date": "2026-11-08",
         "description": "Contemporary Japanese craft presented at Daihonzan Myokenji Temple.",
         "source_url": "https://kogeigene.com/exhibition/",
+        "image_urls": ["https://kogeigene.com/exhibition/images/exh_art_1.jpg?a=2"],
         "cover_image_selectors": ["img[src*='exh_art_1']"],
         "venue_name": "Daihonzan Myokenji Temple",
         "address_text": "514 Myokenjimae-cho, Kamigyo-ku, Kyoto 602-0005 Japan",
@@ -478,6 +486,12 @@
         "end_date": "2026-11-09",
         "description": "International contemporary-art fair and related exhibitions across Kyoto.",
         "source_url": "https://a-c-k.jp/en/",
+        "image_urls": [
+          "https://a-c-k.jp/en/wp-content/uploads/sites/2/2025/08/KANEGAE.jpg",
+          "https://a-c-k.jp/en/wp-content/uploads/sites/2/2026/08/KANEGAE_timeless-%E3%83%BC%E7%8D%A9%E3%83%BC.jpg",
+          "https://a-c-k.jp/en/wp-content/uploads/sites/2/2025/09/CARLOS-ISHIKAWA_2-2048x1448.jpg",
+          "https://a-c-k.jp/en/wp-content/uploads/sites/2/2025/08/CURATION%E2%87%84FAIR-Kyoto_edit-2048x1448.jpg"
+        ],
         "venue_name": "Kyoto International Conference Center",
         "address_text": "Takaragaike, Sakyo-ku, Kyoto 606-0001 Japan",
         "directions_query": "Kyoto International Conference Center, Kyoto",
@@ -538,6 +552,9 @@
         "end_date": "2026-11-08",
         "description": "Contemporary art, historical art, craft, and jewellery across three historic Nishijin temples.",
         "source_url": "https://curation-fair.com/en/kyoto2026",
+        "image_urls": [
+          "https://storage.googleapis.com/production-os-assets/assets/cbce3d64-78d5-40ee-aefd-29526431559f"
+        ],
         "venue_name": "Myokenji, Myokakuji, and Honpoji Temples",
         "address_text": "Nishijin, Kyoto",
         "directions_query": "Daihonzan Myokenji Temple, Kyoto",
@@ -926,7 +943,7 @@
       "allowed_domains": ["kyoto-art-month.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program", "/event", "/"],
-      "notes": "Current homepage behaves as an off-domain directory linking straight to partner venues rather than hosting stable on-domain program detail pages. Keep inactive until we add a source-specific aggregator.",
+      "notes": "Current homepage behaves as an off-domain directory linking straight to partner venues rather than hosting stable on-domain program detail pages.",
       "locales": {
         "ja": {
           "start_urls": ["https://kyoto-art-month.jp/"],
@@ -936,8 +953,7 @@
           "start_urls": [],
           "event_page_patterns": []
         }
-      },
-      "beta": true
+      }
     },
     {
       "slug": "zenbi",

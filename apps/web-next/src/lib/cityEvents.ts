@@ -118,6 +118,10 @@ type SourceConfig = {
     lat?: number;
     lng?: number;
   }[];
+  festival?: {
+    image_urls?: string[];
+    primary_image_url?: string | null;
+  };
 };
 
 export type CityEvent = {
@@ -365,6 +369,25 @@ const imageRecords = (
   });
 };
 
+const withConfiguredFestivalMedia = (event: EventRow, sources: SourceConfig[]): EventRow => {
+  if (
+    event.event_kind !== 'festival' ||
+    event.primary_image_url ||
+    event.image_urls?.some(Boolean)
+  ) {
+    return event;
+  }
+  const slug = sourceSlugForEvent(event, sources);
+  const source = sources.find((candidate) => candidate.slug === slug);
+  const imageUrls = [
+    ...(source?.festival?.image_urls ?? []),
+    source?.festival?.primary_image_url,
+  ].filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index);
+  return imageUrls.length
+    ? { ...event, primary_image_url: imageUrls[0], image_urls: imageUrls }
+    : event;
+};
+
 type CalendarInput = {
   title: string;
   description: string | null;
@@ -426,6 +449,7 @@ export async function fetchCityEvents({
 
   const rows = (await response.json()) as EventRow[];
   const events = dedupeEvents(rows.filter((event) => event.event_kind !== 'festival_program'))
+    .map((event) => withConfiguredFestivalMedia(event, sources))
     .map((event) => filterEventMediaByMinimumHeight(event) as EventRow)
     .filter((event) => visibleSource(sourceSlugForEvent(event, sources)))
     .filter(
@@ -598,10 +622,11 @@ export async function fetchFestivalDetail({
   const source = sources.find((candidate) => candidate.slug === sourceSlug);
   if (!source || (process.env.NODE_ENV === 'production' && source.beta)) return null;
 
-  const localized = translationFor(festival, locale);
+  const festivalWithMedia = withConfiguredFestivalMedia(festival, sources);
+  const localized = translationFor(festivalWithMedia, locale);
   const title = localized?.title || festival.title;
   const description = localized?.description ?? festival.description;
-  const images = imageRecords(filterEventMediaByMinimumHeight(festival) as EventRow, 5);
+  const images = imageRecords(filterEventMediaByMinimumHeight(festivalWithMedia) as EventRow, 5);
   const year =
     festival.external_id?.match(/20\d{2}/)?.[0] ??
     festival.start_date?.slice(0, 4) ??
