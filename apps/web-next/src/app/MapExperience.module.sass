@@ -16,7 +16,7 @@
   flex: 1 1 auto
   min-width: 0
   min-height: 0
-  overflow: hidden
+  overflow: visible
 
 .events
   container-type: inline-size
@@ -25,13 +25,7 @@
   flex-direction: column
   min-width: 0
   min-height: 0
-  overflow-x: hidden
-  overflow-y: auto
-  overscroll-behavior: contain
-  scrollbar-width: none
-
-  &::-webkit-scrollbar
-    display: none
+  overflow: visible
 
 .map
   display: flex
@@ -45,6 +39,16 @@
 
 .content[data-map-visible] .events
   flex: 0 0 var(--events-panel-size, var(--default-events-panel-size))
+  overflow-x: hidden
+  overflow-y: auto
+  overscroll-behavior: contain
+  scrollbar-width: none
+
+  &::-webkit-scrollbar
+    display: none
+
+.content[data-map-visible]
+  overflow: hidden
 
 .resizer
   position: relative

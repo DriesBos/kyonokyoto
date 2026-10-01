@@ -157,3 +157,17 @@ test('lead image owns media ratio and becomes the scrollable track only while op
   assert.match(detail, /className=\{styles\.actionContent\}/);
   assert.match(mediaStyles, /text-transform: lowercase/);
 });
+
+test('events use page scrolling until map opens an independently scrollable panel', async () => {
+  const styles = await readFile(new URL('MapExperience.module.sass', app), 'utf8');
+  const eventsStyles = styles.slice(styles.indexOf('.events'), styles.indexOf('.map'));
+  const mapVisibleStyles = styles.slice(
+    styles.indexOf('.content[data-map-visible] .events'),
+    styles.indexOf('.resizer'),
+  );
+
+  assert.match(eventsStyles, /overflow: visible/);
+  assert.doesNotMatch(eventsStyles, /overscroll-behavior: contain/);
+  assert.match(mapVisibleStyles, /overflow-y: auto/);
+  assert.match(mapVisibleStyles, /overscroll-behavior: contain/);
+});
