@@ -147,6 +147,21 @@
   p
     margin: 0
 
+.festivalMeta
+  position: relative
+  z-index: 3
+  display: flex
+  flex-wrap: wrap
+  gap: 0.25rem 0.75rem
+
+  a
+    color: inherit
+    text-decoration: underline
+    text-underline-offset: 0.2em
+
+  span
+    opacity: 0.7
+
 .title
   margin: 0
   padding-inline: 1rem
@@ -207,10 +222,6 @@
   .title
     padding-inline: 0.5rem
     font-size: 1rem
-
-:global(html[data-blocks-landing-active]),
-:global(html[data-blocks-landing-active] body)
-  overflow: hidden
 
 .landing
   position: fixed

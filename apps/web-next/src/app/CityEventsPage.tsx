@@ -52,7 +52,7 @@ export default async function CityEventsPage({
       >
         <main className={styles.main} data-main-content>
           <BlockControls />
-          <EventsGrid events={events} locale={locale} cityLabel={city.label} />
+          <EventsGrid events={events} locale={locale} cityLabel={city.label} city={city.slug} />
           <SiteFooter
             compact
             className={styles.blocksFooter}

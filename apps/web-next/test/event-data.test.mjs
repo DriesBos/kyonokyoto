@@ -35,7 +35,7 @@ test('V2 event mapper preserves source, calendar, image and media contracts', as
   assert.match(source, /group: 'permanent'/);
   assert.match(
     source,
-    /endpoint\.search = new URLSearchParams\(\{ select: EVENT_SELECT, status: 'eq\.published', city: `eq\.\$\{city\}` \}\)/,
+    /endpoint\.search = new URLSearchParams\(\{\s*select: EVENT_SELECT,\s*status: 'eq\.published',\s*city: `eq\.\$\{city\}`,?\s*\}\)/,
   );
   assert.match(source, /translationFor\(event, locale\)/);
   assert.match(source, /dateOnlyInTimeZone/);
@@ -141,10 +141,7 @@ test('lead image owns media ratio and becomes the scrollable track only while op
   assert.match(mediaStyles, /flex-basis: calc\(100% - var\(--media-peek\)\)/);
   assert.match(mediaStyles, /aspect-ratio: var\(--media-lead-aspect-ratio\)/);
   assert.match(mediaStyles, /object-fit: contain/);
-  const eventCardBlockStyles = blockStyles.slice(
-    0,
-    blockStyles.indexOf(':global(html[data-blocks-landing-active])'),
-  );
+  const eventCardBlockStyles = blockStyles.slice(0, blockStyles.indexOf('.landing'));
   assert.doesNotMatch(eventCardBlockStyles, /aspect-ratio: 3 \/ 2|object-fit: cover/);
   assert.match(mediaStyles, /-webkit-line-clamp: 5/);
   assert.match(blocks, /<EventsGrid events=\{events\} locale=\{locale\}/);

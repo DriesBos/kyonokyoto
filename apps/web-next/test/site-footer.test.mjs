@@ -19,7 +19,7 @@ test('production footer keeps V1 content without the ruled background', async ()
   assert.match(styles, /border-bottom: var\(--footer-stroke\) solid currentColor/);
   assert.match(styles, /background: none/);
   assert.doesNotMatch(styles, /repeating-linear-gradient/);
-  assert.match(page, /<SiteFooter compact className=\{styles\.blocksFooter\}/);
+  assert.match(page, /<SiteFooter\s+compact\s+className=\{styles\.blocksFooter\}/);
   assert.match(blocksStyles, /\.blocksFooter[\s\S]*padding-top: 10vmin/);
   assert.match(footer, /className\?: string/);
   assert.match(footer, /compact\?: boolean/);

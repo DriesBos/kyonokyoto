@@ -1,7 +1,9 @@
 import { Fragment } from 'react';
 import type { AppLocale } from '@/lib/i18n';
 import { uiText } from '@/lib/i18n';
+import type { AppCity } from '@/lib/cities';
 import { type CityEvent, mapLocationIdForEvent } from '@/lib/cityEvents';
+import { festivalPathFor } from '@/lib/festivalRoutes';
 import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
@@ -14,10 +16,12 @@ export default function EventsGrid({
   events,
   locale,
   cityLabel,
+  city,
 }: {
   events: CityEvent[];
   locale: AppLocale;
   cityLabel: string;
+  city: AppCity;
 }) {
   const copy = uiText[locale];
   const groups = Object.fromEntries(
@@ -132,7 +136,27 @@ export default function EventsGrid({
                         <h2 className={styles.title}>{event.title}</h2>
                         <div className={styles.meta}>
                           <p>{event.date}</p>
-                          <p>{event.institution}</p>
+                          {event.festival && (
+                            <p className={styles.festivalMeta}>
+                              {event.festival.slug ? (
+                                <a href={festivalPathFor(city, locale, event.festival.slug)}>
+                                  {event.festival.title} ↗
+                                </a>
+                              ) : (
+                                <span>{event.festival.title}</span>
+                              )}
+                              {event.festival.dateInherited && (
+                                <span>
+                                  {locale === 'ja'
+                                    ? 'フェスティバル全体の開催期間'
+                                    : 'Festival-wide dates'}
+                                </span>
+                              )}
+                            </p>
+                          )}
+                          <p>
+                            {event.festival ? event.venue || event.institution : event.institution}
+                          </p>
                         </div>
                         <EventCardDisclosure
                           eventId={event.id}
