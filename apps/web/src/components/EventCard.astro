@@ -108,7 +108,6 @@ const showInstitutionMeta = event.timing !== 'permanent';
 const venueLabel =
   event.venue_name ||
   (event.institution_name !== event.festival?.title ? event.institution_name : '');
-const festivalDateNote = locale === 'ja' ? 'フェスティバル全体の開催期間' : 'Festival-wide dates';
 const dateParts = formatEventDateParts(event.start_date, event.end_date, event.date_text, locale);
 const safeCalendarEndDate =
   event.is_all_day && /^\d{4}-\d{2}-\d{2}$/.test(event.calendar_ends_at ?? '')
@@ -205,9 +204,6 @@ const cardTitleId = `event-card-title-${event.id}`;
                 <span>{event.festival.title}</span>
               )}
               {venueLabel ? <span>{venueLabel}</span> : null}
-              {event.festival.dateInherited ? (
-                <span class="event-card__date-note">{festivalDateNote}</span>
-              ) : null}
             </>
           ) : showInstitutionMeta ? (
             <span>{event.institution_name}</span>

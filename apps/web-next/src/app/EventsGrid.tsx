@@ -145,13 +145,6 @@ export default function EventsGrid({
                               ) : (
                                 <span>{event.festival.title}</span>
                               )}
-                              {event.festival.dateInherited && (
-                                <span>
-                                  {locale === 'ja'
-                                    ? 'フェスティバル全体の開催期間'
-                                    : 'Festival-wide dates'}
-                                </span>
-                              )}
                             </p>
                           )}
                           <p>

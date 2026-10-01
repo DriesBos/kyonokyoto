@@ -84,7 +84,6 @@ const festivalCopy =
         programme: 'プログラム',
         details: '詳細',
         comingSoon: 'プログラム詳細は近日公開予定です。',
-        inheritedDates: 'フェスティバル全体の開催期間',
       }
     : {
         events: 'events',
@@ -92,7 +91,6 @@ const festivalCopy =
         programme: 'Programme',
         details: 'Details',
         comingSoon: 'Programme details coming soon.',
-        inheritedDates: 'Festival-wide dates',
       };
 ---
 
@@ -133,9 +131,6 @@ const festivalCopy =
               <li>
                 <div class="festival-page__meta">
                   <span>{program.date_text}</span>
-                  {program.festival?.dateInherited ? (
-                    <span>{festivalCopy.inheritedDates}</span>
-                  ) : null}
                   {program.venue_name || program.institution_name ? (
                     <span>{program.venue_name || program.institution_name}</span>
                   ) : null}

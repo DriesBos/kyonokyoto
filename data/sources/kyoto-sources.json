@@ -295,11 +295,14 @@
       },
       "language": "en",
       "base_url": "https://you-me-kyoto.org/programme",
-      "start_urls": ["https://you-me-kyoto.org/programme"],
+      "start_urls": [
+        "https://you-me-kyoto.org/programme",
+        "https://you-me-kyoto.org/programme/journey"
+      ],
       "allowed_domains": ["you-me-kyoto.org", "www.you-me-kyoto.org"],
       "crawl_strategy": "festival-program",
       "event_page_patterns": ["/programme"],
-      "notes": "2026 beta festival QA. Programme is published mostly as one page; extract named exhibition sections as inline programme items and inherit edition dates where item dates are absent.",
+      "notes": "2026 beta festival QA. Extract unique named exhibition items from the programme page and eight dated YouMe Journey workshops from the journey page.",
       "beta": true,
       "festival": {
         "slug": "kyoto-youme-triennale-2026",
@@ -316,11 +319,17 @@
       },
       "locales": {
         "ja": {
-          "start_urls": ["https://you-me-kyoto.org/ja/programme"],
+          "start_urls": [
+            "https://you-me-kyoto.org/ja/programme",
+            "https://you-me-kyoto.org/ja/programme/journey"
+          ],
           "event_page_patterns": ["/ja/programme"]
         },
         "en": {
-          "start_urls": ["https://you-me-kyoto.org/programme"],
+          "start_urls": [
+            "https://you-me-kyoto.org/programme",
+            "https://you-me-kyoto.org/programme/journey"
+          ],
           "event_page_patterns": ["/programme"]
         }
       },

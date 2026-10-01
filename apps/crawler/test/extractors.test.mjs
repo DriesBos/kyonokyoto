@@ -766,6 +766,12 @@ test('Kyoto festival QA sources define 2026 editions and programme crawling', as
     assert.equal(source.festival.end_date, endDate);
     assert.match(source.festival.slug, /-2026$/);
     assert.ok(source.festival.source_url);
+    if (slug === 'kyoto-youme-triennale') {
+      assert.ok(source.start_urls.includes('https://you-me-kyoto.org/programme/journey'));
+      assert.ok(
+        source.locales.ja.start_urls.includes('https://you-me-kyoto.org/ja/programme/journey'),
+      );
+    }
   }
 });
 
@@ -2023,6 +2029,69 @@ test('inline festival extraction reuses the listing snapshot that created fragme
   assert.equal(detailUrls.length, 10);
   assert.equal(event.title, 'Programme 10');
   assert.equal(event.external_id, 'programme-10');
+});
+
+test('YouMe removes duplicate section headings and adds eight dated Journey workshops', async () => {
+  const sources = await loadSourcesConfig({ city: 'kyoto' });
+  const source = sources.find((item) => item.slug === 'kyoto-youme-triennale');
+  const programmeUrl = 'https://you-me-kyoto.org/programme';
+  const journeyUrl = 'https://you-me-kyoto.org/programme/journey';
+  const programmeHtml = `
+    <h2>Insitutional Exhibition</h2>
+    <h2>Edition Manifesto Exhibition</h2>
+    <h2>Adaptive Radiation</h2><p>First exhibition</p>
+    <h2>I Am. We Are. Liberty</h2><p>Second exhibition</p>
+    <h2>Insitutional Exhibition</h2>
+    <h2>Edition Manifesto Exhibition</h2>
+    <h2>Adaptive Radiation</h2><p>First exhibition duplicate</p>
+    <h2>I Am. We Are. Liberty</h2><p>Second exhibition duplicate</p>`;
+  const journeys = [
+    ['10.09', 'Water Kitchen', '261009'],
+    ['10.11', 'Ma (間) Reset', '261011'],
+    ['10.13', 'Tracing the Origins of Making', '261013'],
+    ['10.15', 'Water, Wagashi & Knives', '261014'],
+    ['10.15', 'The Art of Living', '261015'],
+    ['10.16', 'The Meaning of Making', '261016'],
+    ['10.17', 'How Japan Sees Beauty', '261017-01'],
+    ['10.17', 'Beyond Bamboo', '261017-02'],
+  ];
+  const journeyHtml = journeys
+    .map(
+      ([date, title, booking]) => `
+        <h2>${date}</h2>
+        <h2>${title}</h2>
+        <h3>${title} subtitle</h3>
+        <p>${title} description</p>
+        <a href="https://youme-journey${booking}.peatix.com">Details & booking</a>`,
+    )
+    .join('');
+  const listingPages = [
+    { url: programmeUrl, html: programmeHtml },
+    { url: journeyUrl, html: journeyHtml },
+  ];
+  const detailUrls = extractSourceSpecificDetailUrls(
+    detailUrlExtractors[source.slug],
+    listingPages,
+    source,
+  );
+  const events = detailUrls.map((detailUrl) =>
+    eventExtractors[source.slug]('', source, detailUrl, { listingPages }),
+  );
+
+  assert.equal(detailUrls.length, 10);
+  assert.deepEqual(
+    events.slice(0, 2).map((event) => event.title),
+    ['Adaptive Radiation', 'I Am. We Are. Liberty'],
+  );
+  assert.equal(events.filter((event) => event.categories.includes('workshop')).length, 8);
+  assert.equal(
+    events.find((event) => event.title === 'Water, Wagashi & Knives').start_date,
+    '2026-10-14',
+  );
+  assert.equal(
+    events.find((event) => event.title === 'Beyond Bamboo').source_url,
+    'https://youme-journey261017-02.peatix.com/',
+  );
 });
 
 test('Art Rhizome programme discovery keeps each artist inside its own list item', async () => {

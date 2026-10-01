@@ -57,3 +57,13 @@ test('festival detail lookup returns no public detail for beta sources', async (
     /if \(!source \|\| \(process\.env\.NODE_ENV === 'production' && source\.beta\)\) return null/,
   );
 });
+
+test('festival UI omits inherited-date warning labels', async () => {
+  const [page, grid] = await Promise.all([
+    readFile(new URL('../src/app/FestivalPage.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/app/EventsGrid.tsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.doesNotMatch(page, /Festival-wide dates|フェスティバル全体の開催期間/);
+  assert.doesNotMatch(grid, /Festival-wide dates|フェスティバル全体の開催期間/);
+});

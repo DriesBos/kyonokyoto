@@ -3029,9 +3029,48 @@ function festivalInlineProgramCandidates(html, source, pageUrl) {
   }
 
   if (source?.slug === 'kyoto-youme-triennale') {
+    if (/\/programme\/journey\/?$/i.test(new URL(pageUrl).pathname)) {
+      const headings = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)].map((match) => ({
+        title: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
+        offset: match.index ?? 0,
+        endOffset: (match.index ?? 0) + match[0].length,
+      }));
+      const dates = headings.filter((heading) => /^\d{2}\.\d{2}$/.test(heading.title));
+      return dates
+        .map((dateHeading, index) => {
+          const nextDateOffset = dates[index + 1]?.offset ?? html.length;
+          const itemHtml = html.slice(dateHeading.endOffset, nextDateOffset);
+          const title = stripTags(itemHtml.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ?? '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          const subtitle = stripTags(itemHtml.match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/i)?.[1] ?? '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          const booking = [...itemHtml.matchAll(/<a\b[^>]+href=(["'])(.*?)\1[^>]*>/gi)]
+            .map((match) => normalizeUrl(match[2], pageUrl))
+            .find((url) => /peatix\.com/i.test(url ?? ''));
+          const paragraphs = [...itemHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+            .map((match) => stripTags(match[1]).replace(/\s+/g, ' ').trim())
+            .filter(Boolean)
+            .filter((text) => !/^(?:Details & booking|Book now)$/i.test(text));
+          const text = paragraphs.join('\n') || subtitle;
+          return {
+            kind: 'journey',
+            title,
+            subtitle,
+            dateText: dateHeading.title,
+            text,
+            html: itemHtml,
+            offset: dateHeading.offset,
+            href: booking ?? pageUrl,
+          };
+        })
+        .filter((item) => item.title);
+    }
+
     const ignoredHeadings =
-      /^(?:Programme|Institutional Exhibition|Shosei-en|J\u016bshin Kaikan|Cultural Exhibition)$/i;
-    return [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2\b|$)/gi)]
+      /^(?:Programme|Inst?itutional Exhibition|Edition Manifesto Exhibition|Shosei-en|J\u016bshin Kaikan|Cultural Exhibition)$/i;
+    const candidates = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2\b|$)/gi)]
       .map((match) => ({
         title: stripTags(match[1]).replace(/\s+/g, ' ').trim(),
         text: stripTags(match[2]).replace(/\s+/g, ' ').trim(),
@@ -3040,6 +3079,7 @@ function festivalInlineProgramCandidates(html, source, pageUrl) {
         href: pageUrl,
       }))
       .filter((item) => item.title && !ignoredHeadings.test(item.title));
+    return [...new Map(candidates.map((item) => [item.title.toLowerCase(), item])).values()];
   }
 
   if (source?.slug === 'art-collaboration-kyoto') {
@@ -3120,6 +3160,48 @@ function extractInlineFestivalProgram(detailHtml, source, detailUrl) {
   }
 
   if (source.slug === 'kyoto-youme-triennale') {
+    if (candidate.kind === 'journey') {
+      const year = source.festival?.start_date?.slice(0, 4);
+      const [month, day] = candidate.dateText.split('.');
+      const bookingDate = candidate.href.match(/journey(\d{2})(\d{2})(\d{2})/i);
+      const eventDate = bookingDate
+        ? `20${bookingDate[1]}-${bookingDate[2]}-${bookingDate[3]}`
+        : year && month && day
+          ? `${year}-${month}-${day}`
+          : null;
+      const imageUrls = extractGenericImageUrls(candidate.html, detailUrl);
+      return {
+        title: candidate.title,
+        external_id: `journey-${eventDate}-${candidate.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')}`,
+        categories: ['design', 'craft', 'workshop'],
+        description: [candidate.subtitle, candidate.text]
+          .filter(Boolean)
+          .filter((value, index, values) => index === 0 || value !== values[0])
+          .join('\n'),
+        institution_name: null,
+        venue_name: null,
+        address_text: null,
+        directions_query: null,
+        date_text: eventDate
+          ? `${eventDate.slice(5, 7)}.${eventDate.slice(8, 10)}`
+          : candidate.dateText,
+        start_date: eventDate,
+        end_date: eventDate,
+        ...buildScheduleFields({ startDate: eventDate, endDate: eventDate }),
+        calendar_starts_at: eventDate,
+        calendar_ends_at: eventDate,
+        is_all_day: true,
+        timezone: 'Asia/Tokyo',
+        primary_image_url: imageUrls[0] ?? null,
+        image_urls: imageUrls,
+        source_url: candidate.href,
+        extraction_confidence: eventDate ? 0.85 : 0.55,
+      };
+    }
+
     const before = detailHtml.slice(0, candidate.offset);
     const lastShoseien = Math.max(
       before.lastIndexOf('Shosei-en'),
@@ -7364,7 +7446,9 @@ const eventExtractors = {
 function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, source) {
   if (!detailUrlExtractor || !listingPages.length) return [];
 
-  const pages = ['21-21-design-sight', 'kiang-malingue'].includes(source?.slug)
+  const pages = ['21-21-design-sight', 'kiang-malingue', 'kyoto-youme-triennale'].includes(
+    source?.slug,
+  )
     ? listingPages
     : listingPages.slice(0, 1);
 

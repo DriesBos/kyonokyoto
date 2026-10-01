@@ -15,7 +15,6 @@ const copy = {
     programme: 'Programme',
     details: 'Details',
     comingSoon: 'Programme details coming soon.',
-    inheritedDates: 'Festival-wide dates',
   },
   ja: {
     events: 'イベント',
@@ -23,7 +22,6 @@ const copy = {
     programme: 'プログラム',
     details: '詳細',
     comingSoon: 'プログラム詳細は近日公開予定です。',
-    inheritedDates: 'フェスティバル全体の開催期間',
   },
 } as const;
 
@@ -81,7 +79,6 @@ export default async function FestivalPage({
               <li key={program.id}>
                 <div className={styles.meta}>
                   <span>{program.date}</span>
-                  {program.festival?.dateInherited && <span>{labels.inheritedDates}</span>}
                   {(program.venue || program.institution) && (
                     <span>{program.venue || program.institution}</span>
                   )}
