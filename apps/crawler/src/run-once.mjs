@@ -5126,16 +5126,23 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
     .join('\n\n');
   const configuredDateText = selectorTextValues(detailHtml, selectorsFor(source, 'date'))[0];
   const configuredImageUrls = extractConfiguredImageUrls(detailHtml, detailUrl, source);
+  const pinnedSourceImageUrls = finalizeImageUrls(
+    (source.image_urls ?? []).map((url) => ({ url, source: 'source-config' })),
+    detailUrl,
+    { preserveOrder: true },
+  );
   const discoveredDate = configuredDateText
     ? null
     : extractBestDateCandidate(detailHtml, detailUrl);
   const dateText = configuredDateText || discoveredDate?.text || 'See source page';
   const parsedDates = discoveredDate?.parsed ?? parseGenericDateRange(dateText);
-  const imageUrls = configuredImageUrls.length
-    ? configuredImageUrls
-    : extractGenericImageUrls(detailHtml, detailUrl, {
-        includeOgImage: !sourceShouldSkipOgImages(source),
-      });
+  const imageUrls = pinnedSourceImageUrls.length
+    ? pinnedSourceImageUrls
+    : configuredImageUrls.length
+      ? configuredImageUrls
+      : extractGenericImageUrls(detailHtml, detailUrl, {
+          includeOgImage: !sourceShouldSkipOgImages(source),
+        });
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
 
   const event = {

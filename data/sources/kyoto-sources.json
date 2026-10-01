@@ -372,7 +372,7 @@
       "allowed_domains": ["kyoto.kenchikusai.jp", "kenchikusai.jp"],
       "crawl_strategy": "festival-edition",
       "event_page_patterns": ["/program/"],
-      "notes": "2026 festival edition. Save one festival edition with a cover image and up to four programme thumbnails; official festival website remains programme authority.",
+      "notes": "2026 festival edition. Save one festival edition with up to four programme photos only; official festival website remains programme authority.",
       "beta": false,
       "festival": {
         "slug": "kyoto-modern-architecture-festival-2026",
@@ -384,7 +384,6 @@
         "description": "Normally inaccessible modern buildings, guided tours, talks, and special events across Kyoto.",
         "source_url": "https://kyoto.kenchikusai.jp/",
         "image_urls": [
-          "https://kyoto.kenchikusai.jp/wp-content/uploads/2026/07/ogp.jpg",
           "https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T22038-002_01.jpg",
           "https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T26033-001_01.jpg",
           "https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T22026-005_01.jpg",
@@ -954,6 +953,7 @@
       "base_url": "https://kyoto-art-month.jp/",
       "start_urls": ["https://kyoto-art-month.jp/"],
       "allowed_domains": ["kyoto-art-month.jp"],
+      "image_urls": ["https://kyoto-art-month.jp/assets/img/ogp.jpg"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/program", "/event", "/"],
       "notes": "Current homepage behaves as an off-domain directory linking straight to partner venues rather than hosting stable on-domain program detail pages.",

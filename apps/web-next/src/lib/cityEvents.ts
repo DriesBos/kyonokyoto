@@ -110,6 +110,8 @@ type SourceConfig = {
   directions_query?: string;
   lat?: number;
   lng?: number;
+  image_urls?: string[];
+  primary_image_url?: string | null;
   venue_locations?: {
     name?: string;
     match?: string[];
@@ -369,22 +371,31 @@ const imageRecords = (
   });
 };
 
-const withConfiguredFestivalMedia = (event: EventRow, sources: SourceConfig[]): EventRow => {
-  if (
-    event.event_kind !== 'festival' ||
-    event.primary_image_url ||
-    event.image_urls?.some(Boolean)
-  ) {
-    return event;
-  }
+const withConfiguredMedia = (event: EventRow, sources: SourceConfig[]): EventRow => {
   const slug = sourceSlugForEvent(event, sources);
   const source = sources.find((candidate) => candidate.slug === slug);
-  const imageUrls = [
+  const sourceImageUrls = [...(source?.image_urls ?? []), source?.primary_image_url].filter(
+    (url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index,
+  );
+  if (sourceImageUrls.length) {
+    return {
+      ...event,
+      primary_image_url: sourceImageUrls[0],
+      image_urls: sourceImageUrls,
+      image_metadata: null,
+    };
+  }
+  const festivalImageUrls = [
     ...(source?.festival?.image_urls ?? []),
     source?.festival?.primary_image_url,
   ].filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index);
-  return imageUrls.length
-    ? { ...event, primary_image_url: imageUrls[0], image_urls: imageUrls }
+  return event.event_kind === 'festival' && festivalImageUrls.length
+    ? {
+        ...event,
+        primary_image_url: festivalImageUrls[0],
+        image_urls: festivalImageUrls,
+        image_metadata: null,
+      }
     : event;
 };
 
@@ -449,7 +460,7 @@ export async function fetchCityEvents({
 
   const rows = (await response.json()) as EventRow[];
   const events = dedupeEvents(rows.filter((event) => event.event_kind !== 'festival_program'))
-    .map((event) => withConfiguredFestivalMedia(event, sources))
+    .map((event) => withConfiguredMedia(event, sources))
     .map((event) => filterEventMediaByMinimumHeight(event) as EventRow)
     .filter((event) => visibleSource(sourceSlugForEvent(event, sources)))
     .filter(
@@ -622,7 +633,7 @@ export async function fetchFestivalDetail({
   const source = sources.find((candidate) => candidate.slug === sourceSlug);
   if (!source || (process.env.NODE_ENV === 'production' && source.beta)) return null;
 
-  const festivalWithMedia = withConfiguredFestivalMedia(festival, sources);
+  const festivalWithMedia = withConfiguredMedia(festival, sources);
   const localized = translationFor(festivalWithMedia, locale);
   const title = localized?.title || festival.title;
   const description = localized?.description ?? festival.description;

@@ -167,24 +167,30 @@ export const formatEventsForLocale = ({
     const source = configuredSources.find(
       (candidate) => candidate.slug === sourceSlugForEvent(localizedEvent, configuredSources),
     );
+    const configuredSourceImages = [
+      ...(source?.image_urls ?? []),
+      source?.primary_image_url,
+    ].filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index);
     const configuredFestivalImages = [
       ...(source?.festival?.image_urls ?? []),
       source?.festival?.primary_image_url,
     ].filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index);
-    const hasPersistedMedia = Boolean(
-      localizedEvent.primary_image_url || localizedEvent.image_urls?.some(Boolean),
-    );
-    const event = filterEventMediaByMinimumHeight(
-      localizedEvent.event_kind === 'festival' &&
-        !hasPersistedMedia &&
-        configuredFestivalImages.length
+    const eventWithConfiguredMedia = configuredSourceImages.length
+      ? {
+          ...localizedEvent,
+          primary_image_url: configuredSourceImages[0],
+          image_urls: configuredSourceImages,
+          image_metadata: null,
+        }
+      : localizedEvent.event_kind === 'festival' && configuredFestivalImages.length
         ? {
             ...localizedEvent,
             primary_image_url: configuredFestivalImages[0],
             image_urls: configuredFestivalImages,
+            image_metadata: null,
           }
-        : localizedEvent,
-    ) as EventRow;
+        : localizedEvent;
+    const event = filterEventMediaByMinimumHeight(eventWithConfiguredMedia) as EventRow;
     const sourceTruth = sourceTruthForEvent(event, configuredSources, activeLocale);
     const isFestivalProgram = event.event_kind === 'festival_program' && Boolean(event.festival);
     const scheduleSegments = eventScheduleSegments(event);

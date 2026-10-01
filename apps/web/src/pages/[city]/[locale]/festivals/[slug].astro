@@ -98,11 +98,20 @@ const copy =
 const persistedImageUrls = [festival.primary_image_url, ...(festival.image_urls ?? [])].filter(
   Boolean,
 );
-const configuredImageUrls = [
+const configuredSourceImageUrls = [...(source?.image_urls ?? []), source?.primary_image_url].filter(
+  Boolean,
+);
+const configuredFestivalImageUrls = [
   ...(source?.festival?.image_urls ?? []),
   source?.festival?.primary_image_url,
 ].filter(Boolean);
-const imageUrls = (persistedImageUrls.length ? persistedImageUrls : configuredImageUrls)
+const imageUrls = (
+  configuredSourceImageUrls.length
+    ? configuredSourceImageUrls
+    : configuredFestivalImageUrls.length
+      ? configuredFestivalImageUrls
+      : persistedImageUrls
+)
   .filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index)
   .slice(0, 5);
 const images = imageUrls.flatMap((sourceUrl) => {

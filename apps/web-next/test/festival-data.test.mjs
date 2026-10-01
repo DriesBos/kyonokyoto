@@ -13,7 +13,9 @@ test('city listing keeps festival editions and excludes programme child rows', a
   );
   assert.match(source, /eventKind: event\.event_kind === 'festival' \? 'festival' : 'event'/);
   assert.match(source, /event\.event_kind === 'festival' && event\.festival_slug/);
-  assert.match(source, /withConfiguredFestivalMedia\(event, sources\)/);
+  assert.match(source, /withConfiguredMedia\(event, sources\)/);
+  assert.match(source, /sourceImageUrls/);
+  assert.match(source, /festivalImageUrls/);
   assert.doesNotMatch(source, /filter\(\(event\) => event\.event_kind !== 'festival'\)/);
 
   const grid = await readFile(new URL('../src/app/EventsGrid.tsx', import.meta.url), 'utf8');

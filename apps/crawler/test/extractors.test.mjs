@@ -820,6 +820,15 @@ test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
     false,
     'Kyoto Art Month should be public',
   );
+  assert.deepEqual(sourceBySlug.get('kyoto-art-month').image_urls, [
+    'https://kyoto-art-month.jp/assets/img/ogp.jpg',
+  ]);
+  assert.deepEqual(sourceBySlug.get('kyoto-modern-architecture-festival').festival.image_urls, [
+    'https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T22038-002_01.jpg',
+    'https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T26033-001_01.jpg',
+    'https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T22026-005_01.jpg',
+    'https://kyoto.kenchikusai.jp/wp-content/themes/kyoto_kenchikusai_2026/assets/img/event/T26043-001_01.jpg',
+  ]);
   for (const slug of [
     'art-rhizome-kyoto',
     'kyoto-experiment',
@@ -1351,6 +1360,29 @@ test('generic date parsers read en dash date ranges', () => {
   assert.equal(japaneseEvent.end_date, '2026-07-12');
   assert.equal(weekdayDayMonthEvent.start_date, '2026-05-29');
   assert.equal(weekdayDayMonthEvent.end_date, '2026-07-11');
+});
+
+test('source-level image URLs override extracted event media', () => {
+  const pinned = 'https://kyoto-art-month.jp/assets/img/ogp.jpg';
+  const event = extractGenericEvent(
+    `
+      <meta property="og:image" content="https://example.test/other.jpg">
+      <main>
+        <h1>Kyoto Art Month Event</h1>
+        <p>October 1–31, 2026</p>
+        <img src="https://example.test/another.jpg" alt="">
+      </main>
+    `,
+    {
+      name: 'Kyoto Art Month',
+      taxonomy: testTaxonomy(['festival']),
+      image_urls: [pinned],
+    },
+    'https://kyoto-art-month.jp/',
+  );
+
+  assert.equal(event.primary_image_url, pinned);
+  assert.deepEqual(event.image_urls, [pinned]);
 });
 
 test('generic Hong Kong events use Hong Kong schedule timezone', () => {

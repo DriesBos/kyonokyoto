@@ -27,6 +27,8 @@ export type SourceConfig = {
   lat?: number;
   lng?: number;
   skip_og_image?: boolean;
+  image_urls?: string[];
+  primary_image_url?: string | null;
   venue_locations?: {
     name?: string;
     match: string[];
