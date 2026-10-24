@@ -5283,6 +5283,45 @@ function extractIchionListingMetadata(sourceContext, detailUrl) {
   return null;
 }
 
+function extractTerminalKyotoEvent(detailHtml, source, detailUrl, sourceContext = {}) {
+  const event = extractGenericEvent(detailHtml, source, detailUrl);
+  const periodRow = selectElements(detailHtml, '.info_table tr').find(
+    (row) => selectorTextValues(row, ['th'])[0] === '期間',
+  );
+  const dateText = selectorTextValues(periodRow ?? '', ['td'])[0] ?? '';
+  const parsed = parseGenericDateRange(dateText);
+  const detailPath = decodeURI(new URL(detailUrl).pathname);
+  let description = null;
+
+  for (const listingPage of sourceContext.listingPages ?? []) {
+    for (const card of selectElements(listingPage.html, '.monthly_wrap li.entry')) {
+      const href = selectorAttributeValues(card, ['dt a'], ['href'])[0];
+      const url = href ? normalizeUrl(href, listingPage.url) : null;
+      if (!url || decodeURI(new URL(url).pathname) !== detailPath) continue;
+      description = selectorTextValues(card, ['dl dd'])[0] ?? null;
+      break;
+    }
+    if (description) break;
+  }
+
+  return resolveEventDescription(
+    {
+      ...event,
+      ...(description ? { description, _description_origin: 'source_specific_extractor' } : {}),
+      date_text: dateText || 'See source page',
+      start_date: parsed.startDate,
+      end_date: parsed.endDate,
+      ...buildScheduleFields({ startDate: parsed.startDate, endDate: parsed.endDate }),
+      calendar_starts_at: parsed.calendarStartsAt,
+      calendar_ends_at: parsed.calendarEndsAt,
+      _date_origin: 'source_specific_extractor',
+      _date_parser: parsed.parserId ?? null,
+    },
+    source,
+    { html: detailHtml },
+  );
+}
+
 function extractIchionEvent(detailHtml, source, detailUrl, sourceContext = {}) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const listing = extractIchionListingMetadata(sourceContext, detailUrl);
@@ -7528,6 +7567,7 @@ const eventExtractors = {
   'standing-pine-tokyo': extractStandingPineEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
   'tezukayama-gallery': extractTezukayamaEvent,
+  'the-terminal-kyoto': extractTerminalKyotoEvent,
   zenbi: extractZenbiEvent,
 };
 
