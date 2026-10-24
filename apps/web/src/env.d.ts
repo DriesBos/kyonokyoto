@@ -11,6 +11,7 @@ declare namespace App {
 interface Window {
   __appleCalendarBound?: boolean;
   __eventCardToggleBound?: boolean;
+  __eventImageFallbackBound?: boolean;
   __eventStarsBound?: boolean;
   __generalButtonDotBound?: boolean;
   __mapResizerBound?: boolean;
