@@ -5,6 +5,7 @@ import partytown from '@astrojs/partytown';
 import { readdirSync, readFileSync } from 'node:fs';
 
 const sourceConfigDirectory = new URL('../../data/sources/', import.meta.url);
+const permanentConfigDirectory = new URL('../../data/permanent/', import.meta.url);
 const sharedImageHosts = [
   'art-view.roppongihills.com',
   'atz-image.s3.ap-northeast-1.amazonaws.com',
@@ -49,10 +50,34 @@ const sourceImagePatterns = readdirSync(sourceConfigDirectory)
     });
   });
 
+const permanentImagePatterns = readdirSync(permanentConfigDirectory)
+  .filter((fileName) => fileName.endsWith('-permanent.json'))
+  .flatMap((fileName) => {
+    const config = JSON.parse(readFileSync(new URL(fileName, permanentConfigDirectory), 'utf8'));
+    const venues = config.items ?? [];
+    return venues.flatMap((venue) =>
+      [venue.primary_image_url, ...(venue.image_urls ?? [])].flatMap((imageUrl) => {
+        try {
+          const url = new URL(imageUrl);
+          return [{ protocol: url.protocol.slice(0, -1), hostname: url.hostname }];
+        } catch {
+          return [];
+        }
+      }),
+    );
+  });
+
+// Sites often mix http and https image URLs, so allow both protocols for every known host.
 export const imageRemotePatterns = [
   ...sourceImagePatterns,
+  ...permanentImagePatterns,
   ...sharedImageHosts.map((hostname) => ({ protocol: 'https', hostname })),
 ]
+  .filter(({ protocol }) => protocol === 'https' || protocol === 'http')
+  .flatMap(({ hostname }) => [
+    { protocol: 'http', hostname },
+    { protocol: 'https', hostname },
+  ])
   .filter(({ hostname }) => /^[a-z0-9.-]+$/i.test(hostname))
   .filter(
     ({ protocol, hostname }, index, patterns) =>

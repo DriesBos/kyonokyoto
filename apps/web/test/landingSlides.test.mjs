@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
 
@@ -43,6 +43,32 @@ test('Astro Image CDN config permits only explicit source protocols and hosts', 
       (pattern) => pattern.protocol === 'http' && pattern.hostname === 'www.snowcontemporary.com',
     ),
   );
+});
+
+test('Image allowlists cover permanent venue images and http variants of https sources', async () => {
+  const { imageRemotePatterns } = await import('../astro.config.mjs');
+  const permanentDirectory = resolve(repositoryRoot, 'data/permanent');
+  const imageUrls = readdirSync(permanentDirectory)
+    .filter((fileName) => fileName.endsWith('-permanent.json'))
+    .flatMap((fileName) => {
+      const config = JSON.parse(readFileSync(resolve(permanentDirectory, fileName), 'utf8'));
+      return (config.items ?? []).flatMap((item) => [
+        item.primary_image_url,
+        ...(item.image_urls ?? []),
+      ]);
+    })
+    .filter(Boolean);
+
+  assert.ok(imageUrls.length > 0);
+  for (const imageUrl of [...imageUrls, 'http://gallery-yamahon.com/wp-content/image.jpg']) {
+    const { protocol, hostname } = new URL(imageUrl);
+    assert.ok(
+      imageRemotePatterns.some(
+        (pattern) => `${pattern.protocol}:` === protocol && pattern.hostname === hostname,
+      ),
+      `${imageUrl} is missing from Astro image.remotePatterns`,
+    );
+  }
 });
 
 test('Netlify Image CDN allowlist covers every Astro remote host', async () => {

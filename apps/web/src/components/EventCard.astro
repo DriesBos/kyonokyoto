@@ -313,9 +313,11 @@ const isFestivalEdition = event.event_kind === 'festival' && Boolean(festivalUrl
 <script>
   import { initAppleCalendar } from '../scripts/appleCalendar';
   import { initEventCardControls } from '../scripts/eventCardControls';
+  import { initEventImageFallback } from '../scripts/eventImageFallback';
   import { initEventStars } from '../scripts/eventStars';
 
   initEventCardControls();
+  initEventImageFallback();
   initEventStars();
   initAppleCalendar();
 </script>
