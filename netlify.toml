@@ -7,7 +7,7 @@
   directory = "apps/web/.netlify/v1/functions"
 
 [build.environment]
-  NODE_VERSION = "22.22.0"
+  NODE_VERSION = "22.23.4"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
 
 [images]
