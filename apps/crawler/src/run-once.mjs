@@ -322,6 +322,26 @@ function sourceSkipsUrl(source, url) {
   });
 }
 
+function getSourceTitleExclusionReason(source, title) {
+  const patterns = source?.crawl_hints?.exclude_title_patterns;
+  if (!Array.isArray(patterns) || !patterns.length) return null;
+
+  const normalizedTitle = String(title ?? '').trim();
+  if (!normalizedTitle) return null;
+
+  const matchedPattern = patterns.find((pattern) => {
+    if (typeof pattern !== 'string' || !pattern.trim()) return false;
+
+    try {
+      return new RegExp(pattern.trim(), 'iu').test(normalizedTitle);
+    } catch {
+      return false;
+    }
+  });
+
+  return matchedPattern ? `excluded title pattern: ${matchedPattern.trim()}` : null;
+}
+
 function getLocalizedSourceName(source, locale) {
   const normalizedLocale = normalizeLocaleCode(locale) ?? getSourceLocale(source);
   const names = source?.names && typeof source.names === 'object' ? source.names : {};
@@ -2369,6 +2389,28 @@ function canonicalWixImageUrl(url) {
   return match ? `https://static.wixstatic.com/media/${match[1]}` : url;
 }
 
+// WordPress serves resized copies as name-1280x853.jpg / name-scaled.jpg next to the original.
+function imageDedupeKey(url) {
+  return url.replace(/-(?:\d+x\d+|scaled)(\.(?:jpe?g|png|gif|webp|avif))(?=$|[?#])/i, '$1');
+}
+
+function isOriginalImageVariant(url) {
+  return imageDedupeKey(url) === url;
+}
+
+// Collapses size variants of the same asset, keeping the first position and preferring the original.
+function dedupeImageUrls(urls) {
+  const byKey = new Map();
+  for (const url of urls) {
+    const key = imageDedupeKey(url);
+    const existing = byKey.get(key);
+    if (!existing || (!isOriginalImageVariant(existing) && isOriginalImageVariant(url))) {
+      byKey.set(key, url);
+    }
+  }
+  return [...byKey.values()];
+}
+
 function finalizeImageUrls(candidates, baseUrl, { preserveOrder = false } = {}) {
   const accepted = [];
 
@@ -2404,9 +2446,19 @@ function finalizeImageUrls(candidates, baseUrl, { preserveOrder = false } = {}) 
 
   const deduped = new Map();
   for (const candidate of accepted) {
-    const existing = deduped.get(candidate.url);
-    if (!existing || candidate.score > existing.score) {
-      deduped.set(candidate.url, candidate);
+    const key = imageDedupeKey(candidate.url);
+    const existing = deduped.get(key);
+    const candidateIsOriginal = isOriginalImageVariant(candidate.url);
+    const existingIsOriginal = existing ? isOriginalImageVariant(existing.url) : false;
+    if (
+      !existing ||
+      (candidateIsOriginal && !existingIsOriginal) ||
+      (candidateIsOriginal === existingIsOriginal && candidate.score > existing.score)
+    ) {
+      deduped.set(key, {
+        ...candidate,
+        index: Math.min(candidate.index, existing?.index ?? Infinity),
+      });
     }
   }
 
@@ -5590,6 +5642,61 @@ function extractSinSinEvent(detailHtml, source, detailUrl, sourceContext = {}) {
   };
 }
 
+function extractKarimokuCommonsEvent(detailHtml, source, detailUrl) {
+  const genericEvent = extractGenericEvent(detailHtml, source, detailUrl);
+  const headingTitle = stripTags(detailHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '');
+  // Post titles carry a 【Kyoto/Exhibition】 style category prefix.
+  const title = headingTitle.replace(/^【[^】]*】\s*/u, '').trim() || genericEvent.title;
+  const bodyHtml =
+    detailHtml.match(
+      /<div\b[^>]*class=(['"])[^'"]*\btext-wrapper\b[^'"]*\1[^>]*>([\s\S]*?)<\/div>/i,
+    )?.[2] ?? '';
+  const bodyLines = stripTags(bodyHtml.replace(/<br\s*\/?>/gi, '\n'))
+    .split('\n')
+    .map((line) => line.trim());
+  // Labels at line start only, so 申込期間 (application window) never matches 期間.
+  const labelledDate = ['会期', '期間', '日程', '日時']
+    .map((label) =>
+      bodyLines
+        .map((line) => line.match(new RegExp(`^${label}\\s*[：:]\\s*(.+)$`, 'u'))?.[1])
+        .find(Boolean),
+    )
+    .find(Boolean);
+  const dateText = labelledDate
+    ?.replace(
+      /^((\d{4})年(\d{1,2})月)(\d{1,2})日(.*?[–—〜～\-－]\s*)(\d{1,2})日/u,
+      '$1$4日$5$2年$3月$6日',
+    )
+    .trim();
+  const parsedDates = dateText ? parseGenericDateRange(dateText) : null;
+  const imageUrl = normalizeUrl(
+    detailHtml.match(
+      /<figure\b[^>]*class=(['"])[^'"]*\bthumb\b[^'"]*\1[^>]*>\s*<img\b[^>]*\bsrc=(['"])([^'"]+)\2/i,
+    )?.[3],
+    detailUrl,
+  );
+
+  return {
+    ...genericEvent,
+    title,
+    _raw_title: headingTitle || null,
+    ...(parsedDates?.startDate
+      ? {
+          date_text: dateText,
+          start_date: parsedDates.startDate,
+          end_date: parsedDates.endDate,
+          ...buildScheduleFields({
+            startDate: parsedDates.startDate,
+            endDate: parsedDates.endDate,
+          }),
+          calendar_starts_at: parsedDates.calendarStartsAt,
+          calendar_ends_at: parsedDates.calendarEndsAt,
+        }
+      : {}),
+    ...(imageUrl ? { primary_image_url: imageUrl, image_urls: [imageUrl] } : {}),
+  };
+}
+
 function extractKitanoEvent(detailHtml, source, detailUrl) {
   const eventId = new URL(detailUrl).hash.slice(1);
   const start = detailHtml.search(
@@ -6143,17 +6250,15 @@ function extractSamacEvent(detailHtml, source, detailUrl) {
 function extractTezukayamaEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
   const galleryHtml = selectElements(detailHtml, '.p-event-gallery')[0] ?? '';
-  const imageUrls = [
-    ...new Set(
-      [...galleryHtml.matchAll(/<a\b[^>]*>/gi)]
-        .map((match) => parseTagAttributes(match[0]))
-        .filter((attributes) =>
-          (attributes.class ?? '').split(/\s+/).includes('c-image-gallery-item'),
-        )
-        .map((attributes) => normalizeUrl(attributes.href, detailUrl))
-        .filter(Boolean),
-    ),
-  ].slice(0, MAX_IMAGES_PER_EVENT);
+  const imageUrls = dedupeImageUrls(
+    [...galleryHtml.matchAll(/<a\b[^>]*>/gi)]
+      .map((match) => parseTagAttributes(match[0]))
+      .filter((attributes) =>
+        (attributes.class ?? '').split(/\s+/).includes('c-image-gallery-item'),
+      )
+      .map((attributes) => normalizeUrl(attributes.href, detailUrl))
+      .filter(Boolean),
+  ).slice(0, MAX_IMAGES_PER_EVENT);
 
   return {
     ...event,
@@ -7584,6 +7689,7 @@ const eventExtractors = {
   kyotographie: extractKyotographieEvent,
   kyotophonie: extractKyotophonieEvent,
   kankakari: extractKankakariEvent,
+  'karimoku-commons-kyoto': extractKarimokuCommonsEvent,
   kuramonzen: extractKuramonzenEvent,
   'kusakabe-gallery': extractKusakabeEvent,
   'leica-gallery-kyoto': extractLeicaKyotoEvent,
@@ -9374,7 +9480,7 @@ async function normalizeEventImagesForSource(
   const acceptedImageMetadata = [];
   let probeCount = 0;
 
-  for (const imageUrl of [...new Set(imageUrls)]) {
+  for (const imageUrl of dedupeImageUrls(imageUrls)) {
     if (acceptedImageUrls.length >= MAX_IMAGES_PER_EVENT) break;
     let dimensions = getImageCandidateDimensions({}, imageUrl);
     if (isLowResolutionEventMedia(dimensions)) continue;
@@ -9948,6 +10054,18 @@ async function crawlSource({
       recordDescriptionExtraction(diagnostics, extractedEvent);
       const isFestivalProgram = Boolean(savedFestival);
 
+      const titleExclusionReason =
+        getSourceTitleExclusionReason(crawlSourceConfig, extractedEvent._raw_title) ??
+        getSourceTitleExclusionReason(crawlSourceConfig, extractedEvent.title);
+      if (titleExclusionReason) {
+        pushSkippedEvent(skippedEvents, diagnostics, {
+          detailUrl,
+          title: extractedEvent.title,
+          reason: titleExclusionReason,
+        });
+        continue;
+      }
+
       if (!hasValidEventTitle(extractedEvent)) {
         pushSkippedEvent(skippedEvents, diagnostics, {
           detailUrl,
@@ -10391,6 +10509,7 @@ export {
   getSourceDetailLimit,
   getSourceInlineProgramLimit,
   getSourceSpecificSkipReason,
+  getSourceTitleExclusionReason,
   getSourceTruthSkipReason,
   hasVerifiedOpenEndedSchedule,
   hasExtractedImage,
@@ -10423,6 +10542,7 @@ export {
   sanitizePostgresJson,
   sanitizePostgresText,
   stripInlineImageData,
+  extractKarimokuCommonsEvent,
   extractRakuMuseumEvent,
   extractSenOkuEvent,
   sourceContextLoaders,

@@ -534,7 +534,7 @@
         "listing_links": "main a",
         "images": "main img"
       },
-      "beta": true,
+      "beta": false,
       "locales": {
         "ja": {
           "start_urls": [
@@ -610,7 +610,7 @@
         "description": ".section p",
         "images": ".kv img, .image img"
       },
-      "beta": true,
+      "beta": false,
       "locales": {
         "ja": {
           "start_urls": ["https://ichion-contemporary.com/exhibition/"],
@@ -1103,7 +1103,7 @@
         "description": ".ex-contents-about p",
         "images": "#mvSlider img"
       },
-      "beta": true,
+      "beta": false,
       "locales": {
         "ja": {
           "start_urls": ["https://www.artcourtgallery.com/exhibitions/"],
@@ -1337,7 +1337,7 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/"],
       "notes": "Official Osaka folk crafts museum site lists seasonal special exhibitions and related events.",
-      "beta": true,
+      "beta": false,
       "locales": {
         "ja": {
           "start_urls": ["https://www.mingeikan-osaka.or.jp/"],

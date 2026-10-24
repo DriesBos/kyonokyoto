@@ -236,6 +236,15 @@ function normalizeQaConfig(value = {}) {
   return output;
 }
 
+function isValidTitlePattern(pattern) {
+  try {
+    new RegExp(pattern, 'iu');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function normalizeCrawlHints(value = {}) {
   const hints = value && typeof value === 'object' ? value : {};
   const output = {};
@@ -267,6 +276,11 @@ function normalizeCrawlHints(value = {}) {
 
   const skipPatterns = normalizeStringList(hints.skip_patterns);
   if (skipPatterns.length) output.skip_patterns = skipPatterns;
+
+  const excludeTitlePatterns = normalizeStringList(hints.exclude_title_patterns).filter(
+    isValidTitlePattern,
+  );
+  if (excludeTitlePatterns.length) output.exclude_title_patterns = excludeTitlePatterns;
 
   return output;
 }

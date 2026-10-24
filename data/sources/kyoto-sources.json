@@ -2321,6 +2321,57 @@
         "render_mode": "auto",
         "max_detail_pages": 8
       }
+    },
+    {
+      "slug": "karimoku-commons-kyoto",
+      "name": "Karimoku Commons Kyoto",
+      "names": {
+        "en": "Karimoku Commons Kyoto",
+        "ja": "カリモク コモンズ 京都"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["design"],
+        "event_category": ["exhibition", "event"]
+      },
+      "language": "ja",
+      "address_text": "〒604-8182 京都市中京区姉小路通堺町西入大阪材木町685番地2番",
+      "directions_query": "Karimoku Commons Kyoto",
+      "lat": 35.0097587,
+      "lng": 135.7630759,
+      "base_url": "https://commons.karimoku.com/location/kyoto/",
+      "start_urls": ["https://commons.karimoku.com/location/kyoto/"],
+      "allowed_domains": ["commons.karimoku.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/news/detail/"],
+      "notes": "Kyoto location page is JS-rendered from microCMS and lists the latest Kyoto news posts; follow only /news/detail/ links. Post titles carry a 【City/Type】 prefix: keep Kyoto/Exhibition and Kyoto/Event, drop Kyoto/News notices (closures, opening-hour changes) plus any Tokyo or Shop posts. English detail pages exist but body text is often missing, so crawl Japanese only and machine-translate.",
+      "locales": {
+        "ja": {
+          "start_urls": ["https://commons.karimoku.com/location/kyoto/"],
+          "event_page_patterns": ["/news/detail/"]
+        }
+      },
+      "capabilities": {
+        "native_locales": ["ja"]
+      },
+      "crawl_hints": {
+        "render_mode": "always",
+        "skip_patterns": [
+          "/en/",
+          "/location/tokyo/",
+          "/collections/",
+          "/business/",
+          "/about/",
+          "/contact/"
+        ],
+        "exclude_title_patterns": [
+          "^【\\s*(Tokyo|Shop)\\b",
+          "^【\\s*Kyoto/News\\s*】",
+          "営業時間|開館時間|休業|休館|臨時|お知らせ|年末年始",
+          "\\b(opening hours|business hours|closed|closure|holiday|notice)\\b"
+        ],
+        "max_detail_pages": 8
+      }
     }
   ]
 }

@@ -184,9 +184,9 @@ test('approved source allowlist is public without changing nearby beta sources',
     'david-zwirner',
     'white-cube-hong-kong',
     'whitestone-gallery-hong-kong',
+    'i-gallery-osaka',
   ];
   const unchangedBetaSlugs = [
-    'i-gallery-osaka',
     'itsuo-art-museum',
     'gallery-nomart',
     'tokyo-opera-city-art-gallery',
@@ -2539,6 +2539,46 @@ test('Tezukayama follows status cards and keeps full gallery images', async () =
   ]);
 });
 
+test('Tezukayama collapses WordPress size variants of the same gallery image', async () => {
+  const sources = await loadSourcesConfig({ city: 'osaka' });
+  const source = sources.find((item) => item.slug === 'tezukayama-gallery');
+  const detailHtml = `
+    <h1 class="p-event-header__title">星図</h1>
+    <p class="p-event-header__period">2026.11.14 Sat - 2026.12.12 Sat</p>
+    <div class="p-event-gallery">
+      <a class="c-image-gallery-item" href="https://www.tezukayama-g.com/wp-content/uploads/2026/10/Banner_rgb-1280x853.jpg"><img src="x.jpg"></a>
+      <a class="c-image-gallery-item" href="https://www.tezukayama-g.com/wp-content/uploads/2026/10/Banner_rgb.jpg"><img src="y.jpg"></a>
+      <a class="c-image-gallery-item" href="https://www.tezukayama-g.com/wp-content/uploads/2026/10/Install-scaled.jpg"><img src="z.jpg"></a>
+    </div>
+  `;
+  const event = eventExtractors[source.slug](
+    detailHtml,
+    source,
+    'https://www.tezukayama-g.com/exhibition/star-chart',
+  );
+
+  assert.deepEqual(event.image_urls, [
+    'https://www.tezukayama-g.com/wp-content/uploads/2026/10/Banner_rgb.jpg',
+    'https://www.tezukayama-g.com/wp-content/uploads/2026/10/Install-scaled.jpg',
+  ]);
+
+  const normalized = await normalizeEventImagesForSource(
+    {
+      source_url: 'https://www.tezukayama-g.com/exhibition/star-chart',
+      primary_image_url: 'https://www.tezukayama-g.com/wp-content/uploads/2026/10/Banner_rgb.jpg',
+      image_urls: [
+        'https://www.tezukayama-g.com/wp-content/uploads/2026/10/Banner_rgb.jpg',
+        'https://www.tezukayama-g.com/wp-content/uploads/2026/10/Banner_rgb-1280x853.jpg',
+      ],
+    },
+    source,
+    { fetchImageDimensionsFn: async () => ({ width: 1600, height: 1066 }) },
+  );
+  assert.deepEqual(normalized.image_urls, [
+    'https://www.tezukayama-g.com/wp-content/uploads/2026/10/Banner_rgb.jpg',
+  ]);
+});
+
 test('generic listing selectors support common attribute filters', () => {
   const listingHtml = `
     <main>
@@ -4820,8 +4860,8 @@ test('new Osaka gallery sources discover concrete exhibition details', async () 
   assert.ok(iGallery);
   assert.ok(ichion);
   assert.equal(artAndSpace.beta, true);
-  assert.equal(iGallery.beta, true);
-  assert.equal(ichion.beta, true);
+  assert.equal(iGallery.beta, false);
+  assert.equal(ichion.beta, false);
 
   assert.deepEqual(
     extractGenericDetailUrls(

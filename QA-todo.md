@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Operations
 
+2026-10-24: Promoted Osaka i GALLERY OSAKA, ICHION CONTEMPORARY, ARTCOURT Gallery, and Osaka Nihon Mingeikan by setting `beta: false` after explicit approval; hitoto was already public. Image hosts (official domains plus `static.wixstatic.com` and `images.microcms-assets.io`) are already in the Netlify `remote_images` allowlist. Mingeikan still crawls from the homepage with a broad `/` page pattern, so watch for news/event leaks.
+
 2026-10-24: Promoted KO+GEI and ARTS&SCIENCE Kyoto by setting `beta: false` after explicit approval. Image hosts `kogeigene.com`, `www.kogeigene.com`, and `arts-science.com` are already in the Netlify `remote_images` allowlist.
 
 2026-10-01: Pinned Kyoto Art Month to its single official `ogp.jpg`. Removed Kyoto Modern Architecture Festival's generic OGP cover, leaving four programme photos. Crawler and both frontends now treat configured source/festival media as authoritative, so stale persisted images cannot leak into cards or festival detail pages. Needs targeted crawls to persist both media changes and visual approval after deploy.
