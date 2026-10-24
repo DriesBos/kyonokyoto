@@ -1411,23 +1411,48 @@
       "taxonomy": {
         "venue_category": ["gallery"],
         "display_category": ["contemporary"],
-        "event_category": ["exhibition"]
+        "event_category": ["exhibition", "event", "workshop"]
       },
       "language": "ja",
       "address_text": "424 Iwatoyama-cho, Shimogyo-ku, Kyoto 600-8445 Japan",
       "lat": 35.0007069,
       "lng": 135.7568866,
-      "base_url": "https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu",
-      "start_urls": ["https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"],
+      "directions_query": "THE TERMINAL KYOTO, 京都市下京区岩戸山町424",
+      "base_url": "https://kyoto.theterminal.jp/events/",
+      "start_urls": ["https://kyoto.theterminal.jp/events/"],
       "allowed_domains": ["kyoto.theterminal.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/event_type/exhibition/"],
-      "notes": "Japanese-only site. Use the exhibition-type filtered event listing.",
+      "event_page_patterns": ["/events/"],
+      "notes": "Japanese-only exhibition and event listing. Match listing-card descriptions to detail URLs; detail pages provide the period and event images.",
       "skip_og_image": true,
+      "selectors": {
+        "listing_links": ".monthly_wrap .entry dt a",
+        "title": ".sec_entry h2.main_title",
+        "images": ".info_bottom img"
+      },
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://kyoto.theterminal.jp/events/"]
+        },
+        "language_url_pattern": "Japanese-only URLs; machine-fill missing English event copy.",
+        "field_sources": {
+          "listing_links": ".monthly_wrap .entry dt a",
+          "title": ".sec_entry h2.main_title",
+          "date": "Detail .info_table row labeled 期間.",
+          "description": "Matching listing-card dl dd; detail pages can omit event prose.",
+          "images": "Detail .info_bottom img."
+        },
+        "date_format": "YYYY年M月D日（weekday）～M月D日（weekday）",
+        "image_rules": "Keep event images inside .info_bottom; exclude site chrome, paging arrows, and generic Open Graph media."
+      },
       "locales": {
         "ja": {
-          "start_urls": ["https://kyoto.theterminal.jp/event_type/exhibition/#pankuzu"],
-          "event_page_patterns": ["/event_type/exhibition/"]
+          "start_urls": ["https://kyoto.theterminal.jp/events/"],
+          "event_page_patterns": ["/events/"]
         },
         "en": {
           "start_urls": [],
