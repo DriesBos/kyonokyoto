@@ -93,7 +93,7 @@ node apps/crawler/src/run-once.mjs --city=osaka --source=osaka-ukiyoe-museum --g
 Crawl all Osaka sources:
 
 ```bash
-npm --prefix apps/crawler run crawl:osaka
+pnpm --filter kyo-no-kyoto-crawler crawl:osaka
 ```
 
 Production-style cycle:

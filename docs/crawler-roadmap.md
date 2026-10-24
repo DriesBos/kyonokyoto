@@ -46,7 +46,7 @@ node scripts/run-crawl-cycle.mjs --city=tokyo
 `docs/dashboard.md` is the pre-refactor baseline. Compare extractor changes without fetching new pages:
 
 ```bash
-npm --prefix apps/crawler run crawl:replay -- --city=kyoto
+pnpm --filter kyo-no-kyoto-crawler crawl:replay -- --city=kyoto
 ```
 
 Replace `kyoto` with `osaka` or `tokyo`. Replay reads latest stored detail HTML and does not write events.

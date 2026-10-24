@@ -1,6 +1,7 @@
 # Sourced after verified fast-forward; inherits launcher fd 9 lock.
 
-npm --prefix apps/crawler ci
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+corepack pnpm install --frozen-lockfile --filter kyo-no-kyoto-crawler
 
 requirements_hash=$(sha256sum apps/crawler/requirements.txt | cut -d' ' -f1)
 requirements_stamp=apps/crawler/.venv/.requirements.sha256
