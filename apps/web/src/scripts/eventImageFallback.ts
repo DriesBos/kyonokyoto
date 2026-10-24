@@ -10,9 +10,9 @@ const hideBrokenImage = (image: HTMLImageElement) => {
 
   const media = frame.closest(mediaSelector);
   if (!(media instanceof HTMLElement)) return;
-  const hasVisibleMedia = Array.from(media.querySelectorAll(`${frameSelector}, [data-youtube-embed]`)).some(
-    (element) => !(element instanceof HTMLElement && element.style.display === 'none'),
-  );
+  const hasVisibleMedia = Array.from(
+    media.querySelectorAll(`${frameSelector}, [data-youtube-embed]`),
+  ).some((element) => !(element instanceof HTMLElement && element.style.display === 'none'));
   if (!hasVisibleMedia) media.style.display = 'none';
 };
 
