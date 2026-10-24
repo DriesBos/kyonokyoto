@@ -4,6 +4,8 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Operations
 
+2026-10-24: Promoted KO+GEI and ARTS&SCIENCE Kyoto by setting `beta: false` after explicit approval. Image hosts `kogeigene.com`, `www.kogeigene.com`, and `arts-science.com` are already in the Netlify `remote_images` allowlist.
+
 2026-10-01: Pinned Kyoto Art Month to its single official `ogp.jpg`. Removed Kyoto Modern Architecture Festival's generic OGP cover, leaving four programme photos. Crawler and both frontends now treat configured source/festival media as authoritative, so stale persisted images cannot leak into cards or festival detail pages. Needs targeted crawls to persist both media changes and visual approval after deploy.
 
 2026-10-01: Promoted Art Rhizome and KYOTO EXPERIMENT by setting `beta: false` after explicit approval. Removed Kyoto/Kyōto/京都 from all seven festival source display names while preserving official edition titles, slugs, and external URLs.

@@ -16,12 +16,19 @@ const hideBrokenImage = (image: HTMLImageElement) => {
   if (!hasVisibleMedia) media.style.display = 'none';
 };
 
-const isBrokenImage = (image: HTMLImageElement) => image.complete && image.naturalWidth === 0;
+// Some browsers report deferred lazy images as complete with no size, so confirm a failure
+// with a probe request (served from cache) before hiding anything.
+const confirmBrokenImage = (image: HTMLImageElement) => {
+  const source = image.currentSrc || image.src;
+  if (!source || !image.complete || image.naturalWidth > 0) return;
+
+  const probe = new Image();
+  probe.addEventListener('error', () => hideBrokenImage(image), { once: true });
+  probe.src = source;
+};
 
 export const initEventImageFallback = () => {
-  document.querySelectorAll<HTMLImageElement>(imageSelector).forEach((image) => {
-    if (isBrokenImage(image) && image.currentSrc) hideBrokenImage(image);
-  });
+  document.querySelectorAll<HTMLImageElement>(imageSelector).forEach(confirmBrokenImage);
 
   if (window.__eventImageFallbackBound) return;
 

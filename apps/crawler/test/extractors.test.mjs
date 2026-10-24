@@ -783,6 +783,7 @@ test('Kyoto festival QA sources define 2026 parent-only editions', async () => {
     'kyoto-experiment',
     'kyoto-modern-architecture-festival',
     'curation-fair-kyoto',
+    'ko-gei-kyoto',
     'art-collaboration-kyoto',
   ]);
   const festivalDisplayNames = new Map([
@@ -4349,7 +4350,7 @@ test('ARTS&SCIENCE keeps current Kyoto details and reads only Kyoto schedule', a
   ]);
 
   assert.ok(source);
-  assert.equal(source.beta, true);
+  assert.equal(source.beta, false);
   assert.deepEqual(detailUrlExtractors[source.slug](listingJson), [kyotoUrl]);
 
   const event = eventExtractors[source.slug](

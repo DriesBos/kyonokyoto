@@ -2017,24 +2017,59 @@ function getImageAttributeDimensions(attributes) {
   };
 }
 
+// Follows the HTML srcset parsing rules: a comma only separates candidates when it trails a URL or
+// follows its descriptors, so CDN URLs with commas (Wix, Cloudinary) stay intact.
+function splitSrcsetCandidates(value) {
+  const input = String(value);
+  const candidates = [];
+  let position = 0;
+
+  while (position < input.length) {
+    while (position < input.length && /[\s,]/.test(input[position])) position += 1;
+    if (position >= input.length) break;
+
+    let url = '';
+    while (position < input.length && !/\s/.test(input[position])) {
+      url += input[position];
+      position += 1;
+    }
+
+    let descriptor = '';
+    if (/,+$/.test(url)) {
+      url = url.replace(/,+$/, '');
+    } else {
+      let inParens = false;
+      while (position < input.length) {
+        const character = input[position];
+        if (character === '(') inParens = true;
+        if (character === ')') inParens = false;
+        if (character === ',' && !inParens) break;
+        descriptor += character;
+        position += 1;
+      }
+    }
+
+    if (url) candidates.push({ url, descriptor: descriptor.trim() });
+  }
+
+  return candidates;
+}
+
 function parseLargestSrcsetCandidate(value) {
   if (!value) return null;
 
-  return String(value)
-    .split(',')
-    .map((item) => {
-      const [url, descriptor = ''] = item.trim().split(/\s+/);
+  return splitSrcsetCandidates(value)
+    .map(({ url, descriptor }) => {
       const match = descriptor.match(/^(\d+(?:\.\d+)?)(w|x)$/i);
       const amount = Number(match?.[1] ?? 0);
       const unit = match?.[2]?.toLowerCase() ?? null;
 
       return {
-        url: url || null,
+        url,
         width: unit === 'w' && amount > 0 ? Math.round(amount) : null,
         rank: unit === 'w' ? amount : unit === 'x' ? amount * 100000 : 0,
       };
     })
-    .filter((candidate) => candidate.url)
     .sort((left, right) => right.rank - left.rank)
     .at(0);
 }
@@ -2328,11 +2363,18 @@ function scoreImageCandidate(candidate) {
   return score;
 }
 
+// Wix serves the original asset at /media/<id>; drop /v1/fill/... transforms (blur, size, encoding).
+function canonicalWixImageUrl(url) {
+  const match = url.match(/^https?:\/\/static\.wixstatic\.com\/media\/([^/?#]+)\/v1\//i);
+  return match ? `https://static.wixstatic.com/media/${match[1]}` : url;
+}
+
 function finalizeImageUrls(candidates, baseUrl, { preserveOrder = false } = {}) {
   const accepted = [];
 
   for (const [index, candidate] of candidates.entries()) {
-    const url = candidate?.url ? normalizeUrl(candidate.url, baseUrl) : null;
+    const normalizedUrl = candidate?.url ? normalizeUrl(candidate.url, baseUrl) : null;
+    const url = normalizedUrl ? canonicalWixImageUrl(normalizedUrl) : null;
     if (!url) continue;
 
     const { width, height } = getImageCandidateDimensions(candidate, url);
