@@ -197,7 +197,7 @@ First matching location wins. If nothing matches, source `lat`/`lng` are used.
 
 1. Add source config.
 2. Run `node scripts/sync-sources.mjs --city=<city>`; review prune candidates without pruning.
-3. Run `npm --prefix apps/crawler test`.
+3. Run `pnpm --filter kyo-no-kyoto-crawler test`.
 4. Run one source crawl locally or on VPS with `--city=<city>`.
 5. Check crawl result:
    - detail URLs found
@@ -205,4 +205,4 @@ First matching location wins. If nothing matches, source `lat`/`lng` are used.
    - date parsed
    - image present
    - translations native or machine-filled
-6. Run `npm --prefix apps/web run build`.
+6. Run `pnpm --filter kyo-no-kyoto-web build`.

@@ -124,14 +124,12 @@ export const resolveFestivalEvents = (
 ): EventRow[] => {
   return rows
     .filter((row) => row.event_kind !== 'festival_program')
-    .map(
-      (row): EventRow => ({
-        ...row,
-        date_text: row.date_text ?? '',
-        institution_name: row.institution_name ?? '',
-        source_url: row.source_url ?? '',
-      }),
-    );
+    .map((row): EventRow => ({
+      ...row,
+      date_text: row.date_text ?? '',
+      institution_name: row.institution_name ?? '',
+      source_url: row.source_url ?? '',
+    }));
 };
 
 export const localizeEvent = (event: EventRow, activeLocale: AppLocale): EventRow => {

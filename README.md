@@ -17,19 +17,17 @@ Source JSON defines venue truth. VPS crawler fetches event pages, stores normali
 ## Requirements
 
 - Node `22.22.0` or a newer Node 22 release
-- npm
+- pnpm 11.23
 - Python 3.12 for Crawl4AI
 - Supabase project
 
 ## Install
 
 ```bash
-npm ci
-npm ci --prefix apps/crawler
-npm ci --prefix apps/web
+corepack pnpm install --frozen-lockfile
 ```
 
-Use committed npm lockfiles. Do not regenerate pnpm metadata.
+Use the committed pnpm lockfile. Do not create npm lockfiles in workspace packages.
 
 ## Environment
 
@@ -63,7 +61,7 @@ Crawler service output goes to journald. Before deploying its unit change, check
 Create schema changes with Supabase CLI migrations:
 
 ```bash
-npx supabase migration new change_name
+pnpm dlx supabase migration new change_name
 ```
 
 Test locally with `supabase db reset`, then coordinate one remote `supabase db push`. Do not edit live schema first. Keep `supabase/schema.sql` aligned with migrations.
@@ -98,7 +96,7 @@ Removing at least five rows or 25% of city rows also requires `--allow-large-pru
 Tune one source:
 
 ```bash
-npm --prefix apps/crawler run crawl:once -- --city=kyoto --source=<slug>
+pnpm --filter kyo-no-kyoto-crawler crawl:once -- --city=kyoto --source=<slug>
 ```
 
 Run production-style city cycle from repo root:
@@ -114,10 +112,10 @@ See `docs/adding-sources.md`, `docs/source-config.md`, and `QA-routine.md` for s
 ## Checks
 
 ```bash
-npm run format:check
-npm --prefix apps/crawler test
-npm --prefix apps/web test
-npm --prefix apps/web run build
+pnpm format:check
+pnpm --filter kyo-no-kyoto-crawler test
+pnpm --filter kyo-no-kyoto-web test
+pnpm --filter kyo-no-kyoto-web build
 node scripts/source-sync-safety.mjs
 ```
 

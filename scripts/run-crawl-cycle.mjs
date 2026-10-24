@@ -166,8 +166,8 @@ try {
   const translationsPassed =
     (await runStep(
       'Check translations',
-      'npm',
-      ['--prefix', 'apps/crawler', 'run', 'translations:check'],
+      'corepack',
+      ['pnpm', '--filter', 'kyo-no-kyoto-crawler', 'translations:check'],
       { allowFailure: true },
     )) === 0;
 
