@@ -84,6 +84,9 @@ Current lazy-image policy:
 - Crawl4AI retry supports source-specific `wait_for`, `wait_for_images`, and `scan_full_page`. Full-page scanning stays off by default; rendered media still feeds existing deterministic image selection.
 - Renderer preserves raw HTML and also returns `cleaned_html` plus pruning-filtered `fit_html`. Processed HTML may recover description prose, but never replaces raw extraction evidence.
 - Known `selectors.description` values become Crawl4AI `target_elements` on rendered detail pages. Generic pages still use the shared deterministic description resolver.
+- One `crawl4ai-fetch.py --serve` child (and one headless browser) is reused for the whole crawl process, speaking JSON lines over stdin/stdout. It restarts after a timeout, crash, oversized response, or `CRAWL4AI_MAX_RENDERS_PER_BROWSER` renders (default 100). Network guards are attached per page because Crawl4AI reuses browser contexts.
+- Rendered pages skip fonts, audio/video, and common analytics hosts. Images, scripts, and stylesheets still load. Native-locale pages (translation text only) do not wait for images unless the source sets `wait_for_images: true`.
+- Crawl4AI's own cache is disabled; every render is fresh.
 - Use `--render=always` or `CRAWL4AI_RENDER_MODE=always` only when discovery itself needs browser rendering, such as JavaScript-built listing pages.
 - Use `CRAWL4AI_RENDER_MODE=never` for local static-only tuning or when Crawl4AI is not installed.
 

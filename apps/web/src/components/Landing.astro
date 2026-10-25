@@ -1,7 +1,8 @@
 ---
 import Icon from './Icon.astro';
 import Logo from './Logo.astro';
-import type { LandingSlide } from '../lib/landingSlides';
+import { landingPictureSourcesFor } from '../lib/landingImages';
+import { landingSlidesWithHero, type LandingSlide } from '../lib/landingSlides';
 import { serializeInlineJson } from '../../../../packages/shared/inline-json.mjs';
 
 type Props = {
@@ -27,7 +28,10 @@ const {
   heading = `${cityLabel} art exhibitions and cultural events`,
 } = Astro.props;
 const landingLabel = `What's on in ${cityLabel}`;
-const slidesJson = serializeInlineJson(slides);
+const { slides: orderedSlides, hero } = landingSlidesWithHero(slides);
+const heroSources = hero ? landingPictureSourcesFor(hero) : [];
+const heroFallback = heroSources.find((source) => !source.media);
+const slidesJson = serializeInlineJson(orderedSlides);
 ---
 
 <section class="landing" data-landing aria-label={`${brandLabel}: ${landingLabel}`}>
@@ -36,7 +40,31 @@ const slidesJson = serializeInlineJson(slides);
     slides.length > 0 ? (
       <>
         <span class="landing__background" data-landing-slider aria-hidden="true">
-          <span class="landing__slides" data-landing-slider-slides />
+          <span class="landing__slides" data-landing-slider-slides>
+            {hero && heroFallback?.fallbackSrc ? (
+              <span
+                class="landing__slide"
+                data-landing-slide-index="0"
+                data-landing-hero={hero.src}
+              >
+                <picture>
+                  {heroSources
+                    .filter((source) => source.media)
+                    .map((source) => (
+                      <source media={source.media} srcset={source.srcset} sizes={source.sizes} />
+                    ))}
+                  <img
+                    src={heroFallback.fallbackSrc}
+                    srcset={heroFallback.srcset}
+                    sizes={heroFallback.sizes}
+                    alt=""
+                    decoding="async"
+                    fetchpriority="high"
+                  />
+                </picture>
+              </span>
+            ) : null}
+          </span>
           <span class="landing__shutters" data-landing-slider-shutters />
         </span>
         <script type="application/json" data-landing-slider-payload set:html={slidesJson} />

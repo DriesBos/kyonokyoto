@@ -67,7 +67,7 @@ import {
   resolveRendererNavigationUrl,
   resolveEventDescription,
   shouldRetryDetailWithCrawl4Ai,
-  runJsonCommand,
+  createJsonLinesRenderer,
   sourceContextLoaders,
   sourceSpecificSkipMatchers,
   sourceHasNativeLocale,
@@ -575,20 +575,48 @@ test('renderer child gets bounded output, runtime, and scrubbed environment', as
   });
   assert.deepEqual(rendererEnv, { PATH: '/usr/bin', HOME: '/tmp/home' });
 
-  await assert.rejects(
-    () =>
-      runJsonCommand(process.execPath, ['-e', "process.stdout.write('x'.repeat(1000))"], {
-        maxOutputBytes: 100,
-      }),
-    /output exceeded 100 bytes/,
+  const flood = createJsonLinesRenderer(
+    process.execPath,
+    ['-e', "process.stdin.once('data', () => process.stdout.write('x'.repeat(1000)))"],
+    { maxOutputBytes: 100 },
   );
+  await assert.rejects(() => flood.render({ url: 'a' }), /output exceeded 100 bytes/);
+
+  const silent = createJsonLinesRenderer(process.execPath, ['-e', 'process.stdin.resume()']);
   await assert.rejects(
-    () =>
-      runJsonCommand(process.execPath, ['-e', 'setTimeout(() => {}, 1000)'], {
-        timeoutMs: 25,
-      }),
+    () => silent.render({ url: 'a' }, { timeoutMs: 25 }),
     /timed out after 25ms/,
   );
+  silent.close();
+});
+
+test('renderer child stays alive between renders and restarts after a failure', async () => {
+  const echo = [
+    '-e',
+    `let calls = 0;
+    require('node:readline').createInterface({ input: process.stdin }).on('line', (line) => {
+      const request = JSON.parse(line);
+      calls += 1;
+      if (request.url === 'hang') return;
+      process.stdout.write(JSON.stringify({ id: request.id, url: request.url, pid: process.pid, calls }) + '\\n');
+    });`,
+  ];
+  const renderer = createJsonLinesRenderer(process.execPath, echo);
+
+  const [first, second] = await Promise.all([
+    renderer.render({ url: 'https://example.test/a' }),
+    renderer.render({ url: 'https://example.test/b' }),
+  ]);
+  assert.equal(first.url, 'https://example.test/a');
+  assert.equal(second.url, 'https://example.test/b');
+  assert.equal(second.pid, first.pid);
+  assert.equal(second.calls, 2);
+
+  await assert.rejects(() => renderer.render({ url: 'hang' }, { timeoutMs: 25 }), /timed out/);
+  const restarted = await renderer.render({ url: 'https://example.test/c' });
+  assert.notEqual(restarted.pid, first.pid);
+  assert.equal(restarted.calls, 1);
+  renderer.close();
 });
 
 test('retry delay caps external Retry-After values', () => {

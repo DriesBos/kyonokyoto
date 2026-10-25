@@ -1,4 +1,5 @@
 import type { ClassifiedEvent, EventImageMetadata } from './events';
+import { coverDensityFor } from './landingImages.ts';
 
 export type LandingSlideImage = {
   src: string;
@@ -65,4 +66,36 @@ export const landingSlidesForEvents = ({
   }
 
   return slides;
+};
+
+// Viewport sizes the server-rendered first slide should cover, strictest first.
+// The slider caps its eligibility target at 1920x1080, so the first threshold
+// makes the hero eligible on every screen.
+const heroCoverTargets = [
+  { width: 1920, height: 1080 },
+  { width: 1440, height: 900 },
+];
+
+export const landingSlidesWithHero = (
+  slides: LandingSlide[],
+): { slides: LandingSlide[]; hero: LandingSlideImage | null } => {
+  for (const target of heroCoverTargets) {
+    for (const [slideIndex, slide] of slides.entries()) {
+      const hero = slide.images.find(
+        (image) => coverDensityFor(image, target.width, target.height) >= 1,
+      );
+      if (!hero) continue;
+
+      const heroSlide = {
+        ...slide,
+        images: [hero, ...slide.images.filter((image) => image !== hero)],
+      };
+      return {
+        slides: [heroSlide, ...slides.filter((_, index) => index !== slideIndex)],
+        hero,
+      };
+    }
+  }
+
+  return { slides, hero: null };
 };

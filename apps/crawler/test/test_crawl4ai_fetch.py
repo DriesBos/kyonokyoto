@@ -53,6 +53,28 @@ class Crawl4AiNetworkGuardTest(unittest.TestCase):
         self.assertIn('route_web_socket("**", block_web_socket)', source)
         self.assertIn("ServiceWorkerContainer.prototype", MODULE.SERVICE_WORKER_BLOCK_SCRIPT)
 
+    def test_reused_browser_contexts_get_page_scoped_guards(self):
+        source = MODULE_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('await page.route("**", route_filter)', source)
+        self.assertIn("await page.add_init_script(SERVICE_WORKER_BLOCK_SCRIPT)", source)
+        self.assertNotIn("context.route(", source)
+        self.assertNotIn("context.add_init_script(", source)
+
+    def test_fonts_media_and_analytics_are_skipped(self):
+        class Request:
+            def __init__(self, url, resource_type):
+                self.url = url
+                self.resource_type = resource_type
+
+        skip = MODULE.is_skippable_resource
+        self.assertTrue(skip(Request("https://museum.example/font.woff2", "font")))
+        self.assertTrue(skip(Request("https://museum.example/trailer.mp4", "media")))
+        self.assertTrue(skip(Request("https://www.googletagmanager.com/gtag/js", "script")))
+        self.assertFalse(skip(Request("https://museum.example/hero.jpg", "image")))
+        self.assertFalse(skip(Request("https://museum.example/app.js", "script")))
+        self.assertFalse(skip(Request("https://museum.example/site.css", "stylesheet")))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,7 @@ import test from 'node:test';
 
 const componentPath = resolve(import.meta.dirname, '../src/components/Landing.astro');
 const scriptPath = resolve(import.meta.dirname, '../src/scripts/landingSlider.ts');
+const imagesPath = resolve(import.meta.dirname, '../src/lib/landingImages.ts');
 
 test('landing slider styles target JS-created elements globally', async () => {
   const component = await readFile(componentPath, 'utf8');
@@ -26,15 +27,16 @@ test('landing slider styles target JS-created elements globally', async () => {
 
 test('landing slider caps dimension-qualified Netlify image transforms', async () => {
   const script = await readFile(scriptPath, 'utf8');
+  const images = await readFile(imagesPath, 'utf8');
 
   assert.match(script, /const minimumCoverDensity = 1/);
   assert.match(script, /const maximumCoverDensity = 2/);
   assert.match(script, /const maximumRequiredWidth = 1920/);
   assert.match(script, /const maximumRequiredHeight = 1080/);
-  assert.match(script, /const maximumTransformWidth = 2560/);
-  assert.match(script, /const maximumTransformHeight = 1440/);
-  assert.match(script, /\/\.netlify\/images/);
-  assert.match(script, /fit: 'cover'/);
+  assert.match(images, /const maximumTransformWidth = 2560/);
+  assert.match(images, /const maximumTransformHeight = 1440/);
+  assert.match(images, /\/\.netlify\/images/);
+  assert.match(images, /fit: 'cover'/);
   assert.match(script, /image\.fetchPriority = index === 0 \? 'high' : 'low'/);
   assert.match(script, /image\.decode\(\)/);
 });
@@ -84,7 +86,6 @@ test('landing text blends over images and stays white over animated shutters', a
     script.indexOf('const run = async'),
     script.indexOf('createSlideElements('),
   );
-  const assignSource = activateSlide.indexOf('image.src = resolvedSlides[index].src');
   const activateFrame = activateSlide.indexOf("slide.toggleAttribute('data-active'");
   const markReady = activateSlide.indexOf("root.toggleAttribute('data-landing-slider-ready'");
 
@@ -99,8 +100,9 @@ test('landing text blends over images and stays white over animated shutters', a
   assert.match(script, /content\.cloneNode\(true\)/);
   assert.match(script, /fill\.append\(whiteContent\)/);
   assert.doesNotMatch(createSlides, /image\.src\s*=|data-active/);
-  assert.ok(assignSource >= 0 && assignSource < activateFrame && activateFrame < markReady);
-  assert.ok(run.indexOf('await preloadImage(') < run.indexOf('setActiveSlide(activeIndex)'));
+  assert.match(script, /if \(!image\.getAttribute\('src'\)\) image\.src = src/);
+  assert.ok(activateFrame >= 0 && activateFrame < markReady);
+  assert.ok(run.indexOf('await loadSlide(') < run.indexOf('setActiveSlide(activeIndex)'));
   assert.match(script, /root\.removeAttribute\('data-landing-slider-ready'\)/);
   assert.doesNotMatch(script, /mixBlendMode/);
 });
@@ -269,4 +271,21 @@ test('scroll helpers use page fallback when events section is not scrollable', a
   assert.match(helper, /scrollRootFor/);
   assert.match(helper, /scrollHeight > element\.clientHeight \+ 1/);
   files.forEach((source) => assert.match(source, /scrollRootFor/));
+});
+
+test('landing renders the first slide on the server and reveals it without a solid hold', async () => {
+  const component = await readFile(componentPath, 'utf8');
+  const script = await readFile(scriptPath, 'utf8');
+  const run = script.slice(
+    script.indexOf('const run = async'),
+    script.indexOf('createSlideElements('),
+  );
+
+  assert.match(component, /data-landing-hero=\{hero\.src\}/);
+  assert.match(component, /<source media=\{source\.media\}/);
+  assert.match(component, /fetchpriority="high"/);
+  assert.match(script, /heroFrame\.dataset\.landingHero === resolvedSlides\[0\]\.imageSrc/);
+  assert.match(run, /if \(!firstReveal\) await wait\(solidHoldSeconds\)/);
+  assert.match(run, /loadSlide\(\(activeIndex \+ 1\) % resolvedSlides\.length\)/);
+  assert.doesNotMatch(script, /new Image\(\)/);
 });

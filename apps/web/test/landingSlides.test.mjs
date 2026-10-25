@@ -3,7 +3,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
 
-import { landingSlidesForEvents } from '../src/lib/landingSlides.ts';
+import { landingPictureSourcesFor } from '../src/lib/landingImages.ts';
+import { landingSlidesForEvents, landingSlidesWithHero } from '../src/lib/landingSlides.ts';
 import { coverDensityFor, resolveLandingSlides } from '../src/scripts/landingSlider.ts';
 
 const repositoryRoot = resolve(import.meta.dirname, '../../..');
@@ -278,4 +279,80 @@ test('landing transforms never exceed 2560 by 1440', () => {
   });
 
   assert.deepEqual({ width: slide.width, height: slide.height }, { width: 2560, height: 1440 });
+});
+
+test('nearby desktop viewports share one bucketed transform URL', () => {
+  const slides = [
+    {
+      images: [{ src: 'https://example.test/shared.jpg', width: 2400, height: 1600 }],
+      title: 'Shared',
+      sourceSlug: 'shared',
+    },
+  ];
+  const srcFor = (viewportWidth, viewportHeight) =>
+    resolveLandingSlides({ slides, viewportWidth, viewportHeight, devicePixelRatio: 1 })[0].src;
+
+  assert.equal(srcFor(1440, 900), srcFor(1536, 864));
+  const url = new URL(srcFor(1440, 900), 'https://example.test');
+  assert.deepEqual([url.searchParams.get('w'), url.searchParams.get('h')], ['1600', '900']);
+});
+
+test('landing hero is the first slide whose image covers every viewport', () => {
+  const small = { src: 'https://example.test/small.jpg', width: 1200, height: 800 };
+  const large = { src: 'https://example.test/large.jpg', width: 2400, height: 1600 };
+  const { slides, hero } = landingSlidesWithHero([
+    { images: [small], title: 'Small', sourceSlug: 'a' },
+    { images: [small, large], title: 'Large', sourceSlug: 'b' },
+  ]);
+
+  assert.equal(hero, large);
+  assert.deepEqual(
+    slides.map((slide) => slide.title),
+    ['Large', 'Small'],
+  );
+  assert.equal(slides[0].images[0], large);
+  assert.equal(
+    landingSlidesWithHero([{ images: [small], title: 'Small', sourceSlug: 'a' }]).hero,
+    null,
+  );
+});
+
+test('server hero srcsets contain the transforms the slider script requests', () => {
+  const image = { src: 'https://example.test/hero.jpg', width: 2400, height: 1600 };
+  const slides = [{ images: [image], title: 'Hero', sourceSlug: 'hero' }];
+  const sources = landingPictureSourcesFor(image);
+  const srcsetFor = (viewportWidth, viewportHeight) => {
+    const ratio = viewportWidth / viewportHeight;
+    return (
+      sources.find((source) => {
+        const [width, height] =
+          source.media
+            ?.match(/(\d+)\/(\d+)/)
+            ?.slice(1)
+            .map(Number) ?? [];
+        return source.media && ratio <= width / height;
+      }) ?? sources.find((source) => !source.media)
+    ).srcset;
+  };
+
+  assert.equal(sources.filter((source) => source.media).length, 3);
+  for (const [viewportWidth, viewportHeight, devicePixelRatio] of [
+    [390, 844, 3],
+    [820, 1180, 2],
+    [1024, 768, 2],
+    [1440, 900, 1],
+    [1440, 900, 2],
+    [1920, 1080, 1],
+  ]) {
+    const [resolved] = resolveLandingSlides({
+      slides,
+      viewportWidth,
+      viewportHeight,
+      devicePixelRatio,
+    });
+    assert.ok(
+      srcsetFor(viewportWidth, viewportHeight).includes(`${resolved.src} ${resolved.width}w`),
+      `${viewportWidth}x${viewportHeight}@${devicePixelRatio} requests ${resolved.src}`,
+    );
+  }
 });

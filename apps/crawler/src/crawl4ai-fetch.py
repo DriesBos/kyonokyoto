@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Render one URL with Crawl4AI and print a compact JSON payload.
+"""Render URLs with Crawl4AI and print compact JSON payloads.
 
 The Node crawler owns source selection, extraction, normalization, and database
 writes. This script is only a browser-rendering bridge for pages that need JS
 or scroll-triggered lazy images.
+
+`crawl4ai-fetch.py URL --allowed-domain D` renders one page and exits.
+`crawl4ai-fetch.py --serve` keeps one browser open and answers JSON-lines
+requests on stdin, one response line per request on stdout.
 """
 
 import argparse
@@ -31,10 +35,26 @@ if (typeof ServiceWorkerContainer !== "undefined") {
 }
 """
 
+# Not needed for extraction: fonts, audio/video and analytics only slow renders.
+SKIPPED_RESOURCE_TYPES = {"font", "media"}
+SKIPPED_HOSTS = [
+    "google-analytics.com",
+    "googletagmanager.com",
+    "doubleclick.net",
+    "googlesyndication.com",
+    "googleadservices.com",
+    "connect.facebook.net",
+    "hotjar.com",
+    "clarity.ms",
+    "analytics.tiktok.com",
+    "static.ads-twitter.com",
+]
+
 
 def build_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("url")
+    parser.add_argument("url", nargs="?")
+    parser.add_argument("--serve", action="store_true")
     parser.add_argument("--user-agent", default="kyo-no-kyoto-bot/0.1")
     parser.add_argument("--timeout-ms", type=int, default=45000)
     parser.add_argument("--scroll-delay", type=float, default=0.5)
@@ -42,9 +62,22 @@ def build_parser():
     parser.add_argument("--wait-for")
     parser.add_argument("--wait-for-images", action="store_true")
     parser.add_argument("--scan-full-page", action="store_true")
-    parser.add_argument("--bypass-cache", action="store_true")
     parser.add_argument("--allowed-domain", action="append", default=[])
+    parser.add_argument("--max-renders", type=int, default=100)
     return parser
+
+
+def request_from_args(args):
+    return {
+        "url": args.url,
+        "timeout_ms": args.timeout_ms,
+        "scroll_delay": args.scroll_delay,
+        "target_elements": args.target_element,
+        "wait_for": args.wait_for,
+        "wait_for_images": args.wait_for_images,
+        "scan_full_page": args.scan_full_page,
+        "allowed_domains": args.allowed_domain,
+    }
 
 
 def safe_json(value):
@@ -124,133 +157,241 @@ async def is_safe_request_url(value, dns_cache=None, resolver=None):
     return safe
 
 
-async def render(args):
-    if sys.version_info < (3, 10):
-        raise RuntimeError("Crawl4AI requires Python 3.10 or newer")
-    if not args.allowed_domain:
-        raise RuntimeError("Renderer requires at least one allowed domain")
+def is_skippable_resource(request):
+    if request.resource_type in SKIPPED_RESOURCE_TYPES:
+        return True
+    return hostname_allowed(urlsplit(request.url).hostname, SKIPPED_HOSTS)
 
-    from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
-    from crawl4ai.content_filter_strategy import PruningContentFilter
-    from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
-    browser_config = BrowserConfig(
-        headless=True,
-        viewport_width=1920,
-        viewport_height=1080,
-        user_agent=args.user_agent,
-        ignore_https_errors=False,
-        extra_args=["--disable-features=ServiceWorker"],
-    )
+def failure_payload(url, error):
+    return {
+        "success": False,
+        "url": url,
+        "html": "",
+        "cleaned_html": "",
+        "fit_html": "",
+        "media": {},
+        "metadata": {},
+        "error_message": str(error),
+    }
 
-    crawler_config = CrawlerRunConfig(
-        cache_mode=CacheMode.BYPASS if args.bypass_cache else CacheMode.ENABLED,
-        check_robots_txt=True,
-        excluded_tags=["nav", "footer", "aside", "form"],
-        target_elements=args.target_element or None,
-        markdown_generator=DefaultMarkdownGenerator(
-            content_filter=PruningContentFilter(
-                threshold=0.45,
-                threshold_type="dynamic",
-                min_word_threshold=0,
-            )
-        ),
-        page_timeout=args.timeout_ms,
-        remove_overlay_elements=True,
-        wait_for_images=args.wait_for_images,
-        scan_full_page=args.scan_full_page,
-        scroll_delay=args.scroll_delay,
-        wait_for=args.wait_for,
-    )
 
-    started_at = monotonic()
-    blocked_request_count = 0
-    dns_cache = {}
-    initial_navigation_pending = True
-    crawler = AsyncWebCrawler(config=browser_config)
+class Renderer:
+    """One headless browser reused across renders; requests are handled one at a time."""
 
-    async def on_page_context_created(page, context, **_kwargs):
-        await context.add_init_script(SERVICE_WORKER_BLOCK_SCRIPT)
+    def __init__(self, user_agent, max_renders=100):
+        self.user_agent = user_agent
+        self.max_renders = max_renders
+        self.crawler = None
+        self.render_count = 0
+        self.request = None
 
-        route_web_socket = getattr(context, "route_web_socket", None)
+    async def start(self):
+        if sys.version_info < (3, 10):
+            raise RuntimeError("Crawl4AI requires Python 3.10 or newer")
+
+        from crawl4ai import AsyncWebCrawler, BrowserConfig
+
+        browser_config = BrowserConfig(
+            headless=True,
+            viewport_width=1920,
+            viewport_height=1080,
+            user_agent=self.user_agent,
+            ignore_https_errors=False,
+            extra_args=["--disable-features=ServiceWorker"],
+            verbose=False,
+        )
+        crawler = AsyncWebCrawler(config=browser_config)
+        crawler.crawler_strategy.set_hook("on_page_context_created", self.on_page_created)
+        await crawler.start()
+        self.crawler = crawler
+        self.render_count = 0
+
+    async def close(self):
+        crawler, self.crawler = self.crawler, None
+        if crawler is not None:
+            try:
+                await crawler.close()
+            except Exception:
+                pass
+
+    async def on_page_created(self, page, context, **_kwargs):
+        # Contexts are shared between renders, so every guard is page-scoped and
+        # disappears when Crawl4AI closes the page.
+        state = self.request
+        await page.add_init_script(SERVICE_WORKER_BLOCK_SCRIPT)
+
+        route_web_socket = getattr(page, "route_web_socket", None)
         if not callable(route_web_socket):
             raise RuntimeError("Playwright WebSocket routing unavailable; refusing renderer")
 
         async def block_web_socket(web_socket):
-            nonlocal blocked_request_count
-            blocked_request_count += 1
+            state["blocked_request_count"] += 1
             await web_socket.close(code=1008, reason="Crawler network policy")
 
         await route_web_socket("**", block_web_socket)
 
         async def route_filter(route):
-            nonlocal blocked_request_count, initial_navigation_pending
             request = route.request
+            if not request.is_navigation_request() and is_skippable_resource(request):
+                state["skipped_request_count"] += 1
+                await route.abort("blockedbyclient")
+                return
+
             parsed = urlsplit(request.url)
-            safe = await is_safe_request_url(request.url, dns_cache)
+            safe = await is_safe_request_url(request.url, state["dns_cache"])
             navigation_allowed = not request.is_navigation_request() or (
-                initial_navigation_pending
+                state["initial_navigation_pending"]
                 and request.frame.parent_frame is None
-                and hostname_allowed(parsed.hostname, args.allowed_domain)
+                and hostname_allowed(parsed.hostname, state["allowed_domains"])
                 and canonical_navigation_url(request.url)
-                == canonical_navigation_url(args.url)
+                == canonical_navigation_url(state["url"])
             )
 
             if safe and navigation_allowed:
                 if request.is_navigation_request():
-                    initial_navigation_pending = False
+                    state["initial_navigation_pending"] = False
                 await route.continue_()
                 return
 
-            blocked_request_count += 1
+            state["blocked_request_count"] += 1
             await route.abort("blockedbyclient")
 
         # ponytail: DNS is checked at route time; network isolation is needed to eliminate rebinding TOCTOU.
-        await context.route("**", route_filter)
+        await page.route("**", route_filter)
         return page
 
-    crawler.crawler_strategy.set_hook("on_page_context_created", on_page_context_created)
+    async def render(self, request):
+        if not request.get("allowed_domains"):
+            raise RuntimeError("Renderer requires at least one allowed domain")
 
-    async with crawler:
-        result = await crawler.arun(args.url, config=crawler_config)
+        from crawl4ai import CrawlerRunConfig, CacheMode
+        from crawl4ai.content_filter_strategy import PruningContentFilter
+        from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
-    media = getattr(result, "media", {}) or {}
-    metadata = getattr(result, "metadata", {}) or {}
-    markdown = getattr(result, "markdown", None)
-    payload = {
-        "success": bool(getattr(result, "success", False)),
-        "url": getattr(result, "url", args.url),
-        "html": getattr(result, "html", "") or "",
-        "cleaned_html": getattr(result, "cleaned_html", "") or "",
-        "fit_html": getattr(markdown, "fit_html", "") or "",
-        "media": safe_json(media),
-        "metadata": safe_json(metadata),
-        "status_code": getattr(result, "status_code", None),
-        "redirected_status_code": getattr(result, "redirected_status_code", None),
-        "crawl4ai_version": version("crawl4ai"),
-        "duration_ms": round((monotonic() - started_at) * 1000),
-        "blocked_request_count": blocked_request_count,
-        "error_message": getattr(result, "error_message", None),
-    }
-    return payload
+        if self.crawler is not None and self.render_count >= self.max_renders:
+            await self.close()
+        if self.crawler is None:
+            await self.start()
+
+        crawler_config = CrawlerRunConfig(
+            cache_mode=CacheMode.DISABLED,
+            check_robots_txt=True,
+            excluded_tags=["nav", "footer", "aside", "form"],
+            target_elements=request.get("target_elements") or None,
+            markdown_generator=DefaultMarkdownGenerator(
+                content_filter=PruningContentFilter(
+                    threshold=0.45,
+                    threshold_type="dynamic",
+                    min_word_threshold=0,
+                )
+            ),
+            page_timeout=int(request.get("timeout_ms") or 45000),
+            remove_overlay_elements=True,
+            wait_for_images=bool(request.get("wait_for_images")),
+            scan_full_page=bool(request.get("scan_full_page")),
+            scroll_delay=float(request.get("scroll_delay") or 0.5),
+            wait_for=request.get("wait_for") or None,
+            verbose=False,
+        )
+
+        url = request["url"]
+        started_at = monotonic()
+        state = {
+            "url": url,
+            "allowed_domains": request["allowed_domains"],
+            "blocked_request_count": 0,
+            "skipped_request_count": 0,
+            "dns_cache": {},
+            "initial_navigation_pending": True,
+        }
+        self.request = state
+        self.render_count += 1
+        try:
+            result = await self.crawler.arun(url, config=crawler_config)
+        except Exception:
+            # A crashed or wedged browser should not poison later renders.
+            await self.close()
+            raise
+        finally:
+            self.request = None
+
+        media = getattr(result, "media", {}) or {}
+        metadata = getattr(result, "metadata", {}) or {}
+        markdown = getattr(result, "markdown", None)
+        return {
+            "success": bool(getattr(result, "success", False)),
+            "url": getattr(result, "url", url),
+            "html": getattr(result, "html", "") or "",
+            "cleaned_html": getattr(result, "cleaned_html", "") or "",
+            "fit_html": getattr(markdown, "fit_html", "") or "",
+            "media": safe_json(media),
+            "metadata": safe_json(metadata),
+            "status_code": getattr(result, "status_code", None),
+            "redirected_status_code": getattr(result, "redirected_status_code", None),
+            "crawl4ai_version": version("crawl4ai"),
+            "duration_ms": round((monotonic() - started_at) * 1000),
+            "blocked_request_count": state["blocked_request_count"],
+            "skipped_request_count": state["skipped_request_count"],
+            "browser_render_index": self.render_count,
+            "error_message": getattr(result, "error_message", None),
+        }
+
+
+async def render_once(args):
+    renderer = Renderer(args.user_agent)
+    try:
+        return await renderer.render(request_from_args(args))
+    finally:
+        await renderer.close()
+
+
+async def serve(args):
+    """JSON-lines loop: one request per stdin line, one response per stdout line."""
+    # Crawl4AI, Playwright and Chromium may write to stdout; keep that stream
+    # for protocol lines only by pointing fd 1 at stderr.
+    protocol = os.fdopen(os.dup(1), "w", encoding="utf-8")
+    os.dup2(2, 1)
+    sys.stdout = sys.stderr
+
+    renderer = Renderer(args.user_agent, max_renders=max(1, args.max_renders))
+    loop = asyncio.get_running_loop()
+    try:
+        while True:
+            line = await loop.run_in_executor(None, sys.stdin.readline)
+            if not line:
+                break
+            if not line.strip():
+                continue
+
+            request_id = None
+            url = None
+            try:
+                request = json.loads(line)
+                request_id = request.get("id")
+                url = request.get("url")
+                payload = await renderer.render(request)
+            except Exception as error:
+                payload = failure_payload(url, error)
+
+            payload["id"] = request_id
+            protocol.write(json.dumps(payload, ensure_ascii=False) + "\n")
+            protocol.flush()
+    finally:
+        await renderer.close()
 
 
 async def main():
     args = build_parser().parse_args()
 
+    if args.serve:
+        await serve(args)
+        return 0
+
     try:
-        payload = await render(args)
+        payload = await render_once(args)
     except Exception as error:
-        payload = {
-            "success": False,
-            "url": args.url,
-            "html": "",
-            "cleaned_html": "",
-            "fit_html": "",
-            "media": {},
-            "metadata": {},
-            "error_message": str(error),
-        }
+        payload = failure_payload(args.url, error)
 
     print(json.dumps(payload, ensure_ascii=False))
     return 0

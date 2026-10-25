@@ -39,6 +39,7 @@ const appRoot = resolve(__dirname, '..');
 const envPath = resolve(appRoot, '.env');
 const crawl4AiFetchPath = resolve(__dirname, 'crawl4ai-fetch.py');
 let crawl4AiDisabled = false;
+let crawl4AiRenderer = null;
 let googleTranslationClientPromise = null;
 let missingGoogleTranslateConfigWarningShown = false;
 const domainFetchSchedule = new Map();
@@ -7861,65 +7862,147 @@ function buildRendererEnv(env = process.env) {
   );
 }
 
-function runJsonCommand(command, args, options = {}) {
-  return new Promise((resolve, reject) => {
-    const { timeoutMs = 60000, maxOutputBytes = 20 * 1024 * 1024, ...spawnOptions } = options;
-    const child = spawn(command, args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: timeoutMs,
-      killSignal: 'SIGKILL',
-      ...spawnOptions,
-    });
-    let stdout = '';
-    let stderr = '';
-    let outputBytes = 0;
-    let settled = false;
+// Talks to `crawl4ai-fetch.py --serve`: one JSON request line in, one JSON
+// response line out. The child (and its browser) stays alive between renders
+// and is restarted after a timeout, crash, or oversized response.
+function createJsonLinesRenderer(command, args, options = {}) {
+  const { maxOutputBytes = 20 * 1024 * 1024, ...spawnOptions } = options;
+  let child = null;
+  let pending = null;
+  let queue = Promise.resolve();
+  let nextId = 1;
+  let stdoutBuffer = '';
+  let stderrTail = '';
 
-    const fail = (error) => {
-      if (settled) return;
-      settled = true;
-      child.kill('SIGKILL');
-      reject(error);
-    };
+  const stop = (error) => {
+    const current = child;
+    child = null;
+    current?.kill('SIGKILL');
+    if (pending) {
+      const request = pending;
+      pending = null;
+      clearTimeout(request.timer);
+      request.reject(error);
+    }
+  };
 
-    const appendOutput = (current, chunk) => {
-      outputBytes += Buffer.byteLength(chunk);
-      if (outputBytes > maxOutputBytes) {
-        fail(new Error(`${command} output exceeded ${maxOutputBytes} bytes`));
-        return current;
-      }
-      return `${current}${chunk}`;
-    };
+  const handleLine = (line) => {
+    if (!line.trim()) return;
+    let payload;
+    try {
+      payload = JSON.parse(line);
+    } catch (error) {
+      stop(new Error(`Could not parse ${command} JSON output: ${error.message}`));
+      return;
+    }
+    if (!pending || payload?.id !== pending.id) return;
+    const request = pending;
+    pending = null;
+    clearTimeout(request.timer);
+    request.resolve(payload);
+  };
 
-    child.stdout.setEncoding('utf8');
-    child.stderr.setEncoding('utf8');
-    child.stdout.on('data', (chunk) => {
-      stdout = appendOutput(stdout, chunk);
-    });
-    child.stderr.on('data', (chunk) => {
-      stderr = appendOutput(stderr, chunk);
-    });
-    child.on('error', fail);
-    child.on('close', (code, signal) => {
-      if (settled) return;
-      settled = true;
-      if (signal) {
-        reject(new Error(`${command} timed out after ${timeoutMs}ms`));
-        return;
-      }
-      if (code !== 0) {
-        reject(new Error(stderr.trim() || `${command} exited with status ${code}`));
-        return;
-      }
+  const start = () => {
+    const proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'], ...spawnOptions });
+    child = proc;
+    stdoutBuffer = '';
+    stderrTail = '';
 
-      try {
-        const jsonLine = stdout.trim().split(/\r?\n/).filter(Boolean).at(-1) ?? '';
-        resolve(JSON.parse(jsonLine));
-      } catch (error) {
-        reject(new Error(`Could not parse ${command} JSON output: ${error.message}`));
+    proc.stdout.setEncoding('utf8');
+    proc.stderr.setEncoding('utf8');
+    proc.stdout.on('data', (chunk) => {
+      if (child !== proc) return;
+      stdoutBuffer += chunk;
+      let newlineIndex;
+      while (child === proc && (newlineIndex = stdoutBuffer.indexOf('\n')) !== -1) {
+        const line = stdoutBuffer.slice(0, newlineIndex);
+        stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1);
+        handleLine(line);
+      }
+      if (child === proc && Buffer.byteLength(stdoutBuffer) > maxOutputBytes) {
+        stop(new Error(`${command} output exceeded ${maxOutputBytes} bytes`));
       }
     });
-  });
+    proc.stderr.on('data', (chunk) => {
+      stderrTail = `${stderrTail}${chunk}`.slice(-4000);
+    });
+    proc.stdin.on('error', () => {});
+    proc.on('error', (error) => {
+      if (child === proc) stop(error);
+    });
+    proc.on('close', (code, signal) => {
+      if (child !== proc) return;
+      stop(new Error(stderrTail.trim() || `${command} exited with ${signal ?? `status ${code}`}`));
+    });
+
+    // An idle renderer must not keep the crawler process alive; pending
+    // requests hold the event loop through their timeout timer instead.
+    proc.unref();
+    for (const stream of [proc.stdin, proc.stdout, proc.stderr]) stream.unref?.();
+  };
+
+  const send = (request, timeoutMs) =>
+    new Promise((resolve, reject) => {
+      if (!child) start();
+      const id = nextId;
+      nextId += 1;
+      pending = {
+        id,
+        resolve,
+        reject,
+        timer: setTimeout(
+          () => stop(new Error(`${command} timed out after ${timeoutMs}ms`)),
+          timeoutMs,
+        ),
+      };
+      child.stdin.write(`${JSON.stringify({ ...request, id })}\n`);
+    });
+
+  return {
+    render(request, { timeoutMs = 60000 } = {}) {
+      const result = queue.then(() => send(request, timeoutMs));
+      queue = result.catch(() => {});
+      return result;
+    },
+    close() {
+      const current = child;
+      child = null;
+      current?.stdin.end();
+    },
+  };
+}
+
+function getCrawl4AiRenderer(env, userAgent) {
+  const pythonBinary = env.CRAWL4AI_PYTHON ?? 'python3';
+  const key = `${pythonBinary}\0${userAgent}`;
+  if (crawl4AiRenderer?.key === key) return crawl4AiRenderer.renderer;
+
+  crawl4AiRenderer?.renderer.close();
+  const renderer = createJsonLinesRenderer(
+    pythonBinary,
+    [
+      crawl4AiFetchPath,
+      '--serve',
+      '--user-agent',
+      userAgent,
+      '--max-renders',
+      String(getEnvNumber(env, 'CRAWL4AI_MAX_RENDERS_PER_BROWSER', 100)),
+    ],
+    {
+      env: {
+        ...buildRendererEnv(process.env),
+        PYTHONUNBUFFERED: '1',
+      },
+      maxOutputBytes: getEnvNumber(env, 'CRAWL4AI_MAX_OUTPUT_BYTES', 20 * 1024 * 1024),
+    },
+  );
+  crawl4AiRenderer = { key, renderer };
+  return renderer;
+}
+
+function closeCrawl4AiRenderer() {
+  crawl4AiRenderer?.renderer.close();
+  crawl4AiRenderer = null;
 }
 
 function appendCrawl4AiMediaHtml(html, mediaImages) {
@@ -8519,48 +8602,28 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
     diagnostics.crawl4ai_render_count += 1;
   }
 
-  const pythonBinary = env.CRAWL4AI_PYTHON ?? 'python3';
-
   try {
     const rendererUrl = await resolveRendererNavigationUrl(url, userAgent, env, context);
-    const args = [
-      crawl4AiFetchPath,
-      rendererUrl,
-      '--user-agent',
-      userAgent,
-      '--timeout-ms',
-      env.CRAWL4AI_PAGE_TIMEOUT_MS ?? '45000',
-      '--scroll-delay',
-      env.CRAWL4AI_SCROLL_DELAY ?? '0.5',
-    ];
-
-    if (context?.waitFor) args.push('--wait-for', context.waitFor);
-    for (const targetElement of context?.targetElements ?? []) {
-      args.push('--target-element', targetElement);
-    }
-    if (context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true)) {
-      args.push('--wait-for-images');
-    }
-    if (context?.scanFullPage ?? envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', false)) {
-      args.push('--scan-full-page');
-    }
-    if (envFlag(env, 'CRAWL4AI_BYPASS_CACHE', true)) args.push('--bypass-cache');
-    for (const domain of context?.allowedDomains ?? []) {
-      args.push('--allowed-domain', domain);
-    }
-
-    const result = await runJsonCommand(pythonBinary, args, {
-      env: {
-        ...buildRendererEnv(process.env),
-        PYTHONUNBUFFERED: '1',
+    const renderer = env.__crawl4AiRenderer ?? getCrawl4AiRenderer(env, userAgent);
+    const result = await renderer.render(
+      {
+        url: rendererUrl,
+        timeout_ms: getEnvNumber(env, 'CRAWL4AI_PAGE_TIMEOUT_MS', 45000),
+        scroll_delay: Number(env.CRAWL4AI_SCROLL_DELAY ?? 0.5),
+        target_elements: context?.targetElements ?? [],
+        wait_for: context?.waitFor ?? null,
+        wait_for_images: context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true),
+        scan_full_page: context?.scanFullPage ?? envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', false),
+        allowed_domains: context?.allowedDomains ?? [],
       },
-      timeoutMs: getEnvNumber(
-        env,
-        'CRAWL4AI_COMMAND_TIMEOUT_MS',
-        getEnvNumber(env, 'CRAWL4AI_PAGE_TIMEOUT_MS', 45000) + 30000,
-      ),
-      maxOutputBytes: getEnvNumber(env, 'CRAWL4AI_MAX_OUTPUT_BYTES', 20 * 1024 * 1024),
-    });
+      {
+        timeoutMs: getEnvNumber(
+          env,
+          'CRAWL4AI_COMMAND_TIMEOUT_MS',
+          getEnvNumber(env, 'CRAWL4AI_PAGE_TIMEOUT_MS', 45000) + 30000,
+        ),
+      },
+    );
 
     if (!result.success) {
       if (diagnostics) diagnostics.unhealthy_fetch_count += 1;
@@ -8605,6 +8668,8 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
         fetched_via: 'crawl4ai',
         crawl4ai_images_count: result.media?.images?.length ?? 0,
         crawl4ai_blocked_request_count: result.blocked_request_count ?? 0,
+        crawl4ai_skipped_request_count: result.skipped_request_count ?? 0,
+        crawl4ai_browser_render_index: result.browser_render_index ?? null,
         crawl4ai_version: result.crawl4ai_version ?? null,
         crawl4ai_duration_ms: result.duration_ms ?? null,
         crawl4ai_cleaned_html_length: result.cleaned_html?.length ?? 0,
@@ -9186,6 +9251,7 @@ async function fetchNativeLocaleEvent({
       renderMode,
       context: {
         ...crawlContext,
+        waitForImages: crawlContext.waitForImages === true,
         targetElements: selectorsFor(nativeSource, 'description'),
       },
     });
@@ -10416,23 +10482,27 @@ async function main() {
 
   const results = [];
 
-  for (const slug of sourceSlugs) {
-    const result = await crawlSource({
-      env,
-      sourceSlug: slug,
-      userAgent,
-      sourceOverrides,
-      genericDetailLimit,
-      renderMode,
-      triggerType,
-    });
-    results.push(result);
-    console.log(JSON.stringify(result, null, 2));
+  try {
+    for (const slug of sourceSlugs) {
+      const result = await crawlSource({
+        env,
+        sourceSlug: slug,
+        userAgent,
+        sourceOverrides,
+        genericDetailLimit,
+        renderMode,
+        triggerType,
+      });
+      results.push(result);
+      console.log(JSON.stringify(result, null, 2));
 
-    if (result.status === 'failed' && sourceSlug !== 'all') {
-      throw new Error(result.error);
+      if (result.status === 'failed' && sourceSlug !== 'all') {
+        throw new Error(result.error);
+      }
+      if (result.status !== 'success' && sourceSlug !== 'all') process.exitCode = 2;
     }
-    if (result.status !== 'success' && sourceSlug !== 'all') process.exitCode = 2;
+  } finally {
+    closeCrawl4AiRenderer();
   }
 
   if (sourceSlug === 'all') {
@@ -10538,7 +10608,7 @@ export {
   resolveRendererNavigationUrl,
   resolveEventDescription,
   shouldRetryDetailWithCrawl4Ai,
-  runJsonCommand,
+  createJsonLinesRenderer,
   sanitizePostgresJson,
   sanitizePostgresText,
   stripInlineImageData,

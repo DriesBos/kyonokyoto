@@ -1,5 +1,15 @@
 import { gsap } from 'gsap';
+import {
+  aspectClassFor,
+  coverDensityFor,
+  landingImageUrl,
+  maximumTransformHeight,
+  maximumTransformWidth,
+  transformSizeFor,
+} from '../lib/landingImages.ts';
 import type { LandingSlide, LandingSlideImage } from '../lib/landingSlides';
+
+export { coverDensityFor };
 
 type LandingSliderWindow = Window &
   typeof globalThis & {
@@ -11,6 +21,7 @@ const sliderSelector = '[data-landing-slider]';
 const slidesSelector = '[data-landing-slider-slides]';
 const shuttersSelector = '[data-landing-slider-shutters]';
 const payloadSelector = '[data-landing-slider-payload]';
+const heroSelector = '[data-landing-hero]';
 const exitEventName = 'kyo:landing-exit';
 
 const solidHoldSeconds = 1;
@@ -24,14 +35,12 @@ const minimumCoverDensity = 1;
 const maximumCoverDensity = 2;
 const maximumRequiredWidth = 1920;
 const maximumRequiredHeight = 1080;
-const maximumTransformWidth = 2560;
-const maximumTransformHeight = 1440;
-const imageQuality = 82;
 const coveredClipPath = 'inset(0% 0 0 0)';
 const collapsedTopClipPath = 'inset(0 0 100% 0)';
 const collapsedBottomClipPath = 'inset(100% 0 0 0)';
 
 type ResolvedLandingSlide = LandingSlide & {
+  imageSrc: string;
   src: string;
   width: number;
   height: number;
@@ -75,32 +84,6 @@ const parseSlides = (payload: Element | null): LandingSlide[] => {
   }
 };
 
-export const coverDensityFor = (
-  image: Pick<LandingSlideImage, 'width' | 'height'>,
-  viewportWidth: number,
-  viewportHeight: number,
-) => Math.min(image.width / viewportWidth, image.height / viewportHeight);
-
-const netlifyImageUrl = (src: string, width: number, height: number) => {
-  try {
-    if (!src.startsWith('/') && new URL(src).protocol !== 'https:') return null;
-  } catch {
-    return null;
-  }
-
-  if (import.meta.env?.DEV) return src;
-
-  const params = new URLSearchParams({
-    url: src,
-    w: String(width),
-    h: String(height),
-    fit: 'cover',
-    position: 'center',
-    q: String(imageQuality),
-  });
-  return `/.netlify/images?${params}`;
-};
-
 export const resolveLandingSlides = ({
   slides,
   viewportWidth,
@@ -120,6 +103,7 @@ export const resolveLandingSlides = ({
     maximumCoverDensity,
     Math.max(minimumCoverDensity, devicePixelRatio),
   );
+  const aspectClass = aspectClassFor(viewportWidth, viewportHeight);
   const resolvedSlides: ResolvedLandingSlide[] = [];
   const seenSourceSlugs = new Set<string>();
 
@@ -138,12 +122,16 @@ export const resolveLandingSlides = ({
       maximumTransformWidth / requiredWidth,
       maximumTransformHeight / requiredHeight,
     );
-    const width = Math.floor(requiredWidth * density);
-    const height = Math.floor(requiredHeight * density);
-    const src = netlifyImageUrl(image.src, width, height);
-    if (!src) continue;
+    const size = transformSizeFor(
+      image,
+      aspectClass,
+      Math.floor(requiredWidth * density),
+      Math.floor(requiredHeight * density),
+    );
+    const src = size ? landingImageUrl(image.src, size) : null;
+    if (!size || !src) continue;
 
-    resolvedSlides.push({ ...slide, src, width, height });
+    resolvedSlides.push({ ...slide, imageSrc: image.src, src, ...size });
     seenSourceSlugs.add(slide.sourceSlug);
     if (resolvedSlides.length >= landingSlideLimit) break;
   }
@@ -151,17 +139,25 @@ export const resolveLandingSlides = ({
   return resolvedSlides;
 };
 
-const preloadImage = (src: string) =>
+const decodedImage = (image: HTMLImageElement) =>
+  image.decode().then(
+    () => true,
+    () => image.naturalWidth > 0,
+  );
+
+// Loads through the slide's own img so its fetchPriority applies and the
+// server-rendered hero, already fetched by the preload scanner, is reused.
+const loadImage = (image: HTMLImageElement, src: string) =>
   new Promise<boolean>((resolve) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () =>
-      image.decode().then(
-        () => resolve(true),
-        () => resolve(true),
-      );
-    image.onerror = () => resolve(false);
-    image.src = src;
+    if (!image.getAttribute('src')) image.src = src;
+    if (image.complete) {
+      if (image.naturalWidth > 0) decodedImage(image).then(resolve);
+      else resolve(false);
+      return;
+    }
+
+    image.addEventListener('load', () => decodedImage(image).then(resolve), { once: true });
+    image.addEventListener('error', () => resolve(false), { once: true });
   });
 
 const toPixels = (value: string, root: HTMLElement) => {
@@ -184,10 +180,19 @@ const rowHeightFor = (root: HTMLElement) => {
   return toPixels(rawHeight, root) || 160;
 };
 
-const createSlideElements = (container: HTMLElement, slides: ResolvedLandingSlide[]) => {
+const createSlideElements = (
+  container: HTMLElement,
+  slides: ResolvedLandingSlide[],
+  hero: HTMLElement | null,
+) => {
   const fragment = document.createDocumentFragment();
 
   slides.forEach((slide, index) => {
+    if (index === 0 && hero) {
+      fragment.append(hero);
+      return;
+    }
+
     const frame = document.createElement('span');
     const image = document.createElement('img');
 
@@ -195,7 +200,6 @@ const createSlideElements = (container: HTMLElement, slides: ResolvedLandingSlid
     frame.dataset.landingSlideIndex = String(index);
     image.alt = '';
     image.decoding = 'async';
-    image.loading = index === 0 ? 'eager' : 'lazy';
     image.fetchPriority = index === 0 ? 'high' : 'low';
     image.width = slide.width;
     image.height = slide.height;
@@ -252,6 +256,8 @@ export const initLandingSlider = () => {
   const slidesContainer = document.querySelector(slidesSelector);
   const shuttersContainer = document.querySelector(shuttersSelector);
   const content = root instanceof HTMLElement ? root.querySelector('.landing__content') : null;
+  const heroFrame =
+    slidesContainer instanceof HTMLElement ? slidesContainer.querySelector(heroSelector) : null;
   const slides = parseSlides(document.querySelector(payloadSelector));
 
   if (
@@ -288,6 +294,11 @@ export const initLandingSlider = () => {
   let activeIndex = 0;
   let fillClipPath = coveredClipPath;
   const failedIndexes = new Set<number>();
+  const imageLoads = new Map<number, Promise<boolean>>();
+  const hero =
+    heroFrame instanceof HTMLElement && heroFrame.dataset.landingHero === resolvedSlides[0].imageSrc
+      ? heroFrame
+      : null;
 
   const fills = () => gsap.utils.toArray<HTMLElement>('.landing__shutter-fill', shuttersContainer);
 
@@ -326,13 +337,19 @@ export const initLandingSlider = () => {
       pauseOrResume();
     });
 
+  const loadSlide = (index: number) => {
+    const pending = imageLoads.get(index);
+    if (pending) return pending;
+
+    const image = slidesContainer.querySelectorAll('.landing__slide')[index]?.querySelector('img');
+    const load = image ? loadImage(image, resolvedSlides[index].src) : Promise.resolve(false);
+    imageLoads.set(index, load);
+    return load;
+  };
+
   const setActiveSlide = (index: number) => {
     activeIndex = index;
     slidesContainer.querySelectorAll('.landing__slide').forEach((slide, slideIndex) => {
-      if (slideIndex === index) {
-        const image = slide.querySelector('img');
-        if (image && !image.hasAttribute('src')) image.src = resolvedSlides[index].src;
-      }
       slide.toggleAttribute('data-active', slideIndex === index);
     });
     root.toggleAttribute('data-landing-slider-ready', true);
@@ -374,8 +391,10 @@ export const initLandingSlider = () => {
   };
 
   const run = async () => {
+    let firstReveal = true;
+
     while (!stopped && failedIndexes.size < resolvedSlides.length) {
-      const loaded = await preloadImage(resolvedSlides[activeIndex].src);
+      const loaded = await loadSlide(activeIndex);
       if (stopped) return;
 
       if (!loaded) {
@@ -385,7 +404,9 @@ export const initLandingSlider = () => {
       }
 
       setActiveSlide(activeIndex);
-      await wait(solidHoldSeconds);
+      loadSlide((activeIndex + 1) % resolvedSlides.length);
+      if (!firstReveal) await wait(solidHoldSeconds);
+      firstReveal = false;
       if (stopped) return;
 
       await animateFills(collapsedTopClipPath, revealSeconds);
@@ -401,7 +422,7 @@ export const initLandingSlider = () => {
     }
   };
 
-  createSlideElements(slidesContainer, resolvedSlides);
+  createSlideElements(slidesContainer, resolvedSlides, hero);
   createRows(root, shuttersContainer, content, fillClipPath);
   observer?.observe(root);
   window.addEventListener('resize', handleResize);
