@@ -8,6 +8,7 @@ import {
   upsertEventTranslation,
 } from './run-once.mjs';
 import { localesForCity } from '../../../data/sources/source-config.mjs';
+import { isCurrentOrUpcoming } from './check-translations.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = resolve(__dirname, '..', '.env');
@@ -138,7 +139,7 @@ async function main() {
 
   const rows = await supabaseRequest({
     env,
-    path: `events?status=eq.published&select=id,title,description,sources(slug,language,city),event_translations(locale,title,description)&limit=${limit}`,
+    path: `events?status=eq.published&select=id,title,description,end_date,sources(slug,language,city),event_translations(locale,title,description)&limit=${limit}`,
   });
 
   const missing = [];
@@ -147,6 +148,7 @@ async function main() {
 
   for (const row of rows ?? []) {
     if (sourceSlugs.size && !sourceSlugs.has(row.sources?.slug)) continue;
+    if (!isCurrentOrUpcoming(row)) continue;
     const missingLocales = getMissingLocales(row);
     if (!missingLocales.length) continue;
 
