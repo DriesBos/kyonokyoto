@@ -10,7 +10,11 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseEnv } from 'node:util';
-import { loadSourcesConfig, normalizeCity } from '../../../data/sources/source-config.mjs';
+import {
+  isCrawlEnabled,
+  loadSourcesConfig,
+  normalizeCity,
+} from '../../../data/sources/source-config.mjs';
 import {
   closeCrawl4AiRenderer,
   createCrawlDiagnostics,
@@ -195,7 +199,7 @@ async function main() {
   const sources = (await loadSourcesConfig({ city })).filter(
     (source) =>
       source.is_active !== false &&
-      (!requested.length || requested.includes(source.slug)) &&
+      (requested.length ? requested.includes(source.slug) : isCrawlEnabled(source)) &&
       (!unhealthy || unhealthy.has(source.slug)),
   );
   const ids = from === 'raw' ? await sourceIdsBySlug(env, city) : null;

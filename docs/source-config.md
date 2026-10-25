@@ -182,7 +182,8 @@ Optional. Use for fetch/crawl behavior exceptions.
     "wait_for_images": true,
     "scan_full_page": false,
     "max_detail_pages": 12,
-    "skip_patterns": ["/archive/", "/news/"]
+    "skip_patterns": ["/archive/", "/news/"],
+    "disabled": false
   }
 }
 ```
@@ -195,6 +196,7 @@ Optional. Use for fetch/crawl behavior exceptions.
 - `listing_is_detail` treats each start URL as the event page itself, for venues that show the current exhibition inline instead of linking to it.
 - `max_detail_pages` caps detail URLs for this source.
 - `skip_patterns` drops matching URLs before detail fetch.
+- `disabled: true` takes a blocked source out of scheduled crawls (`run-once --source=all`, cycle runs, selector inspection without `--source`) while web visibility stays governed by `beta`. An explicit `--source=<slug>` run still crawls it, so unblocking can be tested. Note the date and reason in `notes`.
 
 ## `taxonomy`
 

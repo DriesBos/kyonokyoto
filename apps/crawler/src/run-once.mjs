@@ -10,6 +10,7 @@ import { parseEnv, TextDecoder } from 'node:util';
 import {
   applySourceOverride,
   currentYearInTokyo,
+  isCrawlEnabled,
   localesForCity,
   loadSourcesConfig,
   normalizeCity,
@@ -4111,7 +4112,6 @@ function extractArtroEvent(detailHtml, source, detailUrl) {
     throw new Error('Could not extract event title from ARTRO detail page');
   }
 
-  const artist = titleParts[0] && titleParts[0] !== title ? titleParts[0] : null;
   const dateText =
     stripTags(
       detailHtml.match(
@@ -4174,7 +4174,6 @@ function extractArtroEvent(detailHtml, source, detailUrl) {
     primary_image_url: imageUrls[0] ?? null,
     image_urls: imageUrls,
     source_url: detailUrl,
-    metadata: artist ? { artist } : undefined,
   };
 }
 
@@ -10869,9 +10868,7 @@ async function main() {
 
   const sourceSlugs =
     sourceSlug === 'all'
-      ? configuredSources
-          .filter((source) => source.is_active !== false)
-          .map((source) => source.slug)
+      ? configuredSources.filter(isCrawlEnabled).map((source) => source.slug)
       : [sourceSlug];
 
   const results = [];

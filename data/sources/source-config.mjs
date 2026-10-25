@@ -266,6 +266,7 @@ function normalizeCrawlHints(value = {}) {
     output.scan_full_page = hints.scan_full_page;
   }
   if (hints.listing_is_detail === true) output.listing_is_detail = true;
+  if (hints.disabled === true) output.disabled = true;
 
   const maxDetailPages = Number(hints.max_detail_pages);
   if (Number.isInteger(maxDetailPages) && maxDetailPages > 0)
@@ -382,6 +383,11 @@ export function applySourceOverride(source, override = {}) {
   delete output.source_type;
   delete output.source_categories;
   return normalizeSourceConfig(output);
+}
+
+// Scheduled crawls skip disabled sources; web visibility stays with `beta`.
+export function isCrawlEnabled(source) {
+  return source.is_active !== false && source.crawl_hints?.disabled !== true;
 }
 
 export function validateSourceConfig(source) {

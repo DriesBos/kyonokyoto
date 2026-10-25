@@ -216,10 +216,11 @@
       "allowed_domains": ["aaa.org.hk"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/programmes/programmes/"],
-      "notes": "Official current/upcoming programmes index. Only entries labelled Exhibition should become events; reject grants, calls, residencies, workshops, and offsite programmes. Moved to beta 2026-10-25 (crawl blocked): aaa.org.hk returns 403 for all paths incl. sitemap, also via crawl4ai; no alternative official source found.",
+      "notes": "Official current/upcoming programmes index. Only entries labelled Exhibition should become events; reject grants, calls, residencies, workshops, and offsite programmes. Crawl disabled 2026-10-25 (crawl_hints.disabled): aaa.org.hk returns 403 for all paths incl. sitemap, also via crawl4ai; no alternative official source found.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": {
+        "disabled": true,
         "skip_patterns": ["/grants/", "/residency/", "/open-call/", "/past"],
         "max_detail_pages": 8
       }
@@ -267,10 +268,10 @@
       "allowed_domains": ["gagosian.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
-      "notes": "Official exhibition index pre-filtered to Hong Kong. It mixes current, upcoming, and archive, so event dates provide the final cutoff. Moved to beta 2026-10-25 (crawl blocked): gagosian.com is behind a Cloudflare bot check (403 on plain fetch and crawl4ai); the configured URL with &-params is also disallowed by robots.txt; sitemap/feed also 403. No alternative found.",
+      "notes": "Official exhibition index pre-filtered to Hong Kong. It mixes current, upcoming, and archive, so event dates provide the final cutoff. Crawl disabled 2026-10-25 (crawl_hints.disabled): gagosian.com is behind a Cloudflare bot check (403 on plain fetch and crawl4ai); the configured URL with &-params is also disallowed by robots.txt; sitemap/feed also 403. No alternative found.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "max_detail_pages": 6 }
+      "crawl_hints": { "disabled": true, "max_detail_pages": 6 }
     },
     {
       "slug": "whitestone-gallery-hong-kong",

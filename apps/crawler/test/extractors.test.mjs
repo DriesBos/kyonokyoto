@@ -93,6 +93,7 @@ import {
   applySourceOverride,
   currentYearInCity,
   currentYearInTokyo,
+  isCrawlEnabled,
   localesForCity,
   loadAllSourcesConfig,
   loadSourcesConfig,
@@ -3542,7 +3543,7 @@ test('Artro listing extraction follows exhibition card links', () => {
   );
 });
 
-test('Artro event extraction reads main visual event fields', () => {
+test('Artro event extraction reads main visual event fields', async () => {
   const detailHtml = `
     <div class="mainVisual__info">
       <h2 class="mainVisual__infoTitle">
@@ -3571,7 +3572,22 @@ test('Artro event extraction reads main visual event fields', () => {
     event.primary_image_url,
     'https://artro.jp/cms_wp/wp-content/uploads/2026/04/P1155587-scaled.jpg',
   );
-  assert.equal(event.metadata.artist, 'AI MAKITA 牧田愛');
+
+  // events has no metadata column; unknown keys fail the whole upsert (PGRST204).
+  const schema = await readFile(
+    resolve(import.meta.dirname, '../../../supabase/schema.sql'),
+    'utf8',
+  );
+  const eventsTable = schema.match(
+    /create table if not exists public\.events \(([\s\S]*?)\n\);/,
+  )[1];
+  const eventColumns = new Set(
+    [...eventsTable.matchAll(/^\s{2}([a-z_]+)\s/gm)].map((match) => match[1]),
+  );
+  assert.deepEqual(
+    Object.keys(event).filter((key) => !key.startsWith('_') && !eventColumns.has(key)),
+    [],
+  );
 });
 
 test('HOSOO event extraction keeps theme exhibition slides', () => {
@@ -4318,6 +4334,28 @@ test('source capabilities declare native locales and machine translation behavio
   assert.equal(sourceHasNativeLocale(source, 'ja'), true);
   assert.equal(sourceHasNativeLocale(source, 'en'), false);
   assert.equal(shouldMachineTranslateMissingLocales(source), false);
+});
+
+test('crawl_hints.disabled removes a source from scheduled crawls without hiding it', async () => {
+  const disabled = normalizeSourceConfig({
+    slug: 'blocked-source',
+    beta: false,
+    crawl_hints: { disabled: true, max_detail_pages: 2 },
+  });
+  assert.equal(disabled.crawl_hints.disabled, true);
+  assert.equal(disabled.beta, false);
+  assert.equal(isCrawlEnabled(disabled), false);
+  assert.equal(isCrawlEnabled(normalizeSourceConfig({ crawl_hints: { disabled: 'yes' } })), true);
+  assert.equal(isCrawlEnabled(normalizeSourceConfig({ is_active: false })), false);
+  assert.equal(isCrawlEnabled(normalizeSourceConfig({})), true);
+
+  const sources = await loadAllSourcesConfig();
+  const crawlDisabled = sources
+    .filter((source) => !isCrawlEnabled(source))
+    .map((source) => source.slug)
+    .sort();
+  assert.deepEqual(crawlDisabled, ['asia-art-archive', 'gagosian-hong-kong', 'pola-museum-annex']);
+  assert.equal(sources.find((source) => source.slug === 'pola-museum-annex').beta, false);
 });
 
 test('city locale registry suppresses machine translation only where no target locale exists', async () => {

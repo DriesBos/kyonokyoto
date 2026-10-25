@@ -1493,7 +1493,7 @@
       "allowed_domains": ["www.po-holdings.co.jp", "po-holdings.co.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/m-annex/exhibition/"],
-      "notes": "Official Ginza current-exhibition page. The listing is also the detail page; past and general corporate news are excluded. Moved to beta 2026-10-25 (crawl blocked): po-holdings.co.jp and pola-art-foundation.jp return CloudFront 403 for all paths incl. robots.txt, also via crawl4ai; no alternative official source found.",
+      "notes": "Official Ginza current-exhibition page. The listing is also the detail page; past and general corporate news are excluded. Crawl disabled 2026-10-25 (crawl_hints.disabled): po-holdings.co.jp and pola-art-foundation.jp return CloudFront 403 for all paths incl. robots.txt, also via crawl4ai; no alternative official source found.",
       "skip_og_image": true,
       "selectors": {
         "title": ".article.dataBox .ttl",
@@ -1501,7 +1501,7 @@
         "description": ".article.dataBox dd.txt p",
         "images": ".article.dataBox dd.right img[src*=\"/detail_\"]"
       },
-      "beta": true,
+      "beta": false,
       "locales": {
         "ja": {
           "start_urls": ["https://www.po-holdings.co.jp/m-annex/exhibition/index.html"],
@@ -1513,6 +1513,7 @@
         "machine_translate_missing_locales": true
       },
       "crawl_hints": {
+        "disabled": true,
         "max_detail_pages": 1
       }
     },
