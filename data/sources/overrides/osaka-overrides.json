@@ -1,4 +1,16 @@
 {
   "description": "Optional Osaka source overrides.",
-  "sources": {}
+  "sources": {
+    "kouichi-fine-arts": {
+      "selectors": {
+        "title": "h1.elementor-heading-title",
+        "description": ".elementor-widget-container div[class=\"\"] p, .elementor-widget-container div[class=\"\"] div"
+      }
+    },
+    "osaka-nihon-mingeikan": {
+      "selectors": {
+        "title": ".archive h2"
+      }
+    }
+  }
 }

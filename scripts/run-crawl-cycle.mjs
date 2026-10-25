@@ -9,6 +9,7 @@ import {
   parseGitDivergence,
   maintainCrawlerStorage,
   postStatus,
+  purgeCityPageCache,
 } from './crawl-cycle-utils.mjs';
 
 const projectRoot = process.cwd();
@@ -170,6 +171,21 @@ try {
       ['pnpm', '--filter', 'kyo-no-kyoto-crawler', 'translations:check'],
       { allowFailure: true },
     )) === 0;
+
+  if (!skipCrawl) {
+    currentStep = 'purge_page_cache';
+    // Stale pages expire at local midnight anyway, so a failed purge only warns.
+    try {
+      const purge = await purgeCityPageCache(env, city);
+      console.log(
+        purge.skipped
+          ? 'Page cache purge skipped: NETLIFY_SITE_ID or NETLIFY_PURGE_TOKEN missing.'
+          : `Purged ${city} page cache.`,
+      );
+    } catch (error) {
+      console.warn(error instanceof Error ? error.message : String(error));
+    }
+  }
 
   const status = cycleStatus({ crawlExitCode, translationsPassed });
   const reasons = [

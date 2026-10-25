@@ -90,6 +90,12 @@ Current lazy-image policy:
 - Use `--render=always` or `CRAWL4AI_RENDER_MODE=always` only when discovery itself needs browser rendering, such as JavaScript-built listing pages.
 - Use `CRAWL4AI_RENDER_MODE=never` for local static-only tuning or when Crawl4AI is not installed.
 
+Selector review workflow:
+
+- `pnpm --filter kyo-no-kyoto-crawler selectors:inspect -- --city=kyoto [--source=a,b] [--unhealthy]` saves listing and detail pages per source, a condensed copy for reading, and a `baseline.json` of which required fields the current config fails. It reads Supabase `raw_pages` when crawler credentials exist and otherwise fetches through the crawler's normal fetch path (robots, delays, render mode). Output goes to gitignored `apps/crawler/.cache/selectors/<city>/`.
+- Write candidate selectors into `apps/crawler/.cache/selectors/<city>/proposals.json` as `{ "sources": { "<slug>": { "selectors": { ... }, "note": "..." } } }`. Only `listing_links`, `title`, `date`, `description`, and `images` are valid keys, and only descendant chains of tag, `#id`, `.class`, and `[attr]` parts are supported (no `>`, `+`, `~`, or pseudo-classes).
+- `pnpm --filter kyo-no-kyoto-crawler selectors:check -- --city=kyoto [--apply]` replays the saved pages with each proposal, reports fixed and broken fields per page, and writes `check-report.json`. `--apply` merges only proposals that fix at least one field and break none into `data/sources/overrides/<city>-overrides.json`. Review the extracted values in the report before committing: a selector can produce a valid-looking but wrong title.
+
 Current image filtering policy:
 
 - Event media is capped at five stored image URLs per event.

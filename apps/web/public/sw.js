@@ -1,4 +1,21 @@
-const CACHE_NAME = 'kyo-no-kyoto-v4';
+const CACHE_NAME = 'kyo-no-kyoto-v5';
+// Runtime entries live in their own capped caches so hashed assets and visited pages from old
+// deploys cannot pile up forever. The oldest entries are evicted first.
+const PAGE_CACHE_NAME = 'kyo-no-kyoto-pages-v1';
+const ASSET_CACHE_NAME = 'kyo-no-kyoto-assets-v1';
+const CACHE_LIMITS = { [PAGE_CACHE_NAME]: 24, [ASSET_CACHE_NAME]: 120 };
+const CURRENT_CACHES = new Set([CACHE_NAME, PAGE_CACHE_NAME, ASSET_CACHE_NAME]);
+const putCapped = async (cacheName, request, response) => {
+  const cache = await caches.open(cacheName);
+  await cache.put(request, response);
+  const keys = await cache.keys();
+  await Promise.all(
+    keys
+      .slice(0, Math.max(0, keys.length - CACHE_LIMITS[cacheName]))
+      .map((key) => cache.delete(key)),
+  );
+};
+
 const APP_SHELL = [
   '/site.webmanifest',
   '/favicon.svg',
@@ -29,7 +46,7 @@ self.addEventListener('activate', (event) => {
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames
-          .filter((cacheName) => cacheName !== CACHE_NAME)
+          .filter((cacheName) => !CURRENT_CACHES.has(cacheName))
           .map((cacheName) => caches.delete(cacheName)),
       );
       await self.clients.claim();
@@ -65,8 +82,7 @@ self.addEventListener('fetch', (event) => {
             url.pathname !== '/' &&
             url.pathname !== '/map'
           ) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(request, response.clone());
+            event.waitUntil(putCapped(PAGE_CACHE_NAME, request, response.clone()));
           }
           return response;
         } catch {
@@ -89,8 +105,9 @@ self.addEventListener('fetch', (event) => {
 
         try {
           const response = await fetch(request);
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(request, response.clone());
+          if (response.ok) {
+            event.waitUntil(putCapped(ASSET_CACHE_NAME, request, response.clone()));
+          }
           return response;
         } catch {
           return cachedResponse ?? Response.error();

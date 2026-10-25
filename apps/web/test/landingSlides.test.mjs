@@ -84,8 +84,9 @@ test('Netlify Image CDN allowlist covers every Astro remote host', async () => {
     JSON.parse(`"${match[1]}"`),
   );
 
-  for (const { protocol, hostname } of imageRemotePatterns) {
-    const imageUrl = `${protocol}://${hostname}/image.jpg`;
+  for (const { protocol, hostname, pathname } of imageRemotePatterns) {
+    const imagePath = pathname ? pathname.replace('**', 'image.jpg') : '/image.jpg';
+    const imageUrl = `${protocol}://${hostname}${imagePath}`;
     assert.ok(
       allowedPatterns.some((pattern) => new RegExp(pattern).test(imageUrl)),
       `${imageUrl} is missing from Netlify images.remote_images`,

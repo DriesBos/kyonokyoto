@@ -21,6 +21,7 @@ import {
   buildEventTranslationPayload,
   buildMachineTranslatedEvent,
   detailUrlExtractors,
+  discoverDetailUrls,
   eventExtractors,
   extractFestivalEditionMedia,
   extractChushinDetailUrls,
@@ -1865,11 +1866,12 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
   assert.deepEqual(
     extractGenericDetailUrls(
       `<a href="/en/programme_detail/?u=past-flagships">Past flagship exhibitions</a>
-       <a href="/en/calendar_programme_detail/?u=current-show">Current show</a>`,
+       <div class="cat2"><a href="../calendar_detail/?u=cinema-show">Cinema show</a></div>
+       <div class="cat1"><a href="../calendar_detail/?u=current-show">Current show</a></div>`,
       hkac.base_url,
       hkac,
     ),
-    ['https://hkac.org.hk/en/calendar_programme_detail/?u=current-show'],
+    ['https://hkac.org.hk/en/calendar_detail/?u=current-show'],
   );
 
   const duMonde = eventExtractors['galerie-du-monde'](
@@ -1882,6 +1884,19 @@ test('Hong Kong image rules remove broken, duplicate, and poster media', async (
     'https://galeriedumonde.com/exhibitions/104-tang-chang/overview/',
   );
   assert.deepEqual(duMonde.image_urls, ['https://static-assets.artlogic.net/artwork.jpg']);
+
+  const duMondeOgOnly = eventExtractors['galerie-du-monde'](
+    `<meta property="og:image" content="https://static-assets.artlogic.net/main_image_override/100/chc.jpg">
+     <h1>Chen Hui-Chiao</h1>
+     <time>4 Jun - 29 Aug 2026</time>
+     <p>Useful exhibition description for Galerie du Monde Hong Kong.</p>`,
+    sourceBySlug.get('galerie-du-monde'),
+    'https://galeriedumonde.com/exhibitions/100-chen-hui-chiao/overview/',
+  );
+  assert.equal(
+    duMondeOgOnly.primary_image_url,
+    'https://static-assets.artlogic.net/main_image_override/100/chc.jpg',
+  );
 
   const duMondePosterOnly = eventExtractors['galerie-du-monde'](
     `<h1>Poster-only exhibition</h1>
@@ -1998,6 +2013,13 @@ test('Villepin discovery stops before past exhibitions', () => {
 
   assert.deepEqual(
     detailUrlExtractors.villepin(listingHtml, 'https://www.villepinart.com/exhibitions'),
+    ['https://www.villepinart.com/as-the-ground-holds'],
+  );
+  assert.deepEqual(
+    detailUrlExtractors.villepin(
+      listingHtml.replace('Current Exhibitions', 'Upcoming Exhibitions'),
+      'https://www.villepinart.com/exhibitions-hong-kong',
+    ),
     ['https://www.villepinart.com/as-the-ground-holds'],
   );
 });
@@ -4160,6 +4182,63 @@ test('Oyamazaki extraction uses article metadata and skips flyer image', () => {
   assert.equal(japaneseEvent.end_date, '2026-09-06');
 });
 
+test('Oyamazaki extraction reads the 30th-anniversary site and keeps its key visual', () => {
+  const detailHtml = `
+    <main>
+      <exhibitions-detail-fv>
+        <picture class="optimized-image mv"><img src="https://images.example.com/rouault_mv.jpg?w=1500" alt=""></picture>
+        <div class="heading">
+          <h1><p class="sup">開館30周年記念展示</p><p class="main"><span>ジョルジュ・ルオー ―いつくしむまなざし、祈りの筆あと</span></p></h1>
+          <div class="overview"><p>敬虔なカトリック教徒だったジョルジュ・ルオーは独自の作品を生みだしました。</p></div>
+        </div>
+      </exhibitions-detail-fv>
+      <exhibitions-detail-exhibits>
+        <div class="exhibits pc"><picture class="optimized-image exhibit"><img src="https://images.example.com/work-01.jpg?w=1500" alt=""></picture></div>
+      </exhibitions-detail-exhibits>
+      <exhibitions-detail-infomation>
+        <ul>
+          <li class="infomation-item term"><p class="ii-heading">会期</p><div class="ii-body"> 2026年9月19日(土)～2026年12月6日(日)　 ＊会期中一部展示替えあり </div></li>
+          <li class="infomation-item closed"><p class="ii-heading">休館日</p><div class="ii-body"> 月曜日(ただし9月21日は開館)、10月13日(火) </div></li>
+        </ul>
+      </exhibitions-detail-infomation>
+    </main>
+  `;
+  const source = {
+    name: 'Oyamazaki Villa Museum',
+    taxonomy: testTaxonomy(['museum']),
+    selectors: {
+      title: '.p-news_title, exhibitions-detail-fv h1 .main',
+      date: '.p-news_date, .infomation-item.term .ii-body',
+      description: '.p-exhibitionArticle_text, exhibitions-detail-fv .overview',
+      images: '.p-exhibitionArticle img, exhibitions-detail-fv img, .exhibits.pc img',
+    },
+  };
+
+  const event = eventExtractors['oyamazaki-villa-museum'](
+    detailHtml,
+    source,
+    'https://www.30th.asahigroup-oyamazaki.com/exhibitions/rouault/',
+  );
+
+  assert.equal(event.title, 'ジョルジュ・ルオー ―いつくしむまなざし、祈りの筆あと');
+  assert.equal(event.start_date, '2026-09-19');
+  assert.equal(event.end_date, '2026-12-06');
+  assert.match(event.description, /ジョルジュ・ルオー/);
+  assert.equal(event.primary_image_url, 'https://images.example.com/rouault_mv.jpg?w=1500');
+
+  const englishEvent = eventExtractors['oyamazaki-villa-museum'](
+    detailHtml.replace(
+      '2026年9月19日(土)～2026年12月6日(日)　 ＊会期中一部展示替えあり',
+      'Saturday, September 19 to Sunday, December 6, 2026',
+    ),
+    source,
+    'https://www.30th.asahigroup-oyamazaki.com/en/exhibitions/rouault/',
+  );
+
+  assert.equal(englishEvent.start_date, '2026-09-19');
+  assert.equal(englishEvent.end_date, '2026-12-06');
+});
+
 test('Baiken event extraction cleans Japanese title dates and infers year', () => {
   const source = {
     name: 'Gallery Baiken',
@@ -4199,6 +4278,32 @@ test('Baiken event extraction cleans Japanese title dates and infers year', () =
     event.primary_image_url,
     'https://baiken.jp/manage/wp-content/uploads/exhibition/2026/04/main.jpg',
   );
+});
+
+test('Baiken slash title dates use the inferred year', () => {
+  const source = {
+    name: 'Gallery Baiken',
+    taxonomy: testTaxonomy(['gallery']),
+    selectors: { title: '.post-title', date: '.field-date', description: '.des-box' },
+  };
+  const detailHtml = `
+    <title>高 資婷 ❍夢見の余韻❍11/7(土)～21(土) | 梅軒画廊</title>
+    <div class="detail-content">
+      <p class="post-title">高 資婷 ❍夢見の余韻❍11/7(土)～21(土)</p>
+      <div class="des-box"><p>日本画家・高資婷さんの個展を開催いたします。</p></div>
+      <img src="https://baiken.jp/manage/wp-content/uploads/exhibition/2026/10/main.jpg" alt="">
+    </div>
+  `;
+
+  const event = eventExtractors['gallery-baiken'](
+    detailHtml,
+    source,
+    'https://baiken.jp/exhibition/kou-shitei/',
+  );
+
+  assert.equal(event.title, '高 資婷 ❍夢見の余韻❍');
+  assert.equal(event.start_date, '2026-11-07');
+  assert.equal(event.end_date, '2026-11-21');
 });
 
 test('source capabilities declare native locales and machine translation behavior', () => {
@@ -4589,7 +4694,7 @@ test('source config includes Hosomi Museum current exhibition', async () => {
   assert.deepEqual(event.image_urls, ['https://www.emuseum.or.jp/img_exhi/ex093/main_ban-pc.jpg']);
 });
 
-test('source config includes KyotoBa gallery events with Japanese default', async () => {
+test('source config crawls the inline KyotoBa gallery page with Japanese default', async () => {
   const payload = JSON.parse(
     await readFile(
       resolve(import.meta.dirname, '../../../data/sources/kyoto-sources.json'),
@@ -4601,10 +4706,15 @@ test('source config includes KyotoBa gallery events with Japanese default', asyn
   assert.equal(source?.name, 'KyotoBa');
   assert.equal(source?.language, 'ja');
   assert.deepEqual(source?.start_urls, ['https://kyoto-ba.jp/gallery/']);
-  assert.equal(source?.selectors?.listing_links, '.mec-event-title a');
-  assert.equal(source?.selectors?.title, '.mec-single-title');
+  assert.equal(source?.crawl_hints?.listing_is_detail, true);
+  assert.equal(source?.selectors?.title, '.p1 strong');
   assert.equal(source?.locales?.ja?.start_urls?.[0], 'https://kyoto-ba.jp/gallery/');
-  assert.match(source?.notes ?? '', /Gallery events are listed on \/gallery\//);
+  assert.deepEqual(
+    discoverDetailUrls(applySourceOverride(source), [
+      { url: 'https://kyoto-ba.jp/gallery/', html: '<a href="/galleryphoto/">Photos</a>' },
+    ]),
+    ['https://kyoto-ba.jp/gallery/'],
+  );
 });
 
 test('source config includes hakari contemporary exhibition cards', async () => {
@@ -4868,14 +4978,17 @@ test('noisy generic sources pin event title and discovery fields', async () => {
   );
   assert.equal(tobikan?.selectors?.listing_links, '.exhibition-item');
   assert.equal(tobikan?.selectors?.title, '.exhibition-header-title');
-  assert.equal(opera?.selectors?.listing_links, "main a[href*='/ag/exh/']");
+  assert.equal(opera?.selectors?.listing_links, '.p-exhPanel__item a');
   assert.ok(opera?.crawl_hints?.skip_patterns.includes('/ag/exh/current_exhibitions'));
-  assert.equal(momat?.selectors?.description, '#section-01 p');
+  assert.equal(momat?.crawl_hints?.render_mode, 'never');
   assert.deepEqual(yamatane?.selectors?.description, [
     '.l-exhibition-intro__text',
     '.l-exhibition-intro__content p',
   ]);
-  assert.equal(kouichi?.selectors?.description, '.HTML__Container-sc-1im40xc-0 p');
+  assert.equal(
+    kouichi?.selectors?.description,
+    '.elementor-widget-container div[class=""] p, .elementor-widget-container div[class=""] div',
+  );
 });
 
 test('new Osaka gallery sources discover concrete exhibition details', async () => {
@@ -5304,6 +5417,26 @@ test('source locale config applies localized source names', async () => {
 
   assert.equal(event.institution_name, '京都芸術センター');
   assert.equal(event.venue_name, '京都芸術センター');
+});
+
+test('Kyoto Art Center listing keeps slug event URLs and skips archive links', () => {
+  const detailUrls = detailUrlExtractors['kyoto-art-center'](
+    `<a href="https://www.kac.or.jp/events/month/">Month</a>
+     <a href="https://www.kac.or.jp/events/archive/">Archive</a>
+     <a href="https://www.kac.or.jp/events/feed/">Feed</a>
+     <ul class="eventsList">
+       <li><a href="https://www.kac.or.jp/events/kyotoexperiment261003/">A</a></li>
+       <li><a href="https://www.kac.or.jp/events/20260807-2/">B</a></li>
+       <li><a href="https://www.kac.or.jp/events/41234/">C</a></li>
+     </ul>`,
+    'https://www.kac.or.jp/events/',
+  );
+
+  assert.deepEqual(detailUrls, [
+    'https://www.kac.or.jp/events/kyotoexperiment261003/',
+    'https://www.kac.or.jp/events/20260807-2/',
+    'https://www.kac.or.jp/events/41234/',
+  ]);
 });
 
 test('Kyoto Art Center empty listing means no current events', () => {
@@ -6348,4 +6481,54 @@ test('source-specific crawler registries only reference configured source slugs'
       `${label} contains unknown source slugs: ${unknownSlugs.join(', ')}`,
     );
   }
+});
+
+test('MOMAT exhibitions come from the official WordPress REST API', async () => {
+  const source = (await loadSourcesConfig({ city: 'tokyo' })).find(
+    (item) => item.slug === 'national-museum-of-modern-art-tokyo',
+  );
+  const listingUrl = 'https://www.momat.go.jp/en/wp-json/wp/v2/exhibition?per_page=10&_fields=id';
+
+  assert.equal(source.start_urls[0], listingUrl);
+  assert.deepEqual(
+    discoverDetailUrls(source, [
+      { url: listingUrl, html: '[{"id":176943},{"id":"x"},{"id":182969}]' },
+    ]),
+    [
+      'https://www.momat.go.jp/en/wp-json/wp/v2/exhibition/176943?_fields=id%2Clink%2Ctitle%2Ccontent%2Cyoast_head_json',
+      'https://www.momat.go.jp/en/wp-json/wp/v2/exhibition/182969?_fields=id%2Clink%2Ctitle%2Ccontent%2Cyoast_head_json',
+    ],
+  );
+
+  const detailJson = JSON.stringify({
+    id: 176942,
+    link: 'https://www.momat.go.jp/exhibitions/572',
+    title: { rendered: '斬新！速水御舟' },
+    content: {
+      rendered: `
+        <figure class="wp-block-image"><img width="682" height="1024" src="https://www.momat.go.jp/wp-content/uploads/2026/09/gyoshu-682x1024.jpg">
+        <figcaption>《京の舞妓》1920年（展示期間：2027年3月19日～4月11日）</figcaption></figure>
+        <h2 id="about">展覧会概要</h2>
+        <p>速水御舟（1894－1935）は、大正から昭和初期にかけて活躍した日本画家です。本展では約100点の作品を4章構成で紹介します。</p>
+        <dl class="momat-dl"><div class="momat-dl__item"><dt>会期</dt><dd><p>2027年3月19日（金）～5月9日（日）</p></dd></div>
+        <div class="momat-dl__item"><dt>開館時間</dt><dd><p>10:00–17:00（金曜・土曜は20:00まで）入館は閉館30分前まで</p></dd></div></dl>`,
+    },
+    yoast_head_json: {
+      og_image: [
+        { url: 'https://www.momat.go.jp/wp-content/uploads/2026/08/exhibitions_572_01.jpg' },
+      ],
+    },
+  });
+  const event = eventExtractors['national-museum-of-modern-art-tokyo'](
+    detailJson,
+    { ...source, language: 'ja' },
+    'https://www.momat.go.jp/wp-json/wp/v2/exhibition/176942',
+  );
+
+  assert.equal(event.title, '斬新！速水御舟');
+  assert.equal(event.source_url, 'https://www.momat.go.jp/exhibitions/572');
+  assert.deepEqual([event.start_date, event.end_date], ['2027-03-19', '2027-05-09']);
+  assert.match(event.description, /^速水御舟/);
+  assert.doesNotMatch(event.description, /開館時間|10:00/);
+  assert.ok(event.primary_image_url);
 });

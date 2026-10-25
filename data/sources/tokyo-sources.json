@@ -365,27 +365,27 @@
       "lat": 35.6905432,
       "lng": 139.7546932,
       "base_url": "https://www.momat.go.jp/en/exhibitions",
-      "start_urls": ["https://www.momat.go.jp/en/exhibitions"],
+      "start_urls": ["https://www.momat.go.jp/en/wp-json/wp/v2/exhibition?per_page=10&_fields=id"],
       "allowed_domains": ["www.momat.go.jp", "momat.go.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibitions", "/exhibitions"],
-      "notes": "Purple art marker from Google My Maps.",
+      "notes": "Purple art marker from Google My Maps. 2026-10-25: HTML pages return 403 to the crawler (robots.txt allows all), so listing and detail data come from the official WordPress REST API (/wp-json/wp/v2/exhibition) via the source-specific extractor.",
       "landing_slider": true,
-      "selectors": {
-        "description": "#section-01 p"
-      },
       "locales": {
         "ja": {
-          "start_urls": ["https://www.momat.go.jp/exhibitions"],
+          "start_urls": ["https://www.momat.go.jp/wp-json/wp/v2/exhibition?per_page=10&_fields=id"],
           "event_page_patterns": ["/exhibitions"]
         },
         "en": {
-          "start_urls": ["https://www.momat.go.jp/en/exhibitions"],
+          "start_urls": [
+            "https://www.momat.go.jp/en/wp-json/wp/v2/exhibition?per_page=10&_fields=id"
+          ],
           "event_page_patterns": ["/en/exhibitions"]
         }
       },
       "crawl_hints": {
-        "max_detail_pages": 10
+        "max_detail_pages": 10,
+        "render_mode": "never"
       },
       "beta": false
     },
@@ -434,6 +434,10 @@
     {
       "slug": "tokyo-opera-city-art-gallery",
       "name": "Opera City Art Gallery",
+      "names": {
+        "en": "Opera City Art Gallery",
+        "ja": "東京オペラシティ アートギャラリー"
+      },
       "taxonomy": {
         "venue_category": ["gallery"],
         "display_category": [],
@@ -445,16 +449,17 @@
       "lng": 139.6873281,
       "base_url": "https://www.operacity.jp/ag/exh/current_exhibitions/",
       "start_urls": [
-        "https://www.operacity.jp/ag/exh/current_exhibitions/",
-        "https://www.operacity.jp/ag/exh/upcoming_exhibitions/"
+        "https://www.operacity.jp/contents/exhibition/current?lang=ja&home=0",
+        "https://www.operacity.jp/contents/exhibition/upcoming?lang=ja&home=0"
       ],
       "allowed_domains": ["www.operacity.jp", "operacity.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/ag/exh/"],
-      "notes": "Japanese-first source. Current/upcoming index pages may be empty; never save those section pages as events.",
+      "event_page_patterns": ["/ag/exh"],
+      "notes": "Japanese-first source. The current/upcoming pages (/ag/exh/current_exhibitions/, /ag/exh/upcoming_exhibitions/) load their lists by XHR, so start URLs are those /contents/exhibition/ fragments. Never save the section pages as events.",
       "selectors": {
-        "listing_links": "main a[href*='/ag/exh/']",
-        "title": "main h1"
+        "listing_links": ".p-exhPanel__item a",
+        "title": "main h1",
+        "description": ".p-exhArticle__contents p"
       },
       "capabilities": {
         "native_locales": ["ja"],
@@ -534,6 +539,13 @@
         }
       },
       "crawl_hints": {
+        "skip_patterns": [
+          "lang=cn",
+          "lang=ko",
+          "lang=tw",
+          "/exhibitions/past",
+          "/exhibitions/year"
+        ],
         "max_detail_pages": 8
       },
       "beta": false
@@ -737,6 +749,9 @@
         "native_locales": ["en"],
         "machine_translate_missing_locales": true
       },
+      "selectors": {
+        "listing_links": "#exhibitions-grid-current a, #exhibitions-grid-forthcoming a"
+      },
       "crawl_hints": {
         "max_detail_pages": 6
       },
@@ -858,6 +873,10 @@
           "start_urls": ["https://museum.geidai.ac.jp/en/exhibit/"],
           "event_page_patterns": ["/en/exhibit/"]
         }
+      },
+      "selectors": {
+        "listing_links": "a[href$=.html]",
+        "title": ".article h2"
       },
       "crawl_hints": {
         "max_detail_pages": 8
@@ -983,6 +1002,7 @@
         }
       },
       "crawl_hints": {
+        "listing_is_detail": true,
         "max_detail_pages": 4
       },
       "beta": true
@@ -1031,16 +1051,16 @@
       "start_urls": ["https://nanzuka.com/en/exhibitions"],
       "allowed_domains": ["nanzuka.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibitions", "/ja/exhibitions"],
-      "notes": "Purple art markers from Google My Maps. One source covers NANZUKA Tokyo exhibition pages and known Tokyo map venues.",
+      "event_page_patterns": ["/en/exhibitions/", "/ja/exhibitions/"],
+      "notes": "Purple art markers from Google My Maps. One source covers NANZUKA Tokyo exhibition pages and known Tokyo map venues. SPA: listing client-redirects to ?year=; wait_for holds the render until exhibition images load.",
       "locales": {
         "ja": {
           "start_urls": ["https://nanzuka.com/ja/exhibitions"],
-          "event_page_patterns": ["/ja/exhibitions"]
+          "event_page_patterns": ["/ja/exhibitions/"]
         },
         "en": {
           "start_urls": ["https://nanzuka.com/en/exhibitions"],
-          "event_page_patterns": ["/en/exhibitions"]
+          "event_page_patterns": ["/en/exhibitions/"]
         }
       },
       "venue_locations": [
@@ -1059,8 +1079,14 @@
           "lng": 139.698939
         }
       ],
+      "selectors": {
+        "title": "main div.text-lg.font-semibold div.text-lg.font-semibold",
+        "description": "main div.text-justify.tracking-wider",
+        "images": "main picture img"
+      },
       "crawl_hints": {
-        "max_detail_pages": 8
+        "max_detail_pages": 8,
+        "wait_for": "js:() => document.querySelector('img[src*=\"nanzuka-bucket\"]') !== null"
       },
       "beta": true
     },
@@ -1467,7 +1493,8 @@
       "allowed_domains": ["www.po-holdings.co.jp", "po-holdings.co.jp"],
       "crawl_strategy": "homepage-and-detail-pages",
       "event_page_patterns": ["/m-annex/exhibition/"],
-      "notes": "Official Ginza current-exhibition page. The listing is also the detail page; past and general corporate news are excluded.",
+      "is_active": false,
+      "notes": "Official Ginza current-exhibition page. The listing is also the detail page; past and general corporate news are excluded. Deactivated 2026-10-25: po-holdings.co.jp and pola-art-foundation.jp return CloudFront 403 for all paths incl. robots.txt, also via crawl4ai; no alternative official source found.",
       "skip_og_image": true,
       "selectors": {
         "title": ".article.dataBox .ttl",
@@ -1504,24 +1531,34 @@
       "lat": 35.66018,
       "lng": 139.73139,
       "base_url": "https://www.taronasugallery.com/en/",
-      "start_urls": ["https://www.taronasugallery.com/en/"],
+      "start_urls": [
+        "https://www.taronasugallery.com/en/exhibition/current/",
+        "https://www.taronasugallery.com/en/exhibition/forthcoming/"
+      ],
       "allowed_domains": ["www.taronasugallery.com", "taronasugallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/", "/exhibition/"],
-      "notes": "Official TARO NASU gallery site. Beta source; homepage links current and forthcoming exhibitions.",
+      "event_page_patterns": ["/en/exhibitions/"],
+      "notes": "Official TARO NASU gallery site. Beta source; listing pages /exhibition/current/ and /exhibition/forthcoming/ link exhibition pages at /exhibitions/<slug>/ (may be empty between shows). Artist pages (/artists/) are not events.",
       "beta": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://www.taronasugallery.com/"],
-          "event_page_patterns": ["/", "/exhibition/"]
+          "start_urls": [
+            "https://www.taronasugallery.com/exhibition/current/",
+            "https://www.taronasugallery.com/exhibition/forthcoming/"
+          ],
+          "event_page_patterns": ["/exhibitions/"]
         },
         "en": {
-          "start_urls": ["https://www.taronasugallery.com/en/"],
-          "event_page_patterns": ["/en/", "/exhibition/"]
+          "start_urls": [
+            "https://www.taronasugallery.com/en/exhibition/current/",
+            "https://www.taronasugallery.com/en/exhibition/forthcoming/"
+          ],
+          "event_page_patterns": ["/en/exhibitions/"]
         }
       },
       "crawl_hints": {
-        "max_detail_pages": 6
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/project-with/", "/news/", "/publication/", "/information/"]
       }
     },
     {

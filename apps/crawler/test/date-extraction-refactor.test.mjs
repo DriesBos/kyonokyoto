@@ -37,6 +37,25 @@ test('spaced dotted Artcourt range parses', () => {
   );
 });
 
+test('same-month ranges with only an end day parse in English and Japanese', () => {
+  for (const [raw, startDate, endDate] of [
+    ['Oct 3 – 31, 2026', '2026-10-03', '2026-10-31'],
+    ['October 3 - 31 2026', '2026-10-03', '2026-10-31'],
+    ['2026年11月7日(土)～21日(土)', '2026-11-07', '2026-11-21'],
+  ]) {
+    const parsed = parseGenericDateRange(raw);
+    assert.deepEqual([parsed.startDate, parsed.endDate], [startDate, endDate], raw);
+  }
+});
+
+test('galerie16 dotted ordinal ranges keep their start date', () => {
+  const raw = 'Oct.13th ,Tue – Oct. 25th Sun, 2026';
+
+  assert.equal(normalizeHumanDateText(raw), 'Oct 13 - Oct 25 2026');
+  const parsed = parseGenericDateRange(raw);
+  assert.deepEqual([parsed.startDate, parsed.endDate], ['2026-10-13', '2026-10-25']);
+});
+
 test('MoMAK omitted end year rolls across New Year', async () => {
   const source = (await loadSourcesConfig({ city: 'kyoto' })).find(
     (candidate) => candidate.slug === 'momak',
@@ -172,4 +191,113 @@ test('SCAI Park and Issey Kura keep verified open-ended canonical truth', async 
     assert.equal(validateScheduleSegments(event).schedule_type, 'open_ended');
     assert.equal(hasVerifiedOpenEndedSchedule(event), true);
   }
+});
+
+test('day-first numeric dates with a trailing year parse as ranges', () => {
+  const cases = [
+    ['10/10/2026 - 31/10/2026', '2026-10-10', '2026-10-31'],
+    ['10.10.2026 – 31.10.2026', '2026-10-10', '2026-10-31'],
+    ['08.03.2026-21.02.2027', '2026-03-08', '2027-02-21'],
+    ['18.07-25.10.2026', '2026-07-18', '2026-10-25'],
+    ['15.12 - 10.01.2027', '2026-12-15', '2027-01-10'],
+    [
+      'Date: 19.9 – 22.11.2026 (Closed on Mondays, except for legal holidays)',
+      '2026-09-19',
+      '2026-11-22',
+    ],
+    ['Date: 5-25/7/2025', '2025-07-05', '2025-07-25'],
+    ['7/3 - 10/5, 2026', '2026-03-07', '2026-05-10'],
+    ['Date | 日期: 27.9.2026 (Sun 日)', '2026-09-27', '2026-09-27'],
+    ['Date: 16/2/2024', '2024-02-16', '2024-02-16'],
+    // A second component over 12 marks US month-first text.
+    ['12/20/2026 - 01/15/2027', '2026-12-20', '2027-01-15'],
+    // JSON-LD startDate/endDate pairs keep their local dates.
+    ['2024-01-15T00:00:00+08:00 - 2030-09-30T23:59:59+08:00', '2024-01-15', '2030-09-30'],
+    // Year-first forms keep their existing parsers.
+    ['2026/10/3 - 2026/11/5', '2026-10-03', '2026-11-05'],
+  ];
+
+  for (const [raw, startDate, endDate] of cases) {
+    const parsed = parseGenericDateRange(raw);
+    assert.deepEqual([parsed.startDate, parsed.endDate], [startDate, endDate], raw);
+  }
+});
+
+test('Japanese ranges tolerate spaced 年月日, ー dashes and a bare end day', () => {
+  const cases = [
+    ['展示期間： 2026 年 7 月 28 日（火）～ 2027 年 1 月 24 日（日）', '2026-07-28', '2027-01-24'],
+    [
+      '令和8年 9月12日（土）〜12月13日（日） 【前期】9月12日（土）〜10月25日（日）',
+      '2026-09-12',
+      '2026-12-13',
+    ],
+    [
+      '会期｜ 2026年5月19日(火)ー6月12日(金) 予約期間 6月16日(火)ー 6月19日(金)',
+      '2026-05-19',
+      '2026-06-12',
+    ],
+    ['2026年2月10日(火)-14(土)', '2026-02-10', '2026-02-14'],
+    ['2026年9月12日 10:00-17:00', '2026-09-12', '2026-09-12'],
+    ['種と根っこ ─ 都市の耕し方 2026年10月17日［土］─ 12月20日［日］', '2026-10-17', '2026-12-20'],
+  ];
+
+  for (const [raw, startDate, endDate] of cases) {
+    const parsed = parseGenericDateRange(raw);
+    assert.deepEqual([parsed.startDate, parsed.endDate], [startDate, endDate], raw);
+  }
+});
+
+test('month-only dotted ranges span whole months without swallowing day dates', () => {
+  const cases = [
+    ['2025. 11 - 2027. 4 OAP Sculpture Path', '2025-11-01', '2027-04-30'],
+    ['2027.12 – 2028.2', '2027-12-01', '2028-02-29'],
+    ['2025.11.3 - 2025.12.4', '2025-11-03', '2025-12-04'],
+    ['2026. 7. 11 [sat] - 8.29 [sat]', '2026-07-11', '2026-08-29'],
+    ['2025.11.3', '2025-11-03', '2025-11-03'],
+    ['2025.11 - 2025.13', null, null],
+    ['v2025.11 build', null, null],
+  ];
+
+  for (const [raw, startDate, endDate] of cases) {
+    const parsed = parseGenericDateRange(raw);
+    assert.deepEqual([parsed.startDate, parsed.endDate], [startDate, endDate], raw);
+  }
+
+  const candidate = extractBestDateCandidate(
+    '<main><h1>Sculpted Rhymes</h1><p>2025. 11 - 2027. 4 <span>OAP Sculpture Path</span></p></main>',
+  );
+  assert.equal(candidate.parserId, 'parseDottedMonthRange');
+  assert.deepEqual(
+    [candidate.parsed.startDate, candidate.parsed.endDate],
+    ['2025-11-01', '2027-04-30'],
+  );
+});
+
+test('open-start date text starts on the crawl date or stays unknown', () => {
+  const html = (dateText) =>
+    `<main><span class="label">DATE</span><div class="event-date"><p>${dateText}</p></div></main>`;
+  const datesFor = (dateText, today) => {
+    const parsed = extractBestDateCandidate(html(dateText), null, { today })?.parsed;
+    return parsed ? [parsed.startDate, parsed.endDate] : null;
+  };
+
+  assert.deepEqual(datesFor('From Now &#8211; 28 February 2027 (Sunday)', '2026-10-25'), [
+    '2026-10-25',
+    '2027-02-28',
+  ]);
+  assert.deepEqual(datesFor('Now - 28 February 2027', '2026-10-25'), ['2026-10-25', '2027-02-28']);
+  assert.deepEqual(datesFor('Until 5 December 2026', '2026-10-25'), ['2026-10-25', '2026-12-05']);
+  assert.deepEqual(datesFor('～2027年2月28日（日）まで', '2026-10-25'), [
+    '2026-10-25',
+    '2027-02-28',
+  ]);
+  // Ended before the crawl, or no crawl date: the start is unknown, so no date.
+  assert.equal(datesFor('From Now – 28 February 2026', '2026-10-25'), null);
+  assert.equal(datesFor('From Now – 28 February 2027', null), null);
+  // Plain single dates and full ranges are untouched.
+  assert.deepEqual(datesFor('28 February 2027', '2026-10-25'), ['2027-02-28', '2027-02-28']);
+  assert.deepEqual(datesFor('2026年10月1日～2027年2月28日まで', '2026-10-25'), [
+    '2026-10-01',
+    '2027-02-28',
+  ]);
 });

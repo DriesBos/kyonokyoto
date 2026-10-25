@@ -137,7 +137,6 @@
       "selectors": {
         "title": "#exhi_waku h2",
         "date": "#time h4",
-        "description": "#exhi_waku .exhi_credit",
         "images": "img[src*=\"main_ban-pc\"]"
       },
       "crawl_hints": {
@@ -1286,6 +1285,9 @@
           ],
           "event_page_patterns": ["/20"]
         }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["archive.html"]
       }
     },
     {
@@ -1627,17 +1629,14 @@
       "start_urls": ["https://kyoto-ba.jp/gallery/"],
       "allowed_domains": ["kyoto-ba.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/events/"],
-      "notes": "Default language is Japanese. Gallery events are listed on /gallery/ in the Modern Events Calendar schedule; follow the event title links under /events/.",
+      "event_page_patterns": ["/gallery/"],
+      "notes": "Default language is Japanese. The current exhibition is shown inline on /gallery/ (it no longer links to Modern Events Calendar pages under /events/), so that page is crawled as the event page.",
       "selectors": {
-        "listing_links": ".mec-event-title a",
-        "title": ".mec-single-title",
-        "date": ".mec-single-event-date dd",
-        "description": ".mec-single-event-description",
-        "images": ".mec-events-content img, .mec-events-event-image img"
+        "title": ".p1 strong"
       },
       "crawl_hints": {
-        "max_detail_pages": 8
+        "listing_is_detail": true,
+        "max_detail_pages": 1
       },
       "capabilities": {
         "native_locales": ["ja"],
@@ -1646,7 +1645,7 @@
       "locales": {
         "ja": {
           "start_urls": ["https://kyoto-ba.jp/gallery/"],
-          "event_page_patterns": ["/events/"]
+          "event_page_patterns": ["/gallery/"]
         },
         "en": {
           "start_urls": [],
@@ -1739,6 +1738,9 @@
           "start_urls": ["https://www.raku-yaki.or.jp/e/museum/exhibition/index.html"],
           "event_page_patterns": ["/e/museum/exhibition/", "/museum/exhibition/"]
         }
+      },
+      "crawl_hints": {
+        "skip_patterns": ["forthcoming_exhibitions.html"]
       }
     },
     {
@@ -1979,35 +1981,39 @@
       "address_text": "5-3 Zenihara, Oyamazaki-cho, Otokuni-gun, Kyoto 618-0071 Japan",
       "lat": 34.8955629,
       "lng": 135.6796672,
-      "base_url": "https://www.asahigroup-oyamazaki.com/exhibition/",
+      "base_url": "https://www.30th.asahigroup-oyamazaki.com/exhibitions/",
       "start_urls": [
-        "https://www.asahigroup-oyamazaki.com/english/exhibition/",
-        "https://www.asahigroup-oyamazaki.com/exhibition/"
+        "https://www.30th.asahigroup-oyamazaki.com/en/exhibitions/",
+        "https://www.30th.asahigroup-oyamazaki.com/exhibitions/"
       ],
-      "allowed_domains": ["www.asahigroup-oyamazaki.com", "asahigroup-oyamazaki.com"],
+      "allowed_domains": [
+        "www.30th.asahigroup-oyamazaki.com",
+        "www.asahigroup-oyamazaki.com",
+        "asahigroup-oyamazaki.com"
+      ],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/english/exhibition/", "/exhibition/"],
-      "notes": "English exhibition listing for the Oyamazaki Villa Museum, just outside Kyoto.",
+      "event_page_patterns": ["/en/exhibitions/", "/exhibitions/"],
+      "notes": "Exhibition listing for the Oyamazaki Villa Museum, just outside Kyoto. TEMPORARY (2026-10): the main site www.asahigroup-oyamazaki.com is down for maintenance, so start URLs point at the 30th-anniversary site (www.30th.asahigroup-oyamazaki.com/exhibitions/, /en/exhibitions/). When the main site returns, restore start_urls/locales to https://www.asahigroup-oyamazaki.com/exhibition/ and /english/exhibition/ with event_page_patterns /exhibition/ and /english/exhibition/; the selectors keep the main-site .p-* groups so they still work.",
       "skip_og_image": true,
       "selectors": {
-        "listing_links": ".p-exhibitionCard_btn a",
-        "title": ".p-news_title",
-        "date": ".p-news_date",
-        "description": ".p-exhibitionArticle_text",
-        "images": ".p-exhibitionArticle img"
+        "listing_links": ".p-exhibitionCard_btn a, a.link.pc[href*=/exhibitions/]",
+        "title": ".p-news_title, exhibitions-detail-fv h1 .main",
+        "date": ".p-news_date, .infomation-item.term .ii-body",
+        "description": ".p-exhibitionArticle_text, exhibitions-detail-fv .overview",
+        "images": ".p-exhibitionArticle img, exhibitions-detail-fv img, .exhibits.pc img"
       },
       "crawl_hints": {
-        "skip_patterns": ["#item-list"],
+        "skip_patterns": ["#item-list", "#top", "#schedule", "#special-exhibition", "#monet"],
         "max_detail_pages": 6
       },
       "locales": {
         "ja": {
-          "start_urls": ["https://www.asahigroup-oyamazaki.com/exhibition/"],
-          "event_page_patterns": ["/exhibition/"]
+          "start_urls": ["https://www.30th.asahigroup-oyamazaki.com/exhibitions/"],
+          "event_page_patterns": ["/exhibitions/"]
         },
         "en": {
-          "start_urls": ["https://www.asahigroup-oyamazaki.com/english/exhibition/"],
-          "event_page_patterns": ["/english/exhibition/"]
+          "start_urls": ["https://www.30th.asahigroup-oyamazaki.com/en/exhibitions/"],
+          "event_page_patterns": ["/en/exhibitions/"]
         }
       }
     },

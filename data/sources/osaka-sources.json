@@ -22,6 +22,7 @@
       "base_url": "https://www.aham.jp/exhibition/future/",
       "start_urls": ["https://www.aham.jp/exhibition/future/"],
       "allowed_domains": ["www.aham.jp", "aham.jp"],
+      "rehost_images": true,
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/future/", "/exhibition/now/"],
       "notes": "Purple art marker from Google My Maps. Official exhibition index is Japanese-first and contains current/future exhibition detail links.",
@@ -1183,22 +1184,28 @@
       "lat": 34.48973,
       "lng": 135.40016,
       "base_url": "https://masaki-art-museum.jp/",
-      "start_urls": ["https://masaki-art-museum.jp/"],
+      "start_urls": ["https://masaki-art-museum.jp/event/"],
       "allowed_domains": ["masaki-art-museum.jp"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/"],
+      "event_page_patterns": ["/event/"],
       "notes": "Official museum site; exhibition information is linked from the homepage image navigation.",
       "beta": true,
       "locales": {
         "ja": {
-          "start_urls": ["https://masaki-art-museum.jp/"],
-          "event_page_patterns": ["/"]
+          "start_urls": ["https://masaki-art-museum.jp/event/"],
+          "event_page_patterns": ["/event/"]
         }
       },
       "capabilities": {
         "native_locales": ["ja"]
       },
+      "selectors": {
+        "title": "#event_before .linkmenu li a",
+        "date": ".time_box td",
+        "images": ".midashi img"
+      },
       "crawl_hints": {
+        "listing_is_detail": true,
         "max_detail_pages": 4
       }
     },
@@ -1280,7 +1287,12 @@
           "event_page_patterns": ["/eventhall/", "/parcohall/"]
         }
       },
+      "selectors": {
+        "title": ".mainIntro__ttl",
+        "date": ".mainIntro__sumally-list p"
+      },
       "crawl_hints": {
+        "skip_patterns": ["/parcohallnagoya/", "/information/"],
         "max_detail_pages": 6
       }
     },
@@ -1348,7 +1360,15 @@
         "native_locales": ["ja"]
       },
       "crawl_hints": {
-        "skip_patterns": ["/shop", "/about", "/floor"],
+        "skip_patterns": [
+          "/shop",
+          "/about",
+          "/floor",
+          "/exhibition/event/",
+          "/2026/",
+          "/2025/",
+          "/2024/"
+        ],
         "max_detail_pages": 6
       }
     },
@@ -1386,7 +1406,11 @@
           "event_page_patterns": ["/en/exhibition.html"]
         }
       },
+      "selectors": {
+        "date": ".c-small_headline"
+      },
       "crawl_hints": {
+        "listing_is_detail": true,
         "max_detail_pages": 2
       }
     }

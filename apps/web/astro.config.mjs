@@ -67,8 +67,15 @@ const permanentImagePatterns = readdirSync(permanentConfigDirectory)
     );
   });
 
+// Crawler copies of images from origins that block fetches from outside Japan.
+const eventMediaPattern = {
+  protocol: 'https',
+  hostname: 'xbnmaaeqzmgsvjmovtrr.supabase.co',
+  pathname: '/storage/v1/object/public/event-media/**',
+};
+
 // Sites often mix http and https image URLs, so allow both protocols for every known host.
-export const imageRemotePatterns = [
+const hostImagePatterns = [
   ...sourceImagePatterns,
   ...permanentImagePatterns,
   ...sharedImageHosts.map((hostname) => ({ protocol: 'https', hostname })),
@@ -88,6 +95,8 @@ export const imageRemotePatterns = [
   .sort((left, right) =>
     `${left.protocol}:${left.hostname}`.localeCompare(`${right.protocol}:${right.hostname}`),
   );
+
+export const imageRemotePatterns = [...hostImagePatterns, eventMediaPattern];
 
 /** @param {string} filePath */
 export const preventJavaScriptInlining = (filePath) =>

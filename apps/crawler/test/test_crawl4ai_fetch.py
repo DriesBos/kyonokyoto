@@ -45,6 +45,30 @@ class Crawl4AiNetworkGuardTest(unittest.TestCase):
             MODULE.canonical_navigation_url("https://museum.example/other"),
         )
 
+    def test_follow_up_navigation_only_allows_same_origin_client_redirects(self):
+        def state(pending=False, remaining=MODULE.MAX_SAME_ORIGIN_NAVIGATIONS):
+            return {
+                "url": "https://nanzuka.com/en/exhibitions",
+                "allowed_domains": ["nanzuka.com"],
+                "initial_navigation_pending": pending,
+                "same_origin_navigations_remaining": remaining,
+            }
+
+        allowed = MODULE.navigation_request_allowed
+
+        self.assertTrue(allowed(state(True), "https://nanzuka.com/en/exhibitions", True))
+        self.assertFalse(allowed(state(True), "https://nanzuka.com/en/exhibitions?year=2026", True))
+        self.assertTrue(allowed(state(), "https://nanzuka.com/en/exhibitions?year=2026", True))
+        self.assertTrue(allowed(state(), "https://NANZUKA.com:443/ja/exhibitions", True))
+        self.assertFalse(allowed(state(), "https://nanzuka.com/en/exhibitions?year=2026", False))
+        self.assertFalse(allowed(state(remaining=0), "https://nanzuka.com/en/exhibitions?y=1", True))
+        self.assertFalse(allowed(state(), "http://nanzuka.com/en/exhibitions", True))
+        self.assertFalse(allowed(state(), "https://www.nanzuka.com/en/exhibitions", True))
+        self.assertFalse(allowed(state(), "https://nanzuka.com:8443/en/exhibitions", True))
+        self.assertFalse(allowed(state(), "https://attacker.test/?u=nanzuka.com", True))
+        self.assertFalse(allowed(state(), "https://nanzuka.com.attacker.test/", True))
+        self.assertFalse(allowed(state(), "javascript:alert(1)", True))
+
     def test_renderer_disables_service_workers_and_routes_websockets(self):
         source = MODULE_PATH.read_text(encoding="utf-8")
 

@@ -18,11 +18,15 @@
       "start_urls": ["https://www.mill6chat.org/current-exhibitions/current-upcoming"],
       "allowed_domains": ["www.mill6chat.org", "mill6chat.org"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/current-exhibitions/", "/events/"],
+      "event_page_patterns": ["/current-exhibitions/", "/events/", "/event/"],
       "notes": "Official current and upcoming exhibitions page. Permanent displays share the listing and should retain their explicit ongoing status.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "skip_patterns": ["/past-exhibitions/", "/news/"], "max_detail_pages": 10 }
+      "selectors": { "listing_links": ".ecs-event-title a" },
+      "crawl_hints": {
+        "skip_patterns": ["/past-exhibitions/", "/news/", "/bloomberg-connects/"],
+        "max_detail_pages": 10
+      }
     },
     {
       "slug": "blindspot-gallery",
@@ -120,7 +124,10 @@
       "notes": "Official contemporary exhibitions index. Keep Hong Kong entries; exclude art fairs and other cities.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
-      "crawl_hints": { "skip_patterns": ["/art-fair/", "/artfairs/"], "max_detail_pages": 8 }
+      "crawl_hints": {
+        "skip_patterns": ["/art-fair/", "/artfairs/", "art-basel"],
+        "max_detail_pages": 8
+      }
     },
     {
       "slug": "hkdi-gallery",
@@ -209,7 +216,8 @@
       "allowed_domains": ["aaa.org.hk"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/programmes/programmes/"],
-      "notes": "Official current/upcoming programmes index. Only entries labelled Exhibition should become events; reject grants, calls, residencies, workshops, and offsite programmes.",
+      "is_active": false,
+      "notes": "Official current/upcoming programmes index. Only entries labelled Exhibition should become events; reject grants, calls, residencies, workshops, and offsite programmes. Deactivated 2026-10-25: aaa.org.hk returns 403 for all paths incl. sitemap, also via crawl4ai; no alternative official source found.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": {
@@ -260,7 +268,8 @@
       "allowed_domains": ["gagosian.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions/"],
-      "notes": "Official exhibition index pre-filtered to Hong Kong. It mixes current, upcoming, and archive, so event dates provide the final cutoff.",
+      "is_active": false,
+      "notes": "Official exhibition index pre-filtered to Hong Kong. It mixes current, upcoming, and archive, so event dates provide the final cutoff. Deactivated 2026-10-25: gagosian.com is behind a Cloudflare bot check (403 on plain fetch and crawl4ai); the configured URL with &-params is also disallowed by robots.txt; sitemap/feed also 403. No alternative found.",
       "beta": true,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "crawl_hints": { "max_detail_pages": 6 }
@@ -546,12 +555,16 @@
       "start_urls": ["https://hkac.org.hk/en/artsatthecentre_exhibition/"],
       "allowed_domains": ["hkac.org.hk", "www.hkac.org.hk"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/calendar_programme_detail/", "/calendar_programme_detail/"],
+      "event_page_patterns": [
+        "/en/calendar_programme_detail/",
+        "/calendar_programme_detail/",
+        "/calendar_detail/"
+      ],
       "notes": "Official Arts at the Centre exhibition listing. Exclude cinema, performance, education, and venue pages.",
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
-        "listing_links": "a[href*='/calendar_programme_detail/']"
+        "listing_links": ".cat1 a[href*='calendar_detail/?u=']"
       },
       "crawl_hints": {
         "render_mode": "always",
@@ -726,8 +739,8 @@
       "directions_query": "Villepin, 53-55 Hollywood Road, Hong Kong",
       "lat": 22.282933,
       "lng": 114.1530178,
-      "base_url": "https://www.villepinart.com/exhibitions",
-      "start_urls": ["https://www.villepinart.com/exhibitions"],
+      "base_url": "https://www.villepinart.com/exhibitions-hong-kong",
+      "start_urls": ["https://www.villepinart.com/exhibitions-hong-kong"],
       "allowed_domains": ["www.villepinart.com", "villepinart.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibitions-1/"],
@@ -736,7 +749,7 @@
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
       "selectors": {
         "listing_links": ".image-caption a[href]",
-        "date": ".sqs-html-content p"
+        "date": ".sqs-html-content h3, .sqs-html-content p"
       },
       "crawl_hints": {
         "skip_patterns": ["/milan", "/off-site", "format=ical"],

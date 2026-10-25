@@ -115,6 +115,29 @@ def canonical_navigation_url(value):
     )
 
 
+MAX_SAME_ORIGIN_NAVIGATIONS = 3
+
+
+def same_origin_navigation(value, initial_url):
+    # Client-side redirects (e.g. an SPA rewriting /exhibitions to
+    # /exhibitions?year=2026) stay on the exact scheme/host/port of the URL
+    # Node already vetted for robots.txt and allowed domains.
+    target = canonical_navigation_url(value)
+    initial = canonical_navigation_url(initial_url)
+    return bool(target and initial and target[:3] == initial[:3])
+
+
+def navigation_request_allowed(state, url, is_top_frame):
+    if not is_top_frame or not hostname_allowed(urlsplit(url).hostname, state["allowed_domains"]):
+        return False
+    if state["initial_navigation_pending"]:
+        return canonical_navigation_url(url) == canonical_navigation_url(state["url"])
+    return (
+        state["same_origin_navigations_remaining"] > 0
+        and same_origin_navigation(url, state["url"])
+    )
+
+
 async def is_safe_request_url(value, dns_cache=None, resolver=None):
     dns_cache = dns_cache if dns_cache is not None else {}
 
@@ -238,18 +261,15 @@ class Renderer:
                 await route.abort("blockedbyclient")
                 return
 
-            parsed = urlsplit(request.url)
             safe = await is_safe_request_url(request.url, state["dns_cache"])
-            navigation_allowed = not request.is_navigation_request() or (
-                state["initial_navigation_pending"]
-                and request.frame.parent_frame is None
-                and hostname_allowed(parsed.hostname, state["allowed_domains"])
-                and canonical_navigation_url(request.url)
-                == canonical_navigation_url(state["url"])
+            navigation_allowed = not request.is_navigation_request() or navigation_request_allowed(
+                state, request.url, request.frame.parent_frame is None
             )
 
             if safe and navigation_allowed:
                 if request.is_navigation_request():
+                    if not state["initial_navigation_pending"]:
+                        state["same_origin_navigations_remaining"] -= 1
                     state["initial_navigation_pending"] = False
                 await route.continue_()
                 return
@@ -304,6 +324,7 @@ class Renderer:
             "skipped_request_count": 0,
             "dns_cache": {},
             "initial_navigation_pending": True,
+            "same_origin_navigations_remaining": MAX_SAME_ORIGIN_NAVIGATIONS,
         }
         self.request = state
         self.render_count += 1

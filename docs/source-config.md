@@ -157,6 +157,18 @@ When enabled, generic extraction ignores `<meta property="og:image">` and uses r
 
 This control is per source. It does not disable configured or source-specific images. All image origins cross the same final media boundary before persistence: URL normalization, unsafe/small-candidate rejection, deduplication, optional dimension probing, and the five-image cap.
 
+## `rehost_images`
+
+Optional. Set `true` when a source's origin blocks image requests from outside Japan, so Netlify Image CDN cannot fetch its images.
+
+```json
+{
+  "rehost_images": true
+}
+```
+
+After the final media boundary, the crawler (which runs in Japan) downloads each accepted image and uploads it to the public `event-media` Supabase Storage bucket at `<slug>/<sha256(url)>.<ext>`, then stores that public URL instead. Images that fail to download or upload keep their original URL. Requires the `event-media` bucket migration.
+
 ## `crawl_hints`
 
 Optional. Use for fetch/crawl behavior exceptions.
@@ -180,6 +192,7 @@ Optional. Use for fetch/crawl behavior exceptions.
 - `wait_for` waits for a Crawl4AI CSS (`css:...`) or JavaScript (`js:...`) condition before capture.
 - `wait_for_images` overrides global image waiting for this source.
 - `scan_full_page` scrolls whole rendered page. Enable only for proven lazy-loaded media.
+- `listing_is_detail` treats each start URL as the event page itself, for venues that show the current exhibition inline instead of linking to it.
 - `max_detail_pages` caps detail URLs for this source.
 - `skip_patterns` drops matching URLs before detail fetch.
 
@@ -255,7 +268,7 @@ Set `url_year` to `"current"` for annual source URLs. Loader replaces any four-d
 
 Keep these. They are runtime fields:
 
-- crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `landing_slider`, `capabilities`
+- crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `landing_slider`, `rehost_images`, `capabilities`
 - web/map truth: `name`, `names`, `taxonomy`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`, `landing_slider`
 
 Metadata-only today:

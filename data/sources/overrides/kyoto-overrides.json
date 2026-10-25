@@ -1,4 +1,10 @@
 {
   "description": "Optional local source overrides. For image offenders, add the source slug under sources with { \"measure_image_dimensions\": true }.",
-  "sources": {}
+  "sources": {
+    "nonaka-hill": {
+      "selectors": {
+        "listing_links": "#exhibitions-grid-current a[href*=\"/exhibitions/\"], #exhibitions-grid-forthcoming a[href*=\"/exhibitions/\"]"
+      }
+    }
+  }
 }

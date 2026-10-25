@@ -2,6 +2,8 @@
   base = "."
   command = "corepack pnpm install --frozen-lockfile && corepack pnpm --filter kyo-no-kyoto-web test && corepack pnpm --filter kyo-no-kyoto-web build"
   publish = "apps/web/dist"
+  # Skip deploys when nothing the site builds from changed (e.g. crawler-only commits).
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- apps/web packages data netlify.toml package.json pnpm-lock.yaml pnpm-workspace.yaml .nvmrc"
 
 [functions]
   directory = "apps/web/.netlify/v1/functions"
@@ -12,6 +14,7 @@
 
 [images]
   remote_images = [
+    "https://xbnmaaeqzmgsvjmovtrr\\.supabase\\.co/storage/v1/object/public/event-media/.*",
     "https?://10chancerylanegallery\\.com/.*",
     "https?://13anewstreet\\.com/.*",
     "https?://2121designsight\\.jp/.*",
@@ -42,6 +45,7 @@
     "https?://bluelotus-gallery\\.com/.*",
     "https?://bunpaku\\.or\\.jp/.*",
     "https?://cbal\\.com\\.hk/.*",
+    "https?://commons\\.karimoku\\.com/.*",
     "https?://cdn\\.sanity\\.io/.*",
     "https?://cdn\\.shopify\\.com/.*",
     "https?://chushin\\.co\\.jp/.*",

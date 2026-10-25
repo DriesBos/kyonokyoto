@@ -15,7 +15,8 @@ import {
   formatEventDateRange,
   googleCalendarUrl,
 } from '../../../../lib/calendar';
-import { fetchPublishedEvents, localizeEvent, type EventRow } from '../../../../lib/events';
+import { fetchPublishedFestival, localizeEvent, type EventRow } from '../../../../lib/events';
+import { cityPageCacheHeaders } from '../../../../lib/cdnCache';
 import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '../../../../lib/mediaDelivery';
 import {
   configuredSourcesFrom,
@@ -32,11 +33,11 @@ const slug = Astro.params.slug;
 if (!cityConfig || !locale || !slug) return new Response('Not found', { status: 404 });
 
 const city = cityConfig.slug;
-const rawEvents = await fetchPublishedEvents({ city, locale });
-const festivalRaw = rawEvents.find(
-  (row) => row.event_kind === 'festival' && row.festival_slug === slug,
-);
+const festivalRaw = await fetchPublishedFestival({ city, locale, slug });
 if (!festivalRaw) return new Response('Not found', { status: 404 });
+for (const [name, value] of Object.entries(cityPageCacheHeaders(city, cityConfig.timeZone))) {
+  Astro.response.headers.set(name, value);
+}
 
 const festival = localizeEvent(
   {

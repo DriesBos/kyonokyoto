@@ -265,6 +265,7 @@ function normalizeCrawlHints(value = {}) {
   if (typeof hints.scan_full_page === 'boolean') {
     output.scan_full_page = hints.scan_full_page;
   }
+  if (hints.listing_is_detail === true) output.listing_is_detail = true;
 
   const maxDetailPages = Number(hints.max_detail_pages);
   if (Number.isInteger(maxDetailPages) && maxDetailPages > 0)
@@ -420,7 +421,12 @@ export function validateSourceConfig(source) {
       }
     }
   }
-  for (const field of ['skip_og_image', 'measure_image_dimensions', 'landing_slider']) {
+  for (const field of [
+    'skip_og_image',
+    'measure_image_dimensions',
+    'landing_slider',
+    'rehost_images',
+  ]) {
     if (source?.[field] !== undefined && typeof source[field] !== 'boolean') {
       warnings.push(`${slug}: ${field} must be boolean`);
     }

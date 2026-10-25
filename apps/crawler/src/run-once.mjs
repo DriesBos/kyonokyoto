@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
@@ -38,6 +39,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(__dirname, '..');
 const envPath = resolve(appRoot, '.env');
 const crawl4AiFetchPath = resolve(__dirname, 'crawl4ai-fetch.py');
+const localVenvPython = resolve(appRoot, '.venv', 'bin', 'python');
 let crawl4AiDisabled = false;
 let crawl4AiRenderer = null;
 let googleTranslationClientPromise = null;
@@ -732,6 +734,21 @@ function tagMatchesSimpleSelector(tagName, attrs, selector) {
   return true;
 }
 
+// Returns the end index of the close tag that balances an already-open
+// element, counting nested elements of the same tag, or -1 when unclosed.
+function findMatchingCloseTag(html, tagName) {
+  const tagPattern = new RegExp(`<(/?)${tagName}(?=[\\s>/])[^>]*>`, 'gi');
+  let depth = 1;
+
+  for (const match of html.matchAll(tagPattern)) {
+    if (match[1]) depth -= 1;
+    else if (!match[0].endsWith('/>')) depth += 1;
+    if (depth === 0) return match.index + match[0].length;
+  }
+
+  return -1;
+}
+
 function selectSimpleElements(html, selector) {
   const parsed = parseSimpleSelector(selector);
   if (!parsed) return [];
@@ -765,15 +782,9 @@ function selectSimpleElements(html, selector) {
       continue;
     }
 
-    const closePattern = new RegExp(`</${lowerTagName}\\s*>`, 'i');
     const rest = html.slice(match.index + openTag.length);
-    const closeMatch = rest.match(closePattern);
-    if (!closeMatch || closeMatch.index === undefined) {
-      elements.push(openTag);
-      continue;
-    }
-
-    elements.push(openTag + rest.slice(0, closeMatch.index + closeMatch[0].length));
+    const closeEnd = findMatchingCloseTag(rest, lowerTagName);
+    elements.push(closeEnd === -1 ? openTag : openTag + rest.slice(0, closeEnd));
   }
 
   return elements;
@@ -1061,30 +1072,42 @@ const ENGLISH_MONTHS = {
 const ENGLISH_MONTH_PATTERN = Object.keys(ENGLISH_MONTHS).join('|');
 
 function normalizeHumanDateText(value) {
-  return decodeHtml(String(value ?? ''))
-    .normalize('NFKC')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    .replace(/令和(元|\d+)年/gu, (_, year) => `${2018 + (year === '元' ? 1 : Number(year))}年`)
-    .replace(/[‐‑‒–—―−－〜～~]/g, '-')
-    .replace(
-      /\s*[（(](?:(?:月|火|水|木|金|土|日)(?:曜日)?|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?[）)]/giu,
-      ' ',
-    )
-    .replace(
-      /\s*\[(?:(?:月|火|水|木|金|土|日)(?:曜日)?|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?\]/giu,
-      ' ',
-    )
-    .replace(
-      /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?,?\s*/giu,
-      '',
-    )
-    .replace(/(\d{1,2})(?:st|nd|rd|th)\b/giu, '$1')
-    .replace(/(\d)\s*\.\s*(?=\d)/g, '$1.')
-    .replace(/\b(jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\./giu, '$1')
-    .replace(/\s+to\s+/giu, ' - ')
-    .replace(/\s+/g, ' ')
-    .replace(/\s*,\s*/g, ', ')
-    .trim();
+  return (
+    decodeHtml(String(value ?? ''))
+      .normalize('NFKC')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      // JSON-LD ISO timestamps keep their local date: "2024-01-15T00:00:00+08:00" -> "2024-01-15"
+      .replace(/(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/g, '$1')
+      // "2026 年 7 月 28 日" -> "2026年7月28日"
+      .replace(/(\d)\s+(?=[年月日])/gu, '$1')
+      .replace(/([年月])\s+(?=\d)/gu, '$1')
+      .replace(/令和(元|\d+)年/gu, (_, year) => `${2018 + (year === '元' ? 1 : Number(year))}年`)
+      // Katakana long-vowel mark used as a range dash: "5月19日(火)ー6月12日(金)"
+      .replace(/(?<=[\d)）日])\s*ー\s*(?=\d)/gu, '-')
+      .replace(/[‐‑‒–—―−－〜～~─]/g, '-')
+      .replace(
+        /\s*[（(](?:(?:月|火|水|木|金|土|日)(?:曜日)?|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?[）)]/giu,
+        ' ',
+      )
+      .replace(
+        /\s*\[(?:(?:月|火|水|木|金|土|日)(?:曜日)?|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?\]/giu,
+        ' ',
+      )
+      .replace(
+        /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)\.?,?\s*/giu,
+        '',
+      )
+      // Japanese end day without 日: "2月10日(火)-14(土)"
+      .replace(/(\d日\s*-\s*)(\d{1,2})(?=\s|$)/gu, '$1$2日')
+      .replace(/(\d{1,2})(?:st|nd|rd|th)\b/giu, '$1')
+      .replace(/(\d)\s*\.\s*(?=\d)/g, '$1.')
+      .replace(/\b(jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\./giu, '$1 ')
+      .replace(/\s+to\s+/giu, ' - ')
+      .replace(/\s+/g, ' ')
+      .replace(/\s*,\s*/g, ', ')
+      .replace(/,\s*-/g, ' -')
+      .trim()
+  );
 }
 
 function isValidDateParts(year, month, day) {
@@ -1126,6 +1149,9 @@ function parseBilingualDateRange(dateText) {
   );
   if (match)
     return buildParsedDateRange(match[1], match[2], match[3], match[4], match[5], match[6]);
+
+  match = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})日[^\d]{0,30}?-\s*(\d{1,2})日/u);
+  if (match) return buildParsedDateRange(match[1], match[2], match[3], null, match[2], match[4]);
 
   match = text.match(
     /(\d{4})[./-](\d{1,2})[./-](\d{1,2})[^\d]{0,20}?-\s*(?:(\d{4})[./-])?(\d{1,2})[./-](\d{1,2})/u,
@@ -1177,6 +1203,17 @@ function parseBilingualDateRange(dateText) {
       ENGLISH_MONTHS[match[5].toLowerCase()],
       match[4],
     );
+  }
+
+  match = text.match(
+    new RegExp(
+      `(${ENGLISH_MONTH_PATTERN})\\.?\\s+(\\d{1,2})\\s*-\\s*(\\d{1,2}),?\\s+(\\d{4})`,
+      'iu',
+    ),
+  );
+  if (match) {
+    const month = ENGLISH_MONTHS[match[1].toLowerCase()];
+    return buildParsedDateRange(match[4], month, match[2], match[4], month, match[3]);
   }
 
   match = text.match(
@@ -1396,6 +1433,78 @@ function parseDottedDateRange(dateText) {
     calendarStartsAt: `${startDate}T10:00:00+09:00`,
     calendarEndsAt: `${endDate}T18:00:00+09:00`,
   };
+}
+
+// Month-only dotted ranges ("2025. 11 - 2027. 4", normalized to "2025.11 - 2027.4") span
+// the first day of the start month to the last day of the end month. The lookarounds
+// keep dotted day dates ("2025.11.3") out.
+const DOTTED_MONTH_RANGE_PATTERN =
+  /(?<![\d.])(\d{4})\.(\d{1,2})(?![\d.])\s*[～〜\-－–—]\s*(\d{4})\.(\d{1,2})(?![\d.])/u;
+
+function parseDottedMonthRange(dateText) {
+  const match = dateText.match(DOTTED_MONTH_RANGE_PATTERN);
+  if (!match) return emptyParsedDateRange();
+
+  const [, sy, sm, ey, em] = match;
+  if (Number(sm) < 1 || Number(sm) > 12 || Number(em) < 1 || Number(em) > 12) {
+    return emptyParsedDateRange();
+  }
+  const lastDay = new Date(Date.UTC(Number(ey), Number(em), 0)).getUTCDate();
+
+  return {
+    ...emptyParsedDateRange(),
+    startDate: `${sy}-${sm.padStart(2, '0')}-01`,
+    endDate: `${ey}-${em.padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
+// Day-first numeric dates with a trailing year (Hong Kong/European style):
+// "10/10/2026 - 31/10/2026", "18.07-25.10.2026", "5-25/7/2025", "7/3 - 10/5, 2026".
+// Year-first forms are handled by the slash/dotted parsers that run earlier. A
+// first component over 12 confirms day-first; a second one over 12 means the
+// text is month-first (US style); ambiguous dates are read day-first.
+const DAY_FIRST_NUMERIC_RANGE_PATTERNS = [
+  /(?<![\d./])(\d{1,2})[./](\d{1,2})[./](\d{4})\s*-\s*(\d{1,2})[./](\d{1,2})[./](\d{4})(?![\d./])/,
+  /(?<![\d./])(\d{1,2})[./](\d{1,2})()\s*-\s*(\d{1,2})[./](\d{1,2})(?:[./]|,\s*)(\d{4})(?![\d./])/,
+  /(?<![\d./-])(\d{1,2})()()\s*-\s*(\d{1,2})[./](\d{1,2})[./](\d{4})(?![\d./])/,
+];
+const DAY_FIRST_NUMERIC_SINGLE_PATTERN = /(?<![\d./])(\d{1,2})[./](\d{1,2})[./](\d{4})(?![\d./])/;
+
+function isMonthFirstNumeric(firstValues, secondValues) {
+  if (firstValues.some((value) => Number(value) > 12)) return false;
+  return secondValues.some((value) => Number(value) > 12);
+}
+
+function emptyParsedDateRange() {
+  return { startDate: null, endDate: null, calendarStartsAt: null, calendarEndsAt: null };
+}
+
+function parseDayFirstNumericDateRange(dateText) {
+  for (const pattern of DAY_FIRST_NUMERIC_RANGE_PATTERNS) {
+    const match = dateText.match(pattern);
+    if (!match) continue;
+
+    const [, sa, sbOrEmpty, sy, ea, eb, ey] = match;
+    // "5-25/7/2025" shares the end month.
+    const sb = sbOrEmpty || eb;
+    const monthFirst = isMonthFirstNumeric([sa, ea], [sb, eb]);
+    const [sd, sm, ed, em] = monthFirst ? [sb, sa, eb, ea] : [sa, sb, ea, eb];
+    // Ranges without a start year ("18.07-25.10.2026") may cross New Year.
+    const startYear = sy || String(Number(ey) - (Number(sm) > Number(em) ? 1 : 0));
+    const parsed = buildParsedDateRange(startYear, sm, sd, ey, em, ed);
+    if (parsed) return parsed;
+  }
+
+  return emptyParsedDateRange();
+}
+
+function parseDayFirstNumericSingleDate(dateText) {
+  const match = dateText.match(DAY_FIRST_NUMERIC_SINGLE_PATTERN);
+  if (!match) return emptyParsedDateRange();
+
+  const [, a, b, year] = match;
+  const [day, month] = isMonthFirstNumeric([a], [b]) ? [b, a] : [a, b];
+  return buildParsedDateRange(year, month, day, year, month, day) ?? emptyParsedDateRange();
 }
 
 function parseEnglishMonthDateRange(dateText) {
@@ -1938,9 +2047,12 @@ function parseGenericDateRange(dateText) {
     parseEnglishMonthDateRangeWithWeekdays,
     parseEnglishMonthDateRange,
     parseEnglishDayMonthYearRange,
+    parseDayFirstNumericDateRange,
+    parseDottedMonthRange,
     parseJapaneseSingleDate,
     parseSlashSingleDate,
     parseEnglishSingleDate,
+    parseDayFirstNumericSingleDate,
   ];
 
   for (const parser of parsers) {
@@ -2674,6 +2786,28 @@ function extractMplusDetailUrls(listingHtml, listingUrl) {
     .filter(Boolean);
 }
 
+// MOMAT answers HTML requests with 403 but publishes exhibitions through the official
+// WordPress REST API, so listing and detail "pages" are JSON from /wp-json/wp/v2/exhibition.
+function extractMomatWpJsonDetailUrls(listingJson, listingUrl) {
+  let entries;
+  try {
+    entries = JSON.parse(listingJson);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(entries)) return [];
+
+  const listing = new URL(listingUrl);
+  return entries
+    .map((entry) => Number(entry?.id))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .map((id) => {
+      const url = new URL(`${listing.pathname.replace(/\/+$/, '')}/${id}`, listing);
+      url.searchParams.set('_fields', 'id,link,title,content,yoast_head_json');
+      return url.toString();
+    });
+}
+
 function extractJpsHongKongDetailUrls(listingHtml, listingUrl) {
   return [...listingHtml.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
     .filter((match) => /\bexhibition-item\b/i.test(match[1]))
@@ -2685,7 +2819,8 @@ function extractJpsHongKongDetailUrls(listingHtml, listingUrl) {
 }
 
 function extractVillepinCurrentDetailUrls(listingHtml, listingUrl) {
-  const currentStart = listingHtml.search(/Current Exhibitions/i);
+  // The Hong Kong page heads its first section "Upcoming Exhibitions" when nothing is on view.
+  const currentStart = listingHtml.search(/(?:Current|Upcoming) Exhibitions/i);
   const currentHtml = currentStart === -1 ? listingHtml : listingHtml.slice(currentStart);
   const pastStart = currentHtml.search(/Past Exhibitions/i);
   const scopedHtml = pastStart === -1 ? currentHtml : currentHtml.slice(0, pastStart);
@@ -2846,6 +2981,7 @@ function extractFirstDateText(text) {
     /\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}/iu,
     /\d{4}年\d{1,2}月\d{1,2}日/u,
     /\d{4}[./-]\d{1,2}[./-]\d{1,2}/u,
+    DOTTED_MONTH_RANGE_PATTERN,
   ];
 
   for (const pattern of patterns) {
@@ -2957,14 +3093,41 @@ function scoreDateCandidate({ raw, parsed, baseScore }) {
   return score;
 }
 
-function buildDateCandidate(input, order) {
+// "From Now – 28 February 2027", "Until 5 Dec 2026", "～2027年2月28日まで": only the end
+// is printed. The start is the crawl date while the event is still running, otherwise
+// unknown (null), since the page never states when it began.
+function isOpenStartDateText(raw, text) {
+  const normalizedRaw = normalizeHumanDateText(raw).replace(/\s+/g, ' ');
+  const index = normalizedRaw.indexOf(text);
+  if (index < 0) return false;
+
+  const before = normalizedRaw.slice(Math.max(0, index - 24), index);
+  const after = normalizedRaw.slice(index + text.length, index + text.length + 12);
+  if (/\d/.test(before)) return false;
+
+  return (
+    /(?:\b(?:from\s+)?now|\buntil|\btill|\bthrough|\bthru|現在|開催中)\s*[-:：]?\s*$/iu.test(
+      before,
+    ) || /^\s*(?:[(（][^)）]{0,8}[)）])?\s*まで/u.test(after)
+  );
+}
+
+function resolveOpenStartDates(raw, text, parsed, today) {
+  if (!parsed.startDate || parsed.startDate !== parsed.endDate) return parsed;
+  if (!isOpenStartDateText(raw, text)) return parsed;
+
+  const startDate = today && today <= parsed.endDate ? today : null;
+  return { ...parsed, startDate, calendarStartsAt: null, openStart: true };
+}
+
+function buildDateCandidate(input, order, today = null) {
   const raw = String(input.raw ?? '').trim();
   if (!raw) return null;
 
   const text = extractFirstDateText(raw);
   if (text === 'See source page') return null;
 
-  const parsed = parseGenericDateRange(text);
+  const parsed = resolveOpenStartDates(raw, text, parseGenericDateRange(text), today);
   if (!parsed.startDate) return null;
 
   return {
@@ -2978,7 +3141,7 @@ function buildDateCandidate(input, order) {
   };
 }
 
-function extractBestDateCandidate(detailHtml, detailUrl = null) {
+function extractBestDateCandidate(detailHtml, detailUrl = null, { today = null } = {}) {
   const inputs = [];
   const push = (raw, origin, baseScore) => {
     if (raw) inputs.push({ raw, origin, baseScore });
@@ -3021,7 +3184,7 @@ function extractBestDateCandidate(detailHtml, detailUrl = null) {
 
   return (
     inputs
-      .map(buildDateCandidate)
+      .map((input, order) => buildDateCandidate(input, order, today))
       .filter(Boolean)
       .sort(
         (left, right) =>
@@ -3066,9 +3229,11 @@ function extractDefinitionValue(html, term) {
 function extractKacDetailUrls(listingHtml, listingUrl) {
   return [
     ...new Set(
-      [...listingHtml.matchAll(/https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/\d+\//g)].map(
-        (match) => new URL(match[0], listingUrl).toString(),
-      ),
+      [
+        ...listingHtml.matchAll(
+          /https:\/\/www\.kac\.or\.jp\/(?:en\/)?events\/(?!(?:month|archive|feed|page)\/)[\w-]+\//g,
+        ),
+      ].map((match) => new URL(match[0], listingUrl).toString()),
     ),
   ];
 }
@@ -5221,6 +5386,7 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
     .join('\n\n');
   const configuredDateText = selectorTextValues(detailHtml, selectorsFor(source, 'date'))[0];
   const configuredImageUrls = extractConfiguredImageUrls(detailHtml, detailUrl, source);
+  const today = toDateInTimeZone(new Date(), timezone);
   const pinnedSourceImageUrls = finalizeImageUrls(
     (source.image_urls ?? []).map((url) => ({ url, source: 'source-config' })),
     detailUrl,
@@ -5228,9 +5394,16 @@ function extractGenericEvent(detailHtml, source, detailUrl) {
   );
   const discoveredDate = configuredDateText
     ? null
-    : extractBestDateCandidate(detailHtml, detailUrl);
+    : extractBestDateCandidate(detailHtml, detailUrl, { today });
   const dateText = configuredDateText || discoveredDate?.text || 'See source page';
-  const parsedDates = discoveredDate?.parsed ?? parseGenericDateRange(dateText);
+  const parsedDates =
+    discoveredDate?.parsed ??
+    resolveOpenStartDates(
+      dateText,
+      extractFirstDateText(dateText),
+      parseGenericDateRange(dateText),
+      today,
+    );
   const imageUrls = pinnedSourceImageUrls.length
     ? pinnedSourceImageUrls
     : configuredImageUrls.length
@@ -5479,6 +5652,44 @@ function extractMplusEvent(detailHtml, source, detailUrl) {
   };
 }
 
+function extractMomatWpJsonEvent(detailJson, source, detailUrl) {
+  let entry;
+  try {
+    entry = JSON.parse(detailJson);
+  } catch {
+    return extractGenericEvent(detailJson, source, detailUrl);
+  }
+
+  const title = decodeHtml(stripTags(entry?.title?.rendered ?? '')).trim();
+  const pageUrl = normalizeUrl(entry?.link ?? '', detailUrl);
+  const ogImage = entry?.yoast_head_json?.og_image?.[0]?.url ?? '';
+  // Figure captions carry per-work display periods, not the exhibition dates.
+  const content = String(entry?.content?.rendered ?? '').replace(
+    /<figcaption\b[\s\S]*?<\/figcaption>/gi,
+    '',
+  );
+  const buildHtml = (body) =>
+    [
+      `<title>${escapeHtmlAttribute(title)}</title>`,
+      ogImage ? `<meta property="og:image" content="${escapeHtmlAttribute(ogImage)}">` : '',
+      `<main><h1>${escapeHtmlAttribute(title)}</h1>${body}</main>`,
+    ].join('\n');
+  const event = extractGenericEvent(buildHtml(content), source, pageUrl ?? detailUrl);
+  // Prefer prose over the hours/admission table (dl.momat-dl); English entries often
+  // have only the table, so its text remains the fallback description.
+  const prose = selectElements(content, 'dl.momat-dl').reduce(
+    (html, table) => html.replace(table, ''),
+    content,
+  );
+  const proseEvent = resolveEventDescription(
+    { ...event, description: null, _description_origin: 'generic_fallback' },
+    source,
+    { html: buildHtml(prose) },
+  );
+
+  return proseEvent.description ? proseEvent : event;
+}
+
 function extractOiDateInfo(detailHtml) {
   const socialText = selectorTextValues(detailHtml, ['.social-intro p']).join(' ');
   const pageText = socialText || stripTags(detailHtml).replace(/\s+/g, ' ').trim();
@@ -5606,7 +5817,12 @@ function extractKiangMalingueEvent(detailHtml, source, detailUrl) {
 
 function extractGalerieDuMondeEvent(detailHtml, source, detailUrl) {
   const event = extractGenericEvent(detailHtml, source, detailUrl);
-  const imageUrls = (event.image_urls ?? []).slice(1);
+  // Drop the leading square poster thumbnail, unless the og:image itself leads
+  // (pages without a poster).
+  const ogImageUrl = normalizeUrl(extractMeta(detailHtml, 'og:image') ?? '', detailUrl);
+  const imageUrls = (event.image_urls ?? []).filter(
+    (url, index) => index > 0 || url === ogImageUrl,
+  );
 
   return {
     ...event,
@@ -6285,9 +6501,13 @@ function parseBaikenDateRange(dateText, fallbackYear) {
   const fullRange = normalized.match(
     /(\d{4})年(\d{1,2})月(\d{1,2})日(?:\([^)]*\))?-(?:(\d{4})年)?(?:(\d{1,2})月)?(\d{1,2})日/u,
   );
-  const monthRange = normalized.match(
-    /(\d{1,2})月(\d{1,2})日(?:\([^)]*\))?-(?:(\d{1,2})月)?(\d{1,2})日(?:\([^)]*\))?/u,
-  );
+  const monthRange =
+    normalized.match(
+      /(\d{1,2})月(\d{1,2})日(?:\([^)]*\))?-(?:(\d{1,2})月)?(\d{1,2})日(?:\([^)]*\))?/u,
+    ) ??
+    normalized.match(
+      /(?<![\d/])(\d{1,2})\/(\d{1,2})(?:\([^)]*\))?-(?:(\d{1,2})\/)?(\d{1,2})(?![\d/])/u,
+    );
 
   const match = fullRange ?? monthRange;
   if (!match) {
@@ -6339,6 +6559,11 @@ function cleanBaikenTitle(title) {
       /\s*(?:\d{4}年)?\d{1,2}月\d{1,2}日(?:\([^)]*\))?\s*[〜～\-－]\s*(?:(?:\d{4}年)?\d{1,2}月)?\d{1,2}日(?:\([^)]*\))?/u,
       '',
     )
+    .replace(
+      /\s*(?<![\d/])\d{1,2}\/\d{1,2}(?:\([^)]*\))?\s*[〜～\-－]\s*(?:\d{1,2}\/)?\d{1,2}(?:\([^)]*\))?/u,
+      '',
+    )
+    .replace(/\s*会期中無休/u, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -6390,9 +6615,11 @@ function extractOyamazakiEvent(detailHtml, source, detailUrl) {
       images: '.p-exhibitionArticle img',
     },
   });
-  const imageUrls = (articleImageUrls.length ? articleImageUrls : (event.image_urls ?? [])).slice(
-    1,
-  );
+  // Main-site articles lead with the flyer, so skip it there. The temporary
+  // 30th-anniversary site has no .p-exhibitionArticle and leads with the key visual.
+  const imageUrls = articleImageUrls.length
+    ? articleImageUrls.slice(1)
+    : (event.image_urls ?? []).slice(0, 6);
   const normalizedDateText = event.date_text.replace(/\bto\b/gi, ' - ');
   const parsedDates = parseOyamazakiDateRange(normalizedDateText);
   const hasParsedDates = Boolean(parsedDates.startDate || parsedDates.endDate);
@@ -7638,6 +7865,7 @@ const detailUrlExtractors = {
   'kyoto-youme-triennale': extractFestivalProgramDetailUrls,
   'ko-gei-kyoto': extractFestivalProgramDetailUrls,
   momak: extractMomakDetailUrls,
+  'national-museum-of-modern-art-tokyo': extractMomatWpJsonDetailUrls,
   'osaka-geidai-whatsnew': extractOsakaGeidaiDetailUrls,
   'pola-museum-annex': extractHosomiMuseumDetailUrls,
   'raku-museum': extractRakuMuseumDetailUrls,
@@ -7695,6 +7923,7 @@ const eventExtractors = {
   'kusakabe-gallery': extractKusakabeEvent,
   'leica-gallery-kyoto': extractLeicaKyotoEvent,
   'm-plus': extractMplusEvent,
+  'national-museum-of-modern-art-tokyo': extractMomatWpJsonEvent,
   'nakanoshima-museum-of-art-osaka': extractSamacEvent,
   'oi-art-space': extractOiEvent,
   'osaka-geidai-whatsnew': extractSamacEvent,
@@ -7973,7 +8202,9 @@ function createJsonLinesRenderer(command, args, options = {}) {
 }
 
 function getCrawl4AiRenderer(env, userAgent) {
-  const pythonBinary = env.CRAWL4AI_PYTHON ?? 'python3';
+  // Same layout as the VPS deploy, so a local apps/crawler/.venv works without config.
+  const pythonBinary =
+    env.CRAWL4AI_PYTHON ?? (existsSync(localVenvPython) ? localVenvPython : 'python3');
   const key = `${pythonBinary}\0${userAgent}`;
   if (crawl4AiRenderer?.key === key) return crawl4AiRenderer.renderer;
 
@@ -8178,7 +8409,7 @@ function classifyFetchResult({ response = null, html = '', error = null }) {
   if ([408, 425, 500, 502, 503, 504].includes(status)) return 'transient_error';
   if ([401, 403].includes(status)) return 'forbidden';
   if (!response.ok) return 'http_error';
-  if (contentType && !/html|xml|text\/plain/i.test(contentType)) return 'not_html';
+  if (contentType && !/html|xml|text\/plain|json/i.test(contentType)) return 'not_html';
 
   const hasChallengeTitle =
     /\b(just a moment|access denied|attention required|captcha|security check|request blocked)\b/i.test(
@@ -9526,6 +9757,137 @@ function shouldProbeFinalImage(imageUrl, source) {
   );
 }
 
+const EVENT_MEDIA_BUCKET = 'event-media';
+const MAX_REHOSTED_IMAGE_BYTES = 12 * 1024 * 1024;
+const REHOSTED_IMAGE_EXTENSIONS = {
+  'image/avif': 'avif',
+  'image/gif': 'gif',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+function shouldRehostSourceImages(source) {
+  return source?.rehost_images === true;
+}
+
+function rehostedImageObjectPath(source, imageUrl, extension) {
+  const hash = createHash('sha256').update(imageUrl).digest('hex').slice(0, 32);
+  return `${source.slug}/${hash}.${extension}`;
+}
+
+function publicEventMediaUrl(env, objectPath) {
+  return `${env.SUPABASE_URL}/storage/v1/object/public/${EVENT_MEDIA_BUCKET}/${objectPath}`;
+}
+
+async function downloadImageForRehost(imageUrl, userAgent, env, diagnostics = null) {
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    getEnvNumber(env, 'CRAWLER_IMAGE_PROBE_TIMEOUT_MS', 10000),
+  );
+
+  try {
+    await assertRobotsAllowed(imageUrl, userAgent, env, diagnostics);
+    await waitForDomainDelay(imageUrl, env);
+    const response = await fetchRemote(
+      imageUrl,
+      {
+        headers: {
+          'user-agent': userAgent,
+          accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        },
+        signal: controller.signal,
+      },
+      lookupHost,
+      fetch,
+      async (redirectUrl) => {
+        await assertRobotsAllowed(redirectUrl, userAgent, env, diagnostics);
+        await waitForDomainDelay(redirectUrl, env);
+      },
+    );
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get('content-type')?.split(';', 1)[0].trim() ?? '';
+    const extension = REHOSTED_IMAGE_EXTENSIONS[contentType.toLowerCase()];
+    if (!extension) return null;
+
+    const bytes = await readResponsePrefix(response, MAX_REHOSTED_IMAGE_BYTES + 1);
+    if (!bytes.length || bytes.length > MAX_REHOSTED_IMAGE_BYTES) return null;
+
+    return { bytes, contentType, extension };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function uploadEventMedia(env, objectPath, { bytes, contentType }) {
+  const response = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/${EVENT_MEDIA_BUCKET}/${objectPath}`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': contentType,
+        'Cache-Control': 'max-age=31536000',
+        'x-upsert': 'true',
+      },
+      body: bytes,
+      signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_API_TIMEOUT_MS', 30000)),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Supabase storage upload failed (${response.status}) for ${objectPath}`);
+  }
+}
+
+// Sources whose origin blocks image fetches from outside Japan (and so from Netlify Image CDN)
+// get their images copied into public Supabase Storage. Failed copies keep the original URL.
+async function rehostEventImages(
+  eventData,
+  source,
+  {
+    env = {},
+    userAgent = 'kyo-no-kyoto-bot/0.1',
+    diagnostics = null,
+    downloadImageFn = downloadImageForRehost,
+    uploadFn = uploadEventMedia,
+  } = {},
+) {
+  if (!shouldRehostSourceImages(source) || !env.SUPABASE_URL || !source?.slug) return eventData;
+
+  const rehostedUrls = new Map();
+  for (const imageUrl of eventData.image_urls ?? []) {
+    if (imageUrl.startsWith(`${env.SUPABASE_URL}/`)) continue;
+
+    try {
+      const image = await downloadImageFn(imageUrl, userAgent, env, diagnostics);
+      if (!image) continue;
+
+      const objectPath = rehostedImageObjectPath(source, imageUrl, image.extension);
+      await uploadFn(env, objectPath, image);
+      rehostedUrls.set(imageUrl, publicEventMediaUrl(env, objectPath));
+    } catch {
+      // Keep the original URL; a later crawl retries the copy.
+    }
+  }
+
+  if (!rehostedUrls.size) return eventData;
+
+  const rehosted = (url) => rehostedUrls.get(url) ?? url;
+  return {
+    ...eventData,
+    primary_image_url: eventData.primary_image_url ? rehosted(eventData.primary_image_url) : null,
+    image_urls: eventData.image_urls.map(rehosted),
+    image_metadata: (eventData.image_metadata ?? []).map((image) => ({
+      ...image,
+      url: rehosted(image.url),
+    })),
+  };
+}
+
 async function normalizeEventImagesForSource(
   eventData,
   source,
@@ -9534,6 +9896,7 @@ async function normalizeEventImagesForSource(
     userAgent = 'kyo-no-kyoto-bot/0.1',
     diagnostics = null,
     fetchImageDimensionsFn = fetchImageDimensions,
+    rehostImagesFn = rehostEventImages,
   } = {},
 ) {
   const baseUrl = eventData?.source_url ?? source?.base_url;
@@ -9583,7 +9946,11 @@ async function normalizeEventImagesForSource(
     }
   }
 
-  return withNormalizedEventImages(eventData, acceptedImageUrls, acceptedImageMetadata);
+  return rehostImagesFn(
+    withNormalizedEventImages(eventData, acceptedImageUrls, acceptedImageMetadata),
+    source,
+    { env, userAgent, diagnostics },
+  );
 }
 
 function festivalEditionEventFromSource(source) {
@@ -9750,6 +10117,57 @@ async function persistFestivalEditionForCrawl({
   };
 }
 
+function discoverDetailUrls(crawlSourceConfig, listingPages, discoveryLimit) {
+  const detailUrlExtractor = detailUrlExtractors[crawlSourceConfig.slug];
+  const detailUrls =
+    crawlSourceConfig.crawl_strategy === 'festival-edition'
+      ? []
+      : crawlSourceConfig.crawl_hints?.listing_is_detail
+        ? listingPages.map((listingPage) => listingPage.url)
+        : crawlSourceConfig.slug === 'sibasi'
+          ? extractSibasiDetailUrls(listingPages, discoveryLimit)
+          : detailUrlExtractor
+            ? extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, crawlSourceConfig)
+            : listingPages.flatMap((listingPage) =>
+                extractGenericDetailUrls(
+                  listingPage.html,
+                  listingPage.url,
+                  crawlSourceConfig,
+                  discoveryLimit,
+                ),
+              );
+
+  return [...new Set(detailUrls)].filter(
+    (detailUrl) =>
+      sourceAllowsUrl(crawlSourceConfig, detailUrl) &&
+      !sourceSkipsUrl(crawlSourceConfig, detailUrl),
+  );
+}
+
+// Mirrors the per-page extraction in crawlSource, without festival handling or
+// render retries, so selector tooling scores a saved page the way a crawl would.
+function extractEventForReview(page, crawlSourceConfig, sourceContext = {}) {
+  const eventExtractor = eventExtractors[crawlSourceConfig.slug] ?? extractGenericEvent;
+  const isGeneric = eventExtractor === extractGenericEvent;
+  const normalizedEvent = normalizeEventSourceTruth(
+    eventExtractor(page.html, crawlSourceConfig, page.url, sourceContext),
+    crawlSourceConfig,
+  );
+  let event = assessEventTitle(
+    isGeneric ? normalizedEvent : withSourceSpecificDescriptionOrigin(normalizedEvent),
+    crawlSourceConfig,
+    isGeneric ? 'generic_fallback' : 'source_specific_extractor',
+  );
+  event = resolveEventDescription(event, crawlSourceConfig, page);
+  event = normalizeEventDatePrecision(event);
+
+  return {
+    event,
+    extractor: isGeneric ? 'generic' : 'source_specific',
+    invalidFields: getInvalidRequiredEventFields(event),
+  };
+}
+
 async function crawlSource({
   env,
   sourceSlug,
@@ -9852,31 +10270,7 @@ async function crawlSource({
       }
     }
 
-    let detailUrls =
-      crawlSourceConfig.crawl_strategy === 'festival-edition'
-        ? []
-        : source.slug === 'sibasi'
-          ? extractSibasiDetailUrls(listingPages, discoveryLimit)
-          : detailUrlExtractor
-            ? extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, crawlSourceConfig)
-            : [
-                ...new Set(
-                  listingPages.flatMap((listingPage) =>
-                    extractGenericDetailUrls(
-                      listingPage.html,
-                      listingPage.url,
-                      crawlSourceConfig,
-                      discoveryLimit,
-                    ),
-                  ),
-                ),
-              ];
-
-    detailUrls = [...new Set(detailUrls)].filter(
-      (detailUrl) =>
-        sourceAllowsUrl(crawlSourceConfig, detailUrl) &&
-        !sourceSkipsUrl(crawlSourceConfig, detailUrl),
-    );
+    let detailUrls = discoverDetailUrls(crawlSourceConfig, listingPages, discoveryLimit);
     const inlineProgramLimit = getSourceInlineProgramLimit(
       crawlSourceConfig,
       sourceDetailLimit,
@@ -10539,6 +10933,7 @@ async function main() {
 }
 
 export {
+  rehostEventImages,
   assessEventTitle,
   archiveStaleEvents,
   assertScheduleSegmentStorage,
@@ -10609,6 +11004,14 @@ export {
   resolveEventDescription,
   shouldRetryDetailWithCrawl4Ai,
   createJsonLinesRenderer,
+  closeCrawl4AiRenderer,
+  discoverDetailUrls,
+  extractEventForReview,
+  fetchHtml,
+  getCrawl4AiRenderMode,
+  getSourceLocale,
+  getSourceRenderMode,
+  selectElements,
   sanitizePostgresJson,
   sanitizePostgresText,
   stripInlineImageData,

@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { createHash } from 'node:crypto';
 import { serializeInlineJson } from '../../../packages/shared/inline-json.mjs';
+import { inlineScriptHashes } from '../src/lib/csp.ts';
 
 test('inline JSON cannot close its script element', () => {
   const serialized = serializeInlineJson({ name: '</script><script>alert(1)</script>' });
@@ -50,6 +52,22 @@ test('Netlify and SSR responses carry baseline security headers', async () => {
 
   assert.doesNotMatch(netlifyConfig, /Content-Security-Policy/);
   assert.match(middleware, /Content-Security-Policy/);
-  assert.match(middleware, /'nonce-\$\{nonce\}'/);
+  assert.match(middleware, /inlineScriptHashes\(html\)/);
+  assert.doesNotMatch(middleware, /'nonce-/);
   assert.doesNotMatch(middleware, /script-src[^;]*'unsafe-inline'/);
+});
+
+test('CSP hashes every inline script and skips external ones', () => {
+  const hash = (body) => `'sha256-${createHash('sha256').update(body).digest('base64')}'`;
+  const html = [
+    '<script>history.scrollRestoration = "manual";</script>',
+    '<script type="module" src="/_astro/app.js"></script>',
+    '<SCRIPT nonce="x">\n  const city = "kyoto";\n</SCRIPT>',
+    '<script>history.scrollRestoration = "manual";</script>',
+  ].join('');
+
+  assert.deepEqual(inlineScriptHashes(html), [
+    hash('history.scrollRestoration = "manual";'),
+    hash('\n  const city = "kyoto";\n'),
+  ]);
 });

@@ -97,16 +97,33 @@ export const eventSelect =
 export const eventTranslationSelect = 'event_translations(locale, title, description)';
 export const eventSourceSelect = 'sources(slug)';
 
-const fetchEvents = ({ city, locale }: { city: AppCity; locale: AppLocale }) =>
+const publishedEventsQuery = ({ city, locale }: { city: AppCity; locale: AppLocale }) =>
   supabase
     .from('events')
     .select(`${eventSelect}, ${eventSourceSelect}, ${eventTranslationSelect}`)
     .eq('status', 'published')
     .eq('city', city)
-    .eq('event_translations.locale', locale)
+    .eq('event_translations.locale', locale);
+
+// end_date is the schedule envelope, so rows that ended before today can never display.
+const fetchEvents = ({
+  city,
+  locale,
+  today,
+}: {
+  city: AppCity;
+  locale: AppLocale;
+  today: string;
+}) =>
+  publishedEventsQuery({ city, locale })
+    .or(`end_date.is.null,end_date.gte.${today}`)
     .order('start_date', { ascending: true, nullsFirst: false });
 
-export const fetchPublishedEvents = async (filters: { city: AppCity; locale: AppLocale }) => {
+export const fetchPublishedEvents = async (filters: {
+  city: AppCity;
+  locale: AppLocale;
+  today: string;
+}) => {
   const { data, error } = await fetchEvents(filters);
   if (error) throw error;
   const rows = (data ?? []) as RawEventRow[];
@@ -116,6 +133,20 @@ export const fetchPublishedEvents = async (filters: { city: AppCity; locale: App
     ) as RawEventRow[]),
     ...rows.filter((row) => row.event_kind === 'festival' || row.event_kind === 'festival_program'),
   ];
+};
+
+export const fetchPublishedFestival = async (filters: {
+  city: AppCity;
+  locale: AppLocale;
+  slug: string;
+}) => {
+  const { data, error } = await publishedEventsQuery(filters)
+    .eq('event_kind', 'festival')
+    .eq('festival_slug', filters.slug)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as RawEventRow | null;
 };
 
 export const resolveFestivalEvents = (

@@ -52,7 +52,6 @@ const structuredData = serializeInlineJson({
 });
 const shouldRegisterServiceWorker = import.meta.env.PROD;
 const themeColor = landingActive ? cityThemeColor : '#EFEFEF';
-const cspNonce = Astro.locals.cspNonce;
 ---
 
 <html
@@ -87,12 +86,11 @@ const cspNonce = Astro.locals.cspNonce;
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="generator" content={Astro.generator} />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <script is:inline nonce={cspNonce}>
+    <script is:inline>
       history.scrollRestoration = 'manual';
     </script>
     <script
       is:inline
-      nonce={cspNonce}
       define:vars={{
         city,
         cityCookie: CITY_COOKIE,
@@ -109,7 +107,7 @@ const cspNonce = Astro.locals.cspNonce;
         // Cookie still carries preference when storage fails.
       }
     </script>
-    <script is:inline nonce={cspNonce} define:vars={{ shouldRegisterServiceWorker }}>
+    <script is:inline define:vars={{ shouldRegisterServiceWorker }}>
       if (shouldRegisterServiceWorker) {
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
@@ -154,14 +152,13 @@ const cspNonce = Astro.locals.cspNonce;
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
-    <script is:inline nonce={cspNonce} type="application/ld+json" set:html={structuredData} />
+    <script is:inline type="application/ld+json" set:html={structuredData} />
     <script
       is:inline
-      nonce={cspNonce}
       type="text/partytown"
       src="https://www.googletagmanager.com/gtag/js?id=G-4EYJPD08Y4"
       async></script>
-    <script is:inline nonce={cspNonce} type="text/partytown">
+    <script is:inline type="text/partytown">
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);

@@ -14,6 +14,8 @@
     "crawl:tokyo": "node src/run-once.mjs --city=tokyo --source=all",
     "crawl:hong-kong": "node src/run-once.mjs --city=hong-kong --source=all",
     "crawl:replay": "node src/replay-latest.mjs",
+    "selectors:inspect": "node src/selectors-inspect.mjs",
+    "selectors:check": "node src/selectors-check.mjs",
     "crawl:kac": "node src/run-once.mjs --source=kyoto-art-center",
     "crawl:kyocera": "node src/run-once.mjs --source=kyoto-city-kyocera-museum-of-art",
     "crawl:momak": "node src/run-once.mjs --source=momak",

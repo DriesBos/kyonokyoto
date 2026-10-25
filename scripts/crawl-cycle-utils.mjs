@@ -63,3 +63,24 @@ export async function postStatus(url, payload, fetchImpl = fetch) {
   });
   if (!response.ok) throw new Error(`Crawler status webhook failed (${response.status})`);
 }
+
+// Web pages cache on the Netlify CDN until the city's midnight, tagged per city
+// (apps/web/src/lib/cdnCache.ts). Purging the tag makes fresh crawl data visible right away.
+export async function purgeCityPageCache(env, city, fetchImpl = fetch) {
+  if (!env.NETLIFY_SITE_ID || !env.NETLIFY_PURGE_TOKEN) return { skipped: true };
+  const response = await fetchImpl('https://api.netlify.com/api/v1/purge', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${env.NETLIFY_PURGE_TOKEN}`,
+    },
+    body: JSON.stringify({ site_id: env.NETLIFY_SITE_ID, cache_tags: [`city-${city}`] }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Netlify cache purge failed (${response.status}): ${await response.text()}`);
+  }
+
+  return { skipped: false };
+}

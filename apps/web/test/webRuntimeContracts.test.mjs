@@ -14,7 +14,8 @@ test('event SSR query filters city and requested locale without schema fallback 
   assert.match(events, /\.eq\('event_translations\.locale', locale\)/);
   assert.match(events, /schedule_type, occurrence_dates/);
   assert.doesNotMatch(events, /selectAttempts|eventSelectWithoutCoordinates/);
-  assert.match(page, /fetchPublishedEvents\(\{ city, locale \}\)/);
+  assert.match(page, /fetchPublishedEvents\(\{ city, locale, today \}\)/);
+  assert.match(events, /\.or\(`end_date\.is\.null,end_date\.gte\.\$\{today\}`\)/);
   assert.doesNotMatch(page, /data-locale-payload|displayEventsByLocale/);
 });
 
@@ -57,7 +58,7 @@ test('keyboard focus remains visible after pointer-focus reset', async () => {
   assert.match(styles, /:focus-visible[\s\S]*outline: 2px solid currentColor !important/);
 });
 
-test('nonce CSP permits the custom cursor and keeps processed scripts external', async () => {
+test('hashed CSP permits the custom cursor and keeps processed scripts external', async () => {
   const { preventJavaScriptInlining } = await import('../astro.config.mjs');
   const config = await readWebFile('astro.config.mjs');
   const layout = await readWebFile('src/layouts/BaseLayout.astro');
@@ -123,6 +124,9 @@ test('festival listings show parent editions and omit programme children', async
   assert.match(events, /configuredSourceImages/);
   assert.match(events, /configuredFestivalImages/);
   assert.doesNotMatch(events, /!hasPersistedMedia/);
+  assert.match(festivalPage, /fetchPublishedFestival\(\{ city, locale, slug \}\)/);
+  assert.match(festivalPage, /cityPageCacheHeaders\(city, cityConfig\.timeZone\)/);
+  assert.match(events, /\.eq\('event_kind', 'festival'\)\s+\.eq\('festival_slug', filters\.slug\)/);
   assert.match(festivalPage, /sourceSlugForEvent\(festival, configuredSources\)/);
   assert.match(festivalPage, /sourceDisplayNameForEvent\(festival, configuredSources, locale\)/);
   assert.match(festivalPage, /festivalYear/);
@@ -156,4 +160,16 @@ test('service worker leaves Netlify Image CDN variants in CDN cache', async () =
 
   assert.match(serviceWorker, /url\.pathname === '\/\.netlify\/images'/);
   assert.match(serviceWorker, /if \(url\.pathname === '\/\.netlify\/images'\) \{\s+return;/);
+});
+
+test('service worker caps runtime caches and evicts old cache versions', async () => {
+  const serviceWorker = await readWebFile('public/sw.js');
+
+  assert.match(
+    serviceWorker,
+    /CACHE_LIMITS = \{ \[PAGE_CACHE_NAME\]: \d+, \[ASSET_CACHE_NAME\]: \d+ \}/,
+  );
+  assert.match(serviceWorker, /putCapped\(PAGE_CACHE_NAME, request, response\.clone\(\)\)/);
+  assert.match(serviceWorker, /putCapped\(ASSET_CACHE_NAME, request, response\.clone\(\)\)/);
+  assert.match(serviceWorker, /!CURRENT_CACHES\.has\(cacheName\)/);
 });
