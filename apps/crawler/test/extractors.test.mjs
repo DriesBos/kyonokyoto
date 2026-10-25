@@ -532,6 +532,31 @@ test('crawler URL guard blocks local and private network targets', async () => {
   );
 });
 
+test('fetch accept-language prefers the locale being crawled', async () => {
+  const languages = [];
+  for (const locale of ['en', 'ja', undefined]) {
+    await resolveRendererNavigationUrl(
+      'https://shop.example/blogs/exhibitions',
+      'test-agent',
+      {},
+      { allowedDomains: ['shop.example'], locale },
+      {
+        lookup: async () => [{ address: '203.0.114.8', family: 4 }],
+        fetchImpl: async (_url, init) => {
+          languages.push(init.headers['accept-language']);
+          return new Response(null, { status: 200 });
+        },
+        assertRobotsAllowedFn: async () => {},
+        waitForDomainDelayFn: async () => {},
+      },
+    );
+  }
+
+  assert.match(languages[0], /^en\b/);
+  assert.match(languages[1], /^ja\b/);
+  assert.match(languages[2], /^ja\b/);
+});
+
 test('renderer preflight checks redirect robots and delay before destination fetch', async () => {
   const sequence = [];
   const finalUrl = await resolveRendererNavigationUrl(
@@ -4871,6 +4896,28 @@ test('source config follows Kuramonzen detail pages for per-event fields', async
     'https://kuramonzen.com/cdn/shop/articles/nomura.jpg?v=1776495202',
     'https://cdn.shopify.com/s/files/1/0658/7472/3063/files/work.jpg?v=1',
   ]);
+});
+
+test('Kuramonzen Japanese pages read the から period and ignore the related carousel', () => {
+  const event = eventExtractors.kuramonzen(
+    `
+      <article class="article-template">
+        <h1 class="article-template__title">グループ展 "BLACK & WHITE"</h1>
+        <span><time datetime="2025-05-19T03:06:26Z">2025年5月19日</time></span>
+        <p>Kura Monzen Galleryでは<strong>、2025年6月7日（土）から7月21日（月・祝）まで</strong>グループ展を開催します。</p>
+      </article>
+      <div class="blog">
+        <h2 class="blog__title">その他の展示会</h2>
+        <p>2026.04.18 - 06.01 この春、</p>
+      </div>
+    `,
+    { name: 'Kura Monzen', language: 'ja' },
+    'https://kuramonzen.com/ja/blogs/exhibitions/black-white',
+  );
+
+  assert.equal(event.date_text, '2025年6月7日（土）から7月21日（月・祝）まで');
+  assert.equal(event.start_date, '2025-06-07');
+  assert.equal(event.end_date, '2025-07-21');
 });
 
 test('Hakari extraction keeps prose and skips both poster images', () => {

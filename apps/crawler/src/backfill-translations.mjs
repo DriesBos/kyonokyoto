@@ -125,6 +125,12 @@ async function main() {
   const env = await loadEnv();
   const dryRun = process.argv.includes('--dry-run');
   const limit = getNumberArg('limit', 1000);
+  const sourceSlugs = new Set(
+    (getArg('source') ?? '')
+      .split(',')
+      .map((slug) => slug.trim())
+      .filter(Boolean),
+  );
 
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in apps/crawler/.env');
@@ -140,6 +146,7 @@ async function main() {
   const skipped = [];
 
   for (const row of rows ?? []) {
+    if (sourceSlugs.size && !sourceSlugs.has(row.sources?.slug)) continue;
     const missingLocales = getMissingLocales(row);
     if (!missingLocales.length) continue;
 
@@ -158,6 +165,19 @@ async function main() {
         translationSource.locale === targetLocale
           ? getMissingLocale(targetLocale)
           : translationSource.locale;
+      // Dry runs only report what would be sent, so they never bill the translation API.
+      if (dryRun) {
+        written.push({
+          id: row.id,
+          targetLocale,
+          dryRun,
+          characters: `${translationSource.eventData.title ?? ''}${
+            translationSource.eventData.description ?? ''
+          }`.length,
+        });
+        continue;
+      }
+
       const translatedEvent = await buildMachineTranslatedEvent(
         env,
         translationSource.eventData,
@@ -174,9 +194,7 @@ async function main() {
         continue;
       }
 
-      if (!dryRun) {
-        await upsertEventTranslation(env, row.id, targetLocale, translatedEvent, sourceContentHash);
-      }
+      await upsertEventTranslation(env, row.id, targetLocale, translatedEvent, sourceContentHash);
 
       written.push({
         id: row.id,
@@ -195,6 +213,9 @@ async function main() {
         events_missing_translations: missing.length,
         translations_written: written.length,
         translations_skipped: skipped.length,
+        ...(dryRun
+          ? { characters_to_translate: written.reduce((sum, item) => sum + item.characters, 0) }
+          : {}),
         missing,
         skipped,
       },

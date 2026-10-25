@@ -7755,8 +7755,9 @@ function extractCurationFairEvent(detailHtml, source, detailUrl) {
 }
 
 function extractKuramonzenEvent(detailHtml, source, detailUrl) {
-  // Truncate at "Others exhibitions" carousel to prevent related articles from polluting extraction
-  const othersIdx = detailHtml.search(/<h2[^>]*>\s*Others\s+exhibitions/i);
+  // Truncate at the "Others exhibitions" / "その他の展示会" carousel so related articles
+  // (and their dates) cannot pollute extraction on either locale.
+  const othersIdx = detailHtml.search(/<h2[^>]*>\s*(?:Others\s+exhibitions|その他の展示会)/i);
   const mainHtml = othersIdx >= 0 ? detailHtml.slice(0, othersIdx) : detailHtml;
 
   const title =
@@ -7778,10 +7779,18 @@ function extractKuramonzenEvent(detailHtml, source, detailUrl) {
   const strongTexts = [...mainHtml.matchAll(/<strong[^>]*>([\s\S]*?)<\/strong>/gi)]
     .map((m) => stripTags(m[1]).replace(/\s+/g, ' ').trim())
     .filter(Boolean);
+  // Japanese pages state the period as "2025年6月7日（土）から7月21日（月・祝）まで".
+  const japaneseStrongDate =
+    source.language === 'ja'
+      ? strongTexts
+          .find((t) => /\d{4}年\d{1,2}月\d{1,2}日/.test(t))
+          ?.replace(/^[、,\s]+|[、,。\s]+$/g, '')
+      : null;
   const rawDateText =
     strongTexts.find((t) => /\d{4}\.\d{1,2}\.\d{1,2}/.test(t)) ??
+    japaneseStrongDate ??
     extractBestDateText(mainHtml, detailUrl);
-  const parsedDates = parseGenericDateRange(rawDateText);
+  const parsedDates = parseGenericDateRange(rawDateText.replace(/から/g, ' - '));
 
   // og:image is unique per Shopify article — use it as the authoritative image source
   const ogImage = extractMeta(detailHtml, 'og:image');
@@ -8262,11 +8271,14 @@ function sleep(ms) {
   });
 }
 
-function buildStaticFetchHeaders(userAgent) {
+// Sites that negotiate language (e.g. Shopify) redirect English URLs to /ja/ when
+// Japanese is preferred, so prefer the locale this fetch is collecting.
+function buildStaticFetchHeaders(userAgent, locale = null) {
   return {
     'user-agent': userAgent,
     accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'accept-language': 'ja,en-US;q=0.9,en;q=0.8',
+    'accept-language':
+      normalizeLocaleCode(locale) === 'en' ? 'en,en-US;q=0.9,ja;q=0.8' : 'ja,en-US;q=0.9,en;q=0.8',
     'cache-control': 'no-cache',
   };
 }
@@ -8795,7 +8807,7 @@ async function resolveRendererNavigationUrl(
   const response = await fetchRemote(
     finalUrl,
     {
-      headers: buildStaticFetchHeaders(userAgent),
+      headers: buildStaticFetchHeaders(userAgent, context?.locale),
       signal: AbortSignal.timeout(getEnvNumber(env, 'CRAWLER_FETCH_TIMEOUT_MS', 30000)),
     },
     lookup,
@@ -8935,7 +8947,7 @@ async function fetchStaticHtml(url, userAgent, env = {}, context = null) {
       response = await fetchRemote(
         url,
         {
-          headers: buildStaticFetchHeaders(userAgent),
+          headers: buildStaticFetchHeaders(userAgent, context?.locale),
           signal: AbortSignal.timeout(timeoutMs),
         },
         lookupHost,
@@ -9481,6 +9493,7 @@ async function fetchNativeLocaleEvent({
       renderMode,
       context: {
         ...crawlContext,
+        locale: targetLocale,
         waitForImages: crawlContext.waitForImages === true,
         targetElements: selectorsFor(nativeSource, 'description'),
       },
@@ -10214,6 +10227,7 @@ async function crawlSource({
     crawlRun = await createCrawlRun(env, source.id, triggerType);
     const crawlContext = {
       diagnostics,
+      locale: sourceLocale,
       allowedDomains: crawlSourceConfig.allowed_domains ?? [],
       waitFor: crawlSourceConfig.crawl_hints?.wait_for ?? null,
       waitForImages: crawlSourceConfig.crawl_hints?.wait_for_images,

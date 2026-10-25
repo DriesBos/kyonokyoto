@@ -1582,7 +1582,7 @@
       "allowed_domains": ["purple-purple.com"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/", "/en/exhibition/"],
-      "notes": "Default language is Japanese. English top link is https://purple-purple.com/en/; the English navigation exposes the exhibition archive at /en/exhibition/, which only includes entries available as translated English posts.",
+      "notes": "Default language is Japanese. English top link is https://purple-purple.com/en/; the English navigation exposes the exhibition archive at /en/exhibition/, which only includes entries available as translated English posts. The English archive only has some posts (e.g. DONOR and Once Upon A Time！KYOTO have no /en/ page), so machine translation fills missing English (2026-10-25).",
       "selectors": {
         "listing_links": "#exhibition .ind_in a",
         "title": ".con_ttl",
@@ -1595,7 +1595,7 @@
       },
       "capabilities": {
         "native_locales": ["ja", "en"],
-        "machine_translate_missing_locales": false
+        "machine_translate_missing_locales": true
       },
       "locales": {
         "ja": {
