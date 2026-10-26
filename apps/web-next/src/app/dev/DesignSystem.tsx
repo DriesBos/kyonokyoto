@@ -198,7 +198,7 @@ export default function DesignSystem() {
 
         <Section title="type">
           <p className={styles.note}>
-            Minor Third (1.2). The root is fluid: 12px up to 768px, 16px from 1280 to 1728px, 20px
+            Minor Third (1.2). The root is fluid: 14px up to 768px, 16px from 1280 to 1728px, 20px
             at 3840px.
           </p>
           <ol className={styles.typeList}>

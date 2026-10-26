@@ -35,6 +35,8 @@
   box-sizing: border-box
   display: flex
   flex-wrap: nowrap
+  // don't stretch items: Safari sizes a stretched frame from the img's 150px fallback height and ignores its aspect-ratio
+  align-items: flex-start
   gap: .5rem
   width: 100%
   padding-inline: var(--media-inset, 0)

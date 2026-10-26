@@ -16,10 +16,10 @@
   --type-title-letter-spacing: 0
   --font-body: var(--font-gt-walsheim), 'Helvetica Neue', Helvetica, Arial, sans-serif
 
-// Fluid root size: 12px up to 768px, 12→16px to 1280px, 16px flat to 1728px,
+// Fluid root size: 14px up to 768px, 14→16px to 1280px, 16px flat to 1728px,
 // then 16→20px to 3840px (4K) and 20px beyond.
 html
-  font-size: clamp(12px, calc(6px + .78125vw), 16px)
+  font-size: clamp(14px, calc(11px + .390625vw), 16px)
 
   @media (min-width: 1728px)
     font-size: clamp(16px, calc(12.7273px + .18939vw), 20px)
