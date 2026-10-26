@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { resolveBlocksLandingSlides, type BlocksLandingCandidate } from '@/lib/blocksLanding';
 import { landingMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import styles from './page.module.sass';
@@ -27,6 +34,7 @@ export default function BlocksLanding({
   const [cycleVersion, setCycleVersion] = useState(0);
   const [exiting, setExiting] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [hoverPaused, setHoverPaused] = useState(false);
 
   const usableCandidates = useMemo(
     () => candidates.filter((candidate) => !failedIds.has(candidate.id)),
@@ -73,6 +81,20 @@ export default function BlocksLanding({
     setCycleVersion((current) => current + 1);
   };
 
+  // hover activates a block and holds rotation; only for real pointers (not touch)
+  const canHover = (event: ReactPointerEvent) =>
+    event.pointerType !== 'touch' && window.matchMedia('(hover: hover)').matches;
+  const hoverSlide = (event: ReactPointerEvent, index: number) => {
+    if (!canHover(event)) return;
+    setHoverPaused(true);
+    if (index !== normalizedActiveIndex) setActiveIndex(index);
+  };
+  const leaveSlide = (event: ReactPointerEvent) => {
+    if (!canHover(event)) return;
+    setHoverPaused(false);
+    setCycleVersion((current) => current + 1);
+  };
+
   useEffect(() => {
     const measure = () => {
       const width = window.innerWidth;
@@ -103,13 +125,13 @@ export default function BlocksLanding({
   }, [hidden]);
 
   useEffect(() => {
-    if (hidden || exiting || slides.length === 0) return;
+    if (hidden || exiting || hoverPaused || slides.length === 0) return;
     const timer = window.setTimeout(
       () => setActiveIndex((current) => (current + 1) % slides.length),
       slideHoldMs,
     );
     return () => window.clearTimeout(timer);
-  }, [activeIndex, cycleVersion, exiting, hidden, slides.length]);
+  }, [activeIndex, cycleVersion, exiting, hidden, hoverPaused, slides.length]);
 
   useEffect(() => {
     if (hidden || slides.length < 2) return;
@@ -226,16 +248,15 @@ export default function BlocksLanding({
               aria-label={`Show ${slide.title}`}
               aria-pressed={active}
               onClick={() => selectSlide(index)}
+              onPointerEnter={(event) => hoverSlide(event, index)}
+              onPointerLeave={leaveSlide}
             >
               <span className={styles.back} aria-hidden="true" />
               <span className={`${styles.face} ${styles.faceTop}`} aria-hidden="true" />
               <span className={`${styles.face} ${styles.faceBottom}`} aria-hidden="true" />
               <span className={`${styles.face} ${styles.faceLeft}`} aria-hidden="true" />
               <span className={`${styles.face} ${styles.faceRight}`} aria-hidden="true" />
-              <span
-                className={styles.front}
-                style={{ backdropFilter: active ? 'blur(10px)' : 'blur(0)' }}
-              >
+              <span className={styles.front}>
                 <span className={styles.landingMeta}>
                   <span>{slide.institution}</span>
                   <span>{slide.date}</span>
