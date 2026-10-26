@@ -638,7 +638,14 @@
       "allowed_domains": ["huko.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/blogs/exhibition/"],
-      "notes": "Use the dedicated exhibition blog listing page, which links into individual exhibition entries under /blogs/exhibition/.",
+      "selectors": {
+        "title": ".hk-exhibition__title",
+        "date": ".hk-exhibition__time",
+        "description": ".hk-exhibition__right .hk-exhibition__content",
+        "images": ".hk-exhibition__slide img"
+      },
+      "skip_og_image": true,
+      "notes": "Use the dedicated exhibition blog listing page, which links into individual exhibition entries under /blogs/exhibition/. Detail pages end with an Archive list of other exhibitions (h3 titles + dates), so title/date/description/images are pinned to the .hk-exhibition article; generic extraction picked archive titles and saved them on the wrong pages (2026-10-26).",
       "locales": {
         "ja": {
           "start_urls": ["https://huko.jp/blogs/exhibition/"],
@@ -1014,7 +1021,7 @@
       "allowed_domains": ["www.chushin.co.jp", "chushin.co.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/bijyutu/exhibition/index.html"],
-      "notes": "Source-specific extractor splits exhibition sections on the single listing page; keep inactive until manually reviewed.",
+      "notes": "Source-specific extractor splits exhibition sections on the single listing page. Approved out of beta 2026-10-26.",
       "locales": {
         "ja": {
           "start_urls": ["https://www.chushin.co.jp/bijyutu/exhibition/index.html"],
@@ -1024,8 +1031,7 @@
           "start_urls": [],
           "event_page_patterns": []
         }
-      },
-      "beta": true
+      }
     },
     {
       "slug": "mtk",
@@ -1801,14 +1807,13 @@
         "images": ".article-template img"
       },
       "crawl_hints": {
-        "max_detail_pages": 12
+        "max_detail_pages": 20
       },
       "capabilities": {
         "native_locales": ["en", "ja"],
         "machine_translate_missing_locales": false
       },
       "notes": "The header offers an English/Japanese language toggle. The listing mixes current, upcoming, and past exhibitions, so crawl article links and parse dates on each detail page. Detail pages include a related section titled \"Others exhibitions\" after the article content.",
-      "beta": true,
       "locales": {
         "ja": {
           "start_urls": ["https://kuramonzen.com/ja/blogs/exhibitions"],

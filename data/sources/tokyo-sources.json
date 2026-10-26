@@ -473,7 +473,7 @@
         ],
         "max_detail_pages": 8
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "tokyo-photographic-art-museum",
@@ -567,7 +567,7 @@
       "allowed_domains": ["yayoikusamamuseum.jp"],
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
-      "notes": "Purple art marker from Google My Maps.",
+      "notes": "Purple art marker from Google My Maps. The current exhibition page is the detail page; its first h1 is the section heading (開催中の展示 / Current Exhibition), the exhibition title is in .section_area_title h1.",
       "landing_slider": true,
       "locales": {
         "ja": {
@@ -579,7 +579,11 @@
           "event_page_patterns": ["/en/exhibition/"]
         }
       },
+      "selectors": {
+        "title": ".section_area_title h1"
+      },
       "crawl_hints": {
+        "listing_is_detail": true,
         "max_detail_pages": 4
       },
       "beta": false
@@ -755,7 +759,7 @@
       "crawl_hints": {
         "max_detail_pages": 6
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "take-ninagawa",
@@ -1005,7 +1009,7 @@
         "listing_is_detail": true,
         "max_detail_pages": 4
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "perrotin-tokyo",
@@ -1154,7 +1158,7 @@
       "crawl_hints": {
         "max_detail_pages": 6
       },
-      "beta": true
+      "beta": false
     },
     {
       "slug": "gyre-gallery",
@@ -1379,66 +1383,6 @@
       },
       "crawl_hints": {
         "max_detail_pages": 6
-      }
-    },
-    {
-      "slug": "snow-contemporary",
-      "name": "SNOW Contemporary",
-      "taxonomy": {
-        "venue_category": ["gallery"],
-        "display_category": [],
-        "event_category": ["exhibition"]
-      },
-      "language": "en",
-      "address_text": "404 Hayano Bldg., 2-13-12 Nishiazabu, Minato-ku, Tokyo 106-0031 Japan",
-      "directions_query": "SNOW Contemporary, 2-13-12 Nishiazabu, Minato-ku, Tokyo",
-      "lat": 35.6363563,
-      "lng": 139.6515776,
-      "base_url": "http://www.snowcontemporary.com/en/exhibition/current.html",
-      "start_urls": ["http://www.snowcontemporary.com/en/exhibition/current.html"],
-      "allowed_domains": ["www.snowcontemporary.com", "snowcontemporary.com"],
-      "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibition/", "/exhibition/"],
-      "notes": "Official SNOW Contemporary current exhibition page. Beta source. The current page is also the detail page; skip nav links and use the single top image.",
-      "qa": {
-        "listing_urls": {
-          "ja": ["http://www.snowcontemporary.com/exhibition/current.html"],
-          "en": ["http://www.snowcontemporary.com/en/exhibition/current.html"]
-        },
-        "language_url_pattern": "English adds /en/ before exhibition; Japanese current page has no locale prefix.",
-        "field_sources": {
-          "listing_links": "current.html itself is the single detail page",
-          "title": "top strong text",
-          "date": "session line",
-          "description": "#boxEX1",
-          "images": "#resizeimage img"
-        },
-        "date_format": "session: YYYY.M.D - YYYY.M.D",
-        "image_rules": "Use only #resizeimage img; skip nav/upcoming/past/info links."
-      },
-      "beta": false,
-      "selectors": {
-        "description": "#boxEX1",
-        "images": "#resizeimage img"
-      },
-      "locales": {
-        "ja": {
-          "start_urls": ["http://www.snowcontemporary.com/exhibition/current.html"],
-          "event_page_patterns": ["/exhibition/"]
-        },
-        "en": {
-          "start_urls": ["http://www.snowcontemporary.com/en/exhibition/current.html"],
-          "event_page_patterns": ["/en/exhibition/"]
-        }
-      },
-      "crawl_hints": {
-        "skip_patterns": [
-          "http://snowcontemporary.com/exhibition/current.html",
-          "/en/exhibition/upcoming.html",
-          "/en/exhibition/past.html",
-          "/en/exhibition/info/"
-        ],
-        "max_detail_pages": 1
       }
     },
     {
