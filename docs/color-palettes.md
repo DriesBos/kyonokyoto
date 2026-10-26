@@ -4,25 +4,25 @@ How the city palettes in `apps/web-next` work, how the dark mode backgrounds wer
 
 ## Where the values live
 
-| What | File |
-| --- | --- |
-| City type colour (`themeColor`) | `apps/web-next/src/lib/cities.ts` |
-| Same colours as sass tokens | `apps/web-next/src/styles/variables.sass` (`$color-<city>`) |
-| Light background (shared beige) | `$color-city-background` in `variables.sass`, `LIGHT_BACKGROUND` in `src/lib/colorScheme.ts` |
-| Dark background per city | `$color-<city>-dark-background` in `variables.sass`, `DARK_BACKGROUNDS` in `src/lib/colorScheme.ts` |
-| Contrast function | `contrastRatio()` in `src/lib/colorScheme.ts` |
-| Live overview | `/dev` (local only), "colours" section: both palettes per city with their ratio |
+| What                            | File                                                                                                |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| City type colour (`themeColor`) | `apps/web-next/src/lib/cities.ts`                                                                   |
+| Same colours as sass tokens     | `apps/web-next/src/styles/variables.sass` (`$color-<city>`)                                         |
+| Light background (shared beige) | `$color-city-background` in `variables.sass`, `LIGHT_BACKGROUND` in `src/lib/colorScheme.ts`        |
+| Dark background per city        | `$color-<city>-dark-background` in `variables.sass`, `DARK_BACKGROUNDS` in `src/lib/colorScheme.ts` |
+| Contrast function               | `contrastRatio()` in `src/lib/colorScheme.ts`                                                       |
+| Live overview                   | `/dev` (local only), "colours" section: both palettes per city with their ratio                     |
 
 `test/color-scheme.test.mjs` fails if the sass and TypeScript dark backgrounds drift apart, or if a city colour drops below 3:1 on its dark background.
 
 ## Current palettes (2026-10-26)
 
-| City | Type colour | Light bg | Light ratio | Dark bg | Dark ratio |
-| --- | --- | --- | --- | --- | --- |
-| Kyoto | `#138e00` | `#efefef` | 3.73 | `#0d120c` | 4.42 |
-| Osaka | `#7d4cff` | `#efefef` | 4.20 | `#0b0910` | 4.10 |
-| Tokyo | `#006fd6` | `#efefef` | 4.30 | `#080b0f` | 3.99 |
-| Hong Kong | `#8c6500` | `#efefef` | 4.59 | `#0f0d09` | 3.68 |
+| City      | Type colour | Light bg  | Light ratio | Dark bg   | Dark ratio |
+| --------- | ----------- | --------- | ----------- | --------- | ---------- |
+| Kyoto     | `#138e00`   | `#efefef` | 3.73        | `#0d120c` | 4.42       |
+| Osaka     | `#7d4cff`   | `#efefef` | 4.20        | `#0b0910` | 4.10       |
+| Tokyo     | `#006fd6`   | `#efefef` | 4.30        | `#080b0f` | 3.99       |
+| Hong Kong | `#8c6500`   | `#efefef` | 4.59        | `#0f0d09` | 3.68       |
 
 ## How a dark background is picked
 
@@ -33,12 +33,12 @@ The rule: the city type colour never changes. Only the background goes dark.
 3. Check the ratio (below). It must be **at least 3:1**. Then aim for the highest ratio you can get without losing the tint, which in practice means lightness under ~6%.
 4. Lower lightness raises the ratio, but only a little: pure black `#000000` is the ceiling.
 
-| City | Dark bg | Hue | Sat | Light |
-| --- | --- | --- | --- | --- |
-| Kyoto | `#0d120c` | 110 | 20% | 5.9% |
-| Osaka | `#0b0910` | 257 | 28% | 4.9% |
-| Tokyo | `#080b0f` | 214 | 30% | 4.5% |
-| Hong Kong | `#0f0d09` | 40 | 25% | 4.7% |
+| City      | Dark bg   | Hue | Sat | Light |
+| --------- | --------- | --- | --- | ----- |
+| Kyoto     | `#0d120c` | 110 | 20% | 5.9%  |
+| Osaka     | `#0b0910` | 257 | 28% | 4.9%  |
+| Tokyo     | `#080b0f` | 214 | 30% | 4.5%  |
+| Hong Kong | `#0f0d09` | 40  | 25% | 4.7%  |
 
 ## How contrast is calculated (WCAG 2)
 

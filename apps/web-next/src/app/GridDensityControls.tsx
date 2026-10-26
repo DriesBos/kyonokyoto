@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import {
   GRID_DENSITY_ATTRIBUTE,
-  GRID_DENSITY_STORAGE_KEY,
   MAX_GRID_DENSITY,
   MIN_GRID_DENSITY,
   normalizeGridDensity,
@@ -17,12 +16,6 @@ const applyDensity = (density: GridDensity) => {
   const root = document.documentElement;
   if (density === 0) root.removeAttribute(GRID_DENSITY_ATTRIBUTE);
   else root.setAttribute(GRID_DENSITY_ATTRIBUTE, String(density));
-  try {
-    if (density === 0) window.localStorage.removeItem(GRID_DENSITY_STORAGE_KEY);
-    else window.localStorage.setItem(GRID_DENSITY_STORAGE_KEY, String(density));
-  } catch {
-    // Private mode or blocked storage: the choice still applies for this page view.
-  }
 };
 
 // Plus/minus icons drawn with CSS bars at var(--stroke-width), so the minus and the plus's

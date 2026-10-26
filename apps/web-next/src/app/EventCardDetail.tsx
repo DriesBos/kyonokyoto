@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   buildAppleCalendarIcs,
   withCalendarDetails,
@@ -11,6 +11,7 @@ import { uiText, type AppLocale } from '@/lib/i18n';
 import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import { AmbientYouTube } from './AmbientYouTube';
 import { useEventCardExpansion } from './ExpandableGrid';
+import { useMediaPager } from './EventCardMediaPager';
 import styles from './EventCardDetail.module.sass';
 
 // Cards get the stored image URL and size only; CDN URLs and srcset are built here, so the page
@@ -72,7 +73,10 @@ export function EventCardMedia({
   className?: string;
 }) {
   const { expanded } = useEventCardExpansion(eventId);
-  const [naturalLeadAspectRatio, setNaturalLeadAspectRatio] = useState<number | null>(null);
+  // Stored image sizes are often wrong, so every image's loaded ratio replaces its stored one.
+  const [naturalAspectRatios, setNaturalAspectRatios] = useState<Readonly<Record<string, number>>>(
+    () => ({}),
+  );
   const [failedSources, setFailedSources] = useState<ReadonlySet<string>>(() => new Set());
   // Origins go down or block hotlinking; drop broken images instead of showing a broken box.
   const usableImages = images.flatMap((image) => {
@@ -81,14 +85,79 @@ export function EventCardMedia({
       ? [{ ...image, src, srcSet: eventMediaDeliverySrcSet(image.url, useImageCdn) }]
       : [];
   });
-  const leadAspectRatio = naturalLeadAspectRatio ?? imageAspectRatio(usableImages[0]);
+  const aspectRatioOf = (image?: (typeof usableImages)[number]) =>
+    (image && naturalAspectRatios[image.src]) ?? imageAspectRatio(image);
+  const leadAspectRatio = aspectRatioOf(usableImages[0]);
   const visibleImages = usableImages.slice(0, expanded ? 3 : 1);
   // Collapsed cards show one lead item; a card without images leads with its video instead.
   const visibleEmbeds = expanded ? embeds : usableImages.length === 0 ? embeds.slice(0, 1) : [];
-  const hasOverflow = expanded && visibleImages.length + visibleEmbeds.length > 1;
-  const syncNaturalLeadAspectRatio = useCallback((image: HTMLImageElement | null) => {
+  const itemCount = visibleImages.length + visibleEmbeds.length;
+  const hasOverflow = expanded && itemCount > 1;
+  const mediaRef = useRef<HTMLDivElement>(null);
+  const pager = useMediaPager();
+  const {
+    setCount: setPagerCount,
+    setActive: setPagerActive,
+    scrollTo: pagerScrollTo,
+  } = pager ?? {};
+
+  // Drives the dots in the meta: which item sits at the scroll start, and scroll to a picked one.
+  useEffect(() => {
+    const media = mediaRef.current;
+    const track = media?.firstElementChild as HTMLElement | null;
+    if (!setPagerCount || !setPagerActive || !pagerScrollTo) return;
+    if (!hasOverflow || !media || !track) {
+      setPagerCount(0);
+      return;
+    }
+    const items = () => Array.from(track.children) as HTMLElement[];
+    const inset = () => parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    const sync = () => {
+      const list = items();
+      if (media.scrollLeft >= media.scrollWidth - media.clientWidth - 1) {
+        setPagerActive(list.length - 1);
+        return;
+      }
+      let closest = 0;
+      list.forEach((item, index) => {
+        const distance = Math.abs(item.offsetLeft - inset() - media.scrollLeft);
+        if (distance < Math.abs(list[closest].offsetLeft - inset() - media.scrollLeft)) {
+          closest = index;
+        }
+      });
+      setPagerActive(closest);
+    };
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(sync);
+    };
+    pagerScrollTo.current = (index) => {
+      const item = items()[index];
+      if (!item) return;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      media.scrollTo({
+        left: item.offsetLeft - inset(),
+        behavior: reduceMotion ? 'auto' : 'smooth',
+      });
+    };
+    setPagerCount(itemCount);
+    setPagerActive(0);
+    media.scrollLeft = 0;
+    media.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      media.removeEventListener('scroll', onScroll);
+      pagerScrollTo.current = null;
+      setPagerCount(0);
+    };
+  }, [hasOverflow, itemCount, setPagerCount, setPagerActive, pagerScrollTo]);
+  const syncNaturalAspectRatio = useCallback((image: HTMLImageElement | null, src: string) => {
     if (!image?.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) return;
-    setNaturalLeadAspectRatio(image.naturalWidth / image.naturalHeight);
+    const ratio = image.naturalWidth / image.naturalHeight;
+    setNaturalAspectRatios((current) =>
+      current[src] === ratio ? current : { ...current, [src]: ratio },
+    );
   }, []);
   const markFailed = useCallback((src: string) => {
     setFailedSources((current) => (current.has(src) ? current : new Set(current).add(src)));
@@ -110,6 +179,7 @@ export function EventCardMedia({
 
   return (
     <div
+      ref={mediaRef}
       className={`${styles.media}${className ? ` ${className}` : ''}`}
       data-event-card-part="media"
       data-expanded={expanded}
@@ -131,8 +201,8 @@ export function EventCardMedia({
             data-event-card-part="media-image"
             key={image.src}
             style={
-              imageAspectRatio(image)
-                ? ({ '--frame-aspect-ratio': String(imageAspectRatio(image)) } as CSSProperties)
+              aspectRatioOf(image)
+                ? ({ '--frame-aspect-ratio': String(aspectRatioOf(image)) } as CSSProperties)
                 : undefined
             }
           >
@@ -147,15 +217,11 @@ export function EventCardMedia({
               fetchPriority={priority && imageIndex === 0 ? 'high' : 'auto'}
               decoding="async"
               ref={(element) => {
-                if (imageIndex === 0) syncNaturalLeadAspectRatio(element);
+                syncNaturalAspectRatio(element, image.src);
                 confirmBrokenImage(element, image.src);
               }}
               onError={() => markFailed(image.src)}
-              onLoad={
-                imageIndex === 0
-                  ? (event) => syncNaturalLeadAspectRatio(event.currentTarget)
-                  : undefined
-              }
+              onLoad={(event) => syncNaturalAspectRatio(event.currentTarget, image.src)}
             />
           </figure>
         ))}

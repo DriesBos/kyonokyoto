@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const { gridDensityInitScript, normalizeGridDensity, stepGridDensity } =
-  await import('../src/lib/gridDensity.ts');
+const { normalizeGridDensity, stepGridDensity } = await import('../src/lib/gridDensity.ts');
 
 test('Grid density stays one step either side of the default', () => {
   assert.equal(stepGridDensity(0, 1), 1);
@@ -12,7 +11,7 @@ test('Grid density stays one step either side of the default', () => {
   assert.equal(stepGridDensity(-1, 1), 0);
 });
 
-test('Grid density ignores bad stored values', () => {
+test('Grid density ignores bad values', () => {
   assert.equal(normalizeGridDensity('1'), 1);
   assert.equal(normalizeGridDensity('-1'), -1);
   assert.equal(normalizeGridDensity('7'), 1);
@@ -20,25 +19,26 @@ test('Grid density ignores bad stored values', () => {
   assert.equal(normalizeGridDensity(null), 0);
 });
 
-test('Grid density init script only sets valid steps', () => {
-  const run = (stored) => {
-    const attributes = {};
-    const document = { documentElement: { setAttribute: (k, v) => (attributes[k] = v) } };
-    const localStorage = { getItem: () => stored };
-    new Function('document', 'localStorage', gridDensityInitScript)(document, localStorage);
-    return attributes['data-grid-density'];
-  };
-  assert.equal(run('1'), '1');
-  assert.equal(run('-1'), '-1');
-  assert.equal(run('0'), undefined);
-  assert.equal(run('5'), undefined);
-  assert.equal(run(null), undefined);
+test('Grid density is not persisted, so a reload resets it', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
+  const sources = await Promise.all([
+    read('../src/lib/gridDensity.ts'),
+    read('../src/app/GridDensityControls.tsx'),
+    read('../src/app/RootDocument.tsx'),
+  ]);
+  for (const source of sources) {
+    assert.doesNotMatch(source, /localStorage|sessionStorage|gridDensityInitScript/);
+  }
 });
 
 test('Grid column breakpoints match the block grid styles', async () => {
   const { readFile } = await import('node:fs/promises');
   const { GRID_COLUMN_BREAKPOINTS, columnsForDensity } = await import('../src/lib/gridDensity.ts');
-  const styles = await readFile(new URL('../src/app/blocks/page.module.sass', import.meta.url), 'utf8');
+  const styles = await readFile(
+    new URL('../src/app/blocks/page.module.sass', import.meta.url),
+    'utf8',
+  );
   const [widest, ...steps] = GRID_COLUMN_BREAKPOINTS;
   assert.match(styles, new RegExp(`--cols-default, ${widest.columns}\\)`));
   for (const { maxWidth, columns, lockDensity } of steps) {
@@ -46,7 +46,9 @@ test('Grid column breakpoints match the block grid styles', async () => {
       const lock = lockDensity ? '    --grid-density: 0\\n' : '';
       assert.match(
         styles,
-        new RegExp(`${rule} \\(max-width: ${maxWidth}px\\)\\n  \\.grid\\n    --cols-default: ${columns}\\n${lock}`),
+        new RegExp(
+          `${rule} \\(max-width: ${maxWidth}px\\)\\n  \\.grid\\n    --cols-default: ${columns}\\n${lock}`,
+        ),
       );
     }
   }

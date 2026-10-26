@@ -6,7 +6,6 @@ import LiveFavicon from '@/app/LiveFavicon';
 import ServiceWorker from '@/app/ServiceWorker';
 import type { AppCity } from '@/lib/cities';
 import { colorSchemeInitScript } from '@/lib/colorScheme';
-import { gridDensityInitScript } from '@/lib/gridDensity';
 import type { AppLocale } from '@/lib/i18n';
 import { siteOrigin } from '@/lib/seo';
 import '@/styles/globals.sass';
@@ -56,7 +55,6 @@ export default function RootDocument({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: gridDensityInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: colorSchemeInitScript }} />
       </head>
       <body>

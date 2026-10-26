@@ -24,7 +24,10 @@ test('dev page and its header button only exist outside production', async () =>
 
 test('city theme colours match the sass palette', async () => {
   const { cityConfigs } = await import('../src/lib/cities.ts');
-  const variables = await readFile(new URL('../src/styles/variables.sass', import.meta.url), 'utf8');
+  const variables = await readFile(
+    new URL('../src/styles/variables.sass', import.meta.url),
+    'utf8',
+  );
   for (const { slug, themeColor } of cityConfigs) {
     assert.match(variables, new RegExp(`\\$color-${slug}: ${themeColor}\\n`));
   }

@@ -147,9 +147,9 @@ test('lead image owns media ratio and becomes the scrollable track only while op
     /const visibleEmbeds = expanded \? embeds : usableImages\.length === 0 \? embeds\.slice\(0, 1\) : \[\]/,
   );
   assert.match(detail, /data-overflow=\{hasOverflow\}/);
-  assert.match(detail, /naturalLeadAspectRatio \?\? imageAspectRatio\(usableImages\[0\]\)/);
+  assert.match(detail, /naturalAspectRatios\[image\.src\]\) \?\? imageAspectRatio\(image\)/);
   assert.match(detail, /image\.naturalWidth \/ image\.naturalHeight/);
-  assert.match(detail, /if \(imageIndex === 0\) syncNaturalLeadAspectRatio\(element\)/);
+  assert.match(detail, /syncNaturalAspectRatio\(element, image\.src\)/);
   // Broken images drop out of the card instead of rendering a broken-image box.
   assert.match(detail, /onError=\{\(\) => markFailed\(image\.src\)\}/);
   assert.match(detail, /confirmBrokenImage\(element, image\.src\)/);
@@ -162,8 +162,8 @@ test('lead image owns media ratio and becomes the scrollable track only while op
     /height: calc\(\(100cqi - 2 \* var\(--media-inset, 0px\) - var\(--media-peek\)\) \/ var\(--media-lead-aspect-ratio, 4 \/ 3\)\)/,
   );
   assert.match(mediaStyles, /padding-inline: var\(--media-inset, 0\)/);
-  assert.match(mediaStyles, /aspect-ratio: var\(--media-lead-aspect-ratio\)/);
-  assert.match(mediaStyles, /object-fit: contain/);
+  assert.match(mediaStyles, /aspect-ratio: var\(--frame-aspect-ratio, auto\)/);
+  assert.doesNotMatch(mediaStyles, /object-fit: contain/);
   const eventCardBlockStyles = blockStyles.slice(0, blockStyles.indexOf('.landing'));
   assert.doesNotMatch(eventCardBlockStyles, /aspect-ratio: 3 \/ 2|object-fit: cover/);
   assert.match(mediaStyles, /-webkit-line-clamp: 5/);

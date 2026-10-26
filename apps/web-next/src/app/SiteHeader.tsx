@@ -276,12 +276,7 @@ export default function SiteHeader({
   };
 
   return (
-    <header
-      className={styles.header}
-      ref={rootRef}
-      data-category-filter
-      data-main-header
-    >
+    <header className={styles.header} ref={rootRef} data-category-filter data-main-header>
       <Link
         className={styles.logo}
         href={homeHref}

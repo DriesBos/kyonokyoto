@@ -1,0 +1,52 @@
+:root {
+  --type-step--1: 0.833rem;
+  --type-step-0: 1rem;
+  --type-step-1: 1.2rem;
+  --type-step-2: 1.44rem;
+  --type-step-3: 1.728rem;
+  --type-step-4: 2.074rem;
+  --type-step-5: 2.488rem;
+  --type-body-size: var(--type-step-0);
+  --type-meta-size: var(--type-step--1);
+  --type-title-size: var(--type-step-2);
+  --type-button-size: var(--type-step-0);
+  --type-logo-size: var(--type-step-5);
+  --type-body-letter-spacing: 0;
+  --type-title-letter-spacing: 0;
+  --font-body: var(--font-gt-walsheim), 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+html {
+  font-size: clamp(12px, 6px + 0.78125vw, 16px);
+}
+@media (min-width: 1728px) {
+  html {
+    font-size: clamp(16px, 12.7273px + 0.18939vw, 20px);
+  }
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--type-body-size);
+  line-height: 1.4;
+  letter-spacing: var(--type-body-letter-spacing);
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-size: var(--type-title-size);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: var(--type-title-letter-spacing);
+}

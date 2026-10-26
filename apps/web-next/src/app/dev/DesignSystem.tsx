@@ -198,8 +198,8 @@ export default function DesignSystem() {
 
         <Section title="type">
           <p className={styles.note}>
-            Minor Third (1.2). The root is fluid: 12px up to 768px, 16px from 1280 to 1728px,
-            20px at 3840px.
+            Minor Third (1.2). The root is fluid: 12px up to 768px, 16px from 1280 to 1728px, 20px
+            at 3840px.
           </p>
           <ol className={styles.typeList}>
             {typeSteps.map(({ token, rem, use }) => (
@@ -284,9 +284,9 @@ export default function DesignSystem() {
 
         <Section title="breakpoints">
           <p className={styles.note}>
-            Columns follow the events panel width (viewport here). The header + and − shift
-            every breakpoint by one step, except under 375px, where the list is one column and
-            the + and − and the dark mode toggle are hidden. The live cell is marked.
+            Columns follow the events panel width (viewport here). The header + and − shift every
+            breakpoint by one step, except under 375px, where the list is one column and the + and −
+            and the dark mode toggle are hidden. The live cell is marked.
           </p>
           <table className={styles.table}>
             <thead>
@@ -319,7 +319,10 @@ export default function DesignSystem() {
           <div className={`${gridStyles.grid} ${styles.liveGrid}`} ref={gridRef}>
             {live && (
               <>
-                <span className={styles.paddingGuide} style={{ left: 0, width: live.padding.left }} />
+                <span
+                  className={styles.paddingGuide}
+                  style={{ left: 0, width: live.padding.left }}
+                />
                 <span
                   className={styles.paddingGuide}
                   style={{ right: 0, width: live.padding.right }}

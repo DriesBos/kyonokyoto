@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const { buildMetadata, festivalSitemapEntries, siteOrigin, structuredData } = await import(
-  '../src/lib/seo.ts'
-);
+const { buildMetadata, festivalSitemapEntries, siteOrigin, structuredData } =
+  await import('../src/lib/seo.ts');
 
 // Netlify builds run tests with PUBLIC_SITE_URL set; these assertions pin the fallback origin.
 const withoutSiteUrl = (fn) => {

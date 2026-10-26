@@ -836,7 +836,10 @@ export async function fetchFestivalSlugs(): Promise<{ city: AppCity; slug: strin
     next: { revalidate: 3600, tags: cityConfigs.map(({ slug }) => cityCacheTag(slug)) },
   });
   if (!response.ok) throw new Error(`Supabase festival list request failed: ${response.status}`);
-  const rows = (await response.json()) as (Pick<EventRow, 'source_id' | 'source_url' | 'sources'> & {
+  const rows = (await response.json()) as (Pick<
+    EventRow,
+    'source_id' | 'source_url' | 'sources'
+  > & {
     city: string;
     festival_slug: string;
   })[];

@@ -40,10 +40,7 @@ export default async function CityEventsPage({
         url: event.sourceUrl,
       })),
     }),
-  ).replaceAll(
-    '<',
-    '\\u003c',
-  );
+  ).replaceAll('<', '\\u003c');
 
   const copy = uiText[locale];
 

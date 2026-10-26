@@ -29,7 +29,10 @@ export default function LiveFavicon() {
 
     update();
     const observer = new MutationObserver(update);
-    observer.observe(root, { attributes: true, attributeFilter: ['data-city', 'data-color-scheme'] });
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['data-city', 'data-color-scheme'],
+    });
     observer.observe(document.head, { childList: true });
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     media.addEventListener('change', update);

@@ -9,6 +9,7 @@ import { festivalPathFor } from '@/lib/festivalRoutes';
 import { withoutCalendarDetails } from '@/lib/appleCalendar';
 import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
+import { EventCardMediaDots, EventCardMediaPager } from './EventCardMediaPager';
 import BoxCluster from './BoxCluster';
 import { BoxEdge, BoxSides } from './blocks/BoxFrame';
 import styles from './blocks/page.module.sass';
@@ -105,73 +106,76 @@ export default function EventsGrid({
                     >
                       <BoxSides />
                       <div className={`${styles.front} ${styles.boxLift}`}>
-                        <EventCardMedia
-                          className={styles.media}
-                          eventId={event.id}
-                          label={event.title}
-                          locale={locale}
-                          images={event.images}
-                          useImageCdn={useImageCdn}
-                          priority={index === 0}
-                          embeds={event.mediaEmbeds.map((embed) => ({
-                            videoId: embed.videoId,
-                            title: `${event.title} video`,
-                          }))}
-                        />
-                        <div className={styles.content}>
-                          <div className={styles.meta}>
-                            <p>
-                              {event.festival
-                                ? event.venue || event.institution
-                                : event.institution}
-                            </p>
-                            <p>
-                              {event.date}
-                              {event.eventKind === 'festival' ? ' — FESTIVAL' : null}
-                            </p>
-                            {event.festival && (
-                              <p className={styles.festivalMeta}>
-                                {event.festival.slug ? (
-                                  <a href={festivalPathFor(city, locale, event.festival.slug)}>
-                                    {[event.festival.title, event.festival.year]
-                                      .filter(Boolean)
-                                      .join(' · ')}{' '}
-                                    ↗
-                                  </a>
-                                ) : (
-                                  <span>{event.festival.title}</span>
-                                )}
+                        <EventCardMediaPager>
+                          <EventCardMedia
+                            className={styles.media}
+                            eventId={event.id}
+                            label={event.title}
+                            locale={locale}
+                            images={event.images}
+                            useImageCdn={useImageCdn}
+                            priority={index === 0}
+                            embeds={event.mediaEmbeds.map((embed) => ({
+                              videoId: embed.videoId,
+                              title: `${event.title} video`,
+                            }))}
+                          />
+                          <div className={styles.content}>
+                            <EventCardMediaDots label={locale === 'ja' ? '画像' : 'Image'} />
+                            <div className={styles.meta}>
+                              <p>
+                                {event.festival
+                                  ? event.venue || event.institution
+                                  : event.institution}
                               </p>
-                            )}
+                              <p>
+                                {event.date}
+                                {event.eventKind === 'festival' ? ' — FESTIVAL' : null}
+                              </p>
+                              {event.festival && (
+                                <p className={styles.festivalMeta}>
+                                  {event.festival.slug ? (
+                                    <a href={festivalPathFor(city, locale, event.festival.slug)}>
+                                      {[event.festival.title, event.festival.year]
+                                        .filter(Boolean)
+                                        .join(' · ')}{' '}
+                                      ↗
+                                    </a>
+                                  ) : (
+                                    <span>{event.festival.title}</span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                            <h2 className={styles.title}>{event.title}</h2>
                           </div>
-                          <h2 className={styles.title}>{event.title}</h2>
-                        </div>
-                        <EventCardDisclosure
-                          eventId={event.id}
-                          detailId={detailId}
-                          label={event.title}
-                          expandLabel={locale === 'ja' ? '開く' : 'Expand'}
-                          collapseLabel={locale === 'ja' ? '閉じる' : 'Collapse'}
-                          className={styles.disclosure}
-                        />
-                        <EventCardDetail
-                          className={styles.detail}
-                          eventId={event.id}
-                          description={event.description}
-                          mapsUrl={event.mapsUrl}
-                          googleCalendarUrl={
-                            event.description && event.googleCalendarUrl
-                              ? withoutCalendarDetails(event.googleCalendarUrl)
-                              : event.googleCalendarUrl
-                          }
-                          appleCalendar={
-                            event.description && event.appleCalendar
-                              ? { ...event.appleCalendar, details: undefined }
-                              : event.appleCalendar
-                          }
-                          sourceUrl={event.sourceUrl}
-                          locale={locale}
-                        />
+                          <EventCardDisclosure
+                            eventId={event.id}
+                            detailId={detailId}
+                            label={event.title}
+                            expandLabel={locale === 'ja' ? '開く' : 'Expand'}
+                            collapseLabel={locale === 'ja' ? '閉じる' : 'Collapse'}
+                            className={styles.disclosure}
+                          />
+                          <EventCardDetail
+                            className={styles.detail}
+                            eventId={event.id}
+                            description={event.description}
+                            mapsUrl={event.mapsUrl}
+                            googleCalendarUrl={
+                              event.description && event.googleCalendarUrl
+                                ? withoutCalendarDetails(event.googleCalendarUrl)
+                                : event.googleCalendarUrl
+                            }
+                            appleCalendar={
+                              event.description && event.appleCalendar
+                                ? { ...event.appleCalendar, details: undefined }
+                                : event.appleCalendar
+                            }
+                            sourceUrl={event.sourceUrl}
+                            locale={locale}
+                          />
+                        </EventCardMediaPager>
                       </div>
                       <BoxEdge />
                     </article>

@@ -10,15 +10,22 @@
     overflow: hidden
 
 .media
-  --media-peek: 3rem
+  --media-peek: 2rem
   overflow: hidden
   pointer-events: none
 
   &[data-expanded='true']
+    scroll-snap-type: x mandatory
+    scroll-padding-inline: var(--media-inset, 0)
     overflow-x: auto
     overflow-y: hidden
     pointer-events: auto
-    scrollbar-width: thin
+    // the dots show the position, so no scrollbar
+    scrollbar-width: none
+
+    // older Safari
+    &::-webkit-scrollbar
+      display: none
 
   &:focus-visible
     outline: 2px solid currentColor
@@ -48,19 +55,17 @@
 .frame
   overflow: hidden
 
-.media[data-lead-aspect-ratio] .frame,
-.media[data-lead-aspect-ratio] .embed
-  aspect-ratio: var(--media-lead-aspect-ratio)
+// The frame carries the image's ratio (the loaded one once known), and the image fills it, so it
+// is never stretched by a wrong stored size.
+.frame
+  aspect-ratio: var(--frame-aspect-ratio, auto)
 
 .frame img
   display: block
   width: 100%
   max-width: none
-  height: auto
-
-.media[data-lead-aspect-ratio] .frame img
   height: 100%
-  object-fit: contain
+  object-fit: cover
 
 // Several items: every item takes the lead's height (the lead still leaves a peek of the next one)
 // and its own width, so nothing is letterboxed.
@@ -76,17 +81,43 @@
   .embed
     flex: 0 0 auto
     height: 100%
-
-  .frame
-    aspect-ratio: var(--frame-aspect-ratio, auto)
+    scroll-snap-align: start
 
   .embed
     aspect-ratio: 16 / 9
 
-  .frame img
-    width: auto
-    height: 100%
-    object-fit: cover
+// Slider dots for an open card with several items; the card places them under the image.
+.dots
+  position: relative
+  z-index: 3
+  display: flex
+  // pixel-sized on purpose so the dots stay crisp at every root font size
+  gap: 2px
+  pointer-events: auto
+
+.dot
+  box-sizing: border-box
+  width: 6px
+  height: 7px
+  padding: 0
+  border: 1.5px solid currentColor
+  background: transparent
+  color: inherit
+  position: relative
+  cursor: pointer
+  outline-offset: 2px
+
+  // a bigger hit area than the dot itself
+  &::before
+    content: ''
+    position: absolute
+    inset: -6px -1px
+
+  &[aria-current='true']
+    background: currentColor
+
+  &:focus-visible
+    outline: 2px solid currentColor
 
 .links
   --action-stroke-width: 2px

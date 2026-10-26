@@ -79,7 +79,10 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
   assert.match(debugControls, /onLongPress=\{\(\) => setOpen\(\(current\) => !current\)\}/);
   assert.doesNotMatch(debugControls, /controlsButton/);
   assert.doesNotMatch(debugControls, /useSearchParams|\?debug/);
-  assert.match(proxy, /normalizeCity\(request\.cookies\.get\(CITY_COOKIE\)\?\.value\) \?\? 'kyoto'/);
+  assert.match(
+    proxy,
+    /normalizeCity\(request\.cookies\.get\(CITY_COOKIE\)\?\.value\) \?\? 'kyoto'/,
+  );
   assert.match(proxy, /citySupportsLocale\(city, requestedLocale\)/);
   assert.match(proxy, /routePathFor\(\{ city: city\.slug, locale \}\)/);
   assert.match(cityPage, /redirect\(routePathFor\(\{ city: city\.slug, locale \}\)\)/);
@@ -97,9 +100,15 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
     /--cols: var\(--block-cols, max\(1, calc\(var\(--cols-default, 5\) \+ var\(--grid-density, 0\)\)\)\)/,
   );
   assert.match(blocks, /label: 'Gap [XY]'[\s\S]*unit: 'rem'/);
-  assert.match(blockStyles, /gap: var\(--block-gap-y, calc\(.*--block-lift, 2\) \+ var\(--space\)\)\) var\(--block-gap-x, calc\(/);
+  assert.match(
+    blockStyles,
+    /gap: var\(--block-gap-y, calc\(.*--block-lift, 2\) \+ var\(--space\)\)\) var\(--block-gap-x, calc\(/,
+  );
   assert.match(blockStyles, /--space: clamp\(12px, calc\(6px \+ \.78125cqi\), 16px\)/);
-  assert.match(blockStyles, /@container \(max-width: 768px\)\n  \.grid\n    --grid-side-gap: var\(--space\)/);
+  assert.match(
+    blockStyles,
+    /@container \(max-width: 768px\)\n  \.grid\n    --grid-side-gap: var\(--space\)/,
+  );
   assert.match(
     blockStyles,
     /grid-column: span min\(var\(--block-expanded-span, 2\), var\(--cols\)\)/,

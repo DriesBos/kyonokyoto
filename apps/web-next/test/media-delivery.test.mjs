@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 process.env.NETLIFY = 'true';
+// netlify.toml sets this for the whole build, tests included; start from a clean slate.
+delete process.env.NEXT_PUBLIC_IMAGE_CDN;
 
 const { eventMediaDeliveryUrl, eventMediaDeliverySrcSet, proxyYutakaImage } =
   await import('../src/lib/mediaDelivery.ts');
@@ -197,4 +199,12 @@ test('http image origins go through the CDN as-is and are upgraded when served d
     eventMediaDeliveryUrl(insecure, false),
     'https://www.kahitsukan.or.jp/kindai2026/EXT00901.jpg',
   );
+});
+
+test('pipes in image paths are percent-encoded the same on server and client', () => {
+  const mplus = 'https://www.mplus.org.hk/api/images/14631/width-1200|format-jpeg/';
+  const encoded = 'https://www.mplus.org.hk/api/images/14631/width-1200%7Cformat-jpeg/';
+  assert.equal(eventMediaDeliveryUrl(mplus, false), encoded);
+  assert.equal(eventMediaDeliveryUrl(encoded, false), encoded);
+  assert.equal(eventMediaDeliveryUrl(mplus, true), imageCdnUrl(encoded));
 });

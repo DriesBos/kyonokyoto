@@ -49,7 +49,9 @@ export const safeEventImageSource = (value: string | null): string | null => {
       return null;
     }
     url.hash = '';
-    return url.href;
+    // Node leaves | and ^ raw in paths while browsers percent-encode them; encode them here so
+    // server and client render the same src (no hydration mismatch).
+    return url.href.replace(/[|^]/g, encodeURIComponent);
   } catch {
     return null;
   }

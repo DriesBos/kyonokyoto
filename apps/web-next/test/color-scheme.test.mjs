@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const { DARK_BACKGROUNDS, colorSchemeInitScript, contrastRatio } = await import(
-  '../src/lib/colorScheme.ts'
-);
+const { DARK_BACKGROUNDS, colorSchemeInitScript, contrastRatio } =
+  await import('../src/lib/colorScheme.ts');
 const { cityConfigs } = await import('../src/lib/cities.ts');
 
 test('Colour scheme init script only sets light or dark', () => {

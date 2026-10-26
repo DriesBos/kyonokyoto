@@ -26,7 +26,8 @@ export async function buildFestivalMetadata({
   const { festival } = detail;
   const title = `${festival.title} | Kyō no Kyōto`;
   const description =
-    festival.description || fallbackDescription[locale](festival.title, cityNameFor(city.slug, locale));
+    festival.description ||
+    fallbackDescription[locale](festival.title, cityNameFor(city.slug, locale));
   const url = `${siteOrigin()}${festivalPathFor(city.slug, locale, festival.slug)}`;
   const image =
     eventShareImageUrl(festival.images[0]?.url ?? null, siteOrigin()) ?? `${siteOrigin()}/og.png`;
