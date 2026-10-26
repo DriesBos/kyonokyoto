@@ -183,15 +183,23 @@ test('approved source allowlist is public without changing nearby beta sources',
     'tokyo-metropolitan-art-museum',
     'take-ninagawa',
     'perrotin-tokyo',
+    'japan-folk-crafts-museum',
+    'ota-fine-arts',
+    'tokyo-opera-city-art-gallery',
+    'lurf-museum',
     'david-zwirner',
     'white-cube-hong-kong',
     'whitestone-gallery-hong-kong',
     'i-gallery-osaka',
+    'blue-lotus-gallery',
+    'kwai-fung-hin',
+    'villepin',
+    'ora-ora',
+    'asia-society-hong-kong',
   ];
   const unchangedBetaSlugs = [
     'itsuo-art-museum',
     'gallery-nomart',
-    'tokyo-opera-city-art-gallery',
     'taro-okamoto-memorial-museum',
     'gyre-gallery',
     'gagosian-hong-kong',
@@ -3289,6 +3297,51 @@ test('native locale URL validation rejects sitewide language roots for detail pa
   );
 });
 
+test('native locale URL validation accepts the other locale listing when the listing is the event page', () => {
+  const source = {
+    allowed_domains: ['yayoikusamamuseum.jp'],
+    start_urls: ['https://yayoikusamamuseum.jp/en/exhibition/current/'],
+    locales: {
+      ja: { start_urls: ['https://yayoikusamamuseum.jp/exhibition/current/'] },
+      en: { start_urls: ['https://yayoikusamamuseum.jp/en/exhibition/current/'] },
+    },
+    crawl_hints: { listing_is_detail: true },
+  };
+
+  assert.equal(
+    isUsableNativeLocaleUrl(
+      'https://yayoikusamamuseum.jp/en/exhibition/current/',
+      'https://yayoikusamamuseum.jp/exhibition/current/',
+      source,
+    ),
+    true,
+  );
+});
+
+test('generic extraction drops ruby readings from Japanese text', () => {
+  const html = `<html><head><title>展覧会</title></head><body><h1>展覧会</h1>
+    <p>2026年10月8日～2027年1月31日</p>
+    <div class="desc"><p>草間彌生は、幼少期の幻覚体験を「<ruby>煌<rt>きら</rt></ruby>めき」と表現しています。</p></div>
+  </body></html>`;
+  const event = extractGenericEvent(
+    html,
+    {
+      slug: 'ruby-test',
+      name: 'Ruby Test',
+      language: 'ja',
+      taxonomy: {
+        venue_category: ['museum'],
+        display_category: [],
+        event_category: ['exhibition'],
+      },
+      selectors: { description: '.desc' },
+    },
+    'https://example.test/exhibition/current/',
+  );
+
+  assert.match(event.description, /「煌めき」/);
+});
+
 test('native locale event validation rejects conflicting parsed dates', () => {
   assert.equal(
     nativeLocaleEventMatchesCanonical(
@@ -3645,6 +3698,27 @@ test('HOSOO event extraction keeps theme exhibition slides', () => {
   ]);
 });
 
+test('generic event extraction skips Drupal theme images such as the Asia Society footer logo', () => {
+  const detailHtml = `
+    <article>
+      <h1>Asia Society Exhibition</h1>
+      <p>12 April 2026 - 31 May 2026</p>
+      <p>Useful exhibition copy for the Asia Society Hong Kong Center exhibition.</p>
+      <img src="https://asiasociety.org/sites/default/files/2026-04/exhibition-hero.jpg" width="1600" height="900">
+      <img src="https://asiasociety.org/themes/custom/asia/images/magazine/asia-society-magazine-footer.svg">
+    </article>
+  `;
+  const event = extractGenericEvent(
+    detailHtml,
+    { name: 'Asia Society Hong Kong Center', taxonomy: testTaxonomy(['institute']) },
+    'https://asiasociety.org/hong-kong/exhibitions/example',
+  );
+
+  assert.deepEqual(event.image_urls, [
+    'https://asiasociety.org/sites/default/files/2026-04/exhibition-hero.jpg',
+  ]);
+});
+
 test('generic event extraction can use configured field selectors', () => {
   const detailHtml = `
     <article>
@@ -3957,54 +4031,6 @@ test('Yutaka Kikutake Gallery source config keeps current/upcoming and artwork i
   assert.deepEqual(event.image_urls, [
     'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/work-01-900x600.jpg',
     'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/work-02-900x600.jpg',
-  ]);
-});
-
-test('SNOW Contemporary source config reads current page title date and single image', async () => {
-  const sources = await loadSourcesConfig({ city: 'tokyo' });
-  const source = sources.find((candidate) => candidate.slug === 'snow-contemporary');
-  const listingHtml = `
-    <a href="http://snowcontemporary.com/exhibition/current.html">/Jp</a>
-    <a href="upcoming.html">upcoming</a>
-    <a href="past.html">past</a>
-    <div id="resizeimage">
-      <img src="../../img/exhibition/202605/top.jpg" alt="snow contemporary">
-    </div>
-    <div id="boxEX1">
-      <strong>Rintaro Fuse Solo exhibition “Exhibition for Time Travelers”</strong><br />
-      session：2026.5.22fri - 7.4sat 13:00 - 19:00<br />
-      *closed on Sun, Mon, Tue and public holidays.<br />
-      venue：SNOW Contemporary / 404 Hayano Bldg. 2-13-12 Nishiazabu, Minato-ku, Tokyo<br />
-      opening reception : 2026.5.22fri 17:00 - 19:00<br />
-      <br />
-      Intro copy for the exhibition.
-    </div>
-    <img src="../img/exhibition/202110/old.jpg" alt="old image">
-  `;
-
-  assert.deepEqual(
-    extractSourceSpecificDetailUrls(
-      detailUrlExtractors[source.slug],
-      [{ url: 'http://www.snowcontemporary.com/en/exhibition/current.html', html: listingHtml }],
-      source,
-    ),
-    ['http://www.snowcontemporary.com/en/exhibition/current.html'],
-  );
-
-  const event = (eventExtractors[source.slug] ?? extractGenericEvent)(
-    listingHtml,
-    source,
-    'http://www.snowcontemporary.com/en/exhibition/current.html',
-  );
-
-  assert.equal(event.title, 'Exhibition for Time Travelers');
-  assert.equal(event.date_text, 'session：2026.5.22fri - 7.4sat 13:00 - 19:00');
-  assert.equal(event.start_date, '2026-05-22');
-  assert.equal(event.end_date, '2026-07-04');
-  assert.equal(event.start_time_text, '13:00');
-  assert.equal(event.end_time_text, '19:00');
-  assert.deepEqual(event.image_urls, [
-    'http://www.snowcontemporary.com/img/exhibition/202605/top.jpg',
   ]);
 });
 

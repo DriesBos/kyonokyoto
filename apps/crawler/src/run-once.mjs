@@ -23,7 +23,13 @@ import {
   buildEventDedupeKey,
   canonicalizeEventUrl,
 } from '../../../packages/shared/event-dedupe.mjs';
-import { MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX } from '../../../packages/shared/event-media.mjs';
+import {
+  dedupeImageUrls,
+  imageDedupeKey,
+  isOriginalImageVariant,
+  isSiteThemeAssetUrl,
+  MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX,
+} from '../../../packages/shared/event-media.mjs';
 import {
   buildScheduleFields,
   classifyEventTiming,
@@ -615,6 +621,9 @@ function stripTags(value) {
   return decodeHtml(
     decoded
       .replace(/<!--[\s\S]*?-->/g, ' ')
+      // Ruby readings (煌<rt>きら</rt>) are pronunciation hints, not text.
+      .replace(/<(rt|rp)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+      .replace(/<\/?ruby\b[^>]*>/gi, '')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n\n')
       .replace(/<[^>]+>/g, ' ')
@@ -1020,6 +1029,18 @@ function isUsableNativeLocaleUrl(detailUrl, alternateUrl, source = null) {
   const alternateParts = getUrlPathParts(alternateUrl);
 
   if (detailParts.length > 1 && alternateParts.length <= 1) {
+    return false;
+  }
+
+  // A header language switch often points at the other locale's listing page,
+  // unless the listing page is itself the event page.
+  if (source?.crawl_hints?.listing_is_detail) return true;
+  const listingUrls = [
+    ...(source?.start_urls ?? []),
+    ...Object.values(source?.locales ?? {}).flatMap((locale) => locale?.start_urls ?? []),
+  ];
+  const comparableAlternate = canonicalizeComparableUrl(alternateUrl);
+  if (listingUrls.some((url) => canonicalizeComparableUrl(url) === comparableAlternate)) {
     return false;
   }
 
@@ -2455,6 +2476,7 @@ function looksLikeSocialOrUiImage(url) {
     /\/css\/img\//i.test(url) ||
     /\/assets\/img\/(?:common|layout|icon)\//i.test(url) ||
     (!isWpThemeContentImage && /\/wp-content\/themes\//i.test(url)) ||
+    isSiteThemeAssetUrl(url) ||
     /(?:^|[\/_.-])(facebook|instagram|twitter|social|sns|share|line|youtube|pinterest|linkedin)(?:[\/_.-]|$)/i.test(
       url,
     ) ||
@@ -2501,28 +2523,6 @@ function scoreImageCandidate(candidate) {
 function canonicalWixImageUrl(url) {
   const match = url.match(/^https?:\/\/static\.wixstatic\.com\/media\/([^/?#]+)\/v1\//i);
   return match ? `https://static.wixstatic.com/media/${match[1]}` : url;
-}
-
-// WordPress serves resized copies as name-1280x853.jpg / name-scaled.jpg next to the original.
-function imageDedupeKey(url) {
-  return url.replace(/-(?:\d+x\d+|scaled)(\.(?:jpe?g|png|gif|webp|avif))(?=$|[?#])/i, '$1');
-}
-
-function isOriginalImageVariant(url) {
-  return imageDedupeKey(url) === url;
-}
-
-// Collapses size variants of the same asset, keeping the first position and preferring the original.
-function dedupeImageUrls(urls) {
-  const byKey = new Map();
-  for (const url of urls) {
-    const key = imageDedupeKey(url);
-    const existing = byKey.get(key);
-    if (!existing || (!isOriginalImageVariant(existing) && isOriginalImageVariant(url))) {
-      byKey.set(key, url);
-    }
-  }
-  return [...byKey.values()];
 }
 
 function finalizeImageUrls(candidates, baseUrl, { preserveOrder = false } = {}) {
@@ -2961,10 +2961,6 @@ function extractHyogoDetailUrls(listingHtml, listingUrl) {
   });
 }
 
-function extractSnowCurrentDetailUrls(_listingHtml, listingUrl) {
-  return [listingUrl];
-}
-
 function extractFirstDateText(text) {
   const normalizedText = normalizeHumanDateText(text);
   const patterns = [
@@ -3257,6 +3253,22 @@ function extractFukudaDetailUrls(listingHtml, listingUrl) {
         .filter((url) => /\/(?:en\/)?exhibition\/\d+/.test(new URL(url).pathname)),
     ),
   ];
+}
+
+function extractFukudaListingUrlsBySchedule(listingHtml, listingUrl) {
+  const sectionHtml =
+    listingHtml.match(/<section\b[^>]*id="exArv"[^>]*>([\s\S]*?)<\/section>/i)?.[1] ?? '';
+
+  return [
+    ...sectionHtml.matchAll(
+      /<article\b[^>]*class="[^"]*\bpostbox\b[^"]*"[^>]*>([\s\S]*?)<\/article>/gi,
+    ),
+  ].flatMap((match) => {
+    const href = match[1].match(/<a\b[^>]+href=(["'])(.*?)\1/i)?.[2];
+    const url = href ? normalizeUrl(href, listingUrl) : null;
+    const dates = parseFukudaDateRange(stripTags(match[1]).replace(/\s+/g, ' '));
+    return url && dates?.startDate ? [[`${dates.startDate}|${dates.endDate}`, url]] : [];
+  });
 }
 
 function extractSibasiDetailUrls(listingPages, genericDetailLimit = 8) {
@@ -6303,52 +6315,6 @@ function extractScaiEvent(detailHtml, source, detailUrl) {
   };
 }
 
-function extractSnowContentHtml(detailHtml) {
-  return (
-    detailHtml.match(/<div\b[^>]*id=(["'])boxEX1\1[^>]*>([\s\S]*?)<\/div>/i)?.[2] ?? detailHtml
-  );
-}
-
-function extractSnowContemporaryEvent(detailHtml, source, detailUrl) {
-  const event = extractGenericEvent(detailHtml, source, detailUrl);
-  const contentHtml = extractSnowContentHtml(detailHtml);
-  const heading = stripTags(contentHtml.match(/<strong\b[^>]*>([\s\S]*?)<\/strong>/i)?.[1] ?? '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const title = heading.match(/["“]([^"”]+)["”]/u)?.[1]?.trim() || event.title;
-  const dateText =
-    stripTags(contentHtml)
-      .split('\n')
-      .map((line) => line.replace(/\s+/g, ' ').trim())
-      .find((line) => /^session[：:]/i.test(line)) ?? event.date_text;
-  const parsedDates = parseGenericDateRange(dateText);
-  const [, startTime, endTime] = dateText.match(/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/) ?? [];
-
-  return {
-    ...event,
-    title,
-    date_text: dateText,
-    start_date: parsedDates.startDate,
-    end_date: parsedDates.endDate,
-    start_time_text: startTime ?? event.start_time_text,
-    end_time_text: endTime ?? event.end_time_text,
-    is_all_day: startTime ? false : event.is_all_day,
-    ...buildScheduleFields({
-      startDate: parsedDates.startDate,
-      endDate: parsedDates.endDate,
-    }),
-    calendar_starts_at:
-      parsedDates.startDate && startTime
-        ? `${parsedDates.startDate}T${startTime}:00+09:00`
-        : parsedDates.calendarStartsAt,
-    calendar_ends_at:
-      parsedDates.endDate && endTime
-        ? `${parsedDates.endDate}T${endTime}:00+09:00`
-        : parsedDates.calendarEndsAt,
-    extraction_confidence: parsedDates.startDate ? 0.78 : event.extraction_confidence,
-  };
-}
-
 function extractHakariContentHtml(detailHtml) {
   const contentStart = detailHtml.search(/<div\b[^>]*class=["'][^"']*\bpost_content\b/i);
   if (contentStart === -1) return detailHtml;
@@ -7284,7 +7250,24 @@ function extractFukudaEvent(detailHtml, source, detailUrl) {
     .filter((value) => value.length > 40)
     .slice(0, 2)
     .join('\n\n');
-  const imageUrl = extractFukudaHeroImage(detailHtml, detailUrl);
+  // The #eyeVisual hero is a ~360px-tall strip that the web media filter rejects, so lead
+  // with the artwork images in the post body and keep the hero only as a fallback.
+  const heroImageUrl = extractFukudaHeroImage(detailHtml, detailUrl);
+  const bodyImageUrls = finalizeImageUrls(
+    [...(selectElements(detailHtml, '.postBody')[0] ?? '').matchAll(/<img\b[^>]*>/gi)]
+      .map((match) => parseTagAttributes(match[0]))
+      .map((attrs) => {
+        const { width, height } = getImageAttributeDimensions(attrs);
+        return { url: attrs.src ?? attrs['data-src'] ?? null, width, height, source: 'img' };
+      })
+      .filter(
+        (candidate) => !candidate.height || candidate.height >= MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX,
+      ),
+    detailUrl,
+    { preserveOrder: true },
+  );
+  const imageUrls = bodyImageUrls.length ? bodyImageUrls : heroImageUrl ? [heroImageUrl] : [];
+  const imageUrl = imageUrls[0] ?? null;
   const directionsQuery = source.directions_query ?? `${source.name}, Kyoto`;
 
   return {
@@ -7309,7 +7292,7 @@ function extractFukudaEvent(detailHtml, source, detailUrl) {
     calendar_starts_at: parsedDates.calendarStartsAt,
     calendar_ends_at: parsedDates.calendarEndsAt,
     primary_image_url: imageUrl,
-    image_urls: imageUrl ? [imageUrl] : [],
+    image_urls: imageUrls,
     source_url: detailUrl,
     extraction_confidence: parsedDates.startDate ? 0.86 : 0.45,
   };
@@ -7792,19 +7775,27 @@ function extractKuramonzenEvent(detailHtml, source, detailUrl) {
     extractBestDateText(mainHtml, detailUrl);
   const parsedDates = parseGenericDateRange(rawDateText.replace(/から/g, ' - '));
 
-  // og:image is unique per Shopify article — use it as the authoritative image source
-  const ogImage = extractMeta(detailHtml, 'og:image');
-  const imageUrls = finalizeImageUrls(
-    [
-      ...(ogImage ? [{ url: ogImage, source: 'og:image' }] : []),
-      ...[...mainHtml.matchAll(/<img\b[^>]*>/gi)].map((match) => {
-        const attrs = parseTagAttributes(match[0]);
-        const { width, height } = getImageAttributeDimensions(attrs);
-        return { url: attrs.src ?? attrs['data-src'] ?? null, width, height, source: 'img' };
-      }),
-    ],
-    detailUrl,
+  // Show the article's own images (below the title) in page order. The banner above the
+  // title is the same asset as og:image, so it is only a fallback when the body has none.
+  const titleIdx = mainHtml.search(/<h1\b/i);
+  const backIdx = mainHtml.search(/class="[^"]*\barticle-template__back\b/i);
+  const bodyHtml = mainHtml.slice(
+    Math.max(titleIdx, 0),
+    backIdx > titleIdx ? backIdx : mainHtml.length,
   );
+  const bodyImageUrls = finalizeImageUrls(
+    [...bodyHtml.matchAll(/<img\b[^>]*>/gi)].map((match) => {
+      const attrs = parseTagAttributes(match[0]);
+      const { width, height } = getImageAttributeDimensions(attrs);
+      return { url: attrs.src ?? attrs['data-src'] ?? null, width, height, source: 'img' };
+    }),
+    detailUrl,
+    { preserveOrder: true },
+  );
+  const ogImage = extractMeta(detailHtml, 'og:image');
+  const imageUrls = bodyImageUrls.length
+    ? bodyImageUrls
+    : finalizeImageUrls(ogImage ? [{ url: ogImage, source: 'og:image' }] : [], detailUrl);
 
   const description = [...mainHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
     .map((m) => stripTags(m[1]).replace(/\s+/g, ' ').trim())
@@ -7881,7 +7872,6 @@ const detailUrlExtractors = {
   'scai-piramide': extractScaiDetailUrlsFor('scai-piramide'),
   'scai-park': extractScaiDetailUrlsFor('scai-park'),
   'sen-oku-hakukokan': extractSenOkuDetailUrls,
-  'snow-contemporary': extractSnowCurrentDetailUrls,
   'sokyo-kyoto': extractSokyoDetailUrls,
   'taka-ishii-gallery': extractTakaIshiiDetailUrls,
   villepin: extractVillepinCurrentDetailUrls,
@@ -7948,7 +7938,6 @@ const eventExtractors = {
   'sen-oku-hakukokan': extractSenOkuEvent,
   sibasi: extractSibasiEvent,
   'sin-sin-fine-art': extractSinSinEvent,
-  'snow-contemporary': extractSnowContemporaryEvent,
   'sokyo-kyoto': extractSokyoEvent,
   'standing-pine-tokyo': extractStandingPineEvent,
   'taka-ishii-gallery': extractTakaIshiiEvent,
@@ -8015,6 +8004,34 @@ function getSourceSpecificSkipReason(source, eventData) {
 }
 
 const sourceContextLoaders = {
+  // JA and EN exhibition pages use unrelated ids and only link to each other's listing,
+  // so pair EN detail pages to JA events by the date range on the EN listing cards.
+  async 'fukuda-art-museum'({ userAgent, env, crawlContext, diagnostics, source }) {
+    const urlsBySchedule = new Map();
+    let pagesFetched = 0;
+    for (const listingUrl of source.locales?.en?.start_urls ?? []) {
+      try {
+        const page = await fetchHtml(listingUrl, userAgent, env, {
+          renderMode: 'never',
+          context: { ...crawlContext, locale: 'en' },
+        });
+        recordFetchedPage(diagnostics, page);
+        pagesFetched += 1;
+        for (const [key, url] of extractFukudaListingUrlsBySchedule(page.html, listingUrl)) {
+          if (!urlsBySchedule.has(key)) urlsBySchedule.set(key, url);
+        }
+      } catch (error) {
+        console.warn(
+          `Fukuda EN listing skipped (${listingUrl}): ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    }
+
+    return {
+      sourceContext: { nativeLocaleUrlsBySchedule: { en: urlsBySchedule } },
+      pagesFetched,
+    };
+  },
   async momak({ userAgent, env, crawlContext, diagnostics, source, crawlRun }) {
     const accessPage = await fetchHtml(
       'https://www.momak.go.jp/English/guide/access.html',
@@ -9462,6 +9479,14 @@ async function buildMachineTranslatedEvent(env, eventData, sourceLocale, targetL
   };
 }
 
+// For sites whose locale pages share no links or ids, a context loader can map the target
+// locale's detail URLs by schedule (`${start_date}|${end_date}`).
+function nativeLocaleUrlFromContext(sourceContext, targetLocale, canonicalEvent) {
+  const urlsBySchedule = sourceContext?.nativeLocaleUrlsBySchedule?.[targetLocale];
+  if (!urlsBySchedule || !canonicalEvent?.start_date) return null;
+  return urlsBySchedule.get(`${canonicalEvent.start_date}|${canonicalEvent.end_date}`) ?? null;
+}
+
 async function fetchNativeLocaleEvent({
   env,
   source,
@@ -9479,6 +9504,7 @@ async function fetchNativeLocaleEvent({
 }) {
   const discoveredLocaleUrls = extractLocaleUrlsFromHtml(detailPage.html, detailUrl);
   const alternateUrl =
+    nativeLocaleUrlFromContext(sourceContext, targetLocale, canonicalEvent) ??
     discoveredLocaleUrls[targetLocale] ??
     inferAlternateLocaleUrlFromConfig(detailUrl, source, sourceLocale, targetLocale);
 
@@ -10945,6 +10971,7 @@ async function main() {
 
 export {
   rehostEventImages,
+  extractFukudaListingUrlsBySchedule,
   assessEventTitle,
   archiveStaleEvents,
   assertScheduleSegmentStorage,
