@@ -131,7 +131,10 @@ test('lead image owns media ratio and becomes the scrollable track only while op
   assert.match(grid, /useState<string \| null>/);
   assert.match(grid, /aria-expanded=\{expanded\}/);
   assert.match(detail, /usableImages\.slice\(0, expanded \? 3 : 1\)/);
-  assert.match(detail, /const visibleEmbeds = expanded \? embeds : usableImages\.length === 0 \? embeds\.slice\(0, 1\) : \[\]/);
+  assert.match(
+    detail,
+    /const visibleEmbeds = expanded \? embeds : usableImages\.length === 0 \? embeds\.slice\(0, 1\) : \[\]/,
+  );
   assert.match(detail, /data-overflow=\{hasOverflow\}/);
   assert.match(detail, /naturalLeadAspectRatio \?\? imageAspectRatio\(usableImages\[0\]\)/);
   assert.match(detail, /image\.naturalWidth \/ image\.naturalHeight/);

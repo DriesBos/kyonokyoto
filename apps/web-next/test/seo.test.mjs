@@ -3,6 +3,19 @@ import test from 'node:test';
 
 const { buildMetadata, siteOrigin, structuredData } = await import('../src/lib/seo.ts');
 
+// Netlify builds run tests with PUBLIC_SITE_URL set; these assertions pin the fallback origin.
+const withoutSiteUrl = (fn) => {
+  const previous = [process.env.NEXT_PUBLIC_SITE_URL, process.env.PUBLIC_SITE_URL];
+  delete process.env.NEXT_PUBLIC_SITE_URL;
+  delete process.env.PUBLIC_SITE_URL;
+  try {
+    fn();
+  } finally {
+    if (previous[0] !== undefined) process.env.NEXT_PUBLIC_SITE_URL = previous[0];
+    if (previous[1] !== undefined) process.env.PUBLIC_SITE_URL = previous[1];
+  }
+};
+
 test('SEO metadata uses canonical, hreflang, social image, and public origin', () => {
   const previousNext = process.env.NEXT_PUBLIC_SITE_URL;
   const previousPublic = process.env.PUBLIC_SITE_URL;
@@ -23,12 +36,13 @@ test('SEO metadata uses canonical, hreflang, social image, and public origin', (
   else process.env.PUBLIC_SITE_URL = previousPublic;
 });
 
-test('single-locale city has bare canonical and no unsupported alternate', () => {
-  const metadata = buildMetadata({ city: 'hong-kong', locale: 'en' });
-  assert.equal(metadata.alternates.canonical, 'https://kyonokyoto.com/hong-kong/');
-  assert.equal(metadata.alternates.languages.en, 'https://kyonokyoto.com/hong-kong/');
-  assert.equal(metadata.alternates.languages.ja, undefined);
-});
+test('single-locale city has bare canonical and no unsupported alternate', () =>
+  withoutSiteUrl(() => {
+    const metadata = buildMetadata({ city: 'hong-kong', locale: 'en' });
+    assert.equal(metadata.alternates.canonical, 'https://kyonokyoto.com/hong-kong/');
+    assert.equal(metadata.alternates.languages.en, 'https://kyonokyoto.com/hong-kong/');
+    assert.equal(metadata.alternates.languages.ja, undefined);
+  }));
 
 test('JSON-LD is a localized CollectionPage', () => {
   const data = structuredData({ city: 'hong-kong', locale: 'en' });

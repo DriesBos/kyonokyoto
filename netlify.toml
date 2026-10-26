@@ -1,16 +1,17 @@
 [build]
   base = "."
-  command = "corepack pnpm install --frozen-lockfile && corepack pnpm --filter kyo-no-kyoto-web test && corepack pnpm --filter kyo-no-kyoto-web build"
-  publish = "apps/web/dist"
+  command = "corepack pnpm install --frozen-lockfile && corepack pnpm --filter kyo-no-kyoto-web-next test && corepack pnpm --filter kyo-no-kyoto-web-next build"
+  publish = "apps/web-next/.next"
   # Skip deploys when nothing the site builds from changed (e.g. crawler-only commits).
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- apps/web packages data netlify.toml package.json pnpm-lock.yaml pnpm-workspace.yaml .nvmrc"
-
-[functions]
-  directory = "apps/web/.netlify/v1/functions"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- apps/web-next packages data netlify.toml package.json pnpm-lock.yaml pnpm-workspace.yaml .nvmrc"
 
 [build.environment]
   NODE_VERSION = "22.23.4"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+
+# The repo root has no `next` dependency, so Netlify cannot auto-detect the framework.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [images]
   remote_images = [
