@@ -39,27 +39,29 @@ export default function BoxCluster({
 
   return (
     <div ref={rootRef} className={styles.root} role="separator" aria-label={ariaLabel}>
-      {boxes.map((box, index) => (
-        <span
-          className={`${styles.slot} ${box.slots.medium ? '' : styles.hiddenMedium} ${box.slots.small ? '' : styles.hiddenSmall}`}
-          key={index}
-          style={slotStyle(box)}
-        >
+      <div className={styles.field}>
+        {boxes.map((box, index) => (
           <span
-            className={styles.box}
-            aria-hidden="true"
-            data-cluster-box
-            style={{ '--bob-lift': box.lift } as React.CSSProperties}
+            className={`${styles.slot} ${box.slots.medium ? '' : styles.hiddenMedium} ${box.slots.small ? '' : styles.hiddenSmall}`}
+            key={index}
+            style={slotStyle(box)}
           >
-            <span className={blockStyles.back} />
-            <span className={`${blockStyles.face} ${blockStyles.faceTop}`} />
-            <span className={`${blockStyles.face} ${blockStyles.faceBottom}`} />
-            <span className={`${blockStyles.face} ${blockStyles.faceLeft}`} />
-            <span className={`${blockStyles.face} ${blockStyles.faceRight}`} />
-            <span className={styles.front}>{box.label}</span>
+            <span
+              className={styles.box}
+              aria-hidden="true"
+              data-cluster-box
+              style={{ '--bob-lift': box.lift } as React.CSSProperties}
+            >
+              <span className={blockStyles.back} />
+              <span className={`${blockStyles.face} ${blockStyles.faceTop}`} />
+              <span className={`${blockStyles.face} ${blockStyles.faceBottom}`} />
+              <span className={`${blockStyles.face} ${blockStyles.faceLeft}`} />
+              <span className={`${blockStyles.face} ${blockStyles.faceRight}`} />
+              <span className={styles.front}>{box.label}</span>
+            </span>
           </span>
-        </span>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
