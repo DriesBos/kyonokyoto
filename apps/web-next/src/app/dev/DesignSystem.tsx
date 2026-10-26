@@ -285,7 +285,7 @@ export default function DesignSystem() {
         <Section title="breakpoints">
           <p className={styles.note}>
             Columns follow the events panel width (viewport here). The header + and − shift every
-            breakpoint by one step, except under 375px, where the list is one column and the + and −
+            breakpoint by one step, except under 400px, where the list is one column and the + and −
             and the dark mode toggle are hidden. The live cell is marked.
           </p>
           <table className={styles.table}>
@@ -302,7 +302,7 @@ export default function DesignSystem() {
                 <tr key={index}>
                   <th scope="row">{breakpointLabel(index)}</th>
                   {densities.map((density) => {
-                    // Under 375px the +/- are hidden and the offset is ignored.
+                    // Under 400px the +/- are hidden and the offset is ignored.
                     const count = columnsForDensity(columns, lockDensity ? 0 : density);
                     const active = live?.density === density && count === live.columns;
                     return (

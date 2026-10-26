@@ -61,6 +61,6 @@ test('card image sizes follow the rendered width, with the default grid as fallb
   const { EVENT_CARD_IMAGE_SIZES } = await import('../src/lib/gridDensity.ts');
   assert.equal(
     EVENT_CARD_IMAGE_SIZES,
-    'auto, (max-width: 374px) 100vw, (max-width: 800px) 50vw, (max-width: 1100px) 33vw, (max-width: 1440px) 25vw, 20vw',
+    'auto, (max-width: 399px) 100vw, (max-width: 800px) 50vw, (max-width: 1100px) 33vw, (max-width: 1440px) 25vw, 20vw',
   );
 });
