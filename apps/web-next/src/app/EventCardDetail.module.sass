@@ -94,17 +94,18 @@
   z-index: 3
   display: flex
   // pixel-sized on purpose so the dots stay crisp at every root font size
-  gap: 2px
+  gap: 4px
   pointer-events: auto
 
 .dot
-  box-sizing: border-box
-  width: 6px
-  height: 7px
+  // thin vertical lines: height follows the root size (Dries), width stays a crisp 2px
+  width: 2px
+  height: 1rem
   padding: 0
-  border: 1.5px solid currentColor
-  background: transparent
+  border: 0
+  background: currentColor
   color: inherit
+  opacity: 0.33
   position: relative
   cursor: pointer
   outline-offset: 2px
@@ -113,10 +114,10 @@
   &::before
     content: ''
     position: absolute
-    inset: -6px -1px
+    inset: -6px -2px
 
   &[aria-current='true']
-    background: currentColor
+    opacity: 1
 
   &:focus-visible
     outline: 2px solid currentColor

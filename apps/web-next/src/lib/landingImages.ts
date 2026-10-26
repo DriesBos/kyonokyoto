@@ -21,7 +21,8 @@ export const landingLongSideBuckets = [960, 1280, 1440, 1600, 1920, 2560];
 
 const maximumTransformWidth = 2560;
 const maximumTransformHeight = 1440;
-const imageQuality = 82;
+// 60 keeps the landing light to load; it sits behind a dim layer and frosted boxes
+const imageQuality = 60;
 
 const ratioValue = ([width, height]: [number, number]) => width / height;
 

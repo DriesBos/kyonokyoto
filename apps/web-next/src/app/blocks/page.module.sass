@@ -262,10 +262,11 @@
   gap: 1rem
   padding: 1rem 0.5rem
 
-  // slider dots: 8px under the image, 8px in from the right (lined up with the image inset)
+  // slider dots: 1rem under the image (level with the venue line), 0.5rem in from the right
+  // (lined up with the image inset)
   > [data-event-card-part='media-dots']
     position: absolute
-    top: 0.5rem
+    top: 1rem
     right: 0.5rem
 
 // venue and date above the title, 14px uppercase with a 2px line gap
@@ -407,9 +408,10 @@
   object-fit: cover
   object-position: center
   opacity: 0
-  transition: opacity 600ms ease
+  transition: opacity 400ms ease
 
-  &[data-active]
+  // fades in only once decoded (data-loaded), never painting while it downloads
+  &[data-active][data-loaded]
     opacity: 1
 
 .landingExit
@@ -458,6 +460,8 @@
   width: var(--landing-block-width)
   // fixed 3:4 height: aspect-ratio alone lets long titles stretch the box past its slot
   height: var(--landing-block-height)
+  // intro: fades in flat, 100ms apart per position; depth rises once the landing is raised
+  animation: landingBlockFade 800ms ease-out calc((var(--landing-position, 1) - 1) * 100ms) backwards
   padding: 0
   border: 0
   background: transparent
@@ -466,6 +470,12 @@
   appearance: none
   cursor: pointer
   pointer-events: auto
+
+  &[data-position='2']
+    --landing-position: 2
+
+  &[data-position='3']
+    --landing-position: 3
 
   &[data-position='1']
     top: var(--landing-top-1)
@@ -565,6 +575,63 @@
 
     &[data-position='2']
       left: calc(var(--landing-block-width) + var(--landing-col-gap))
+
+@keyframes landingBlockFade
+  from
+    opacity: 0
+
+// intro: boxes start flat (depth 0) and rise to their standard depth with a slower motion
+.landing:not([data-boxes-raised]) .landingBlock
+  --block-depth: 0
+
+.landing:not([data-intro-done]) .landingBlock
+  --block-motion: 600ms cubic-bezier(.22, 1, .36, 1)
+
+// the first image starts 200ms into the 600ms rise, so its 400ms fade ends as box 1 lands
+.landing:not([data-intro-done]) .landingImage
+  transition-delay: 200ms
+
+// box 1 becomes active after the rise, so during the rise it already takes its whole active
+// look (depth, front fill, sharp copy) in one motion; activation then changes nothing visible
+.landing[data-boxes-raised]:not([data-intro-done]) .landingBlock[data-position='1']
+  --block-depth: 1.35
+
+  .front
+    background: rgb(255 255 255 / .33)
+
+  .landingMeta,
+  .landingTitle
+    opacity: 1
+    filter: none
+
+// the back panel fill, the front panel (fill + frost) and the copy stay off while the boxes
+// fade in flat, then fade in together as the boxes rise to their depth
+.landing:not([data-boxes-raised]) .landingBlock .boxBack
+  fill: transparent
+
+.landing:not([data-intro-done]) .landingBlock .boxBack
+  transition: fill 600ms ease-out, transform var(--block-motion), width var(--block-motion), height var(--block-motion)
+
+.landing:not([data-boxes-raised]) .landingBlock .front
+  background: transparent
+  -webkit-backdrop-filter: blur(0)
+  backdrop-filter: blur(0)
+
+.landing:not([data-boxes-raised]) :is(.landingMeta, .landingTitle)
+  opacity: 0
+
+.landing:not([data-intro-done]) .landingBlock .front
+  transition: background-color 600ms ease-out, backdrop-filter 600ms ease-out, -webkit-backdrop-filter 600ms ease-out, left var(--block-motion), top var(--block-motion)
+
+.landing:not([data-intro-done]) :is(.landingMeta, .landingTitle)
+  transition: opacity 600ms ease-out, filter 180ms ease-out
+
+@media (prefers-reduced-motion: reduce)
+  .landingBlock
+    animation: none
+
+  .landingImage
+    transition: none
 
 .landingMeta,
 .landingTitle

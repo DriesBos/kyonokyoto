@@ -25,6 +25,13 @@ const slideHoldMs = 4000;
 const exitMs = 500;
 const wheelThreshold = 80;
 const touchThreshold = 48;
+// Intro: boxes fade in flat (depth 0; 800ms, 100ms apart, see .landingBlock), then after a
+// 500ms pause rise to their depth (600ms; box 1 straight to its active depth), then the first box activates and its image fades in, waiting
+// for that image up to introImageWaitMs.
+const introFadeMs = 1000;
+const introPauseMs = 500;
+const introRaiseMs = 600;
+const introImageWaitMs = 2500;
 
 // The events list scrolls inside [data-events-section] when the map is open, else the window.
 const eventsScrollRoot = () => {
@@ -97,6 +104,24 @@ export default function BlocksLanding({
   const [exiting, setExiting] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [hoverPaused, setHoverPaused] = useState(false);
+  const [loadedIds, setLoadedIds] = useState<Set<string>>(() => new Set());
+  const [boxesRaised, setBoxesRaised] = useState(false);
+  const [boxesGrown, setBoxesGrown] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
+
+  // Images fade in only once decoded, so they never paint top to bottom while downloading.
+  const markLoaded = useCallback((id: string, image: HTMLImageElement) => {
+    image
+      .decode()
+      .catch(() => undefined)
+      .then(() =>
+        setLoadedIds((current) => (current.has(id) ? current : new Set(current).add(id))),
+      );
+  }, []);
+  // The server-rendered hero can finish loading before hydration, when onLoad is never fired.
+  const loadedRef = (id: string) => (image: HTMLImageElement | null) => {
+    if (image?.complete && image.naturalWidth > 0) markLoaded(id, image);
+  };
 
   const usableCandidates = useMemo(
     () => candidates.filter((candidate) => !failedIds.has(candidate.id)),
@@ -127,6 +152,11 @@ export default function BlocksLanding({
     [rawSlides],
   );
   const normalizedActiveIndex = slides.length > 0 ? activeIndex % slides.length : 0;
+  // nothing is active until the intro has run; the first image fades in during the rise
+  // (delayed in CSS) so it is fully in when box 1 reaches its active depth
+  const shownIndex = introDone ? normalizedActiveIndex : -1;
+  const imageIndex = introDone ? normalizedActiveIndex : boxesRaised ? 0 : -1;
+  const firstSlideLoaded = slides.length > 0 && loadedIds.has(slides[0].id);
   const slideKey = slides.map((slide) => slide.id).join('|');
 
   const useNetlifyImageCdn = imageCdnEnabled();
@@ -142,7 +172,7 @@ export default function BlocksLanding({
   const heroVisible =
     Boolean(hero && heroFallbackSrc && !failedIds.has(hero.id)) &&
     (slides.length === 0 || heroIndex >= 0);
-  const heroActive = slides.length === 0 || heroIndex === normalizedActiveIndex;
+  const heroActive = heroIndex >= 0 && heroIndex === imageIndex;
 
   const dismiss = useCallback(() => {
     if (exiting || hidden) return;
@@ -163,12 +193,12 @@ export default function BlocksLanding({
   const canHover = (event: ReactPointerEvent) =>
     event.pointerType !== 'touch' && window.matchMedia('(hover: hover)').matches;
   const hoverSlide = (event: ReactPointerEvent, index: number) => {
-    if (!canHover(event)) return;
+    if (!introDone || !canHover(event)) return;
     setHoverPaused(true);
     if (index !== normalizedActiveIndex) setActiveIndex(index);
   };
   const leaveSlide = (event: ReactPointerEvent) => {
-    if (!canHover(event)) return;
+    if (!introDone || !canHover(event)) return;
     setHoverPaused(false);
     setCycleVersion((current) => current + 1);
   };
@@ -198,6 +228,35 @@ export default function BlocksLanding({
     setCycleVersion((current) => current + 1);
   }, [slideKey]);
 
+  const hasSlides = slides.length > 0;
+  useEffect(() => {
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    setBoxesRaised(true);
+    setBoxesGrown(true);
+    setIntroDone(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasSlides || boxesGrown) return;
+    const raiseAt = introFadeMs + introPauseMs;
+    const raise = window.setTimeout(() => setBoxesRaised(true), raiseAt);
+    const grown = window.setTimeout(() => setBoxesGrown(true), raiseAt + introRaiseMs);
+    return () => {
+      window.clearTimeout(raise);
+      window.clearTimeout(grown);
+    };
+  }, [boxesGrown, hasSlides]);
+
+  useEffect(() => {
+    if (!boxesGrown || introDone) return;
+    if (firstSlideLoaded) {
+      setIntroDone(true);
+      return;
+    }
+    const timer = window.setTimeout(() => setIntroDone(true), introImageWaitMs);
+    return () => window.clearTimeout(timer);
+  }, [boxesGrown, firstSlideLoaded, introDone]);
+
   useEffect(() => {
     if (viewport.width > 0 && slides.length === 0) setHidden(true);
   }, [slides.length, viewport.width]);
@@ -221,13 +280,13 @@ export default function BlocksLanding({
   }, [hidden]);
 
   useEffect(() => {
-    if (hidden || exiting || hoverPaused || slides.length === 0) return;
+    if (!introDone || hidden || exiting || hoverPaused || slides.length === 0) return;
     const timer = window.setTimeout(
       () => setActiveIndex((current) => (current + 1) % slides.length),
       slideHoldMs,
     );
     return () => window.clearTimeout(timer);
-  }, [activeIndex, cycleVersion, exiting, hidden, hoverPaused, slides.length]);
+  }, [activeIndex, cycleVersion, exiting, hidden, hoverPaused, introDone, slides.length]);
 
   useEffect(() => {
     if (hidden || slides.length < 2) return;
@@ -297,6 +356,8 @@ export default function BlocksLanding({
       ref={rootRef}
       className={styles.landing}
       data-exiting={exiting || undefined}
+      data-boxes-raised={boxesRaised || undefined}
+      data-intro-done={introDone || undefined}
       hidden={hidden}
       inert={hidden ? true : undefined}
       aria-label={copy.eventHighlights(cityLabel)}
@@ -316,8 +377,10 @@ export default function BlocksLanding({
               />
             ))}
             <img
+              ref={loadedRef(hero.id)}
               className={styles.landingImage}
               data-active={heroActive || undefined}
+              data-loaded={loadedIds.has(hero.id) || undefined}
               src={heroFallbackSrc ?? undefined}
               width={hero.width}
               height={hero.height}
@@ -325,6 +388,7 @@ export default function BlocksLanding({
               decoding="async"
               loading="eager"
               fetchPriority="high"
+              onLoad={(event) => markLoaded(hero.id, event.currentTarget)}
               onError={() => setFailedIds((current) => new Set(current).add(hero.id))}
             />
           </picture>
@@ -333,8 +397,10 @@ export default function BlocksLanding({
           slide.id === hero?.id && heroVisible ? null : (
             <img
               key={slide.id}
+              ref={loadedRef(slide.id)}
               className={styles.landingImage}
-              data-active={index === normalizedActiveIndex || undefined}
+              data-active={index === imageIndex || undefined}
+              data-loaded={loadedIds.has(slide.id) || undefined}
               src={slide.src}
               width={slide.width}
               height={slide.height}
@@ -342,6 +408,7 @@ export default function BlocksLanding({
               decoding="async"
               loading={index === 0 ? 'eager' : 'lazy'}
               fetchPriority={index === 0 ? 'high' : 'low'}
+              onLoad={(event) => markLoaded(slide.id, event.currentTarget)}
               onError={() =>
                 setFailedIds((current) => {
                   const next = new Set(current);
@@ -361,7 +428,7 @@ export default function BlocksLanding({
       />
       <div className={styles.landingBlocks}>
         {slides.map((slide, index) => {
-          const active = index === normalizedActiveIndex;
+          const active = index === shownIndex;
           return (
             <button
               className={styles.landingBlock}

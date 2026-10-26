@@ -21,8 +21,9 @@ test('open cards with several items show square slider dots under the image, on 
   assert.match(pager, /aria-current=\{index === pager\.active/);
   assert.match(media, /setPagerCount\(hasOverflow|setPagerCount\(itemCount\)/);
   assert.match(media, /prefers-reduced-motion: reduce/);
-  assert.match(mediaStyles, /border: 1.5px solid currentColor/);
-  assert.match(mediaStyles, /&\[aria-current='true'\]\n    background: currentColor/);
+  assert.match(mediaStyles, /width: 2px\n  height: 1rem\n  padding: 0\n  border: 0\n  background: currentColor/);
+  assert.match(mediaStyles, /opacity: 0\.33/);
+  assert.match(mediaStyles, /&\[aria-current='true'\]\n    opacity: 1/);
   assert.match(mediaStyles, /scroll-snap-type: x mandatory/);
-  assert.match(blockStyles, /media-dots'\]\n    position: absolute\n    top: 0\.5rem\n    right: 0\.5rem/);
+  assert.match(blockStyles, /media-dots'\]\n    position: absolute\n    top: 1rem\n    right: 0\.5rem/);
 });

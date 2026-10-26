@@ -96,7 +96,7 @@ test('Blocks landing uses capped V1-style Netlify cover transforms', () => {
   assert.equal(url.pathname, '/.netlify/images');
   assert.equal(url.searchParams.get('url'), 'https://example.com/large.jpg');
   assert.equal(url.searchParams.get('fit'), 'cover');
-  assert.equal(url.searchParams.get('q'), '82');
+  assert.equal(url.searchParams.get('q'), '60');
   assert.deepEqual({ width: slide.width, height: slide.height }, { width: 2560, height: 1440 });
 });
 

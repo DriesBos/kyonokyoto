@@ -116,7 +116,7 @@ export const landingMediaDeliveryUrl = (
     h: String(height),
     fit: 'cover',
     position: 'center',
-    q: '82',
+    q: '60',
   })}`;
 };
 
