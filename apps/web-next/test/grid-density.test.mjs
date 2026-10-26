@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const { gridDensityInitScript, normalizeGridDensity, stepGridDensity } = await import(
-  '../src/lib/gridDensity.ts'
-);
+const { gridDensityInitScript, normalizeGridDensity, stepGridDensity } =
+  await import('../src/lib/gridDensity.ts');
 
 test('Grid density stays one step either side of the default', () => {
   assert.equal(stepGridDensity(0, 1), 1);
