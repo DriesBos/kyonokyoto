@@ -52,6 +52,13 @@ body
   @media (any-pointer: coarse)
     --stroke-width: 2.5px
 
+// Header +/- grid density (lib/gridDensity.ts); set before paint from localStorage.
+:root[data-grid-density='1']
+  --grid-density: 1
+
+:root[data-grid-density='-1']
+  --grid-density: -1
+
 body
   background: var(--color-background)
   color: var(--color-text)

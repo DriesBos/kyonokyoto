@@ -26,6 +26,7 @@ import {
 } from '@/lib/heightTransition';
 import { routePathFor } from '@/lib/routeState';
 import GeneralButton from './GeneralButton';
+import GridDensityControls from './GridDensityControls';
 import styles from './SiteHeader.module.sass';
 
 export type HeaderCategory = { slug: string; label: string; dimension: string };
@@ -328,7 +329,6 @@ export default function SiteHeader({
             }}
           />
           <GeneralButton
-            edge={otherLocale ? undefined : 'last'}
             verticalPadding="full"
             label={copy.cities}
             showDot
@@ -344,7 +344,6 @@ export default function SiteHeader({
           />
           {otherLocale && (
             <GeneralButton
-              edge="last"
               verticalPadding="full"
               href={routePathFor({ city, locale: otherLocale })}
               hrefLang={otherLocale}
@@ -353,6 +352,7 @@ export default function SiteHeader({
               onClick={() => persistPreference(city, otherLocale)}
             />
           )}
+          <GridDensityControls />
         </div>
         {showFilterControls && (
           <div

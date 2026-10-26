@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import GoogleAnalytics from '@/app/GoogleAnalytics';
 import ServiceWorker from '@/app/ServiceWorker';
+import { gridDensityInitScript } from '@/lib/gridDensity';
 import '@/styles/globals.sass';
 import '@/styles/typography.sass';
 
@@ -34,6 +35,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       data-locale={locale}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: gridDensityInitScript }} />
+      </head>
       <body>
         {children}
         <ServiceWorker register={process.env.NODE_ENV === 'production'} />

@@ -24,8 +24,8 @@ test('production route renders block cards with groups, maps, and box-cluster di
   assert.match(page, /<BlocksLanding/);
   assert.match(page, /<MapExperience/);
   assert.match(page, /<EventsGrid/);
-  assert.match(styles, /--cols: var\(--block-cols, 4\)/);
-  assert.match(styles, /grid-column: span var\(--block-expanded-span, 2\)/);
+  assert.match(styles, /--cols: var\(--block-cols, max\(1, calc\(var\(--cols-default, 5\) \+ var\(--grid-density, 0\)\)\)\)/);
+  assert.match(styles, /grid-column: span min\(var\(--block-expanded-span, 2\), var\(--cols\)\)/);
 });
 
 test('block controls remain accessible and legacy routes canonicalize', async () => {
@@ -89,8 +89,8 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
     blocks,
     /style\.setProperty\('--block-expanded-span', String\(Math\.min\(next, 2\)\)\)/,
   );
-  assert.match(blockStyles, /--cols: var\(--block-cols, 4\)/);
+  assert.match(blockStyles, /--cols: var\(--block-cols, max\(1, calc\(var\(--cols-default, 5\) \+ var\(--grid-density, 0\)\)\)\)/);
   assert.match(blocks, /label: 'Gap [XY]'[\s\S]*unit: 'vmin'/);
   assert.match(blockStyles, /gap: var\(--block-gap-y, 5vmin\) var\(--block-gap-x, 5vmin\)/);
-  assert.match(blockStyles, /grid-column: span var\(--block-expanded-span, 2\)/);
+  assert.match(blockStyles, /grid-column: span min\(var\(--block-expanded-span, 2\), var\(--cols\)\)/);
 });

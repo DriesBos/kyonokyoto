@@ -8,21 +8,39 @@
   display: grid
   isolation: isolate
   // fixed column count so each block can derive its row/col for z-index stacking
-  --cols: var(--block-cols, 4)
+  // the header +/- shifts every breakpoint's default by --grid-density (-1, 0 or 1)
+  --cols: var(--block-cols, max(1, calc(var(--cols-default, 5) + var(--grid-density, 0))))
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr))
   align-items: start
-
-  @media (max-width: 1200px)
-    --cols: var(--block-cols, 3)
-
-  @media (max-width: 860px)
-    --cols: var(--block-cols, 2)
   gap: var(--block-gap-y, 5vmin) var(--block-gap-x, 5vmin)
   padding: calc(2rem + max(var(--block-dy, 24px), -1 * var(--block-dy, 24px)) * var(--block-lift, 2)) calc(2rem + max(var(--block-dx, 24px), -1 * var(--block-dx, 24px)) * var(--block-lift, 2))
 
+// Breakpoints follow the events panel width (container on MapExperience .events), so a
+// narrower panel with the map open drops columns too. Viewport queries are the fallback
+// for pages without that container.
+@media (max-width: 1440px)
+  .grid
+    --cols-default: 4
+
+@media (max-width: 1100px)
+  .grid
+    --cols-default: 3
+
+@media (max-width: 800px)
+  .grid
+    --cols-default: 2
+
+@container (max-width: 1440px)
+  .grid
+    --cols-default: 4
+
+@container (max-width: 1100px)
+  .grid
+    --cols-default: 3
+
 @container (max-width: 800px)
   .grid
-    --cols: var(--block-cols, 2)
+    --cols-default: 2
 
 .divider
   grid-column: 1 / -1
@@ -199,7 +217,8 @@
   opacity: 0.5
 
 .block:has([data-event-card-detail][data-expanded='true'])
-  grid-column: span var(--block-expanded-span, 2)
+  // never wider than the grid, or a 1-column grid grows an implicit column
+  grid-column: span min(var(--block-expanded-span, 2), var(--cols))
   // expanded cards get the same lift as hover; both set the same var, so
   // hovering an expanded card never double-lifts
   --depth-hover: 0.35
