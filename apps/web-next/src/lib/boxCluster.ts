@@ -46,29 +46,21 @@ const capitalize = (value: string) => value.charAt(0).toLocaleUpperCase() + valu
 
 export function boxClusterLabels(heading: string, cheer: string, soon: string) {
   const title = capitalize(heading);
-  return [
-    '↓',
-    `${title} ↓`,
-    capitalize(cheer),
-    '↓↓↓',
-    `↓ ${capitalize(soon)}`,
-    `↓↓ ${title}`,
-    '↓',
-  ];
+  return ['↓', `${title} ↓`, capitalize(cheer), '↓↓↓', `↓ ${capitalize(soon)}`, `↓↓ ${title}`, '↓'];
 }
 
 export function boxClusterLayout(labels: string[], seed: string) {
   const random = seededRandom(seed);
   const round = (value: number) => Number(value.toFixed(3));
-  const boxes = Array.from(
-    { length: boxClusterGrids.wide.count },
-    (_, index): ClusterBox => ({
-      label: labels[index % labels.length],
-      lift: round(0.8 + random() * 1.2),
-      slots: {},
-    }),
-  );
-  for (const [name, grid] of Object.entries(boxClusterGrids) as [BoxClusterGrid, (typeof boxClusterGrids)[BoxClusterGrid]][]) {
+  const boxes = Array.from({ length: boxClusterGrids.wide.count }, (_, index): ClusterBox => ({
+    label: labels[index % labels.length],
+    lift: round(0.8 + random() * 1.2),
+    slots: {},
+  }));
+  for (const [name, grid] of Object.entries(boxClusterGrids) as [
+    BoxClusterGrid,
+    (typeof boxClusterGrids)[BoxClusterGrid],
+  ][]) {
     const cells = Array.from({ length: grid.cols * grid.rows }, (_, cell) => cell);
     for (let i = cells.length - 1; i > 0; i--) {
       const j = Math.floor(random() * (i + 1));

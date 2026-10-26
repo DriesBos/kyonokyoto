@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const { boxClusterGrids, boxClusterHold, boxClusterLabels, boxClusterLayout } = await import('../src/lib/boxCluster.ts');
+const { boxClusterGrids, boxClusterHold, boxClusterLabels, boxClusterLayout } =
+  await import('../src/lib/boxCluster.ts');
 
 test('Box cluster labels capitalise the copy and keep arrows', () => {
   const labels = boxClusterLabels('upcoming', 'get ready!', 'coming soon');
@@ -30,6 +31,12 @@ test('Box cluster layout is deterministic per seed and scatters boxes over disti
 });
 
 test('Box cluster holds between 0.7s and 2.5s', () => {
-  assert.equal(boxClusterHold(() => 0), 700);
-  assert.equal(boxClusterHold(() => 1), 2500);
+  assert.equal(
+    boxClusterHold(() => 0),
+    700,
+  );
+  assert.equal(
+    boxClusterHold(() => 1),
+    2500,
+  );
 });

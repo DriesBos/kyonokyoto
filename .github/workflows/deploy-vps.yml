@@ -36,6 +36,8 @@ jobs:
         run: pnpm --filter kyo-no-kyoto-crawler test
       - name: Test web and source configuration
         run: pnpm --filter kyo-no-kyoto-web test
+      - name: Test web-next
+        run: pnpm --filter kyo-no-kyoto-web-next test
       - name: Validate source configuration
         run: |
           node --input-type=module - <<'NODE'
@@ -48,11 +50,11 @@ jobs:
           NODE
       - name: Test source sync safety
         run: node scripts/source-sync-safety.mjs
-      - name: Build web
+      - name: Build web-next
         env:
-          PUBLIC_SUPABASE_URL: https://example.supabase.co
-          PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
-        run: pnpm --filter kyo-no-kyoto-web build
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+        run: pnpm --filter kyo-no-kyoto-web-next build
 
   deploy:
     name: Fast-forward VPS
