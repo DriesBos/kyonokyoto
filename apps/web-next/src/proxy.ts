@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { cachedCityPagePath, cityPageCacheHeaders } from '@/lib/cdnCache';
 import { normalizeCity } from '@/lib/cities';
 import { normalizeLocale } from '@/lib/i18n';
 
@@ -9,7 +10,17 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-kyo-city', city);
   requestHeaders.set('x-kyo-locale', locale);
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  const cachedCity = cachedCityPagePath(request.nextUrl.pathname);
+  if (cachedCity) {
+    for (const [name, value] of Object.entries(
+      cityPageCacheHeaders(cachedCity.slug, cachedCity.timeZone),
+    )) {
+      response.headers.set(name, value);
+    }
+  }
+  return response;
 }
 
 export const config = {

@@ -194,6 +194,10 @@
     outline: 3px solid var(--color-text)
     outline-offset: -6px
 
+// Beta sources only render in dev; dim them so they read as unreleased.
+.block[data-beta]
+  opacity: 0.5
+
 .block:has([data-event-card-detail][data-expanded='true'])
   grid-column: span var(--block-expanded-span, 2)
   // expanded cards get the same lift as hover; both set the same var, so

@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
 export async function generateViewport({ params }: RouteProps): Promise<Viewport> {
   const state = await routeState(params);
   return {
-    themeColor: state?.city.themeColor ?? '#d2d3d5',
+    themeColor: state?.city.themeColor ?? '#efefef',
     width: 'device-width',
     initialScale: 1,
   };

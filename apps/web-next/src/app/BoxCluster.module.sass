@@ -1,0 +1,90 @@
+// small 3D boxes reusing the event card's back/face styles at a quarter of the depth
+.root
+  --cluster-dx: calc(var(--block-dx, 24px) * 0.25)
+  --cluster-dy: calc(var(--block-dy, 24px) * 0.25)
+  --cols: 7
+  --rows: 3
+  position: relative
+  width: 100%
+  height: clamp(16rem, 24vw, 26rem)
+  margin-block: 2rem 3rem
+
+// jittered grid: the slot sits at a random spot in its cell and is shifted back by the
+// same fraction of its own size, so it always stays inside the cell (with a small inset)
+.slot
+  --col: var(--wide-col)
+  --row: var(--wide-row)
+  --x: var(--wide-x)
+  --y: var(--wide-y)
+  position: absolute
+  width: max-content
+  left: calc((var(--col) + 0.06 + var(--x) * 0.88) / var(--cols) * 100%)
+  top: calc((var(--row) + 0.08 + var(--y) * 0.84) / var(--rows) * 100%)
+  transform: translate(calc(var(--x) * -100%), calc(var(--y) * -100%))
+
+.box
+  --block-dx: var(--cluster-dx)
+  --block-dy: var(--cluster-dy)
+  // same mechanism as event cards: the back stays on the plane, the front moves
+  // toward the viewer by the extra depth, and transform/width/height transition
+  --block-depth: 1
+  --box-rise: 0.6s
+  position: relative
+  display: block
+  transform: translate(calc((1 - var(--block-depth)) * var(--block-dx)), calc((1 - var(--block-depth)) * var(--block-dy)))
+  transition: transform var(--box-rise) linear
+
+  // span outranks the card's own .back/.face transition shorthand
+  > span
+    transition-duration: var(--box-rise)
+    transition-timing-function: linear
+
+  &[data-raised]
+    --block-depth: calc(1 + var(--bob-lift, 1))
+
+  // hover raises the box to its full height
+  @media (hover: hover)
+    &:hover
+      --block-depth: calc(1 + var(--bob-lift, 1))
+
+.front
+  position: relative
+  z-index: 1
+  display: block
+  padding: 0.4em 0.7em
+  border: var(--block-border-width, 2px) solid var(--color-text)
+  background: var(--color-background)
+  color: var(--color-text)
+  font-size: clamp(0.875rem, 1.6vmin, 1.25rem)
+  line-height: 1
+  white-space: nowrap
+
+@media (max-width: 1000px)
+  .root
+    --cols: 4
+    --rows: 3
+    height: 18rem
+
+  .slot
+    --col: var(--medium-col)
+    --row: var(--medium-row)
+    --x: var(--medium-x)
+    --y: var(--medium-y)
+
+  .hiddenMedium
+    display: none
+
+@media (max-width: 600px)
+  .root
+    --cols: 2
+    --rows: 4
+    height: 20rem
+
+  .slot
+    --col: var(--small-col)
+    --row: var(--small-row)
+    --x: var(--small-x)
+    --y: var(--small-y)
+
+  .hiddenSmall
+    display: none

@@ -11,6 +11,13 @@ import {
   isEventWithinDisplayWindow,
   nextRelevantScheduleStartDateOnly,
 } from '../../../../packages/shared/event-schedule.mjs';
+import {
+  assertTaxonomy,
+  CATEGORY_DIMENSIONS,
+  CATEGORY_REGISTRY,
+  flattenTaxonomy,
+  parseCategoryToken,
+} from '../../../../data/categories.mjs';
 import hongKongPermanentPayload from '../../../../data/permanent/hong-kong-permanent.json';
 import kyotoPermanentPayload from '../../../../data/permanent/kyoto-permanent.json';
 import osakaPermanentPayload from '../../../../data/permanent/osaka-permanent.json';
@@ -28,6 +35,7 @@ import {
   safeHttpUrl,
 } from './calendar';
 import { cityConfigFor, dateOnlyInTimeZone, type AppCity } from './cities';
+import { cityCacheTag } from './cdnCache';
 import { formatEventDateRange, formatOngoingEventEnd } from './eventDates';
 import type { AppLocale } from './i18n';
 import { sourceSlugForEvent } from './sourceMatching';
@@ -130,6 +138,8 @@ export type CityEvent = {
   id: string;
   group: 'ongoing' | 'upcoming' | 'permanent';
   sourceSlug: string | null;
+  // Beta sources only reach dev builds, where their cards render dimmed.
+  beta: boolean;
   landingEligible: boolean;
   mapVisible: boolean;
   categories: string[];
@@ -248,14 +258,10 @@ const localized = (
   locale: AppLocale,
   fallback: string,
 ) => values?.[locale] || values?.en || values?.ja || fallback;
-const taxonomyCategories = (taxonomy?: Taxonomy) => [
-  ...new Set(
-    Object.values(taxonomy ?? {})
-      .flat()
-      .map(normalizedText)
-      .filter(Boolean),
-  ),
-];
+// Category tokens carry their dimension (venue_category:fair vs event_category:fair), matching
+// data/categories.mjs and apps/web, so filters never mix up dimensions that share a word.
+const taxonomyCategories = (taxonomy: Taxonomy | undefined, owner: string): string[] =>
+  taxonomy ? flattenTaxonomy(assertTaxonomy(taxonomy, owner)) : [];
 
 const coordinatePair = (lat: unknown, lng: unknown) => {
   const parsedLat = Number(lat);
@@ -270,6 +276,8 @@ const coordinatePair = (lat: unknown, lng: unknown) => {
     ? { lat: parsedLat, lng: parsedLng }
     : null;
 };
+
+const showBeta = () => process.env.NODE_ENV !== 'production';
 
 const activeSourcesFor = (city: AppCity) =>
   sourcesByCity[city].filter((source) => source.is_active !== false);
@@ -351,9 +359,9 @@ const sourceTruth = (
           source?.directions_query ??
           event.directions_query ??
           addressText)) ?? null,
-    categories: taxonomyCategories(source?.taxonomy).length
-      ? taxonomyCategories(source?.taxonomy)
-      : (event.categories ?? []).map(normalizedText).filter(Boolean),
+    categories: source
+      ? taxonomyCategories(source.taxonomy, source.slug)
+      : [...new Set((event.categories ?? []).map(normalizedText).filter(Boolean))],
     lat: pair?.lat ?? null,
     lng: pair?.lng ?? null,
   };
@@ -442,20 +450,25 @@ export async function fetchCityEvents({
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error('Missing Supabase public environment variables');
 
+  const today = dateOnlyInTimeZone(new Date(), cityConfigFor(city)?.timeZone ?? 'Asia/Tokyo');
   const endpoint = new URL('/rest/v1/events', url);
   endpoint.search = new URLSearchParams({
     select: EVENT_SELECT,
     status: 'eq.published',
     city: `eq.${city}`,
+    // end_date is the schedule envelope, so rows that ended before today can never display.
+    or: `(end_date.is.null,end_date.gte.${today})`,
   }).toString();
-  const response = await fetch(endpoint, { headers: { apikey: key }, next: { revalidate: 300 } });
+  const response = await fetch(endpoint, {
+    headers: { apikey: key },
+    next: { revalidate: 300, tags: [cityCacheTag(city)] },
+  });
   if (!response.ok) throw new Error(`Supabase events request failed: ${response.status}`);
 
   const sources = activeSourcesFor(city);
-  const today = dateOnlyInTimeZone(new Date(), cityConfigFor(city)?.timeZone ?? 'Asia/Tokyo');
   const visibleSource = (slug: string | null) => {
     const source = sources.find((candidate) => candidate.slug === slug);
-    return Boolean(source && (process.env.NODE_ENV !== 'production' || !source.beta));
+    return Boolean(source && (showBeta() || !source.beta));
   };
 
   const rows = (await response.json()) as EventRow[];
@@ -538,6 +551,7 @@ export async function fetchCityEvents({
         id: event.id,
         group: eventDisplayGroup({ ...enriched, timing }, today),
         sourceSlug: truth.slug,
+        beta: Boolean(truth.source?.beta),
         landingEligible: Boolean(truth.source?.landing_slider),
         mapVisible: event.event_kind !== 'festival' && truth.source?.map_visibility !== false,
         categories: truth.categories,
@@ -623,7 +637,10 @@ export async function fetchFestivalDetail({
     event_kind: 'eq.festival',
     limit: '1',
   }).toString();
-  const response = await fetch(endpoint, { headers: { apikey: key }, next: { revalidate: 300 } });
+  const response = await fetch(endpoint, {
+    headers: { apikey: key },
+    next: { revalidate: 300, tags: [cityCacheTag(city)] },
+  });
   if (!response.ok) throw new Error(`Supabase festival request failed: ${response.status}`);
   const [festival] = (await response.json()) as EventRow[];
   if (!festival) return null;
@@ -631,7 +648,7 @@ export async function fetchFestivalDetail({
   const sources = activeSourcesFor(city);
   const sourceSlug = sourceSlugForEvent(festival, sources);
   const source = sources.find((candidate) => candidate.slug === sourceSlug);
-  if (!source || (process.env.NODE_ENV === 'production' && source.beta)) return null;
+  if (!source || (!showBeta() && source.beta)) return null;
 
   const festivalWithMedia = withConfiguredMedia(festival, sources);
   const localized = translationFor(festivalWithMedia, locale);
@@ -717,9 +734,7 @@ const permanentEventsFor = ({
   sources: SourceConfig[];
 }): CityEvent[] =>
   permanentByCity[city]
-    .filter(
-      (item) => item.is_active !== false && (process.env.NODE_ENV !== 'production' || !item.beta),
-    )
+    .filter((item) => item.is_active !== false && (showBeta() || !item.beta))
     .flatMap((item) => {
       const source = sources.find((candidate) => candidate.slug === item.slug);
       const institution = localized(
@@ -752,9 +767,10 @@ const permanentEventsFor = ({
           id: `${item.cadence ?? 'permanent'}:${item.slug}`,
           group: 'permanent' as const,
           sourceSlug: item.slug,
+          beta: Boolean(item.beta || source?.beta),
           landingEligible: false,
           mapVisible: source?.map_visibility !== false,
-          categories: taxonomyCategories(item.taxonomy ?? source?.taxonomy),
+          categories: taxonomyCategories(item.taxonomy ?? source?.taxonomy, item.slug),
           date: locale === 'ja' ? 'あわせて' : 'also visit',
           institution,
           venue: null,
@@ -788,29 +804,32 @@ const categoryLabel = (value: string) =>
     .map((word) => word[0]?.toUpperCase() + word.slice(1))
     .join(' ');
 
-export function categoriesForEvents(
-  events: CityEvent[],
-  city: AppCity = 'kyoto',
-): CategoryOption[] {
-  const visible = new Set(events.flatMap((event) => event.categories));
-  const options = activeSourcesFor(city).flatMap((source) =>
-    (Object.entries(source.taxonomy ?? {}) as [keyof Taxonomy, string[]][]).flatMap(
-      ([dimension, values]) =>
-        values
-          .filter((slug) => visible.has(normalizedText(slug)))
-          .map((slug) => ({
-            slug: normalizedText(slug),
-            label: categoryLabel(slug),
-            dimension,
-          })),
-    ),
-  );
-  return [
-    ...new Map(options.map((option) => [`${option.dimension}:${option.slug}`, option])).values(),
-  ].sort(
-    (left, right) =>
-      left.dimension.localeCompare(right.dimension) || left.label.localeCompare(right.label),
-  );
+const registryIndex = (dimension: keyof Taxonomy, category: string) =>
+  (CATEGORY_REGISTRY[dimension] as readonly string[]).indexOf(category);
+
+export function categoriesForEvents(events: CityEvent[]): CategoryOption[] {
+  const options = new Map<string, CategoryOption & { category: string }>();
+  events
+    .flatMap((event) => event.categories)
+    .forEach((token) => {
+      const parsed = parseCategoryToken(token);
+      if (!parsed || options.has(token)) return;
+      options.set(token, {
+        slug: token,
+        label: categoryLabel(parsed.category),
+        dimension: parsed.dimension as keyof Taxonomy,
+        category: parsed.category,
+      });
+    });
+  return [...options.values()]
+    .sort(
+      (left, right) =>
+        CATEGORY_DIMENSIONS.indexOf(left.dimension) -
+          CATEGORY_DIMENSIONS.indexOf(right.dimension) ||
+        registryIndex(left.dimension, left.category) -
+          registryIndex(right.dimension, right.category),
+    )
+    .map(({ category: _category, ...option }) => option);
 }
 
 export function mapSourcesForEvents(events: CityEvent[]): MapSource[] {

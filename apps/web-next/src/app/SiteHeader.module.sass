@@ -1,120 +1,134 @@
 @use '@/styles/variables' as *
 
+// Port of apps/web Header.astro styles.
 .header
   position: sticky
   top: 0
   z-index: 100
+  isolation: isolate
   display: flex
-  align-items: flex-start
   justify-content: space-between
+  align-items: flex-start
+  gap: 0
   min-width: 0
-  padding: max(0px, env(safe-area-inset-top)) .5rem 0
-  background: var(--color-background)
+  padding: 0.5rem 0
+  padding-top: max(0.5rem, env(safe-area-inset-top))
+  background-color: var(--color-background)
   color: var(--color-text)
-  border-bottom: 1px solid var(--color-text)
+  overflow: visible
+
+  &::after
+    content: ''
+    position: absolute
+    z-index: 2
+    inset-inline: 0
+    bottom: 0
+    border-top: var(--stroke-width) solid var(--stroke)
+    opacity: 0
+    pointer-events: none
+    transition: opacity 165ms ease
+
+  &[data-stuck]
+    &::after
+      opacity: 1
+
+    .logo svg,
+    .logo .wordmark
+      height: calc(var(--type-title-size) * 1.22)
+      font-size: var(--type-title-size)
 
 .logo
-  display: block
+  position: relative
+  z-index: 1
   flex: 0 0 auto
+  display: block
+  padding-left: var(--page-padding-x)
   color: inherit
+  text-decoration: none
 
   svg,
   .wordmark
     display: block
     width: auto
-    height: clamp(2.5rem, 3.2vw, 3rem)
+    height: calc(var(--type-logo-size) * 1.22)
+    font-size: var(--type-logo-size)
+    line-height: 1.22
     color: inherit
+    transition: height 165ms ease
 
 .wordmark
-  height: auto !important
-  font-size: clamp(1.4rem, 3vw, 2.25rem)
-  line-height: 1.1
   white-space: nowrap
 
 .controls
+  position: relative
+  z-index: 1
   display: flex
-  flex: 1 1 auto
   flex-direction: column
   align-items: flex-end
+  margin-left: auto
   min-width: 0
+  overflow: visible
 
-.toolbar,
+.toolbar
+  display: inline-flex
+  align-items: flex-start
+  justify-content: flex-end
+  flex-wrap: wrap
+  column-gap: 0
+  row-gap: var(--control-gap)
+
 .panel
   display: flex
   flex-wrap: wrap
   justify-content: flex-end
-
-.panel
+  column-gap: 0
   width: min(100%, 48rem)
-  max-height: 0
+  padding-right: 0.5rem
+  height: 0
   overflow: hidden
   pointer-events: none
-  transition: max-height 165ms ease
 
   &[data-open]
-    max-height: 20rem
+    overflow: visible
     pointer-events: auto
 
-.control
-  position: relative
-  display: inline-flex
-  align-items: flex-start
-  min-height: clamp(2.5rem, 3.2vw, 3rem)
-  padding: .35rem .7rem 0
-  border: 0
-  appearance: none
-  background: transparent
-  color: inherit
-  font: inherit
-  font-size: clamp(.75rem, .94vw, .875rem)
-  line-height: 1
-  text-decoration: none
-  text-transform: lowercase
-  cursor: pointer
+.group
+  display: contents
 
-  &::before
-    content: ''
-    position: absolute
-    top: 0
-    right: .35rem
-    left: .35rem
-    border-top: max(1px, var(--block-border-width, 1px)) solid currentColor
-
-  &::after
-    content: ''
-    position: absolute
-    top: 1.35rem
-    left: 50%
-    width: .45rem
-    height: .45rem
-    border-radius: 50%
-    background: currentColor
-    opacity: 0
-    transform: translateX(-50%)
-
-  &[aria-pressed='true'],
-  &[aria-current='page']
-    text-decoration: underline
-    text-underline-offset: .18em
-
-    &::after
-      opacity: 1
-
-  &:focus-visible
-    outline: 2px solid currentColor
-    outline-offset: -2px
+.cityButton [data-general-button-label]
+  text-transform: capitalize
 
 @media (max-width: $mobile-breakpoint)
   .header
-    gap: .5rem
+    flex-direction: row
+    align-items: flex-start
+
+  .logo svg,
+  .logo .wordmark
+    height: calc(var(--type-logo-size) * 0.96)
+    font-size: calc(var(--type-logo-size) * 0.79)
+
+  .filterToggle
+    display: inline-flex
+    align-items: center
+    justify-content: flex-start
 
   .controls
-    align-items: stretch
+    flex: 1 1 auto
+    flex-direction: column
+    align-items: flex-end
 
   .toolbar,
   .panel
     width: 100%
 
-  .control
-    flex: 1 0 auto
-    min-height: 2.5rem
+  .panel
+    [data-filter-button],
+    [data-city-button]
+      opacity: 0
+      pointer-events: none
+
+  .panel[data-open]
+    [data-filter-button],
+    [data-city-button]
+      pointer-events: auto

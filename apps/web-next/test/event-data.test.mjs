@@ -35,7 +35,7 @@ test('V2 event mapper preserves source, calendar, image and media contracts', as
   assert.match(source, /group: 'permanent'/);
   assert.match(
     source,
-    /endpoint\.search = new URLSearchParams\(\{\s*select: EVENT_SELECT,\s*status: 'eq\.published',\s*city: `eq\.\$\{city\}`,?\s*\}\)/,
+    /endpoint\.search = new URLSearchParams\(\{\s*select: EVENT_SELECT,\s*status: 'eq\.published',\s*city: `eq\.\$\{city\}`,[^}]*or: `\(end_date\.is\.null,end_date\.gte\.\$\{today\}\)`,?\s*\}\)/,
   );
   assert.match(source, /translationFor\(event, locale\)/);
   assert.match(source, /dateOnlyInTimeZone/);
@@ -130,12 +130,16 @@ test('lead image owns media ratio and becomes the scrollable track only while op
   ]);
   assert.match(grid, /useState<string \| null>/);
   assert.match(grid, /aria-expanded=\{expanded\}/);
-  assert.match(detail, /images\.slice\(0, expanded \? 3 : 1\)/);
-  assert.match(detail, /const visibleEmbeds = expanded \? embeds : \[\]/);
+  assert.match(detail, /usableImages\.slice\(0, expanded \? 3 : 1\)/);
+  assert.match(detail, /const visibleEmbeds = expanded \? embeds : usableImages\.length === 0 \? embeds\.slice\(0, 1\) : \[\]/);
   assert.match(detail, /data-overflow=\{hasOverflow\}/);
-  assert.match(detail, /naturalLeadAspectRatio \?\? imageAspectRatio\(images\[0\]\)/);
+  assert.match(detail, /naturalLeadAspectRatio \?\? imageAspectRatio\(usableImages\[0\]\)/);
   assert.match(detail, /image\.naturalWidth \/ image\.naturalHeight/);
-  assert.match(detail, /ref=\{imageIndex === 0 \? syncNaturalLeadAspectRatio : undefined\}/);
+  assert.match(detail, /if \(imageIndex === 0\) syncNaturalLeadAspectRatio\(element\)/);
+  // Broken images drop out of the card instead of rendering a broken-image box.
+  assert.match(detail, /onError=\{\(\) => markFailed\(image\.src\)\}/);
+  assert.match(detail, /confirmBrokenImage\(element, image\.src\)/);
+  assert.match(detail, /images\.filter\(\(image\) => !failedSources\.has\(image\.src\)\)/);
   assert.match(detail, /--media-lead-aspect-ratio/);
   assert.match(mediaStyles, /overflow-x: auto/);
   assert.match(mediaStyles, /flex-basis: calc\(100% - var\(--media-peek\)\)/);
@@ -161,9 +165,10 @@ test('lead image owns media ratio and becomes the scrollable track only while op
 test('events use page scrolling until map opens an independently scrollable panel', async () => {
   const styles = await readFile(new URL('MapExperience.module.sass', app), 'utf8');
   const eventsStyles = styles.slice(styles.indexOf('.events'), styles.indexOf('.map'));
+  // The panel keeps scrolling while the map is mounted, including while it slides out.
   const mapVisibleStyles = styles.slice(
-    styles.indexOf('.content[data-map-visible] .events'),
-    styles.indexOf('.resizer'),
+    styles.indexOf('.content[data-map-mounted]'),
+    styles.indexOf('.content[data-map-visible]'),
   );
 
   assert.match(eventsStyles, /overflow: visible/);

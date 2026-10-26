@@ -5,7 +5,7 @@ import test from 'node:test';
 const app = new URL('../src/app/', import.meta.url);
 const lib = new URL('../src/lib/', import.meta.url);
 
-test('production route renders block cards with groups, maps, and time dividers', async () => {
+test('production route renders block cards with groups, maps, and box-cluster dividers', async () => {
   const [component, page, styles, events] = await Promise.all([
     readFile(new URL('EventsGrid.tsx', app), 'utf8'),
     readFile(new URL('CityEventsPage.tsx', app), 'utf8'),
@@ -16,7 +16,7 @@ test('production route renders block cards with groups, maps, and time dividers'
   assert.match(events, /imageUrls: string\[\]/);
   assert.match(events, /\.filter\(Boolean\)\.slice\(0, 3\)/);
   assert.match(component, /groupOrder = \['ongoing', 'upcoming', 'permanent'\]/);
-  assert.match(component, /<TimeDivider/);
+  assert.match(component, /<BoxCluster/);
   assert.match(component, /data-event-card/);
   assert.match(component, /data-map-location-id/);
   assert.match(component, /<EventCardMedia/);

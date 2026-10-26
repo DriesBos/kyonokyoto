@@ -11,6 +11,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
+  type TransitionEvent,
   type ReactNode,
 } from 'react';
 import GoogleMapCanvas, { type GoogleMapCanvasProps } from './GoogleMapCanvas';
@@ -68,6 +69,10 @@ type PanelStyle = CSSProperties & {
 const desktopMinimum = 320;
 const mobileMinimum = 160;
 const step = 24;
+// Fallback for when transitionend never fires; matches the sass duration plus headroom.
+const closeFallbackMs = 360;
+
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export default function MapExperience({
   header,
@@ -78,6 +83,10 @@ export default function MapExperience({
 }: MapExperienceProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [mapOpen, setMapOpen] = useState(defaultOpen);
+  // The map stays mounted while it slides out, and only becomes visible a frame after
+  // mounting so the panel can transition in from zero size.
+  const [mapMounted, setMapMounted] = useState(defaultOpen);
+  const [mapVisible, setMapVisible] = useState(defaultOpen);
   const [isMobile, setIsMobile] = useState(false);
   const [eventsPanelSize, setEventsPanelSize] = useState<number>();
   const [mapPanelSize, setMapPanelSize] = useState<number>();
@@ -97,6 +106,28 @@ export default function MapExperience({
     return () => query.removeEventListener('change', update);
   }, []);
 
+  useEffect(() => {
+    if (mapOpen) {
+      setMapMounted(true);
+      if (prefersReducedMotion()) {
+        setMapVisible(true);
+        return;
+      }
+      let frame = window.requestAnimationFrame(() => {
+        frame = window.requestAnimationFrame(() => setMapVisible(true));
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    setMapVisible(false);
+    if (prefersReducedMotion()) {
+      setMapMounted(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => setMapMounted(false), closeFallbackMs);
+    return () => window.clearTimeout(timeout);
+  }, [mapOpen]);
+
   const context = useMemo(
     () => ({ mapOpen, setMapOpen, toggleMap: () => setMapOpen((open) => !open) }),
     [mapOpen],
@@ -114,11 +145,19 @@ export default function MapExperience({
     setMapPanelSize(Math.min(Math.max(value, mobileMinimum), maximum));
     emitLayoutUpdate();
   };
+  const onMapTransitionEnd = (event: TransitionEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return;
+    // Desktop sizes the map via max-width, mobile via max-height.
+    if (!['max-width', 'max-height'].includes(event.propertyName)) return;
+    if (!mapOpen) setMapMounted(false);
+    emitLayoutUpdate();
+  };
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!mapOpen) return;
     const root = rootRef.current;
     if (!root) return;
     event.currentTarget.setPointerCapture(event.pointerId);
+    root.toggleAttribute('data-map-resizing', true);
     dragRef.current = {
       pointerId: event.pointerId,
       x: event.clientX,
@@ -145,6 +184,7 @@ export default function MapExperience({
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     dragRef.current = null;
+    rootRef.current?.removeAttribute('data-map-resizing');
   };
   const onSeparatorKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const validKey = isMobile ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight'];
@@ -173,20 +213,22 @@ export default function MapExperience({
         <div
           className={styles.content}
           data-content-container
-          data-map-visible={mapOpen || undefined}
+          data-map-mounted={mapMounted || undefined}
+          data-map-visible={mapVisible || undefined}
           ref={rootRef}
           style={panelStyle}
         >
           <section className={styles.events} data-events-section>
             {children}
           </section>
-          {mapOpen && (
+          {mapMounted && (
             <>
               <div
                 className={styles.resizer}
                 data-map-resizer
                 role="separator"
-                tabIndex={0}
+                tabIndex={mapOpen ? 0 : -1}
+                inert={!mapOpen}
                 aria-label="Resize map"
                 aria-orientation={isMobile ? 'horizontal' : 'vertical'}
                 onPointerDown={onPointerDown}
@@ -195,7 +237,13 @@ export default function MapExperience({
                 onPointerCancel={onPointerEnd}
                 onKeyDown={onSeparatorKeyDown}
               />
-              <section className={styles.map} id="map-section" data-map-section>
+              <section
+                className={styles.map}
+                id="map-section"
+                data-map-section
+                inert={!mapOpen}
+                onTransitionEnd={onMapTransitionEnd}
+              >
                 <GoogleMapCanvas {...mapProps} />
               </section>
             </>

@@ -20,7 +20,7 @@ export default async function CityEventsPage({
 }) {
   const events = await fetchCityEvents({ city: city.slug, locale });
   const landingCandidates = blocksLandingCandidatesForEvents(events);
-  const categories = categoriesForEvents(events, city.slug);
+  const categories = categoriesForEvents(events);
   const mapSources = mapSourcesForEvents(events);
   const jsonLd = JSON.stringify(structuredData({ city: city.slug, locale })).replaceAll(
     '<',

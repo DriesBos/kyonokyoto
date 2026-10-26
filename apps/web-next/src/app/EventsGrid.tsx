@@ -1,13 +1,14 @@
 import { Fragment } from 'react';
 import type { AppLocale } from '@/lib/i18n';
 import { uiText } from '@/lib/i18n';
+import { boxClusterLabels } from '@/lib/boxCluster';
 import type { AppCity } from '@/lib/cities';
 import { type CityEvent, mapLocationIdForEvent } from '@/lib/cityEvents';
 import { festivalPathFor } from '@/lib/festivalRoutes';
 import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
-import TimeDivider from './TimeDivider';
+import BoxCluster from './BoxCluster';
 import styles from './blocks/page.module.sass';
 
 const groupOrder = ['ongoing', 'upcoming', 'permanent'] as const;
@@ -58,9 +59,13 @@ export default function EventsGrid({
               data-before-group={previousVisibleGroup}
               data-after-group={group}
             >
-              <TimeDivider
-                label={copy[group]}
-                readyLabel={group === 'upcoming' ? copy.getReady : copy.permanent}
+              <BoxCluster
+                labels={boxClusterLabels(
+                  group === 'permanent' ? copy.alsoVisit : copy[group],
+                  group === 'upcoming' ? copy.getReady : copy.permanent,
+                  copy.comingSoon,
+                )}
+                seed={`${city}-${group}`}
                 ariaLabel={`${copy[group]} events`}
               />
             </div>
@@ -107,6 +112,7 @@ export default function EventsGrid({
                       data-event-card
                       data-event-id={event.id}
                       data-event-group-name={event.group}
+                      data-beta={event.beta || undefined}
                       data-categories={event.categories.join('|')}
                       data-map-location-id={mapLocationIdForEvent(event) ?? undefined}
                       key={event.id}

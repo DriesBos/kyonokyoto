@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
+import GoogleAnalytics from '@/app/GoogleAnalytics';
+import ServiceWorker from '@/app/ServiceWorker';
 import '@/styles/globals.sass';
 import '@/styles/typography.sass';
 
@@ -32,7 +34,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       data-locale={locale}
       suppressHydrationWarning
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorker register={process.env.NODE_ENV === 'production'} />
+        {process.env.NODE_ENV === 'production' && <GoogleAnalytics />}
+      </body>
     </html>
   );
 }

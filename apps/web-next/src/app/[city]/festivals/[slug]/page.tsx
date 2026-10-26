@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
 
 export async function generateViewport({ params }: RouteProps): Promise<Viewport> {
   const city = cityConfigFor((await params).city);
-  return { themeColor: city?.themeColor ?? '#d2d3d5', width: 'device-width', initialScale: 1 };
+  return { themeColor: city?.themeColor ?? '#efefef', width: 'device-width', initialScale: 1 };
 }
 
 export default async function FestivalRoute({ params }: RouteProps) {

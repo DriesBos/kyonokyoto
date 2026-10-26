@@ -3,7 +3,7 @@
 import { useCallback, useState, type CSSProperties } from 'react';
 import { buildAppleCalendarIcs, type AppleCalendarEvent } from '@/lib/appleCalendar';
 import { uiText, type AppLocale } from '@/lib/i18n';
-import { buildYouTubeEmbedSrc } from '@/lib/youtubeEmbed';
+import { AmbientYouTube } from './AmbientYouTube';
 import { useEventCardExpansion } from './ExpandableGrid';
 import styles from './EventCardDetail.module.sass';
 
@@ -60,14 +60,33 @@ export function EventCardMedia({
 }) {
   const { expanded } = useEventCardExpansion(eventId);
   const [naturalLeadAspectRatio, setNaturalLeadAspectRatio] = useState<number | null>(null);
-  const leadAspectRatio = naturalLeadAspectRatio ?? imageAspectRatio(images[0]);
-  const visibleImages = images.slice(0, expanded ? 3 : 1);
-  const visibleEmbeds = expanded ? embeds : [];
+  const [failedSources, setFailedSources] = useState<ReadonlySet<string>>(() => new Set());
+  // Origins go down or block hotlinking; drop broken images instead of showing a broken box.
+  const usableImages = images.filter((image) => !failedSources.has(image.src));
+  const leadAspectRatio = naturalLeadAspectRatio ?? imageAspectRatio(usableImages[0]);
+  const visibleImages = usableImages.slice(0, expanded ? 3 : 1);
+  // Collapsed cards show one lead item; a card without images leads with its video instead.
+  const visibleEmbeds = expanded ? embeds : usableImages.length === 0 ? embeds.slice(0, 1) : [];
   const hasOverflow = expanded && visibleImages.length + visibleEmbeds.length > 1;
   const syncNaturalLeadAspectRatio = useCallback((image: HTMLImageElement | null) => {
     if (!image?.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) return;
     setNaturalLeadAspectRatio(image.naturalWidth / image.naturalHeight);
   }, []);
+  const markFailed = useCallback((src: string) => {
+    setFailedSources((current) => (current.has(src) ? current : new Set(current).add(src)));
+  }, []);
+  // Images that failed before hydration never fire onError, and some browsers report deferred
+  // lazy images as complete with no size, so confirm with a probe (served from cache) first.
+  const confirmBrokenImage = useCallback(
+    (image: HTMLImageElement | null, src: string) => {
+      const source = image?.currentSrc || image?.src;
+      if (!image || !source || !image.complete || image.naturalWidth > 0) return;
+      const probe = new Image();
+      probe.addEventListener('error', () => markFailed(src), { once: true });
+      probe.src = source;
+    },
+    [markFailed],
+  );
 
   if (visibleImages.length + visibleEmbeds.length === 0) return null;
 
@@ -100,7 +119,11 @@ export function EventCardMedia({
               loading={image.loading ?? 'lazy'}
               fetchPriority={image.fetchPriority}
               decoding="async"
-              ref={imageIndex === 0 ? syncNaturalLeadAspectRatio : undefined}
+              ref={(element) => {
+                if (imageIndex === 0) syncNaturalLeadAspectRatio(element);
+                confirmBrokenImage(element, image.src);
+              }}
+              onError={() => markFailed(image.src)}
               onLoad={
                 imageIndex === 0
                   ? (event) => syncNaturalLeadAspectRatio(event.currentTarget)
@@ -110,15 +133,11 @@ export function EventCardMedia({
           </figure>
         ))}
         {visibleEmbeds.map((embed) => (
-          <iframe
+          <AmbientYouTube
             className={styles.embed}
-            data-event-card-part="media-embed"
             key={embed.videoId}
-            src={buildYouTubeEmbedSrc(embed.videoId)}
+            videoId={embed.videoId}
             title={embed.title}
-            loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
           />
         ))}
       </div>
