@@ -6,7 +6,9 @@ const lib = new URL('../src/lib/', import.meta.url);
 const app = new URL('../src/app/', import.meta.url);
 const { buildAppleCalendarIcs } = await import(new URL('appleCalendar.ts', lib));
 const { googleCalendarUrl, safeHttpUrl } = await import(new URL('calendar.ts', lib));
-const { normalizeYouTubeEmbeds } = await import(new URL('youtubeEmbed.ts', lib));
+const { buildYouTubeEmbedSrc, normalizeYouTubeEmbeds } = await import(
+  new URL('youtubeEmbed.ts', lib)
+);
 
 const calendarEvent = {
   title: 'Kyoto event',
@@ -120,6 +122,15 @@ test('YouTube normalization keeps valid YouTube embeds only', () => {
   );
 });
 
+test('YouTube embed uses the privacy-enhanced host and CSP allows only it as a frame', async () => {
+  assert.match(
+    buildYouTubeEmbedSrc('abc123', 'https://x.test'),
+    /^https:\/\/www\.youtube-nocookie\.com\/embed\/abc123\?/,
+  );
+  const config = await readFile(new URL('../next.config.mjs', import.meta.url), 'utf8');
+  assert.match(config, /'frame-src https:\/\/www\.youtube-nocookie\.com'/);
+});
+
 test('lead image owns media ratio and becomes the scrollable track only while open', async () => {
   const [grid, detail, mediaStyles, blocks, blockStyles] = await Promise.all([
     readFile(new URL('ExpandableGrid.tsx', app), 'utf8'),
@@ -142,10 +153,15 @@ test('lead image owns media ratio and becomes the scrollable track only while op
   // Broken images drop out of the card instead of rendering a broken-image box.
   assert.match(detail, /onError=\{\(\) => markFailed\(image\.src\)\}/);
   assert.match(detail, /confirmBrokenImage\(element, image\.src\)/);
-  assert.match(detail, /images\.filter\(\(image\) => !failedSources\.has\(image\.src\)\)/);
+  assert.match(detail, /src && !failedSources\.has\(src\)/);
   assert.match(detail, /--media-lead-aspect-ratio/);
   assert.match(mediaStyles, /overflow-x: auto/);
-  assert.match(mediaStyles, /flex-basis: calc\(100% - var\(--media-peek\)\)/);
+  // Several open items share the lead's height (minus the peek) and keep their own widths.
+  assert.match(
+    mediaStyles,
+    /height: calc\(\(100cqi - 2 \* var\(--media-inset, 0px\) - var\(--media-peek\)\) \/ var\(--media-lead-aspect-ratio, 4 \/ 3\)\)/,
+  );
+  assert.match(mediaStyles, /padding-inline: var\(--media-inset, 0\)/);
   assert.match(mediaStyles, /aspect-ratio: var\(--media-lead-aspect-ratio\)/);
   assert.match(mediaStyles, /object-fit: contain/);
   const eventCardBlockStyles = blockStyles.slice(0, blockStyles.indexOf('.landing'));
@@ -175,7 +191,30 @@ test('events use page scrolling until map opens an independently scrollable pane
   );
 
   assert.match(eventsStyles, /overflow: visible/);
-  assert.doesNotMatch(eventsStyles, /overscroll-behavior: contain/);
+  assert.doesNotMatch(eventsStyles, /overscroll-behavior/);
   assert.match(mapVisibleStyles, /overflow-y: auto/);
-  assert.match(mapVisibleStyles, /overscroll-behavior: contain/);
+  assert.match(mapVisibleStyles, /overscroll-behavior-x: contain/);
+  assert.match(mapVisibleStyles, /overscroll-behavior-y: none/);
+  assert.match(mapVisibleStyles, /scrollbar-width: none/);
+});
+
+test('cards send each description once and build image URLs in the browser', async () => {
+  const { withCalendarDetails, withoutCalendarDetails } = await import(
+    new URL('appleCalendar.ts', lib)
+  );
+  const [grid, detail] = await Promise.all([
+    readFile(new URL('EventsGrid.tsx', app), 'utf8'),
+    readFile(new URL('EventCardDetail.tsx', app), 'utf8'),
+  ]);
+  const url =
+    'https://calendar.google.com/calendar/render?action=TEMPLATE&text=A&dates=20261001/20261002&details=Long%20text&location=Kyoto';
+  const stripped = withoutCalendarDetails(url);
+  assert.equal(new URL(stripped).searchParams.has('details'), false);
+  assert.equal(
+    new URL(withCalendarDetails(stripped, 'Long text')).searchParams.get('details'),
+    'Long text',
+  );
+  assert.match(grid, /images=\{event\.images\}/);
+  assert.doesNotMatch(grid, /eventMediaDeliverySrcSet/);
+  assert.match(detail, /eventMediaDeliveryUrl\(image\.url, useImageCdn\)/);
 });

@@ -8,8 +8,16 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import { resolveBlocksLandingSlides, type BlocksLandingCandidate } from '@/lib/blocksLanding';
+import {
+  resolveBlocksLandingSlides,
+  type BlocksLandingCandidate,
+  type BlocksLandingHero,
+} from '@/lib/blocksLanding';
+import { imageCdnEnabled } from '@/lib/env';
+import { uiText, type AppLocale } from '@/lib/i18n';
+import { landingPictureSourcesFor } from '@/lib/landingImages';
 import { landingMediaDeliveryUrl } from '@/lib/mediaDelivery';
+import { EXPAND_EVENT_CARD_EVENT } from '../ExpandableGrid';
 import { BoxEdge, BoxSides } from './BoxFrame';
 import styles from './page.module.sass';
 
@@ -18,17 +26,70 @@ const exitMs = 500;
 const wheelThreshold = 80;
 const touchThreshold = 48;
 
+// The events list scrolls inside [data-events-section] when the map is open, else the window.
+const eventsScrollRoot = () => {
+  const events = document.querySelector<HTMLElement>('[data-events-section]');
+  if (!events) return null;
+  const overflowY = getComputedStyle(events).overflowY;
+  return overflowY !== 'visible' &&
+    overflowY !== 'clip' &&
+    events.scrollHeight > events.clientHeight + 1
+    ? events
+    : null;
+};
+
+// Scrolls the event's card to just below the sticky header (header height + 2rem). The header
+// shrinks as the page scrolls, so the target is measured again when the first scroll settles.
+const scrollToEventCard = (eventId: string) => {
+  const card = document.querySelector<HTMLElement>(
+    `[data-event-card][data-event-id="${CSS.escape(eventId)}"]`,
+  );
+  if (!card || card.offsetParent === null) return;
+  const root = eventsScrollRoot();
+  const target: HTMLElement | Window = root ?? window;
+  const behavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 'auto'
+    : 'smooth';
+  const targetTop = () => {
+    const header = document.querySelector<HTMLElement>('[data-main-header]');
+    const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const rootTop = root ? root.getBoundingClientRect().top : 0;
+    const scrollTop = root ? root.scrollTop : window.scrollY;
+    const offset = (header?.getBoundingClientRect().height ?? 0) + 2 * rem;
+    return Math.max(0, card.getBoundingClientRect().top - rootTop + scrollTop - offset);
+  };
+  const currentTop = () => (root ? root.scrollTop : window.scrollY);
+
+  target.scrollTo({ top: targetTop(), behavior });
+  let settled = false;
+  const settle = () => {
+    if (settled) return;
+    settled = true;
+    target.removeEventListener('scrollend', settle);
+    const top = targetTop();
+    if (Math.abs(top - currentTop()) > 2) target.scrollTo({ top, behavior });
+  };
+  target.addEventListener('scrollend', settle);
+  window.setTimeout(settle, 1200);
+};
+
 export default function BlocksLanding({
   candidates,
+  hero = null,
   slideLimit = 3,
   cityLabel = 'Kyoto',
+  locale = 'en',
 }: {
   candidates: BlocksLandingCandidate[];
+  hero?: BlocksLandingHero | null;
   slideLimit?: number;
   cityLabel?: string;
+  locale?: AppLocale;
 }) {
+  const copy = uiText[locale];
   const rootRef = useRef<HTMLElement>(null);
   const exitTimer = useRef<number | null>(null);
+  const pendingScrollId = useRef<string | null>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0, density: 1 });
   const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
   const [activeIndex, setActiveIndex] = useState(0);
@@ -59,7 +120,7 @@ export default function BlocksLanding({
           slide.src,
           slide.width,
           slide.height,
-          process.env.NODE_ENV === 'production',
+          imageCdnEnabled(),
         );
         return src ? [{ ...slide, src }] : [];
       }),
@@ -67,6 +128,21 @@ export default function BlocksLanding({
   );
   const normalizedActiveIndex = slides.length > 0 ? activeIndex % slides.length : 0;
   const slideKey = slides.map((slide) => slide.id).join('|');
+
+  const useNetlifyImageCdn = imageCdnEnabled();
+  const heroSources = useMemo(
+    () => (hero ? landingPictureSourcesFor(hero, useNetlifyImageCdn) : []),
+    [hero, useNetlifyImageCdn],
+  );
+  const heroFallbackSrc = hero
+    ? landingMediaDeliveryUrl(hero.src, 1920, 1080, useNetlifyImageCdn)
+    : null;
+  const heroIndex = hero ? slides.findIndex((slide) => slide.id === hero.id) : -1;
+  // before the client resolves slides only the hero exists; after, it shows while it's active
+  const heroVisible =
+    Boolean(hero && heroFallbackSrc && !failedIds.has(hero.id)) &&
+    (slides.length === 0 || heroIndex >= 0);
+  const heroActive = slides.length === 0 || heroIndex === normalizedActiveIndex;
 
   const dismiss = useCallback(() => {
     if (exiting || hidden) return;
@@ -77,9 +153,10 @@ export default function BlocksLanding({
     }, exitMs);
   }, [exiting, hidden]);
 
-  const selectSlide = (index: number) => {
-    setActiveIndex(index);
-    setCycleVersion((current) => current + 1);
+  // a block click closes the landing, then scrolls to that event's card once the page is unlocked
+  const openSlide = (eventId: string) => {
+    pendingScrollId.current = eventId;
+    dismiss();
   };
 
   // hover activates a block and holds rotation; only for real pointers (not touch)
@@ -97,14 +174,23 @@ export default function BlocksLanding({
   };
 
   useEffect(() => {
+    let frame = 0;
     const measure = () => {
+      frame = 0;
       const width = window.innerWidth;
       const height = window.innerHeight;
       setViewport({ width, height, density: window.devicePixelRatio || 1 });
     };
+    // One re-render per frame while resizing, not one per resize event.
+    const scheduleMeasure = () => {
+      if (!frame) frame = window.requestAnimationFrame(measure);
+    };
     measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    window.addEventListener('resize', scheduleMeasure);
+    return () => {
+      window.removeEventListener('resize', scheduleMeasure);
+      window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
@@ -119,6 +205,15 @@ export default function BlocksLanding({
   useEffect(() => {
     if (hidden) {
       document.documentElement.removeAttribute('data-blocks-landing-active');
+      const eventId = pendingScrollId.current;
+      pendingScrollId.current = null;
+      if (eventId) {
+        // open the card first so the scroll lands on its expanded layout
+        window.dispatchEvent(new CustomEvent(EXPAND_EVENT_CARD_EVENT, { detail: { eventId } }));
+        window.requestAnimationFrame(() =>
+          window.requestAnimationFrame(() => scrollToEventCard(eventId)),
+        );
+      }
       return;
     }
     document.documentElement.setAttribute('data-blocks-landing-active', '');
@@ -204,36 +299,64 @@ export default function BlocksLanding({
       data-exiting={exiting || undefined}
       hidden={hidden}
       inert={hidden ? true : undefined}
-      aria-label={`${cityLabel} event highlights`}
+      aria-label={copy.eventHighlights(cityLabel)}
     >
-      <h1 className={styles.visuallyHidden}>{cityLabel} event highlights</h1>
+      <h2 className={styles.visuallyHidden}>{copy.eventHighlights(cityLabel)}</h2>
       <div className={styles.landingSlides} aria-hidden="true">
-        {slides.map((slide, index) => (
-          <img
-            key={slide.id}
-            className={styles.landingImage}
-            data-active={index === normalizedActiveIndex || undefined}
-            src={slide.src}
-            width={slide.width}
-            height={slide.height}
-            alt=""
-            decoding="async"
-            loading={index === 0 ? 'eager' : 'lazy'}
-            fetchPriority={index === 0 ? 'high' : 'low'}
-            onError={() =>
-              setFailedIds((current) => {
-                const next = new Set(current);
-                next.add(slide.id);
-                return next;
-              })
-            }
-          />
-        ))}
+        {heroVisible && hero && (
+          // Server-rendered first slide so the browser fetches it from the HTML, before hydration
+          // and the viewport measure; it stays mounted as the hero's slide afterwards.
+          <picture key={hero.id}>
+            {heroSources.map((source) => (
+              <source
+                key={source.media ?? 'default'}
+                media={source.media}
+                srcSet={source.srcSet}
+                sizes={source.sizes}
+              />
+            ))}
+            <img
+              className={styles.landingImage}
+              data-active={heroActive || undefined}
+              src={heroFallbackSrc ?? undefined}
+              width={hero.width}
+              height={hero.height}
+              alt=""
+              decoding="async"
+              loading="eager"
+              fetchPriority="high"
+              onError={() => setFailedIds((current) => new Set(current).add(hero.id))}
+            />
+          </picture>
+        )}
+        {slides.map((slide, index) =>
+          slide.id === hero?.id && heroVisible ? null : (
+            <img
+              key={slide.id}
+              className={styles.landingImage}
+              data-active={index === normalizedActiveIndex || undefined}
+              src={slide.src}
+              width={slide.width}
+              height={slide.height}
+              alt=""
+              decoding="async"
+              loading={index === 0 ? 'eager' : 'lazy'}
+              fetchPriority={index === 0 ? 'high' : 'low'}
+              onError={() =>
+                setFailedIds((current) => {
+                  const next = new Set(current);
+                  next.add(slide.id);
+                  return next;
+                })
+              }
+            />
+          ),
+        )}
       </div>
       <button
         className={styles.landingExit}
         type="button"
-        aria-label={`View all ${cityLabel} events`}
+        aria-label={copy.viewAllEvents(cityLabel)}
         onClick={dismiss}
       />
       <div className={styles.landingBlocks}>
@@ -246,9 +369,7 @@ export default function BlocksLanding({
               data-active={active || undefined}
               key={slide.id}
               type="button"
-              aria-label={`Show ${slide.title}`}
-              aria-pressed={active}
-              onClick={() => selectSlide(index)}
+              onClick={() => openSlide(slide.id)}
               onPointerEnter={(event) => hoverSlide(event, index)}
               onPointerLeave={leaveSlide}
             >

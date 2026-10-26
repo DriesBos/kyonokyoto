@@ -1,28 +1,34 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { cachedCityPagePath, cityPageCacheHeaders } from '@/lib/cdnCache';
-import { normalizeCity } from '@/lib/cities';
-import { normalizeLocale } from '@/lib/i18n';
+import {
+  CITY_COOKIE,
+  cityConfigFor,
+  citySupportsLocale,
+  defaultLocaleForCity,
+  normalizeCity,
+} from '@/lib/cities';
+import { LOCALE_COOKIE, normalizeLocale } from '@/lib/i18n';
+import { routePathFor } from '@/lib/routeState';
 
+// Only the cookie-driven entry redirects (/, /en/, /ja/) run here. City and festival pages read
+// nothing per request, so they stay static and cacheable on the CDN.
 export function proxy(request: NextRequest) {
-  const segments = request.nextUrl.pathname.split('/').filter(Boolean);
-  const city = normalizeCity(segments[0]) ?? 'kyoto';
-  const locale = normalizeLocale(segments[1]) ?? normalizeLocale(segments[0]) ?? 'en';
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-kyo-city', city);
-  requestHeaders.set('x-kyo-locale', locale);
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
-
-  const cachedCity = cachedCityPagePath(request.nextUrl.pathname);
-  if (cachedCity) {
-    for (const [name, value] of Object.entries(
-      cityPageCacheHeaders(cachedCity.slug, cachedCity.timeZone),
-    )) {
-      response.headers.set(name, value);
-    }
-  }
+  const [segment] = request.nextUrl.pathname.split('/').filter(Boolean);
+  const routeLocale = normalizeLocale(segment);
+  const city = cityConfigFor(normalizeCity(request.cookies.get(CITY_COOKIE)?.value) ?? 'kyoto')!;
+  const requestedLocale = routeLocale ?? normalizeLocale(request.cookies.get(LOCALE_COOKIE)?.value);
+  const locale =
+    requestedLocale && citySupportsLocale(city, requestedLocale)
+      ? requestedLocale
+      : defaultLocaleForCity(city);
+  const response = NextResponse.redirect(
+    new URL(routePathFor({ city: city.slug, locale }), request.url),
+    307,
+  );
+  // The target depends on cookies, so no shared cache may keep it.
+  response.headers.set('Cache-Control', 'private, no-store');
   return response;
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon|.*\\..*).*)'],
+  matcher: ['/', '/en', '/en/', '/ja', '/ja/'],
 };

@@ -5,10 +5,14 @@ import EventsGrid from '@/app/EventsGrid';
 import ExperienceHeader from '@/app/ExperienceHeader';
 import MapExperience from '@/app/MapExperience';
 import SiteFooter from '@/app/SiteFooter';
-import { blocksLandingCandidatesForEvents } from '@/lib/blocksLanding';
+import {
+  blocksLandingCandidatesForEvents,
+  blocksLandingCandidatesWithHero,
+} from '@/lib/blocksLanding';
 import type { CityConfig } from '@/lib/cities';
 import { categoriesForEvents, fetchCityEvents, mapSourcesForEvents } from '@/lib/cityEvents';
-import type { AppLocale } from '@/lib/i18n';
+import { googleMapsEnv } from '@/lib/env';
+import { uiText, type AppLocale } from '@/lib/i18n';
 import { structuredData } from '@/lib/seo';
 
 export default async function CityEventsPage({
@@ -19,18 +23,42 @@ export default async function CityEventsPage({
   locale: AppLocale;
 }) {
   const events = await fetchCityEvents({ city: city.slug, locale });
-  const landingCandidates = blocksLandingCandidatesForEvents(events);
+  const landing = blocksLandingCandidatesWithHero(blocksLandingCandidatesForEvents(events));
   const categories = categoriesForEvents(events);
   const mapSources = mapSourcesForEvents(events);
-  const jsonLd = JSON.stringify(structuredData({ city: city.slug, locale })).replaceAll(
+  const jsonLd = JSON.stringify(
+    structuredData({
+      city: city.slug,
+      locale,
+      events: events.map((event) => ({
+        name: event.title,
+        startDate: event.calendarStartsAt,
+        endDate: event.calendarEndsAt,
+        place: event.venue ?? event.institution,
+        address: event.addressText,
+        image: event.images[0]?.url ?? null,
+        url: event.sourceUrl,
+      })),
+    }),
+  ).replaceAll(
     '<',
     '\\u003c',
   );
 
+  const copy = uiText[locale];
+
   return (
     <>
-      {landingCandidates.length > 0 && (
-        <BlocksLanding candidates={landingCandidates} cityLabel={city.label} />
+      <a className={styles.skipLink} href="#events">
+        {copy.skipToEvents}
+      </a>
+      {landing.candidates.length > 0 && (
+        <BlocksLanding
+          candidates={landing.candidates}
+          hero={landing.hero}
+          cityLabel={city.label}
+          locale={locale}
+        />
       )}
       <MapExperience
         header={
@@ -45,12 +73,11 @@ export default async function CityEventsPage({
         locale={locale}
         mapCenter={city.mapCenter}
         sources={mapSources}
-        apiKey={
-          process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.PUBLIC_GOOGLE_MAPS_API_KEY
-        }
-        mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? process.env.PUBLIC_GOOGLE_MAPS_MAP_ID}
+        apiKey={googleMapsEnv().apiKey}
+        mapId={googleMapsEnv().mapId}
       >
-        <main className={styles.main} data-main-content>
+        <main className={styles.main} id="events" tabIndex={-1} data-main-content>
+          <h1 className={styles.visuallyHidden}>{copy.pageHeading(city.label)}</h1>
           <BlockControls />
           <EventsGrid events={events} locale={locale} cityLabel={city.label} city={city.slug} />
           <SiteFooter

@@ -9,8 +9,16 @@ export const heightTransition = {
   collapseDuration: 0.25,
 } as const;
 
+// Reduced motion: heights jump to their end value.
+const reducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export const getHeightTransitionDuration = (isExpanding: boolean) =>
-  isExpanding ? heightTransition.expandDuration : heightTransition.collapseDuration;
+  reducedMotion()
+    ? 0
+    : isExpanding
+      ? heightTransition.expandDuration
+      : heightTransition.collapseDuration;
 
 export const createHeightTransitionTimeline = (options: Parameters<typeof gsap.timeline>[0] = {}) =>
   gsap.timeline({

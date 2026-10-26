@@ -10,6 +10,7 @@ import {
   stepGridDensity,
   type GridDensity,
 } from '@/lib/gridDensity';
+import { uiText, type AppLocale } from '@/lib/i18n';
 import styles from './GridDensityControls.module.sass';
 
 const applyDensity = (density: GridDensity) => {
@@ -26,7 +27,8 @@ const applyDensity = (density: GridDensity) => {
 
 // Plus/minus icons drawn with CSS bars at var(--stroke-width), so the minus and the plus's
 // horizontal bar sit exactly on the header buttons' top lines.
-export default function GridDensityControls() {
+export default function GridDensityControls({ locale = 'en' }: { locale?: AppLocale }) {
+  const copy = uiText[locale];
   const [density, setDensity] = useState<GridDensity>(0);
 
   useEffect(() => {
@@ -46,11 +48,11 @@ export default function GridDensityControls() {
   const atMin = density === MIN_GRID_DENSITY;
 
   return (
-    <div className={styles.controls} role="group" aria-label="Items per row">
+    <div className={styles.controls} role="group" aria-label={copy.itemsPerRow}>
       <button
         type="button"
         className={styles.step}
-        aria-label="More items per row"
+        aria-label={copy.moreItemsPerRow}
         aria-disabled={atMax || undefined}
         data-grid-density-step="up"
         onClick={() => change(1)}
@@ -60,7 +62,7 @@ export default function GridDensityControls() {
       <button
         type="button"
         className={styles.step}
-        aria-label="Fewer items per row"
+        aria-label={copy.fewerItemsPerRow}
         aria-disabled={atMin || undefined}
         data-grid-density-step="down"
         onClick={() => change(-1)}

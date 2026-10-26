@@ -41,15 +41,24 @@ test('Grid column breakpoints match the block grid styles', async () => {
   const styles = await readFile(new URL('../src/app/blocks/page.module.sass', import.meta.url), 'utf8');
   const [widest, ...steps] = GRID_COLUMN_BREAKPOINTS;
   assert.match(styles, new RegExp(`--cols-default, ${widest.columns}\\)`));
-  for (const { maxWidth, columns } of steps) {
+  for (const { maxWidth, columns, lockDensity } of steps) {
     for (const rule of ['@media', '@container']) {
+      const lock = lockDensity ? '    --grid-density: 0\\n' : '';
       assert.match(
         styles,
-        new RegExp(`${rule} \\(max-width: ${maxWidth}px\\)\\n  \\.grid\\n    --cols-default: ${columns}\\n`),
+        new RegExp(`${rule} \\(max-width: ${maxWidth}px\\)\\n  \\.grid\\n    --cols-default: ${columns}\\n${lock}`),
       );
     }
   }
   assert.equal(columnsForDensity(2, -1), 1);
   assert.equal(columnsForDensity(1, -1), 1);
   assert.equal(columnsForDensity(5, 1), 6);
+});
+
+test('card image sizes follow the rendered width, with the default grid as fallback', async () => {
+  const { EVENT_CARD_IMAGE_SIZES } = await import('../src/lib/gridDensity.ts');
+  assert.equal(
+    EVENT_CARD_IMAGE_SIZES,
+    'auto, (max-width: 374px) 100vw, (max-width: 800px) 50vw, (max-width: 1100px) 33vw, (max-width: 1440px) 25vw, 20vw',
+  );
 });

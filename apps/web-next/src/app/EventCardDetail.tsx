@@ -1,21 +1,24 @@
 'use client';
 
 import { useCallback, useState, type CSSProperties } from 'react';
-import { buildAppleCalendarIcs, type AppleCalendarEvent } from '@/lib/appleCalendar';
+import {
+  buildAppleCalendarIcs,
+  withCalendarDetails,
+  type AppleCalendarEvent,
+} from '@/lib/appleCalendar';
+import { EVENT_CARD_IMAGE_SIZES } from '@/lib/gridDensity';
 import { uiText, type AppLocale } from '@/lib/i18n';
+import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import { AmbientYouTube } from './AmbientYouTube';
 import { useEventCardExpansion } from './ExpandableGrid';
 import styles from './EventCardDetail.module.sass';
 
+// Cards get the stored image URL and size only; CDN URLs and srcset are built here, so the page
+// payload doesn't carry four long CDN URLs per image.
 export type EventCardImage = {
-  src: string;
-  srcSet?: string | null;
+  url: string;
   width?: number | null;
   height?: number | null;
-  alt: string;
-  sizes?: string;
-  loading?: 'eager' | 'lazy';
-  fetchPriority?: 'high' | 'low' | 'auto';
 };
 
 export type EventCardEmbed = {
@@ -23,11 +26,14 @@ export type EventCardEmbed = {
   title: string;
 };
 
-const imageAspectRatio = (image?: EventCardImage) => {
+const imageAspectRatio = (image?: Pick<EventCardImage, 'width' | 'height'>) => {
   const width = Number(image?.width);
   const height = Number(image?.height);
   return width > 0 && height > 0 ? width / height : null;
 };
+
+// Without details, the calendar links take the card's description (see withoutCalendarDetails).
+export type EventCardCalendar = Omit<AppleCalendarEvent, 'details'> & { details?: string };
 
 export type EventCardActionsProps = {
   mapsUrl?: string | null;
@@ -36,7 +42,8 @@ export type EventCardActionsProps = {
   appleCalendar?: AppleCalendarEvent | null;
 };
 
-type EventCardDetailProps = EventCardActionsProps & {
+type EventCardDetailProps = Omit<EventCardActionsProps, 'appleCalendar'> & {
+  appleCalendar?: EventCardCalendar | null;
   eventId: string;
   description: string | null;
   className?: string;
@@ -50,19 +57,30 @@ export function EventCardMedia({
   label,
   images = [],
   embeds = [],
+  useImageCdn,
+  priority = false,
   className,
+  locale = 'en',
 }: {
   eventId: string;
   label: string;
+  locale?: AppLocale;
   images?: EventCardImage[];
   embeds?: EventCardEmbed[];
+  useImageCdn: boolean;
+  priority?: boolean;
   className?: string;
 }) {
   const { expanded } = useEventCardExpansion(eventId);
   const [naturalLeadAspectRatio, setNaturalLeadAspectRatio] = useState<number | null>(null);
   const [failedSources, setFailedSources] = useState<ReadonlySet<string>>(() => new Set());
   // Origins go down or block hotlinking; drop broken images instead of showing a broken box.
-  const usableImages = images.filter((image) => !failedSources.has(image.src));
+  const usableImages = images.flatMap((image) => {
+    const src = eventMediaDeliveryUrl(image.url, useImageCdn);
+    return src && !failedSources.has(src)
+      ? [{ ...image, src, srcSet: eventMediaDeliverySrcSet(image.url, useImageCdn) }]
+      : [];
+  });
   const leadAspectRatio = naturalLeadAspectRatio ?? imageAspectRatio(usableImages[0]);
   const visibleImages = usableImages.slice(0, expanded ? 3 : 1);
   // Collapsed cards show one lead item; a card without images leads with its video instead.
@@ -103,21 +121,30 @@ export function EventCardMedia({
           : undefined
       }
       role={hasOverflow ? 'region' : undefined}
-      aria-label={hasOverflow ? `${label} media` : undefined}
+      aria-label={hasOverflow ? `${label} ${uiText[locale].media}` : undefined}
       tabIndex={hasOverflow ? 0 : undefined}
     >
       <div className={styles.mediaTrack} data-event-card-part="media-track">
         {visibleImages.map((image, imageIndex) => (
-          <figure className={styles.frame} data-event-card-part="media-image" key={image.src}>
+          <figure
+            className={styles.frame}
+            data-event-card-part="media-image"
+            key={image.src}
+            style={
+              imageAspectRatio(image)
+                ? ({ '--frame-aspect-ratio': String(imageAspectRatio(image)) } as CSSProperties)
+                : undefined
+            }
+          >
             <img
               src={image.src}
               srcSet={image.srcSet ?? undefined}
-              sizes={image.sizes}
+              sizes={EVENT_CARD_IMAGE_SIZES}
               width={image.width ?? undefined}
               height={image.height ?? undefined}
-              alt={image.alt}
-              loading={image.loading ?? 'lazy'}
-              fetchPriority={image.fetchPriority}
+              alt={label}
+              loading={priority && imageIndex === 0 ? 'eager' : 'lazy'}
+              fetchPriority={priority && imageIndex === 0 ? 'high' : 'auto'}
               decoding="async"
               ref={(element) => {
                 if (imageIndex === 0) syncNaturalLeadAspectRatio(element);
@@ -263,6 +290,7 @@ export default function EventCardDetail({
 }: EventCardDetailProps) {
   const { expanded } = useEventCardExpansion(eventId);
   const detailId = `event-card-detail-${eventId}`;
+  const details = description ?? '';
 
   return (
     <div
@@ -276,8 +304,14 @@ export default function EventCardDetail({
       {expanded && (
         <EventCardActions
           mapsUrl={mapsUrl}
-          googleCalendarUrl={googleCalendarUrl}
-          appleCalendar={appleCalendar}
+          googleCalendarUrl={
+            googleCalendarUrl && details && !new URL(googleCalendarUrl).searchParams.has('details')
+              ? withCalendarDetails(googleCalendarUrl, details)
+              : googleCalendarUrl
+          }
+          appleCalendar={
+            appleCalendar ? { ...appleCalendar, details: appleCalendar.details ?? details } : null
+          }
           sourceUrl={sourceUrl}
           locale={locale}
         />

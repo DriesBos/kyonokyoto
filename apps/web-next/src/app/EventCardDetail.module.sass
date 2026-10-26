@@ -20,19 +20,17 @@
     pointer-events: auto
     scrollbar-width: thin
 
-  &[data-overflow='true'] .frame,
-  &[data-overflow='true'] .embed
-    flex-basis: calc(100% - var(--media-peek))
-
   &:focus-visible
     outline: 2px solid currentColor
     outline-offset: -2px
 
 .mediaTrack
+  box-sizing: border-box
   display: flex
   flex-wrap: nowrap
   gap: .5rem
   width: 100%
+  padding-inline: var(--media-inset, 0)
 
 .frame,
 .embed
@@ -63,6 +61,32 @@
 .media[data-lead-aspect-ratio] .frame img
   height: 100%
   object-fit: contain
+
+// Several items: every item takes the lead's height (the lead still leaves a peek of the next one)
+// and its own width, so nothing is letterboxed.
+.media[data-overflow='true']
+  container-type: inline-size
+
+  .mediaTrack
+    width: max-content
+    min-width: 100%
+    height: calc((100cqi - 2 * var(--media-inset, 0px) - var(--media-peek)) / var(--media-lead-aspect-ratio, 4 / 3))
+
+  .frame,
+  .embed
+    flex: 0 0 auto
+    height: 100%
+
+  .frame
+    aspect-ratio: var(--frame-aspect-ratio, auto)
+
+  .embed
+    aspect-ratio: 16 / 9
+
+  .frame img
+    width: auto
+    height: 100%
+    object-fit: cover
 
 .links
   --action-stroke-width: 2px

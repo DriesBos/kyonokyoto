@@ -40,8 +40,8 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
     debugControls,
     blocks,
     blockStyles,
-    legacyPage,
-    rootPage,
+    cityPage,
+    proxy,
   ] = await Promise.all([
     readFile(new URL('ControlPanel.tsx', app), 'utf8'),
     readFile(new URL('ControlPanel.module.sass', app), 'utf8'),
@@ -50,8 +50,8 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
     readFile(new URL('DebugControls.tsx', app), 'utf8'),
     readFile(new URL('blocks/BlockControls.tsx', app), 'utf8'),
     readFile(new URL('blocks/page.module.sass', app), 'utf8'),
-    readFile(new URL('[city]/page.tsx', app), 'utf8'),
-    readFile(new URL('page.tsx', app), 'utf8'),
+    readFile(new URL('[city]/(single)/page.tsx', app), 'utf8'),
+    readFile(new URL('../proxy.ts', app), 'utf8'),
   ]);
 
   assert.doesNotMatch(panel, /next\/link|href:/);
@@ -79,10 +79,10 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
   assert.match(debugControls, /onLongPress=\{\(\) => setOpen\(\(current\) => !current\)\}/);
   assert.doesNotMatch(debugControls, /controlsButton/);
   assert.doesNotMatch(debugControls, /useSearchParams|\?debug/);
-  assert.match(legacyPage, /normalizeCity\(store\.get\(CITY_COOKIE\)\?\.value\) \?\? 'kyoto'/);
-  assert.match(legacyPage, /city\.locales\.includes\(routeLocale\)/);
-  assert.match(legacyPage, /redirect\(routePathFor\(\{ city: city\.slug, locale \}\)\)/);
-  assert.match(rootPage, /redirect\(routePathFor\(\{ city: config\.slug, locale \}\)\)/);
+  assert.match(proxy, /normalizeCity\(request\.cookies\.get\(CITY_COOKIE\)\?\.value\) \?\? 'kyoto'/);
+  assert.match(proxy, /citySupportsLocale\(city, requestedLocale\)/);
+  assert.match(proxy, /routePathFor\(\{ city: city\.slug, locale \}\)/);
+  assert.match(cityPage, /redirect\(routePathFor\(\{ city: city\.slug, locale \}\)\)/);
   assert.match(blocks, /<ControlPanel/);
   assert.match(blocks, /<RangeControl/);
   assert.match(blocks, /aria-label="Show fewer items per row"/);
@@ -97,7 +97,9 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
     /--cols: var\(--block-cols, max\(1, calc\(var\(--cols-default, 5\) \+ var\(--grid-density, 0\)\)\)\)/,
   );
   assert.match(blocks, /label: 'Gap [XY]'[\s\S]*unit: 'rem'/);
-  assert.match(blockStyles, /gap: var\(--block-gap-y, calc\(.*--block-lift, 2\) \+ 1rem\)\) var\(--block-gap-x, calc\(/);
+  assert.match(blockStyles, /gap: var\(--block-gap-y, calc\(.*--block-lift, 2\) \+ var\(--space\)\)\) var\(--block-gap-x, calc\(/);
+  assert.match(blockStyles, /--space: clamp\(12px, calc\(6px \+ \.78125cqi\), 16px\)/);
+  assert.match(blockStyles, /@container \(max-width: 768px\)\n  \.grid\n    --grid-side-gap: var\(--space\)/);
   assert.match(
     blockStyles,
     /grid-column: span min\(var\(--block-expanded-span, 2\), var\(--cols\)\)/,

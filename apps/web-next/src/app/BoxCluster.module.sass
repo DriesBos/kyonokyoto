@@ -7,8 +7,8 @@
   margin-block: 2rem 3rem
 
 .field
-  --cluster-dx: calc(var(--block-dx, 1.5rem) * 0.25)
-  --cluster-dy: calc(var(--block-dy, 1.5rem) * 0.25)
+  --cluster-dx: calc(var(--block-dx, var(--space-offset, 1.5rem)) * 0.25)
+  --cluster-dy: calc(var(--block-dy, var(--space-offset, 1.5rem)) * 0.25)
   --cols: 7
   --rows: 3
   position: relative
@@ -55,7 +55,7 @@
   border: var(--block-border-width, 2px) solid transparent
   background: var(--color-background)
   color: var(--color-text)
-  font-size: clamp(0.875rem, 1.6vmin, 1.25rem)
+  font-size: var(--type-body-size)
   line-height: 1
   white-space: nowrap
 
@@ -73,6 +73,11 @@
 
   .hiddenMedium
     display: none
+
+// mobile: same 800px panel-width cutoff as the blocks grid
+@container (max-width: 800px)
+  .front
+    font-size: var(--type-step-1)
 
 @container (max-width: 560px)
   .field

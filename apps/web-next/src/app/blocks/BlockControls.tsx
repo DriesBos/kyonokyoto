@@ -16,8 +16,24 @@ type Control = {
 };
 
 const CONTROLS: Control[] = [
-  { varName: '--block-dx', label: 'Offset X', min: -3, max: 3, step: 0.125, initial: 1.5, unit: 'rem' },
-  { varName: '--block-dy', label: 'Offset Y', min: -3, max: 3, step: 0.125, initial: 1.5, unit: 'rem' },
+  {
+    varName: '--block-dx',
+    label: 'Offset X',
+    min: -3,
+    max: 3,
+    step: 0.125,
+    initial: 1.5,
+    unit: 'rem',
+  },
+  {
+    varName: '--block-dy',
+    label: 'Offset Y',
+    min: -3,
+    max: 3,
+    step: 0.125,
+    initial: 1.5,
+    unit: 'rem',
+  },
   { varName: '--block-lift', label: 'Lift', min: 1, max: 4, step: 0.25, initial: 2, unit: '' },
   {
     varName: '--block-gap-x',
@@ -37,7 +53,16 @@ const CONTROLS: Control[] = [
     initial: 4,
     unit: 'rem',
   },
-  { varName: '--block-shade', label: 'Shade', min: 0, max: 30, step: 1, initial: 12, unit: '%' },
+  { varName: '--block-shade-x', label: 'Shade X', min: 0, max: 30, step: 1, initial: 8, unit: '%' },
+  {
+    varName: '--block-shade-y',
+    label: 'Shade Y',
+    min: 0,
+    max: 30,
+    step: 1,
+    initial: 14,
+    unit: '%',
+  },
 ];
 
 const defaults = Object.fromEntries(CONTROLS.map((control) => [control.varName, control.initial]));

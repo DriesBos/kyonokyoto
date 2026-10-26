@@ -35,7 +35,7 @@ test('sitemap emits supported city locales only', () =>
     const hongKong = sitemapEntries().filter((entry) => entry.city === 'hong-kong');
     assert.deepEqual(
       hongKong.map((entry) => entry.url),
-      ['https://kyonokyoto.com/hong-kong/'],
+      ['https://kyonokyoto.xyz/hong-kong/'],
     );
     assert.deepEqual(Object.keys(hongKong[0].languages), ['en']);
   }));

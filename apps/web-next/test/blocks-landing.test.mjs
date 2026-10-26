@@ -2,8 +2,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const { blocksLandingCandidatesForEvents, resolveBlocksLandingSlides } =
-  await import('../src/lib/blocksLanding.ts');
+const {
+  blocksLandingCandidatesForEvents,
+  blocksLandingCandidatesWithHero,
+  resolveBlocksLandingSlides,
+} = await import('../src/lib/blocksLanding.ts');
+const { landingPictureSourcesFor } = await import('../src/lib/landingImages.ts');
 const { landingMediaDeliveryUrl } = await import('../src/lib/mediaDelivery.ts');
 const { sourceSlugForEvent } = await import('../src/lib/sourceMatching.ts');
 
@@ -152,5 +156,52 @@ test('Blocks landing changes slides with a direct fade and no shutter rows', asy
   const withoutBox = styles.replace(/\/\/ Box lines are SVG strokes[\s\S]*?\n(?=\.front\n)/, '');
   assert.doesNotMatch(withoutBox, /landingShutter|clip-path/);
   assert.match(styles, /transition: opacity 600ms ease/);
-  assert.match(styles, /--landing-block-width: 25vmin/);
+  assert.match(
+    styles,
+    /--landing-block-width: min\(calc\(\(100cqw - \(var\(--landing-cols\) - 1\) \* var\(--landing-col-gap\)\)/,
+  );
+});
+
+test('Blocks landing moves the first large-screen image to the front as the server hero', () => {
+  const { candidates, hero } = blocksLandingCandidatesWithHero(
+    blocksLandingCandidatesForEvents([
+      event({
+        id: 'small',
+        images: [{ url: 'https://example.com/small.jpg', width: 1200, height: 800 }],
+      }),
+      event({
+        id: 'big',
+        images: [
+          { url: 'https://example.com/big-a.jpg', width: 1000, height: 700 },
+          { url: 'https://example.com/big-b.jpg', width: 3000, height: 2000 },
+        ],
+      }),
+    ]),
+  );
+  assert.deepEqual(
+    candidates.map((candidate) => candidate.id),
+    ['big', 'small'],
+  );
+  assert.equal(candidates[0].images[0].src, 'https://example.com/big-b.jpg');
+  assert.deepEqual(hero, {
+    id: 'big',
+    src: 'https://example.com/big-b.jpg',
+    width: 3000,
+    height: 2000,
+  });
+
+  const sources = landingPictureSourcesFor(hero, true);
+  assert.equal(sources.length, 4);
+  assert.equal(sources[3].media, undefined);
+  assert.match(sources[3].srcSet, /w=1920&h=1080/);
+  assert.deepEqual(landingPictureSourcesFor(hero, false), []);
+});
+
+test('Blocks landing snaps transforms to shared size buckets', () => {
+  const [slide] = resolveBlocksLandingSlides({
+    candidates: blocksLandingCandidatesForEvents([event({ id: 'one' })]),
+    viewportWidth: 1366,
+    viewportHeight: 768,
+  });
+  assert.deepEqual({ width: slide.width, height: slide.height }, { width: 1440, height: 810 });
 });

@@ -8,11 +8,17 @@ import { fetchFestivalDetail } from '@/lib/cityEvents';
 import { festivalPathFor } from '@/lib/festivalRoutes';
 import type { AppLocale } from '@/lib/i18n';
 import { routePathFor } from '@/lib/routeState';
+import { festivalStructuredData } from '@/lib/seo';
 import styles from './FestivalPage.module.sass';
 
 const copy = {
-  en: { events: 'events', website: 'Festival website', year: 'Edition' },
-  ja: { events: 'イベント', website: 'フェスティバル公式サイト', year: '開催年' },
+  en: { events: 'events', website: 'Festival website', year: 'Edition', breadcrumb: 'Breadcrumb' },
+  ja: {
+    events: 'イベント',
+    website: 'フェスティバル公式サイト',
+    year: '開催年',
+    breadcrumb: 'パンくずリスト',
+  },
 } as const;
 
 export default async function FestivalPage({
@@ -32,16 +38,34 @@ export default async function FestivalPage({
   const alternateLocale = city.locales.find((language) => language !== locale);
   const cover = festival.images[0];
   const previews = festival.images.slice(1, 5);
+  const jsonLd = JSON.stringify(
+    festivalStructuredData({
+      city: city.slug,
+      locale,
+      slug: festival.slug,
+      event: {
+        name: festival.title,
+        startDate: festival.startDate,
+        endDate: festival.endDate,
+        place: festival.venue,
+        address: festival.addressText,
+        image: cover?.url ?? null,
+        url: festival.sourceUrl,
+        description: festival.description,
+      },
+    }),
+  ).replaceAll('<', '\\u003c');
 
   return (
     <main className={styles.page} data-festival-page>
-      <nav className={styles.navigation} aria-label="Breadcrumb">
-        <Link href={routePathFor({ city: city.slug, locale })}>
+      <nav className={styles.navigation} aria-label={labels.breadcrumb}>
+        <Link href={routePathFor({ city: city.slug, locale })} prefetch={false}>
           {city.label} {labels.events}
         </Link>
         {alternateLocale && (
           <Link
             href={festivalPathFor(city.slug, alternateLocale, festival.slug)}
+            prefetch={false}
             hrefLang={alternateLocale}
             lang={alternateLocale}
           >
@@ -112,6 +136,7 @@ export default async function FestivalPage({
         </section>
       )}
       <SiteFooter cityLabel={city.label} locale={locale} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     </main>
   );
 }

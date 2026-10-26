@@ -6,6 +6,7 @@ Next.js (App Router) rewrite of the site. `apps/web` (Astro) stays in production
 
 - We use SASS (indented `.sass` syntax, matching `apps/web`).
 - Global files in `src/styles/` (`globals.sass`, `typography.sass`, `variables.sass`) hold the design system: tokens, resets, and base typography. Add new design-system concerns as global files here.
+- City colours, dark mode backgrounds and contrast checks: see `docs/color-palettes.md`.
 - Components use React style modules (`Component.module.sass`), colocated with the component. Pull shared tokens in with `@use '@/styles/variables' as *`.
 
 ## Images

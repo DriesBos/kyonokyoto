@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, PointerEvent, ReactNode } from 'react';
+import { pressSpringHandlers } from '@/lib/pressSpring';
 import styles from './GeneralButton.module.sass';
 
 // Port of apps/web GeneralButton.astro: a lowercase label under a top stroke, with an organic
@@ -51,6 +52,8 @@ export default function GeneralButton(props: ButtonProps | LinkProps) {
     verticalPadding = 'none',
     className,
     onPointerDown,
+    onPointerUp,
+    onPointerLeave,
     ...rest
   } = props;
   const classes = [
@@ -76,16 +79,28 @@ export default function GeneralButton(props: ButtonProps | LinkProps) {
     if (showDot) placeDot(event);
     (onPointerDown as ((event: PointerEvent<HTMLElement>) => void) | undefined)?.(event);
   };
+  const handlePointerUp = (event: PointerEvent<HTMLElement>) => {
+    pressSpringHandlers.onPointerUp(event);
+    (onPointerUp as ((event: PointerEvent<HTMLElement>) => void) | undefined)?.(event);
+  };
+  const handlePointerLeave = (event: PointerEvent<HTMLElement>) => {
+    pressSpringHandlers.onPointerLeave(event);
+    (onPointerLeave as ((event: PointerEvent<HTMLElement>) => void) | undefined)?.(event);
+  };
 
   if (typeof rest.href === 'string') {
     const { href, ...anchorProps } = rest as Omit<LinkProps, keyof SharedProps>;
     return (
       <Link
+        // City pages carry a large payload; fetch it on click, not for every link in view.
+        prefetch={false}
         {...anchorProps}
         href={href}
         className={classes}
         aria-pressed={typeof pressed === 'boolean' ? pressed : undefined}
         onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
       >
         {content}
       </Link>
@@ -100,6 +115,8 @@ export default function GeneralButton(props: ButtonProps | LinkProps) {
       className={classes}
       aria-pressed={typeof pressed === 'boolean' ? pressed : undefined}
       onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerLeave}
     >
       {content}
     </button>

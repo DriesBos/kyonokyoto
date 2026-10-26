@@ -1,6 +1,7 @@
 'use client';
 
 import { uiText, type AppLocale } from '@/lib/i18n';
+import { pressSpringHandlers } from '@/lib/pressSpring';
 import styles from './SiteFooter.module.sass';
 
 export function ArrowLong() {
@@ -34,36 +35,44 @@ export default function SiteFooter({
       data-compact={compact || undefined}
     >
       <div className={styles.content}>
-        <div className={styles.left}>
+        <div className={styles.half}>
           <p className={styles.credit}>
-            Site by{' '}
-            <a href="https://driesbos.com" target="_blank" rel="noopener noreferrer">
+            {uiText[locale].siteBy}{' '}
+            <a
+              href="https://driesbos.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              {...pressSpringHandlers}
+            >
               Dries Bos
             </a>
           </p>
+        </div>
+        <div className={`${styles.half} ${styles.end}`}>
           {!compact && (
             <span className={styles.mark} aria-hidden="true">
               <span />
               <span />
             </span>
           )}
-          <p className={styles.note}>Enjoy {cityLabel} Culture</p>
+          <p className={styles.note}>{uiText[locale].enjoyCulture(cityLabel)}</p>
+          <button
+            className={styles.scrollTop}
+            type="button"
+            {...pressSpringHandlers}
+            aria-label={uiText[locale].scrollTop}
+            onClick={(event) => {
+              const events = event.currentTarget.closest<HTMLElement>('[data-events-section]');
+              if (events && events.scrollHeight > events.clientHeight) {
+                events.scrollTo({ top: 0, behavior: 'smooth' });
+              } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+          >
+            <ArrowLong />
+          </button>
         </div>
-        <button
-          className={styles.scrollTop}
-          type="button"
-          aria-label={uiText[locale].scrollTop}
-          onClick={(event) => {
-            const events = event.currentTarget.closest<HTMLElement>('[data-events-section]');
-            if (events && events.scrollHeight > events.clientHeight) {
-              events.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}
-        >
-          <ArrowLong />
-        </button>
       </div>
     </footer>
   );

@@ -34,8 +34,15 @@ import {
   mapsUrl,
   safeHttpUrl,
 } from './calendar';
-import { cityConfigFor, dateOnlyInTimeZone, type AppCity } from './cities';
+import {
+  cityConfigFor,
+  cityConfigs,
+  dateOnlyInTimeZone,
+  normalizeCity,
+  type AppCity,
+} from './cities';
 import { cityCacheTag } from './cdnCache';
+import { supabaseEnv } from './env';
 import { formatEventDateRange, formatOngoingEventEnd } from './eventDates';
 import type { AppLocale } from './i18n';
 import { sourceSlugForEvent } from './sourceMatching';
@@ -177,6 +184,11 @@ export type FestivalDetail = {
     title: string;
     description: string | null;
     date: string;
+    // ISO dates for structured data.
+    startDate: string | null;
+    endDate: string | null;
+    venue: string | null;
+    addressText: string | null;
     sourceUrl: string | null;
     slug: string;
     images: { url: string; width: number | null; height: number | null }[];
@@ -445,9 +457,7 @@ export async function fetchCityEvents({
   city: AppCity;
   locale: AppLocale;
 }): Promise<CityEvent[]> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const { url, key } = supabaseEnv();
   if (!url || !key) throw new Error('Missing Supabase public environment variables');
 
   const today = dateOnlyInTimeZone(new Date(), cityConfigFor(city)?.timeZone ?? 'Asia/Tokyo');
@@ -623,9 +633,7 @@ export async function fetchFestivalDetail({
   locale: AppLocale;
   slug: string;
 }): Promise<FestivalDetail | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const { url, key } = supabaseEnv();
   if (!url || !key) throw new Error('Missing Supabase public environment variables');
 
   const endpoint = new URL('/rest/v1/events', url);
@@ -695,6 +703,10 @@ export async function fetchFestivalDetail({
       title,
       description,
       date: parentDate,
+      startDate: festival.start_date,
+      endDate: festival.end_date,
+      venue: calendarInput.venue,
+      addressText: festival.address_text,
       sourceUrl: safeHttpUrl(festival.source_url),
       slug: festival.festival_slug ?? slug,
       images,
@@ -806,6 +818,41 @@ const categoryLabel = (value: string) =>
 
 const registryIndex = (dimension: keyof Taxonomy, category: string) =>
   (CATEGORY_REGISTRY[dimension] as readonly string[]).indexOf(category);
+
+// Published festivals from visible sources, for the sitemap (same rule as fetchFestivalDetail).
+export async function fetchFestivalSlugs(): Promise<{ city: AppCity; slug: string }[]> {
+  const { url, key } = supabaseEnv();
+  if (!url || !key) throw new Error('Missing Supabase public environment variables');
+
+  const endpoint = new URL('/rest/v1/events', url);
+  endpoint.search = new URLSearchParams({
+    select: 'city,festival_slug,source_id,source_url,sources(slug)',
+    status: 'eq.published',
+    event_kind: 'eq.festival',
+    festival_slug: 'not.is.null',
+  }).toString();
+  const response = await fetch(endpoint, {
+    headers: { apikey: key },
+    next: { revalidate: 3600, tags: cityConfigs.map(({ slug }) => cityCacheTag(slug)) },
+  });
+  if (!response.ok) throw new Error(`Supabase festival list request failed: ${response.status}`);
+  const rows = (await response.json()) as (Pick<EventRow, 'source_id' | 'source_url' | 'sources'> & {
+    city: string;
+    festival_slug: string;
+  })[];
+
+  const seen = new Set<string>();
+  return rows.flatMap((row) => {
+    const city = normalizeCity(row.city);
+    if (!city || city !== row.city) return [];
+    const sources = activeSourcesFor(city);
+    const source = sources.find(({ slug }) => slug === sourceSlugForEvent(row, sources));
+    const key = `${city}/${row.festival_slug}`;
+    if (!source || (!showBeta() && source.beta) || seen.has(key)) return [];
+    seen.add(key);
+    return [{ city, slug: row.festival_slug }];
+  });
+}
 
 export function categoriesForEvents(events: CityEvent[]): CategoryOption[] {
   const options = new Map<string, CategoryOption & { category: string }>();

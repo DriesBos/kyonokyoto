@@ -1,3 +1,5 @@
+import { imageCdnEnabled } from './env.ts';
+
 const YUTAKA_IMAGE_ORIGIN = 'https://www.yutakakikutakegallery.com';
 const YUTAKA_IMAGE_PATH_PREFIX = '/ykgg/wp-content/uploads/';
 // trailingSlash: true would 308 the slashless path, and the image CDN should fetch it directly.
@@ -53,6 +55,10 @@ export const safeEventImageSource = (value: string | null): string | null => {
   }
 };
 
+// The CDN fetches http:// origins server-side; served directly they are mixed content the CSP
+// (img-src https:) blocks, so try https instead.
+const directImageSource = (source: string) => source.replace(/^http:\/\//, 'https://');
+
 const netlifyImageUrl = (source: string, width: number) =>
   `/.netlify/images?${new URLSearchParams({
     url: source,
@@ -60,18 +66,36 @@ const netlifyImageUrl = (source: string, width: number) =>
     q: EVENT_IMAGE_QUALITY,
   })}`;
 
-export const eventMediaDeliveryUrl = (value: string | null): string | null => {
+export const eventMediaDeliveryUrl = (
+  value: string | null,
+  useImageCdn = imageCdnEnabled(),
+): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  return process.env.NETLIFY ? netlifyImageUrl(source, 640) : source;
+  return useImageCdn ? netlifyImageUrl(source, 640) : directImageSource(source);
 };
 
-export const eventMediaDeliverySrcSet = (value: string | null): string | null => {
+export const eventMediaDeliverySrcSet = (
+  value: string | null,
+  useImageCdn = imageCdnEnabled(),
+): string | null => {
   const source = safeEventImageSource(value);
-  if (!source || !process.env.NETLIFY) return null;
+  if (!source || !useImageCdn) return null;
   return EVENT_IMAGE_WIDTHS.map((width) => `${netlifyImageUrl(source, width)} ${width}w`).join(
     ', ',
   );
+};
+
+// Social cards need an absolute URL; origin is the site origin for CDN and self-hosted paths.
+export const eventShareImageUrl = (
+  value: string | null,
+  origin: string,
+  useImageCdn = imageCdnEnabled(),
+): string | null => {
+  const source = safeEventImageSource(value);
+  if (!source) return null;
+  const url = useImageCdn ? netlifyImageUrl(source, 1200) : directImageSource(source);
+  return new URL(url, origin).href;
 };
 
 export const landingMediaDeliveryUrl = (
@@ -82,7 +106,7 @@ export const landingMediaDeliveryUrl = (
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  if (!useNetlifyImageCdn) return source;
+  if (!useNetlifyImageCdn) return directImageSource(source);
 
   return `/.netlify/images?${new URLSearchParams({
     url: source,

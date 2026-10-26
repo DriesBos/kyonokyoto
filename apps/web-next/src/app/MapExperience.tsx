@@ -14,8 +14,13 @@ import {
   type TransitionEvent,
   type ReactNode,
 } from 'react';
-import GoogleMapCanvas, { type GoogleMapCanvasProps } from './GoogleMapCanvas';
+import dynamic from 'next/dynamic';
+import { uiText } from '@/lib/i18n';
+import type { GoogleMapCanvasProps } from './GoogleMapCanvas';
 import styles from './MapExperience.module.sass';
+
+// The map only mounts once opened, so its code loads then instead of with the page.
+const GoogleMapCanvas = dynamic(() => import('./GoogleMapCanvas'), { ssr: false });
 
 export type { GoogleMapCanvasProps, MapSource } from './GoogleMapCanvas';
 
@@ -229,7 +234,7 @@ export default function MapExperience({
                 role="separator"
                 tabIndex={mapOpen ? 0 : -1}
                 inert={!mapOpen}
-                aria-label="Resize map"
+                aria-label={uiText[mapProps.locale ?? 'en'].resizeMap}
                 aria-orientation={isMobile ? 'horizontal' : 'vertical'}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}

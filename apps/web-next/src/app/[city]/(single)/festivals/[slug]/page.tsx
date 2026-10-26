@@ -2,11 +2,21 @@ import type { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import FestivalPage from '@/app/FestivalPage';
 import { cityConfigFor, defaultLocaleForCity } from '@/lib/cities';
+import { fetchFestivalSlugs } from '@/lib/cityEvents';
 import { buildFestivalMetadata } from '@/lib/festivalMetadata';
 
 type RouteProps = { params: Promise<{ city: string; slug: string }> };
 
 export const revalidate = 300;
+
+// Known festivals render at build; new ones are cached (ISR) once first rendered, and a failed
+// render is never stored.
+export async function generateStaticParams() {
+  const festivals = await fetchFestivalSlugs().catch(() => []);
+  return festivals
+    .filter(({ city }) => cityConfigFor(city)?.locales.length === 1)
+    .map(({ city, slug }) => ({ city, slug }));
+}
 
 export async function generateMetadata({ params }: RouteProps): Promise<Metadata> {
   const values = await params;
@@ -17,7 +27,12 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
 
 export async function generateViewport({ params }: RouteProps): Promise<Viewport> {
   const city = cityConfigFor((await params).city);
-  return { themeColor: city?.themeColor ?? '#efefef', width: 'device-width', initialScale: 1 };
+  return {
+    themeColor: city?.themeColor ?? '#efefef',
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover',
+  };
 }
 
 export default async function FestivalRoute({ params }: RouteProps) {

@@ -1,6 +1,9 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+
+// Lets code outside the grid (the landing) open a card: dispatch with { detail: { eventId } }.
+export const EXPAND_EVENT_CARD_EVENT = 'kyo:expand-event-card';
 
 type Expansion = {
   expanded: boolean;
@@ -62,6 +65,15 @@ export default function ExpandableGrid({
   ariaLabel?: string;
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const expand = (event: Event) => {
+      const eventId = (event as CustomEvent<{ eventId?: unknown }>).detail?.eventId;
+      if (typeof eventId === 'string') setActiveId(eventId);
+    };
+    window.addEventListener(EXPAND_EVENT_CARD_EVENT, expand);
+    return () => window.removeEventListener(EXPAND_EVENT_CARD_EVENT, expand);
+  }, []);
 
   return (
     <ExpansionContext.Provider value={{ activeId, setActiveId }}>

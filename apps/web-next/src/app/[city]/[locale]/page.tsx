@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import CityEventsPage from '@/app/CityEventsPage';
 import { cityConfigFor, cityConfigs, citySupportsLocale, defaultLocaleForCity } from '@/lib/cities';
 import { normalizeLocale } from '@/lib/i18n';
@@ -32,13 +32,14 @@ export async function generateViewport({ params }: RouteProps): Promise<Viewport
     themeColor: state?.city.themeColor ?? '#efefef',
     width: 'device-width',
     initialScale: 1,
+    viewportFit: 'cover',
   };
 }
 
 export default async function LocaleRoute({ params }: RouteProps) {
   const values = await params;
   const city = cityConfigFor(values.city);
-  if (!city) redirect('/kyoto/en/');
+  if (!city) notFound();
   const locale = normalizeLocale(values.locale);
   if (!locale || !citySupportsLocale(city, locale)) {
     redirect(routePathFor({ city: city.slug, locale: defaultLocaleForCity(city) }));

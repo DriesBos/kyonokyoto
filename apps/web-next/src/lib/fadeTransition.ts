@@ -7,6 +7,10 @@ export const fadeTransition = {
   ease: 'ease',
 } as const;
 
+// Reduced motion: fades complete instantly (no duration, delay or stagger).
+const reducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 type FadeOptions = {
   delay?: number;
   duration?: number;
@@ -29,10 +33,14 @@ export const fadeIn = (targets: gsap.TweenTarget, options: FadeOptions = {}) =>
   gsap.to(targets, {
     opacity: 1,
     visibility: 'visible',
-    duration: options.duration ?? fadeTransition.duration,
-    delay: options.delay ?? 0,
+    ...(reducedMotion()
+      ? { duration: 0, delay: 0, stagger: 0 }
+      : {
+          duration: options.duration ?? fadeTransition.duration,
+          delay: options.delay ?? 0,
+          stagger: options.stagger ?? fadeTransition.stagger,
+        }),
     ease: fadeTransition.ease,
-    stagger: options.stagger ?? fadeTransition.stagger,
     overwrite: true,
   });
 
@@ -40,9 +48,13 @@ export const fadeOut = (targets: gsap.TweenTarget, options: FadeOptions = {}) =>
   gsap.to(targets, {
     opacity: 0,
     visibility: 'visible',
-    duration: options.duration ?? fadeTransition.duration,
-    delay: options.delay ?? 0,
+    ...(reducedMotion()
+      ? { duration: 0, delay: 0, stagger: 0 }
+      : {
+          duration: options.duration ?? fadeTransition.duration,
+          delay: options.delay ?? 0,
+          stagger: options.stagger ?? 0,
+        }),
     ease: fadeTransition.ease,
-    stagger: options.stagger ?? 0,
     overwrite: true,
   });

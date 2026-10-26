@@ -61,3 +61,17 @@ export const buildAppleCalendarIcs = (
     'END:VCALENDAR',
   ].join('\r\n');
 };
+
+// Cards send the description once: the Google link and the .ics leave it out on the server
+// and the card adds it back in the browser.
+export const withoutCalendarDetails = (url: string) => {
+  const parsed = new URL(url);
+  parsed.searchParams.delete('details');
+  return parsed.href;
+};
+
+export const withCalendarDetails = (url: string, details: string) => {
+  const parsed = new URL(url);
+  parsed.searchParams.set('details', details);
+  return parsed.href;
+};

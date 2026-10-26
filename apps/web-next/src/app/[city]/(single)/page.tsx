@@ -1,15 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import CityEventsPage from '@/app/CityEventsPage';
-import {
-  CITY_COOKIE,
-  cityConfigFor,
-  cityConfigs,
-  defaultLocaleForCity,
-  normalizeCity,
-} from '@/lib/cities';
-import { normalizeLocale } from '@/lib/i18n';
+import { cityConfigFor, cityConfigs, defaultLocaleForCity } from '@/lib/cities';
 import { routePathFor } from '@/lib/routeState';
 import { buildMetadata } from '@/lib/seo';
 
@@ -32,22 +24,18 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
 
 export async function generateViewport({ params }: RouteProps): Promise<Viewport> {
   const city = await cityForParams(params);
-  return { themeColor: city?.themeColor ?? '#efefef', width: 'device-width', initialScale: 1 };
+  return {
+    themeColor: city?.themeColor ?? '#efefef',
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover',
+  };
 }
 
 export default async function CityRoute({ params }: RouteProps) {
-  const { city: value } = await params;
-  const routeLocale = normalizeLocale(value);
-
-  if (routeLocale) {
-    const store = await cookies();
-    const city = cityConfigFor(normalizeCity(store.get(CITY_COOKIE)?.value) ?? 'kyoto')!;
-    const locale = city.locales.includes(routeLocale) ? routeLocale : defaultLocaleForCity(city);
-    redirect(routePathFor({ city: city.slug, locale }));
-  }
-
-  const city = cityConfigFor(value);
-  if (!city) redirect('/kyoto/en/');
+  // /en/ and /ja/ redirect by cookie in src/proxy.ts, so this page reads nothing per request.
+  const city = cityConfigFor((await params).city);
+  if (!city) notFound();
   const locale = defaultLocaleForCity(city);
   if (city.locales.length > 1) redirect(routePathFor({ city: city.slug, locale }));
   return <CityEventsPage city={city} locale={locale} />;

@@ -1,5 +1,7 @@
 'use client';
 
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -27,6 +29,7 @@ import {
   toHeight,
 } from '@/lib/heightTransition';
 import { routePathFor } from '@/lib/routeState';
+import ColorSchemeToggle from './ColorSchemeToggle';
 import GeneralButton from './GeneralButton';
 import GridDensityControls from './GridDensityControls';
 import styles from './SiteHeader.module.sass';
@@ -97,6 +100,11 @@ function useDisclosurePanel(open: boolean) {
   return panelRef;
 }
 
+gsap.registerPlugin(ScrollTrigger);
+
+// The logo shrinks and the divider line fades in over this much of the first scroll.
+const SHRINK_DISTANCE_VH = 10;
+
 const scrollRoot = () => {
   const events = document.querySelector<HTMLElement>('[data-events-section]');
   if (!events) return null;
@@ -120,7 +128,6 @@ export default function SiteHeader({
   const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
   const [citiesOpen, setCitiesOpen] = useState(false);
-  const [stuck, setStuck] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(() => new Set());
   const [activeTiming, setActiveTiming] = useState('');
   // apps/web keeps the header controls in English in every locale.
@@ -169,29 +176,21 @@ export default function SiteHeader({
     };
   }, [onMapToggle]);
 
-  // The divider line and the smaller logo appear once the sticky header reaches the top.
+  // The logo shrinks and the divider line fades in with the scroll position, over the first
+  // SHRINK_DISTANCE_VH of scroll. --header-shrink runs from 0 (top) to 1.
   useEffect(() => {
-    const target = scrollRoot() ?? window;
-    const sync = () => {
-      const header = rootRef.current;
-      if (!header) return;
-      const root = scrollRoot();
-      const rootTop = root ? root.getBoundingClientRect().top : 0;
-      const pagePaddingY = Number.parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue('--page-padding-y'),
-      );
-      setStuck(
-        header.getBoundingClientRect().top <=
-          rootTop + (Number.isFinite(pagePaddingY) ? pagePaddingY : 0) + 0.5,
-      );
-    };
-    sync();
-    target.addEventListener('scroll', sync, { passive: true });
-    window.addEventListener('resize', sync);
-    return () => {
-      target.removeEventListener('scroll', sync);
-      window.removeEventListener('resize', sync);
-    };
+    const header = rootRef.current;
+    if (!header) return;
+    const setShrink = (progress: number) =>
+      header.style.setProperty('--header-shrink', progress.toFixed(4));
+    const trigger = ScrollTrigger.create({
+      scroller: scrollRoot() ?? window,
+      start: 0,
+      end: () => (window.innerHeight * SHRINK_DISTANCE_VH) / 100,
+      onUpdate: (self) => setShrink(self.progress),
+      onRefresh: (self) => setShrink(self.progress),
+    });
+    return () => trigger.kill();
   }, [mapOpen]);
 
   // Open panels close once the page has scrolled half a viewport away from where they opened.
@@ -282,11 +281,11 @@ export default function SiteHeader({
       ref={rootRef}
       data-category-filter
       data-main-header
-      data-stuck={stuck || undefined}
     >
       <Link
         className={styles.logo}
         href={homeHref}
+        prefetch={false}
         aria-label={`${brandLabel} home`}
         onClick={() => persistPreference()}
       >
@@ -346,7 +345,7 @@ export default function SiteHeader({
             label={copy.cities}
             showDot
             pressed={citiesOpen}
-            aria-label={`Choose city. Current city: ${currentCityLabel}`}
+            aria-label={`${copy.cities}, ${copy.currentCity}: ${currentCityLabel}`}
             data-city-disclosure
             aria-expanded={citiesOpen}
             aria-controls="site-header-cities"
@@ -365,7 +364,10 @@ export default function SiteHeader({
               onClick={() => persistPreference(city, otherLocale)}
             />
           )}
-          <GridDensityControls />
+          <div className={styles.icons}>
+            <GridDensityControls />
+            <ColorSchemeToggle />
+          </div>
         </div>
         {showFilterControls && (
           <div
@@ -427,7 +429,7 @@ export default function SiteHeader({
           ref={cityPanelRef}
           data-city-options
           data-open={citiesOpen || undefined}
-          aria-label="Cities"
+          aria-label={copy.citiesAria}
           role="group"
           aria-hidden={!citiesOpen}
           inert={!citiesOpen ? true : undefined}

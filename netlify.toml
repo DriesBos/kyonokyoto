@@ -8,6 +8,8 @@
 [build.environment]
   NODE_VERSION = "22.23.4"
   SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+  # Inlined at build: ISR re-renders at runtime, where NETLIFY is unset (see src/lib/env.ts).
+  NEXT_PUBLIC_IMAGE_CDN = "1"
 
 # The repo root has no `next` dependency, so Netlify cannot auto-detect the framework.
 [[plugins]]

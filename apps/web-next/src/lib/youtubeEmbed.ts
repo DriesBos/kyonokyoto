@@ -23,6 +23,9 @@ export const normalizeYouTubeEmbeds = (embeds: unknown): YouTubeEmbed[] =>
     })
     .filter((embed): embed is YouTubeEmbed => embed !== null);
 
+// Privacy-enhanced host: no cookies until the viewer interacts.
+export const youtubeEmbedHost = 'https://www.youtube-nocookie.com';
+
 export const buildYouTubeEmbedSrc = (videoId: string, origin?: string) => {
   const params = new URLSearchParams({
     autoplay: '0',
@@ -38,5 +41,5 @@ export const buildYouTubeEmbedSrc = (videoId: string, origin?: string) => {
     iv_load_policy: '3',
   });
   if (origin) params.set('origin', origin);
-  return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params}`;
+  return `${youtubeEmbedHost}/embed/${encodeURIComponent(videoId)}?${params}`;
 };

@@ -22,7 +22,7 @@ export const contentSecurityPolicy = ({ dev = false } = {}) =>
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://maps.googleapis.com https://maps.gstatic.com https://www.google.com https://www.youtube.com",
-    'frame-src https://www.youtube.com',
+    'frame-src https://www.youtube-nocookie.com',
     "worker-src 'self' blob:",
     "manifest-src 'self'",
   ].join('; ');
@@ -40,6 +40,9 @@ export const securityHeaders = ({ dev = false } = {}) => [
 const nextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
   trailingSlash: true,
+  // Several root layouts (src/app/[city]/..., src/app/dev), so unmatched URLs need
+  // src/app/global-not-found.tsx for a styled 404.
+  experimental: { globalNotFound: true },
   async headers() {
     return [
       {

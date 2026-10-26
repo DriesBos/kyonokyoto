@@ -9,6 +9,7 @@ import densityStyles from '@/app/GridDensityControls.module.sass';
 import SiteHeader from '@/app/SiteHeader';
 import { ArrowLong } from '@/app/SiteFooter';
 import { cityConfigFor, cityConfigs } from '@/lib/cities';
+import { DARK_BACKGROUNDS, LIGHT_BACKGROUND, contrastRatio } from '@/lib/colorScheme';
 import {
   GRID_COLUMN_BREAKPOINTS,
   GRID_DENSITY_ATTRIBUTE,
@@ -35,6 +36,17 @@ const colorTokens = [
   { name: '--stroke', use: 'lines and icons' },
   { name: '--color-background', use: 'background' },
   { name: '--color-pink', use: 'press dot, image placeholder' },
+];
+
+// Minor Third type scale (styles/typography.sass), largest first. px at the 16px root.
+const typeSteps = [
+  { token: '--type-step-5', rem: 2.488, use: 'logo' },
+  { token: '--type-step-4', rem: 2.074, use: 'unused' },
+  { token: '--type-step-3', rem: 1.728, use: 'unused' },
+  { token: '--type-step-2', rem: 1.44, use: 'landing title, sticky logo, headings' },
+  { token: '--type-step-1', rem: 1.2, use: 'card title' },
+  { token: '--type-step-0', rem: 1, use: 'body, header nav, footer, divider, landing meta' },
+  { token: '--type-step--1', rem: 0.833, use: 'card meta and detail, map labels' },
 ];
 
 function useTokenValues() {
@@ -149,6 +161,32 @@ export default function DesignSystem() {
               </Specimen>
             ))}
           </div>
+          <p className={styles.note}>
+            Light and dark palette per city, with the WCAG contrast of the city colour on each
+            background. 4.5:1 is AA for body text, 3:1 for large text and lines/icons.
+          </p>
+          {(['light', 'dark'] as const).map((scheme) => (
+            <div className={styles.row} key={scheme}>
+              {cityConfigs.map((config) => {
+                const background =
+                  scheme === 'light' ? LIGHT_BACKGROUND : DARK_BACKGROUNDS[config.slug];
+                const ratio = contrastRatio(config.themeColor, background).toFixed(2);
+                return (
+                  <Specimen
+                    key={config.slug}
+                    caption={`${config.label} ${scheme} ${background} · ${ratio}:1`}
+                  >
+                    <span
+                      className={`${styles.swatch} ${styles.paletteSwatch}`}
+                      style={{ background, color: config.themeColor }}
+                    >
+                      {config.label}
+                    </span>
+                  </Specimen>
+                );
+              })}
+            </div>
+          ))}
           <div className={styles.row}>
             {colorTokens.map(({ name, use }) => (
               <Specimen key={name} caption={`${name} ${tokenValues[name] ?? ''}, ${use}`}>
@@ -156,6 +194,25 @@ export default function DesignSystem() {
               </Specimen>
             ))}
           </div>
+        </Section>
+
+        <Section title="type">
+          <p className={styles.note}>
+            Minor Third (1.2). The root is fluid: 12px up to 768px, 16px from 1280 to 1728px,
+            20px at 3840px.
+          </p>
+          <ol className={styles.typeList}>
+            {typeSteps.map(({ token, rem, use }) => (
+              <li key={token} className={styles.typeStep}>
+                <span className={styles.typeSample} style={{ fontSize: `var(${token})` }}>
+                  Kyoto today
+                </span>
+                <span className={styles.caption}>
+                  {token} · {rem}rem · {+(rem * 16).toFixed(1)}px · {use}
+                </span>
+              </li>
+            ))}
+          </ol>
         </Section>
 
         <Section title="button">
@@ -228,7 +285,8 @@ export default function DesignSystem() {
         <Section title="breakpoints">
           <p className={styles.note}>
             Columns follow the events panel width (viewport here). The header + and − shift
-            every breakpoint by one step. The live cell is marked.
+            every breakpoint by one step, except under 375px, where the list is one column and
+            the + and − and the dark mode toggle are hidden. The live cell is marked.
           </p>
           <table className={styles.table}>
             <thead>
@@ -240,16 +298,16 @@ export default function DesignSystem() {
               </tr>
             </thead>
             <tbody>
-              {GRID_COLUMN_BREAKPOINTS.map(({ columns }, index) => (
+              {GRID_COLUMN_BREAKPOINTS.map(({ columns, lockDensity }, index) => (
                 <tr key={index}>
                   <th scope="row">{breakpointLabel(index)}</th>
                   {densities.map((density) => {
-                    const active =
-                      live?.density === density &&
-                      columnsForDensity(columns, density) === live.columns;
+                    // Under 375px the +/- are hidden and the offset is ignored.
+                    const count = columnsForDensity(columns, lockDensity ? 0 : density);
+                    const active = live?.density === density && count === live.columns;
                     return (
                       <td key={density} data-active={active || undefined}>
-                        {columnsForDensity(columns, density)}
+                        {count}
                       </td>
                     );
                   })}

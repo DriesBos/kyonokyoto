@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-const { buildMetadata, siteOrigin, structuredData } = await import('../src/lib/seo.ts');
+const { buildMetadata, festivalSitemapEntries, siteOrigin, structuredData } = await import(
+  '../src/lib/seo.ts'
+);
 
 // Netlify builds run tests with PUBLIC_SITE_URL set; these assertions pin the fallback origin.
 const withoutSiteUrl = (fn) => {
@@ -39,8 +41,8 @@ test('SEO metadata uses canonical, hreflang, social image, and public origin', (
 test('single-locale city has bare canonical and no unsupported alternate', () =>
   withoutSiteUrl(() => {
     const metadata = buildMetadata({ city: 'hong-kong', locale: 'en' });
-    assert.equal(metadata.alternates.canonical, 'https://kyonokyoto.com/hong-kong/');
-    assert.equal(metadata.alternates.languages.en, 'https://kyonokyoto.com/hong-kong/');
+    assert.equal(metadata.alternates.canonical, 'https://kyonokyoto.xyz/hong-kong/');
+    assert.equal(metadata.alternates.languages.en, 'https://kyonokyoto.xyz/hong-kong/');
     assert.equal(metadata.alternates.languages.ja, undefined);
   }));
 
@@ -49,4 +51,48 @@ test('JSON-LD is a localized CollectionPage', () => {
   assert.equal(data['@type'], 'CollectionPage');
   assert.equal(data.inLanguage, 'en');
   assert.match(data.name, /Hong Kong/);
+});
+
+test('festival pages are in the sitemap with their locale alternates', () =>
+  withoutSiteUrl(() => {
+    const entries = festivalSitemapEntries([
+      { city: 'kyoto', slug: 'art week' },
+      { city: 'hong-kong', slug: 'art-basel' },
+    ]);
+    assert.deepEqual(
+      entries.map(({ url }) => url),
+      [
+        'https://kyonokyoto.xyz/kyoto/en/festivals/art%20week/',
+        'https://kyonokyoto.xyz/kyoto/ja/festivals/art%20week/',
+        'https://kyonokyoto.xyz/hong-kong/festivals/art-basel/',
+      ],
+    );
+    assert.equal(entries[0].languages.ja, 'https://kyonokyoto.xyz/kyoto/ja/festivals/art%20week/');
+    assert.deepEqual(Object.keys(entries[2].languages), ['en']);
+  }));
+
+test('city JSON-LD lists dated events; festival JSON-LD is a Festival with its page URL', async () => {
+  const { structuredData, festivalStructuredData } = await import('../src/lib/seo.ts');
+  const event = {
+    name: 'Show',
+    startDate: '2026-11-01',
+    endDate: '2026-11-30',
+    place: 'Gallery',
+    address: null,
+    image: null,
+    url: 'https://example.com/show',
+  };
+  const city = structuredData({
+    city: 'kyoto',
+    locale: 'en',
+    events: [event, { ...event, name: 'Permanent', startDate: null }],
+  });
+  assert.equal(city.mainEntity.itemListElement.length, 1);
+  assert.equal(city.mainEntity.itemListElement[0].item.name, 'Show');
+  assert.equal(city.mainEntity.itemListElement[0].item.location.name, 'Gallery');
+
+  const festival = festivalStructuredData({ city: 'kyoto', locale: 'ja', slug: 'ack', event });
+  assert.equal(festival['@type'], 'Festival');
+  assert.match(festival.url, /\/kyoto\/ja\/festivals\/ack\/$/);
+  assert.equal(festival.sameAs, 'https://example.com/show');
 });

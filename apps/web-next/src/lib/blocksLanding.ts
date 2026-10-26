@@ -1,3 +1,5 @@
+import { aspectClassFor, transformSizeFor } from './landingImages.ts';
+
 export type BlocksLandingCandidate = {
   id: string;
   title: string;
@@ -127,8 +129,15 @@ export const resolveBlocksLandingSlides = ({
       maximumTransformWidth / requiredWidth,
       maximumTransformHeight / requiredHeight,
     );
-    const width = Math.floor(requiredWidth * density);
-    const height = Math.floor(requiredHeight * density);
+    // snap to a shared crop ratio + size bucket so visitors hit warm CDN transforms
+    const size = transformSizeFor(
+      image,
+      aspectClassFor(viewportWidth, viewportHeight),
+      Math.floor(requiredWidth * density),
+      Math.floor(requiredHeight * density),
+    );
+    if (!size) return;
+    const { width, height } = size;
     slides.push({
       id: candidate.id,
       title: candidate.title,
@@ -155,4 +164,35 @@ export const resolveBlocksLandingSlides = ({
   }
 
   return slides;
+};
+
+export type BlocksLandingHero = { id: string; src: string; width: number; height: number };
+
+// Cover targets for the server-rendered first slide, largest first.
+const heroCoverTargets = [
+  { width: 1920, height: 1080 },
+  { width: 1440, height: 900 },
+];
+
+// Moves the first candidate with an image that covers a large screen to the front (with that
+// image first), so the server can render it as the first slide before the client measures.
+export const blocksLandingCandidatesWithHero = (
+  candidates: BlocksLandingCandidate[],
+): { candidates: BlocksLandingCandidate[]; hero: BlocksLandingHero | null } => {
+  for (const target of heroCoverTargets) {
+    for (const [index, candidate] of candidates.entries()) {
+      const image = candidate.images.find(
+        (item) => coverDensityFor(item, target.width, target.height) >= 1,
+      );
+      if (!image) continue;
+      return {
+        candidates: [
+          { ...candidate, images: [image, ...candidate.images.filter((item) => item !== image)] },
+          ...candidates.filter((_, other) => other !== index),
+        ],
+        hero: { id: candidate.id, ...image },
+      };
+    }
+  }
+  return { candidates, hero: null };
 };

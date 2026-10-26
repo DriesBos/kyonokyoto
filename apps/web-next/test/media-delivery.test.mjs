@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 process.env.NETLIFY = 'true';
@@ -170,4 +171,30 @@ test('local dev serves image sources directly without the Netlify Image CDN', as
   } finally {
     process.env.NETLIFY = 'true';
   }
+});
+
+test('NEXT_PUBLIC_IMAGE_CDN turns the image CDN on without NETLIFY (ISR runtime)', async () => {
+  const { imageCdnEnabled } = await import('../src/lib/env.ts');
+  delete process.env.NETLIFY;
+  process.env.NEXT_PUBLIC_IMAGE_CDN = '1';
+  try {
+    assert.equal(imageCdnEnabled(), true);
+    assert.equal(eventMediaDeliveryUrl(galleryExitImage), imageCdnUrl(galleryExitImage));
+  } finally {
+    delete process.env.NEXT_PUBLIC_IMAGE_CDN;
+    process.env.NETLIFY = 'true';
+  }
+  assert.match(
+    await readFile(new URL('../../../netlify.toml', import.meta.url), 'utf8'),
+    /NEXT_PUBLIC_IMAGE_CDN = "1"/,
+  );
+});
+
+test('http image origins go through the CDN as-is and are upgraded when served directly', () => {
+  const insecure = 'http://www.kahitsukan.or.jp/kindai2026/EXT00901.jpg';
+  assert.equal(eventMediaDeliveryUrl(insecure, true), imageCdnUrl(insecure));
+  assert.equal(
+    eventMediaDeliveryUrl(insecure, false),
+    'https://www.kahitsukan.or.jp/kindai2026/EXT00901.jpg',
+  );
 });

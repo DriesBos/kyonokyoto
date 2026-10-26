@@ -4,8 +4,9 @@ import { uiText } from '@/lib/i18n';
 import { boxClusterLabels } from '@/lib/boxCluster';
 import type { AppCity } from '@/lib/cities';
 import { type CityEvent, mapLocationIdForEvent } from '@/lib/cityEvents';
+import { imageCdnEnabled } from '@/lib/env';
 import { festivalPathFor } from '@/lib/festivalRoutes';
-import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '@/lib/mediaDelivery';
+import { withoutCalendarDetails } from '@/lib/appleCalendar';
 import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
 import BoxCluster from './BoxCluster';
@@ -30,6 +31,7 @@ export default function EventsGrid({
     groupOrder.map((group) => [group, events.filter((event) => event.group === group)]),
   ) as Record<(typeof groupOrder)[number], CityEvent[]>;
   let globalIndex = 0;
+  const useImageCdn = imageCdnEnabled();
 
   if (events.length === 0) {
     return (
@@ -83,29 +85,6 @@ export default function EventsGrid({
               >
                 {groupEvents.map((event, groupItemIndex) => {
                   const index = globalIndex++;
-                  const mediaImages = event.images.flatMap((item, imageIndex) => {
-                    const src = eventMediaDeliveryUrl(item.url);
-                    return src
-                      ? [
-                          {
-                            src,
-                            srcSet: eventMediaDeliverySrcSet(item.url),
-                            width: item.width,
-                            height: item.height,
-                            alt: event.title,
-                            sizes: '(max-width: 767px) 90vw, 20rem',
-                            loading:
-                              imageIndex === 0 && index === 0
-                                ? ('eager' as const)
-                                : ('lazy' as const),
-                            fetchPriority:
-                              imageIndex === 0 && index === 0
-                                ? ('high' as const)
-                                : ('auto' as const),
-                          },
-                        ]
-                      : [];
-                  });
                   const detailId = `event-card-detail-${event.id}`;
                   return (
                     <article
@@ -130,36 +109,43 @@ export default function EventsGrid({
                           className={styles.media}
                           eventId={event.id}
                           label={event.title}
-                          images={mediaImages}
+                          locale={locale}
+                          images={event.images}
+                          useImageCdn={useImageCdn}
+                          priority={index === 0}
                           embeds={event.mediaEmbeds.map((embed) => ({
                             videoId: embed.videoId,
                             title: `${event.title} video`,
                           }))}
                         />
-                        <div className={styles.meta}>
-                          <p>
-                            {event.festival ? event.venue || event.institution : event.institution}
-                          </p>
-                          <p>
-                            {event.date}
-                            {event.eventKind === 'festival' ? ' — FESTIVAL' : null}
-                          </p>
-                          {event.festival && (
-                            <p className={styles.festivalMeta}>
-                              {event.festival.slug ? (
-                                <a href={festivalPathFor(city, locale, event.festival.slug)}>
-                                  {[event.festival.title, event.festival.year]
-                                    .filter(Boolean)
-                                    .join(' · ')}{' '}
-                                  ↗
-                                </a>
-                              ) : (
-                                <span>{event.festival.title}</span>
-                              )}
+                        <div className={styles.content}>
+                          <div className={styles.meta}>
+                            <p>
+                              {event.festival
+                                ? event.venue || event.institution
+                                : event.institution}
                             </p>
-                          )}
+                            <p>
+                              {event.date}
+                              {event.eventKind === 'festival' ? ' — FESTIVAL' : null}
+                            </p>
+                            {event.festival && (
+                              <p className={styles.festivalMeta}>
+                                {event.festival.slug ? (
+                                  <a href={festivalPathFor(city, locale, event.festival.slug)}>
+                                    {[event.festival.title, event.festival.year]
+                                      .filter(Boolean)
+                                      .join(' · ')}{' '}
+                                    ↗
+                                  </a>
+                                ) : (
+                                  <span>{event.festival.title}</span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                          <h2 className={styles.title}>{event.title}</h2>
                         </div>
-                        <h2 className={styles.title}>{event.title}</h2>
                         <EventCardDisclosure
                           eventId={event.id}
                           detailId={detailId}
@@ -173,8 +159,16 @@ export default function EventsGrid({
                           eventId={event.id}
                           description={event.description}
                           mapsUrl={event.mapsUrl}
-                          googleCalendarUrl={event.googleCalendarUrl}
-                          appleCalendar={event.appleCalendar}
+                          googleCalendarUrl={
+                            event.description && event.googleCalendarUrl
+                              ? withoutCalendarDetails(event.googleCalendarUrl)
+                              : event.googleCalendarUrl
+                          }
+                          appleCalendar={
+                            event.description && event.appleCalendar
+                              ? { ...event.appleCalendar, details: undefined }
+                              : event.appleCalendar
+                          }
                           sourceUrl={event.sourceUrl}
                           locale={locale}
                         />

@@ -18,6 +18,9 @@
   cursor: pointer
   pointer-events: auto
   overflow: visible
+  // WCAG 2.5.8 target size, for short labels like "jp".
+  min-width: 24px
+  min-height: 24px
 
   &:hover,
   &:active,
@@ -57,7 +60,8 @@
   align-items: center
   justify-content: flex-start
   gap: 4px
-  padding: calc(var(--stroke-width) + 3px) calc(var(--control-gap) / 2) 0
+  // Figma tag 621:3745: the label sits 4px under the line, which runs 1px past it each side.
+  padding: calc(var(--stroke-width) + 4px) calc(var(--control-gap) / 2 + 1px) 0
   overflow: visible
 
   &::before
@@ -68,6 +72,13 @@
     right: calc(var(--control-gap) / 2)
     border-top: var(--stroke-width) solid var(--stroke)
     pointer-events: none
+    transition: transform var(--press-release)
+
+// Hover presses the line down like a spring; leaving or releasing a click lets it spring back.
+@media (hover: hover) and (prefers-reduced-motion: no-preference)
+  .button:hover:not([data-released], :disabled, [aria-disabled='true']) .content::before
+    transform: translateY(var(--press-depth))
+    transition: transform var(--press-down)
 
 .label
   position: relative

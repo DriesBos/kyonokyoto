@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { buildYouTubeEmbedSrc } from '@/lib/youtubeEmbed';
 
-// Port of apps/web scripts/youtubeAmbient.ts: card videos load near the viewport and play
-// muted while at least half visible. Every visible video plays (apps/web played one at a time).
+// Port of apps/web scripts/youtubeAmbient.ts: card videos show a thumbnail until about one
+// viewport away, then load the player and play muted while at least half visible. Every visible
+// video plays (apps/web played one at a time).
 
 type YouTubePlayer = { mute: () => void; playVideo: () => void; pauseVideo: () => void };
 type YouTubeApi = {
@@ -20,8 +21,10 @@ type AmbientYouTubeWindow = Window &
   };
 
 const apiSrc = 'https://www.youtube.com/iframe_api';
-const loadRootMargin = '900px 0px';
+const loadRootMargin = '100% 0px';
 const playThreshold = 0.5;
+
+const fill = { position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 } as const;
 
 let apiPromise: Promise<YouTubeApi> | null = null;
 
@@ -52,13 +55,15 @@ export function AmbientYouTube({
   title: string;
   className?: string;
 }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [src, setSrc] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
-  // Set the src only once the frame nears the viewport.
+  // Mount the iframe (and load the API) only once the facade nears the viewport.
   useEffect(() => {
-    const frame = frameRef.current;
-    if (!frame) return;
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
@@ -67,7 +72,7 @@ export function AmbientYouTube({
       },
       { rootMargin: loadRootMargin },
     );
-    observer.observe(frame);
+    observer.observe(wrapper);
     return () => observer.disconnect();
   }, [videoId]);
 
@@ -98,6 +103,7 @@ export function AmbientYouTube({
             if (disposed) return;
             player = event.target;
             ready = true;
+            setReady(true);
             player.mute();
             sync();
           },
@@ -121,15 +127,31 @@ export function AmbientYouTube({
   }, [src]);
 
   return (
-    <iframe
-      ref={frameRef}
+    <div
+      ref={wrapperRef}
       className={className}
-      data-event-card-part="media-embed"
-      src={src ?? undefined}
-      title={title}
-      allow="autoplay; encrypted-media; picture-in-picture"
-      referrerPolicy="strict-origin-when-cross-origin"
-      tabIndex={-1}
-    />
+      style={{ position: 'relative', overflow: 'hidden' }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- decorative facade, see AGENTS.md */}
+      <img
+        src={`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={{ ...fill, objectFit: 'cover', visibility: ready ? 'hidden' : 'visible' }}
+      />
+      {src ? (
+        <iframe
+          ref={frameRef}
+          style={fill}
+          data-event-card-part="media-embed"
+          src={src}
+          title={title}
+          allow="autoplay; encrypted-media; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+          tabIndex={-1}
+        />
+      ) : null}
+    </div>
   );
 }

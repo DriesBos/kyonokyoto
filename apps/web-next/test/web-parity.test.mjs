@@ -20,19 +20,10 @@ test('every route carries the security headers apps/web sends', async () => {
   assert.match(contentSecurityPolicy({ dev: true }), /unsafe-eval/);
 });
 
-test('city and festival pages send purgeable CDN cache headers from the proxy', async () => {
-  const proxy = await readFile(new URL('../src/proxy.ts', import.meta.url), 'utf8');
-  const events = await readFile(new URL('cityEvents.ts', lib), 'utf8');
-
-  assert.match(proxy, /cachedCityPagePath\(request\.nextUrl\.pathname\)/);
-  assert.match(proxy, /cityPageCacheHeaders\(cachedCity\.slug, cachedCity\.timeZone\)/);
-  assert.equal((events.match(/tags: \[cityCacheTag\(city\)\]/g) ?? []).length, 2);
-});
-
 test('service worker ships and only registers in production', async () => {
   const [worker, layout, register] = await Promise.all([
     readFile(new URL('../public/sw.js', import.meta.url), 'utf8'),
-    readFile(new URL('layout.tsx', app), 'utf8'),
+    readFile(new URL('RootDocument.tsx', app), 'utf8'),
     readFile(new URL('ServiceWorker.tsx', app), 'utf8'),
   ]);
 
@@ -75,7 +66,7 @@ test('Yutaka images go through the in-app proxy route', async () => {
 test('Google Analytics loads the apps/web property in production only', async () => {
   const [analytics, layout, config] = await Promise.all([
     readFile(new URL('GoogleAnalytics.tsx', app), 'utf8'),
-    readFile(new URL('layout.tsx', app), 'utf8'),
+    readFile(new URL('RootDocument.tsx', app), 'utf8'),
     import(new URL('next.config.mjs', root)),
   ]);
 

@@ -12,11 +12,12 @@ test('production footer keeps V1 content without the ruled background', async ()
     readFile(new URL('blocks/page.module.sass', app), 'utf8'),
   ]);
 
-  assert.match(footer, /Site by/);
-  assert.match(footer, /Enjoy \{cityLabel\} Culture/);
+  assert.match(footer, /uiText\[locale\]\.siteBy/);
+  assert.match(footer, /uiText\[locale\]\.enjoyCulture\(cityLabel\)/);
   assert.match(footer, /aria-label=\{uiText\[locale\]\.scrollTop\}/);
   assert.match(footer, /M11\.5024 50\.02/);
-  assert.match(styles, /border-bottom: var\(--footer-stroke\) solid currentColor/);
+  assert.match(styles, /border-top: var\(--footer-stroke\) solid var\(--stroke\)/);
+  assert.match(styles, /flex: 0 0 50%/);
   assert.match(styles, /background: none/);
   assert.doesNotMatch(styles, /repeating-linear-gradient/);
   assert.match(page, /<SiteFooter\s+compact\s+className=\{styles\.blocksFooter\}/);

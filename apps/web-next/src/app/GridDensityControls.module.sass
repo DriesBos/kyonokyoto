@@ -1,17 +1,19 @@
-// Figma header 621:3717 (Frame 27): two 11px icons, 6px apart, 24px after the last button's line.
+// Header icons, Figma header 621:3718 "controls": plus 10px, minus 11px, square 10px, 12px apart.
+// SiteHeader's .icons places the group; these are shared with ColorSchemeToggle.
 .controls
   display: inline-flex
   align-items: flex-start
-  // jp's own right padding is half a control gap, so this lands the plus 24px after its line.
-  margin-left: calc(24px - var(--control-gap) / 2)
-  padding-right: calc(var(--page-padding-x) - 3px)
 
 .step
   display: inline-flex
   align-items: flex-start
-  // Same top padding as GeneralButton verticalFull, so the bar lands on the buttons' top line;
-  // 3px sides give the 6px gap between icons.
-  padding: 0.5rem 3px 1rem
+  // Same top padding as GeneralButton verticalFull, so each bar's top lands on the buttons'
+  // top line; half-gap sides give the 12px between icons and a wider hit area.
+  padding: 0.5rem 0.375rem 1rem
+  // WCAG 2.5.8 target size: centres at least 24px apart; the icon stays centred.
+  justify-content: center
+  min-width: 24px
+  min-height: 24px
   border: 0
   appearance: none
   -webkit-tap-highlight-color: transparent
@@ -38,11 +40,20 @@
   height: var(--stroke-width)
   background: currentColor
 
-.plus::after
-  content: ''
-  position: absolute
-  left: calc((11px - var(--stroke-width)) / 2)
-  top: calc((var(--stroke-width) - 11px) / 2)
-  width: var(--stroke-width)
-  height: 11px
-  background: currentColor
+.plus
+  width: 10px
+
+  &::after
+    content: ''
+    position: absolute
+    left: calc((10px - var(--stroke-width)) / 2)
+    top: calc((var(--stroke-width) - 10px) / 2)
+    width: var(--stroke-width)
+    height: 10px
+    background: currentColor
+
+// Colour scheme toggle: a 10px square centred on the line, like the plus.
+.square
+  width: 10px
+  height: 10px
+  margin-top: calc((var(--stroke-width) - 10px) / 2)

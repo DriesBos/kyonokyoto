@@ -9,35 +9,48 @@ html,
 body
   margin: 0
   padding: 0
+  // No vertical scroll bounce (rubber band) at the page edges.
+  overscroll-behavior-y: none
+  // The event list scrolls the page when the map is closed; never show its scrollbar.
+  scrollbar-width: none
+
+  &::-webkit-scrollbar
+    display: none
 
 :root
   --color-text: #{$color-text}
   --color-background: #{$color-background}
 
 // Each city page gets its own text/stroke colour on the shared beige, as in apps/web.
-// Debug themes below come later in the file, so they still override these.
 @each $city, $color in (kyoto: $color-kyoto, osaka: $color-osaka, tokyo: $color-tokyo, hong-kong: $color-hong-kong)
   :root[data-city='#{$city}']
     --color-text: #{$color}
 
-:root[data-theme='monochrome']
-  --color-text: #{$color-text-monochrome}
-  --color-background: #{$color-background-monochrome}
+// Dark mode: an explicit choice from the header toggle (data-color-scheme), else the system
+// setting. Only the background changes; each city keeps its type colour.
+@each $city, $background in (kyoto: $color-kyoto-dark-background, osaka: $color-osaka-dark-background, tokyo: $color-tokyo-dark-background, hong-kong: $color-hong-kong-dark-background)
+  :root[data-city='#{$city}']
+    --color-background-dark: #{$background}
 
-:root[data-theme='dark']
-  --color-text: #{$color-text-dark}
-  --color-background: #{$color-background-dark}
+:root
+  color-scheme: light
 
-:root[data-theme='brown']
-  --color-text: #{$color-text-brown}
-  --color-background: #{$color-background-brown}
+:root[data-color-scheme='dark']
+  --color-background: var(--color-background-dark, #{$color-kyoto-dark-background})
+  color-scheme: dark
+
+@media (prefers-color-scheme: dark)
+  :root:not([data-color-scheme='light'])
+    --color-background: var(--color-background-dark, #{$color-kyoto-dark-background})
+    color-scheme: dark
 
 // Header and control tokens ported from apps/web (src/styles/app.sass).
 :root
   --color-pink: #{$image-placeholder}
   --stroke-width: 2px
   --stroke: var(--color-text)
-  --control-gap: 1rem
+  // Figma tag: 12px between lines at the 16px root.
+  --control-gap: 0.75rem
   --page-padding-x: 0.5rem
   --page-padding-y: 0.5rem
   --dot-button: 1.5rem
@@ -45,6 +58,11 @@ body
   --dot-mask-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='63' viewBox='0 0 64 63'%3E%3Cpath d='M31.593 0.920265C40.5925 0.463048 50.8047 -2.10275 57.4107 4.03377C64.1093 10.2563 63.7229 20.7851 62.7734 29.8847C61.9341 37.9276 58.1454 45.0365 52.5261 50.8448C46.7959 56.7678 39.7839 61.2551 31.593 62.1139C22.4252 63.0752 12.1955 62.3589 5.76265 55.7482C-0.625424 49.1836 -0.235473 39.0384 0.230601 29.8847C0.665877 21.336 1.98466 12.334 8.26866 6.53043C14.3788 0.887481 23.2913 1.34203 31.593 0.920265Z' fill='black'/%3E%3C/svg%3E")
   --dot-mask-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='63' height='64' viewBox='0 0 63 64'%3E%3Cpath d='M39.7348 0.184949C52.3336 1.32214 58.1132 14.5373 61.5051 26.724C64.3427 36.9189 63.0894 47.9679 54.8995 54.6697C44.9552 62.8071 31.3992 67.0744 20.488 60.2883C6.87291 51.8205 -3.67355 36.5518 1.21622 21.2822C6.15212 5.86847 23.6155 -1.27001 39.7348 0.184949Z' fill='black'/%3E%3C/svg%3E")
   --dot-mask: var(--dot-mask-1)
+  // Top-line spring (lib/pressSpring.ts): 2px down on hover, back up with an overshoot.
+  --press-depth: 2px
+  --press-down: 140ms cubic-bezier(0.3, 0.7, 0.4, 1)
+  // Damped spring, damping ratio 0.456: one overshoot of 20% (0.4px on the 2px press), then settles.
+  --press-release: 500ms linear(0, 0.082, 0.278, 0.521, 0.758, 0.955, 1.094, 1.173, 1.2, 1.187, 1.15, 1.101, 1.053, 1.013, 0.984, 0.967, 0.96, 0.962, 0.969, 0.979, 0.988, 0.997, 1.003, 1.006, 1.008, 1.008, 1)
   --dot-rotation: 0deg
   --dot-scale-x: 1
   --dot-scale-y: 1
@@ -60,6 +78,8 @@ body
   --grid-density: -1
 
 body
+  // Landscape notches: keep content clear of the sides (top: SiteHeader, bottom: SiteFooter).
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right)
   background: var(--color-background)
   color: var(--color-text)
 

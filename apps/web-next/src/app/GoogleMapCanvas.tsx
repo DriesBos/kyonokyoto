@@ -407,7 +407,7 @@ export default function GoogleMapCanvas({
   }, [apiKey, copy, mapCenter, mapId, sources]);
 
   return (
-    <div className={styles.canvas} role="application" aria-label={`${cityLabel} cultural map`}>
+    <div className={styles.canvas} role="region" aria-label={copy.culturalMap(cityLabel)}>
       <div className={styles.viewport} ref={viewportRef} />
       <div className={styles.controls}>
         <button

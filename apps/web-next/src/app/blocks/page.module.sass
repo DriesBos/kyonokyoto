@@ -1,38 +1,79 @@
 .main
   width: 100%
 
+  // Focus target of the skip link only; the events themselves carry the focus styles.
+  &:focus
+    outline: none
+
+// Hidden until keyboard focus, then above the landing overlay.
+.skipLink
+  position: fixed
+  top: 0.5rem
+  left: 0.5rem
+  z-index: 1000
+  padding: 0.5rem 0.75rem
+  background: var(--color-background)
+  color: var(--color-text)
+  outline: 2px solid currentColor
+  transform: translateY(calc(-100% - 1rem))
+
+  &:focus-visible
+    transform: none
+
 .blocksFooter
   padding-top: 10vmin
 
 .grid
   display: grid
   isolation: isolate
+  // Spacing unit that follows the events panel width (cqi) with the same curve as the root font
+  // size follows the viewport (typography.sass), so a narrow panel with the map open spaces like
+  // a phone of that width. Gaps, side padding and box depth use it; card text stays in rem.
+  --space: clamp(12px, calc(6px + .78125cqi), 16px)
+  --space-offset: calc(1.5 * var(--space))
   // fixed column count so each block can derive its row/col for z-index stacking
   // the header +/- shifts every breakpoint's default by --grid-density (-1, 0 or 1)
   --cols: var(--block-cols, max(1, calc(var(--cols-default, 5) + var(--grid-density, 0))))
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr))
   align-items: start
   // Gaps leave room for both neighbours' depth (one box's back plus a lifted neighbour's front
-  // is |offset| * lift), plus 1rem, so boxes never touch at any screen size.
-  gap: var(--block-gap-y, calc(max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2) + 1rem)) var(--block-gap-x, calc(max(var(--block-dx, 1.5rem), -1 * var(--block-dx, 1.5rem)) * var(--block-lift, 2) + 1rem))
+  // is |offset| * lift), plus one space unit, so boxes never touch at any width.
+  gap: var(--block-gap-y, calc(max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2) + var(--space))) var(--block-gap-x, calc(max(var(--block-dx, var(--space-offset, 1.5rem)), -1 * var(--block-dx, var(--space-offset, 1.5rem))) * var(--block-lift, 2) + var(--space)))
   // Side padding: a per-breakpoint gap from the screen edge to the box's visible edge. Each side
   // adds only what the 3D box sticks out there: a lifted front moves (lift - 1) * dx against the
-  // offset, the back sits dx along it. With dx 1.5rem and lift 2 that is 1.5rem per side.
-  --grid-side-gap: 8rem
-  padding: calc(2rem + max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, var(--block-dx, 1.5rem), (1 - var(--block-lift, 2)) * var(--block-dx, 1.5rem))) calc(2rem + max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, -1 * var(--block-dx, 1.5rem), (var(--block-lift, 2) - 1) * var(--block-dx, 1.5rem)))
+  // offset, the back sits dx along it. With the default offset and lift 2 that is 1.5 space units per side.
+  --grid-side-gap: calc(8 * var(--space))
+  padding: calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, var(--block-dx, var(--space-offset, 1.5rem)), (1 - var(--block-lift, 2)) * var(--block-dx, var(--space-offset, 1.5rem)))) calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, -1 * var(--block-dx, var(--space-offset, 1.5rem)), (var(--block-lift, 2) - 1) * var(--block-dx, var(--space-offset, 1.5rem))))
 
-// Side gap: wide > 1728px, desktop <= 1728px, tablet <= 1280px, mobile <= 768px.
+// Side gap: wide > 1728px, desktop <= 1728px, tablet <= 1280px, mobile <= 768px. Like the
+// columns, the container queries (events panel width) win over the viewport fallback.
 @media (max-width: 1728px)
   .grid
-    --grid-side-gap: 4rem
+    --grid-side-gap: calc(4 * var(--space))
 
 @media (max-width: 1280px)
   .grid
-    --grid-side-gap: 2rem
+    --grid-side-gap: calc(2 * var(--space))
 
 @media (max-width: 768px)
   .grid
-    --grid-side-gap: 1rem
+    --grid-side-gap: var(--space)
+
+@container (min-width: 1728px)
+  .grid
+    --space: clamp(16px, calc(12.7273px + .18939cqi), 20px)
+
+@container (max-width: 1728px)
+  .grid
+    --grid-side-gap: calc(4 * var(--space))
+
+@container (max-width: 1280px)
+  .grid
+    --grid-side-gap: calc(2 * var(--space))
+
+@container (max-width: 768px)
+  .grid
+    --grid-side-gap: var(--space)
 
 // Breakpoints follow the events panel width (container on MapExperience .events), so a
 // narrower panel with the map open drops columns too. Viewport queries are the fallback
@@ -49,6 +90,12 @@
   .grid
     --cols-default: 2
 
+// Under 375px: one column, and the header +/- (hidden there) no longer apply.
+@media (max-width: 374px)
+  .grid
+    --cols-default: 1
+    --grid-density: 0
+
 @container (max-width: 1440px)
   .grid
     --cols-default: 4
@@ -60,6 +107,11 @@
 @container (max-width: 800px)
   .grid
     --cols-default: 2
+
+@container (max-width: 374px)
+  .grid
+    --cols-default: 1
+    --grid-density: 0
 
 .divider
   grid-column: 1 / -1
@@ -93,7 +145,7 @@
   --block-depth: calc(var(--depth-base, 1) + var(--depth-hover, 0))
   // stacking follows viewing direction on both axes: dx>0 = seen from the right (right neighbors closer),
   // dy>0 = seen from below (lower rows closer); row term dominates via the x100 weight
-  z-index: calc(mod(var(--block-i, 0), var(--cols, 4)) * sign(var(--block-dx, 1.5rem)) + round(down, var(--block-i, 0) / var(--cols, 4), 1) * 100 * sign(var(--block-dy, 1.5rem)))
+  z-index: calc(mod(var(--block-i, 0), var(--cols, 4)) * sign(var(--block-dx, var(--space-offset, 1.5rem))) + round(down, var(--block-i, 0) / var(--cols, 4), 1) * 100 * sign(var(--block-dy, var(--space-offset, 1.5rem))))
 
   // hover lift only on devices with real hover (not touch)
   @media (hover: hover)
@@ -111,11 +163,11 @@
 .boxSides,
 .boxEdge
   --box-w: var(--block-border-width, 2px)
-  --box-dx: calc(abs(var(--block-dx, 1.5rem)) * var(--block-depth, 1))
-  --box-dy: calc(abs(var(--block-dy, 1.5rem)) * var(--block-depth, 1))
+  --box-dx: calc(abs(var(--block-dx, var(--space-offset, 1.5rem))) * var(--block-depth, 1))
+  --box-dy: calc(abs(var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-depth, 1))
   // how far the lifted front sits from its resting spot, in the mirrored +x/+y frame
-  --box-ex: calc(abs(var(--block-dx, 1.5rem)) * (var(--block-depth, 1) - 1))
-  --box-ey: calc(abs(var(--block-dy, 1.5rem)) * (var(--block-depth, 1) - 1))
+  --box-ex: calc(abs(var(--block-dx, var(--space-offset, 1.5rem))) * (var(--block-depth, 1) - 1))
+  --box-ey: calc(abs(var(--block-dy, var(--space-offset, 1.5rem))) * (var(--block-depth, 1) - 1))
   position: absolute
   inset: calc(var(--box-w) / 2)
   width: calc(100% - var(--box-w))
@@ -142,13 +194,13 @@
 // Keeping the block and back still and moving everything on the main thread keeps them in step.
 .boxLift,
 .boxEdge
-  left: calc((1 - var(--block-depth, 1)) * var(--block-dx, 1.5rem))
-  top: calc((1 - var(--block-depth, 1)) * var(--block-dy, 1.5rem))
+  left: calc((1 - var(--block-depth, 1)) * var(--block-dx, var(--space-offset, 1.5rem)))
+  top: calc((1 - var(--block-depth, 1)) * var(--block-dy, var(--space-offset, 1.5rem)))
   transition: left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out)
 
 .boxEdge
-  left: calc(var(--box-w) / 2 + (1 - var(--block-depth, 1)) * var(--block-dx, 1.5rem))
-  top: calc(var(--box-w) / 2 + (1 - var(--block-depth, 1)) * var(--block-dy, 1.5rem))
+  left: calc(var(--box-w) / 2 + (1 - var(--block-depth, 1)) * var(--block-dx, var(--space-offset, 1.5rem)))
+  top: calc(var(--box-w) / 2 + (1 - var(--block-depth, 1)) * var(--block-dy, var(--space-offset, 1.5rem)))
   right: auto
   bottom: auto
 
@@ -156,28 +208,30 @@
 .boxOrient
   transform-box: view-box
   transform-origin: 50% 50%
-  transform: scale(calc(1 - 2 * max(0, -1 * sign(var(--block-dx, 1.5rem)))), calc(1 - 2 * max(0, -1 * sign(var(--block-dy, 1.5rem)))))
+  transform: scale(calc(1 - 2 * max(0, -1 * sign(var(--block-dx, var(--space-offset, 1.5rem))))), calc(1 - 2 * max(0, -1 * sign(var(--block-dy, var(--space-offset, 1.5rem))))))
 
 .boxBack
   fill: var(--color-background)
-  transform: translate(abs(var(--block-dx, 1.5rem)), abs(var(--block-dy, 1.5rem)))
+  transform: translate(abs(var(--block-dx, var(--space-offset, 1.5rem))), abs(var(--block-dy, var(--space-offset, 1.5rem))))
   // the faces draw the back's right and bottom edges; its top and left only show in wireframe
   clip-path: inset(calc(-1 * var(--box-w)) calc(var(--box-w) / 2) calc(var(--box-w) / 2) calc(-1 * var(--box-w)))
 
 .boxFaceY,
 .boxFaceX
-  fill: color-mix(in srgb, var(--color-background), var(--color-text) var(--block-shade, 12%))
+  // light from the top left: the bottom face gets less of it than the side face
+  fill: color-mix(in srgb, var(--color-background), var(--color-text) var(--block-shade-x, 8%))
 
 .boxFaceY
+  fill: color-mix(in srgb, var(--color-background), var(--color-text) var(--block-shade-y, 14%))
   height: var(--box-dy)
-  transform: translate(calc(-1 * var(--box-ex)), calc(100% - var(--box-ey))) skewX(atan2(abs(var(--block-dx, 1.5rem)), abs(var(--block-dy, 1.5rem))))
+  transform: translate(calc(-1 * var(--box-ex)), calc(100% - var(--box-ey))) skewX(atan2(abs(var(--block-dx, var(--space-offset, 1.5rem))), abs(var(--block-dy, var(--space-offset, 1.5rem)))))
   // the side face draws the shared diagonal; clip this face's copy (the clip is skewed with the
   // face, so its horizontal inset is half a stroke divided by the diagonal's cosine)
-  clip-path: inset(calc(-1 * var(--box-w)) calc(var(--box-w) / 2 / cos(atan2(abs(var(--block-dx, 1.5rem)), abs(var(--block-dy, 1.5rem))))) calc(-1 * var(--box-w)) calc(-1 * var(--box-w)))
+  clip-path: inset(calc(-1 * var(--box-w)) calc(var(--box-w) / 2 / cos(atan2(abs(var(--block-dx, var(--space-offset, 1.5rem))), abs(var(--block-dy, var(--space-offset, 1.5rem)))))) calc(-1 * var(--box-w)) calc(-1 * var(--box-w)))
 
 .boxFaceX
   width: var(--box-dx)
-  transform: translate(calc(100% - var(--box-ex)), calc(-1 * var(--box-ey))) skewY(atan2(abs(var(--block-dy, 1.5rem)), abs(var(--block-dx, 1.5rem))))
+  transform: translate(calc(100% - var(--box-ex)), calc(-1 * var(--box-ey))) skewY(atan2(abs(var(--block-dy, var(--space-offset, 1.5rem))), abs(var(--block-dx, var(--space-offset, 1.5rem)))))
 
 :global([data-blocks='wireframe']) .boxBack,
 :global([data-blocks='wireframe']) .boxFaceY,
@@ -189,23 +243,29 @@
   z-index: 1
   display: flex
   flex-direction: column
-  gap: 1rem
   // transparent so the layout keeps the stroke's room; BoxEdge draws the outline on top
   border: var(--block-border-width, 2px) solid transparent
   background: var(--color-background)
-  padding: 0 0 1rem
 
 .media
   position: relative
   z-index: 3
-  margin: 0.5rem 0.5rem 0
+  // the side inset lives inside the scroll area, so scrolled images aren't cut at the card edge
+  --media-inset: 0.5rem
+  margin: 0.5rem 0 0
 
-// Figma 624:3858: venue and date above the title, 14px uppercase with a 2px line gap
+// Figma 624:3858: meta and title sit in one padded content box below the image
+.content
+  display: flex
+  flex-direction: column
+  gap: 1rem
+  padding: 1rem 0.5rem
+
+// venue and date above the title, 14px uppercase with a 2px line gap
 .meta
   display: flex
   flex-direction: column
   gap: 0.125rem
-  padding-inline: 0.5rem
   font-size: var(--type-meta-size)
   line-height: normal
   letter-spacing: -0.01em
@@ -225,6 +285,10 @@
     color: inherit
     text-decoration: underline
     text-underline-offset: 0.2em
+    // WCAG 2.5.8 target size: a 24px-tall hit area without moving the line.
+    display: inline-block
+    padding-block: 7px
+    margin-block: -7px
 
   span
     opacity: 0.7
@@ -232,8 +296,8 @@
 .title
   margin: 0
   // the design insets the title a further 8px past the meta
-  padding-inline: 1rem
-  font-size: 1.625rem
+  padding-inline: 0.5rem
+  font-size: var(--type-step-1)
   line-height: normal
   letter-spacing: -0.01em
   display: -webkit-box
@@ -245,7 +309,10 @@
   position: relative
   z-index: 3
   padding-inline: 0.5rem
-  font-size: 0.875rem
+  font-size: var(--type-meta-size)
+
+  &[data-expanded='true']
+    padding-bottom: 1rem
 
 .detail [data-event-card-part='description']
   line-height: 1.4
@@ -277,11 +344,6 @@
   .title
     -webkit-line-clamp: unset
 
-// mobile: two smaller blocks per row
-@media (max-width: 560px)
-  .grid
-    padding-block: calc(1rem + max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2))
-
 .landing
   position: fixed
   z-index: 800
@@ -290,7 +352,8 @@
   height: 100svh
   overflow: hidden
   isolation: isolate
-  background: var(--color-background)
+  // type colour while the first image loads
+  background: var(--color-text)
   color: #fff
   transform: translateY(0)
   transition: transform 500ms cubic-bezier(.65, 0, .35, 1)
@@ -354,17 +417,38 @@
     outline-offset: -6px
 
 .landingBlocks
+  // Same box area and box width as the default event grid (density 0) at this viewport: the
+  // .grid padding (4rem + 3rem depth top/bottom, side gap + 1.5rem overhang per side), its
+  // columns and 4rem column gap, mirrored as media queries below because the landing is a
+  // fixed overlay outside the events panel container.
+  --landing-cols: 5
+  --landing-side-gap: 8rem
+  --landing-col-gap: 4rem
+  --landing-row-gap: 4rem
+  inset: 7rem calc(var(--landing-side-gap) + 1.5rem)
+  // size container so boxes can use cqw/cqh: width follows the area's width, top its height
+  container-type: size
   z-index: 3
   pointer-events: none
 
+// Every box, depth included, stays inside the area: the back reaches one depth (--landing-depth)
+// right and below the block, and the active front lifts 0.35 depth up and left. Boxes 1 and 3
+// share a column, so the width is also capped so both fit above each other (two heights, a row
+// gap, the lift above and the depth below), and the tops are clamped against the bottom edge.
 .landingBlock
-  --landing-block-width: 25vmin
+  --landing-depth: var(--space-offset, 1.5rem)
+  --landing-block-width: min(calc((100cqw - (var(--landing-cols) - 1) * var(--landing-col-gap)) / var(--landing-cols)), calc((100cqh - var(--landing-row-gap) - 1.35 * var(--landing-depth)) * 3 / 8))
+  --landing-block-height: calc(var(--landing-block-width) * 4 / 3)
+  --landing-top-min: calc(0.35 * var(--landing-depth))
+  --landing-top-max: calc(100cqh - var(--landing-depth) - var(--landing-block-height))
+  --landing-top-1: clamp(var(--landing-top-min), 12.6cqh, calc(var(--landing-top-max) - var(--landing-block-height) - var(--landing-row-gap)))
   // twice the event cards' 2px line
   --block-border-width: 4px
   --block-depth: 1
   position: absolute
   width: var(--landing-block-width)
-  aspect-ratio: 3 / 4
+  // fixed 3:4 height: aspect-ratio alone lets long titles stretch the box past its slot
+  height: var(--landing-block-height)
   padding: 0
   border: 0
   background: transparent
@@ -375,15 +459,16 @@
   pointer-events: auto
 
   &[data-position='1']
-    top: 12.6%
+    top: var(--landing-top-1)
     left: 18.8%
 
   &[data-position='2']
-    top: 33%
+    top: clamp(var(--landing-top-min), 33cqh, var(--landing-top-max))
     left: 56.3%
 
+  // never closer than one grid row gap below box 1, which shares its column
   &[data-position='3']
-    top: 57.2%
+    top: clamp(calc(var(--landing-top-1) + var(--landing-block-height) + var(--landing-row-gap)), 57.2cqh, var(--landing-top-max))
     left: 15.9%
 
   &[data-active]
@@ -396,6 +481,7 @@
     .landingMeta,
     .landingTitle
       opacity: 1
+      filter: none
 
   .boxSides,
   .boxEdge
@@ -413,13 +499,13 @@
     height: 100%
     justify-content: space-between
     align-items: flex-start
-    gap: .4vmin
+    gap: 1rem
     border: 0
     background: rgb(255 255 255 / .165)
     -webkit-backdrop-filter: blur(10px)
     backdrop-filter: blur(10px)
     transition: background-color 180ms ease-out, left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out)
-    padding: .6vmin
+    padding: 0.75rem 0.75rem 1rem
     color: inherit
     text-align: left
     overflow: hidden
@@ -431,15 +517,58 @@
       outline: 3px solid #fff
       outline-offset: 4px
 
+@media (max-width: 1728px)
+  .landingBlocks
+    --landing-side-gap: 4rem
+
+@media (max-width: 1280px)
+  .landingBlocks
+    --landing-side-gap: 2rem
+
+@media (max-width: 768px)
+  .landingBlocks
+    --landing-side-gap: 1rem
+
+@media (max-width: 1440px)
+  .landingBlocks
+    --landing-cols: 4
+
+@media (max-width: 1100px)
+  .landingBlocks
+    --landing-cols: 3
+
+// short viewports (landscape phones): less inset and gap so the boxes keep a usable size
+@media (max-height: 640px)
+  .landingBlocks
+    --landing-row-gap: 2.5rem
+    top: 3rem
+    bottom: 3rem
+
+// Two columns on small screens: 1 and 3 on the left, 2 on the right, one grid gap apart
+@media (max-width: 800px)
+  .landingBlocks
+    --landing-cols: 2
+
+  .landingBlock
+    &[data-position='1'],
+    &[data-position='3']
+      left: 0
+
+    &[data-position='2']
+      left: calc(var(--landing-block-width) + var(--landing-col-gap))
+
 .landingMeta,
 .landingTitle
   display: block
   width: 100%
   opacity: .33
-  transition: opacity 180ms ease-out
+  // inactive text is slightly out of focus
+  filter: blur(1.5px)
+  transition: opacity 180ms ease-out, filter 180ms ease-out
 
 .landingMeta
-  font-size: 1.8vmin
+  // one Minor Third step above the card meta
+  font-size: var(--type-step-0)
   line-height: 1.05
   letter-spacing: -.01em
   text-transform: uppercase
@@ -448,7 +577,8 @@
     display: block
 
 .landingTitle
-  font-size: 3.3vmin
+  // one Minor Third step above the card title
+  font-size: var(--type-step-2)
   font-weight: 400
   line-height: 1.05
   letter-spacing: -.01em
