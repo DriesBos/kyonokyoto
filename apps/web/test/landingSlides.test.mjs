@@ -39,11 +39,6 @@ test('Astro Image CDN config permits only explicit source protocols and hosts', 
       (pattern) => pattern.protocol === 'http' && pattern.hostname === 'www.hakusasonso.jp',
     ),
   );
-  assert.ok(
-    imageRemotePatterns.some(
-      (pattern) => pattern.protocol === 'http' && pattern.hostname === 'www.snowcontemporary.com',
-    ),
-  );
 });
 
 test('Image allowlists cover permanent venue images and http variants of https sources', async () => {
@@ -58,7 +53,8 @@ test('Image allowlists cover permanent venue images and http variants of https s
         ...(item.image_urls ?? []),
       ]);
     })
-    .filter(Boolean);
+    // Site paths (/venues/...) are self-hosted in public/ and need no remote allowlist.
+    .filter((imageUrl) => imageUrl && !imageUrl.startsWith('/'));
 
   assert.ok(imageUrls.length > 0);
   for (const imageUrl of [...imageUrls, 'http://gallery-yamahon.com/wp-content/image.jpg']) {

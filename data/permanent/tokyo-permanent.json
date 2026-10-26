@@ -1,5 +1,35 @@
 {
   "version": 1,
   "description": "Tokyo editorial venue highlights.",
-  "items": []
+  "items": [
+    {
+      "slug": "snow-contemporary",
+      "name": "SNOW Contemporary",
+      "names": {
+        "en": "SNOW Contemporary",
+        "ja": "SNOW Contemporary"
+      },
+      "base_url": "http://www.snowcontemporary.com/en/",
+      "address_text": "404 Hayano Bldg., 2-13-12 Nishiazabu, Minato-ku, Tokyo 106-0031 Japan",
+      "directions_query": "SNOW Contemporary, 2-13-12 Nishiazabu, Minato-ku, Tokyo",
+      "lat": 35.660912,
+      "lng": 139.722794,
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": [],
+        "event_category": []
+      },
+      "is_active": true,
+      "primary_image_url": "/venues/snow-contemporary.jpg",
+      "image_urls": ["/venues/snow-contemporary.jpg"],
+      "description": {
+        "en": "A Nishiazabu gallery founded in 2010 by curator Kenji Kubota, showing painting, sculpture, ceramics, conceptual and socially engaged art by artists from Tokyo and abroad.",
+        "ja": "2010年にキュレーターの窪田研二が設立した西麻布のギャラリー。東京と海外のアーティストによる絵画、彫刻、陶芸、コンセプチュアル・アート、社会と関わるアートを紹介しています。"
+      },
+      "urls": {
+        "en": "http://www.snowcontemporary.com/en/",
+        "ja": "http://www.snowcontemporary.com/"
+      }
+    }
+  ]
 }

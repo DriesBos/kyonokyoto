@@ -24,6 +24,14 @@ test('event images use Netlify Image CDN at quality 60', () => {
   );
 });
 
+test('self-hosted venue images use Netlify Image CDN with a site path', () => {
+  const localImage = '/venues/snow-contemporary.jpg';
+
+  assert.equal(eventMediaDeliveryUrl(localImage), imageCdnUrl(localImage));
+  assert.equal(eventMediaDeliveryUrl('//example.test/image.jpg'), null);
+  assert.equal(eventMediaDeliveryUrl('/venues/../secret.txt'), null);
+});
+
 test('Yutaka publisher images use the bounded display proxy', () => {
   const proxied = eventMediaDeliveryUrl(publisherImage);
 

@@ -21,7 +21,8 @@
         "event_category": []
       },
       "is_active": true,
-      "beta": true,
+      "primary_image_url": "https://marcoart.gallery/wp-content/uploads/2023/07/about-03-1024x683.jpg",
+      "image_urls": ["https://marcoart.gallery/wp-content/uploads/2023/07/about-03-1024x683.jpg"],
       "description": {
         "en": "A Shinsaibashi gallery focused on crossover contemporary art, with shows and open days announced through its Instagram and gallery channels.",
         "ja": "心斎橋のコマーシャルギャラリー。クロスオーバーを軸に現代美術の展覧会を行い、営業日や展示情報はInstagramなどで告知されています。"
@@ -49,7 +50,10 @@
         "event_category": []
       },
       "is_active": true,
-      "beta": true,
+      "primary_image_url": "https://dougukan.jp/wp-content/uploads/2024/07/f532cc67ff10221f2c203669b4842319-1500x999.webp",
+      "image_urls": [
+        "https://dougukan.jp/wp-content/uploads/2024/07/f532cc67ff10221f2c203669b4842319-1500x999.webp"
+      ],
       "description": {
         "en": "A specialist museum near Shin-Kobe dedicated to Japanese carpentry tools, craft techniques, and wood architecture, with permanent displays and occasional exhibitions.",
         "ja": "新神戸近くの大工道具専門ミュージアム。日本の木工技術、道具、木造建築文化を常設展示と企画展で紹介しています。"

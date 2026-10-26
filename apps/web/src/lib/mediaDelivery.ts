@@ -38,6 +38,8 @@ const eventImageSource = (value: string | null): string | null => {
   if (upstream) return `${YUTAKA_IMAGE_PROXY_PATH}?url=${encodeURIComponent(upstream.href)}`;
 
   if (typeof value !== 'string') return null;
+  // Venue photos we host ourselves (apps/web/public) when the origin can't be fetched by the CDN.
+  if (/^\/(?!\/)[\w./-]+$/.test(value) && rasterImagePathPattern.test(value)) return value;
   try {
     const url = new URL(value);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
