@@ -96,8 +96,8 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
     blockStyles,
     /--cols: var\(--block-cols, max\(1, calc\(var\(--cols-default, 5\) \+ var\(--grid-density, 0\)\)\)\)/,
   );
-  assert.match(blocks, /label: 'Gap [XY]'[\s\S]*unit: 'vmin'/);
-  assert.match(blockStyles, /gap: var\(--block-gap-y, 5vmin\) var\(--block-gap-x, 5vmin\)/);
+  assert.match(blocks, /label: 'Gap [XY]'[\s\S]*unit: 'rem'/);
+  assert.match(blockStyles, /gap: var\(--block-gap-y, calc\(.*--block-lift, 2\) \+ 1rem\)\) var\(--block-gap-x, calc\(/);
   assert.match(
     blockStyles,
     /grid-column: span min\(var\(--block-expanded-span, 2\), var\(--cols\)\)/,

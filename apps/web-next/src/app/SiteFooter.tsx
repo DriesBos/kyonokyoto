@@ -3,7 +3,7 @@
 import { uiText, type AppLocale } from '@/lib/i18n';
 import styles from './SiteFooter.module.sass';
 
-function ArrowLong() {
+export function ArrowLong() {
   return (
     <svg className={styles.arrow} viewBox="0 0 25 50" fill="none" aria-hidden="true">
       <path

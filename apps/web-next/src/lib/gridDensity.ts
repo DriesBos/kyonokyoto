@@ -19,3 +19,15 @@ export const stepGridDensity = (current: GridDensity, delta: number) =>
 
 // Runs in <head> before first paint so a saved density never flashes the default grid.
 export const gridDensityInitScript = `try{var d=Math.round(Number(localStorage.getItem('${GRID_DENSITY_STORAGE_KEY}')));if(d===1||d===-1)document.documentElement.setAttribute('${GRID_DENSITY_ATTRIBUTE}',String(d))}catch(e){}`;
+
+// Default columns per events-panel width, widest first. blocks/page.module.sass holds the same
+// steps as media and container queries; test/grid-density.test.mjs keeps the two in sync.
+export const GRID_COLUMN_BREAKPOINTS = [
+  { maxWidth: null, columns: 5 },
+  { maxWidth: 1440, columns: 4 },
+  { maxWidth: 1100, columns: 3 },
+  { maxWidth: 800, columns: 2 },
+] as const;
+
+export const columnsForDensity = (columns: number, density: GridDensity) =>
+  Math.max(1, columns + density);

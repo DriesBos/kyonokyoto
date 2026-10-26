@@ -34,3 +34,22 @@ test('Grid density init script only sets valid steps', () => {
   assert.equal(run('5'), undefined);
   assert.equal(run(null), undefined);
 });
+
+test('Grid column breakpoints match the block grid styles', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { GRID_COLUMN_BREAKPOINTS, columnsForDensity } = await import('../src/lib/gridDensity.ts');
+  const styles = await readFile(new URL('../src/app/blocks/page.module.sass', import.meta.url), 'utf8');
+  const [widest, ...steps] = GRID_COLUMN_BREAKPOINTS;
+  assert.match(styles, new RegExp(`--cols-default, ${widest.columns}\\)`));
+  for (const { maxWidth, columns } of steps) {
+    for (const rule of ['@media', '@container']) {
+      assert.match(
+        styles,
+        new RegExp(`${rule} \\(max-width: ${maxWidth}px\\)\\n  \\.grid\\n    --cols-default: ${columns}\\n`),
+      );
+    }
+  }
+  assert.equal(columnsForDensity(2, -1), 1);
+  assert.equal(columnsForDensity(1, -1), 1);
+  assert.equal(columnsForDensity(5, 1), 6);
+});

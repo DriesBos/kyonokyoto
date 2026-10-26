@@ -30,6 +30,12 @@
     outline: 2px solid currentColor
     outline-offset: 2px
 
+  // Same unavailable state as the header +/- at their limit.
+  &:disabled,
+  &[aria-disabled='true']
+    opacity: 0.5
+    cursor: default
+
   &[aria-pressed='true'] .dot,
   &[aria-current='page'] .dot
     opacity: 1

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   CITY_COOKIE,
@@ -10,6 +11,7 @@ import {
   defaultLocaleForCity,
   type AppCity,
 } from '@/lib/cities';
+import { DEV_PAGE_ENABLED, DEV_PAGE_PATH } from '@/lib/devPage';
 import { LOCALE_COOKIE, uiText, type AppLocale } from '@/lib/i18n';
 import { CATEGORY_DIMENSIONS } from '../../../../data/categories.mjs';
 import {
@@ -115,6 +117,7 @@ export default function SiteHeader({
   onMapToggle,
 }: SiteHeaderProps) {
   const rootRef = useRef<HTMLElement>(null);
+  const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
   const [citiesOpen, setCitiesOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
@@ -295,10 +298,20 @@ export default function SiteHeader({
         role="group"
       >
         <div className={styles.toolbar}>
+          {DEV_PAGE_ENABLED && (
+            <GeneralButton
+              edge="first"
+              verticalPadding="full"
+              href={DEV_PAGE_PATH}
+              label="dev"
+              showDot
+              aria-current={pathname?.startsWith('/dev') ? 'page' : undefined}
+            />
+          )}
           {showFilterControls && (
             <GeneralButton
               className={styles.filterToggle}
-              edge="first"
+              edge={DEV_PAGE_ENABLED ? undefined : 'first'}
               verticalPadding="full"
               label={copy.filter}
               showDot
@@ -314,7 +327,7 @@ export default function SiteHeader({
             />
           )}
           <GeneralButton
-            edge={showFilterControls ? undefined : 'first'}
+            edge={showFilterControls || DEV_PAGE_ENABLED ? undefined : 'first'}
             verticalPadding="full"
             label={copy.map}
             showDot

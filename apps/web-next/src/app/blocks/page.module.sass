@@ -12,8 +12,27 @@
   --cols: var(--block-cols, max(1, calc(var(--cols-default, 5) + var(--grid-density, 0))))
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr))
   align-items: start
-  gap: var(--block-gap-y, 5vmin) var(--block-gap-x, 5vmin)
-  padding: calc(2rem + max(var(--block-dy, 24px), -1 * var(--block-dy, 24px)) * var(--block-lift, 2)) calc(2rem + max(var(--block-dx, 24px), -1 * var(--block-dx, 24px)) * var(--block-lift, 2))
+  // Gaps leave room for both neighbours' depth (one box's back plus a lifted neighbour's front
+  // is |offset| * lift), plus 1rem, so boxes never touch at any screen size.
+  gap: var(--block-gap-y, calc(max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2) + 1rem)) var(--block-gap-x, calc(max(var(--block-dx, 1.5rem), -1 * var(--block-dx, 1.5rem)) * var(--block-lift, 2) + 1rem))
+  // Side padding: a per-breakpoint gap from the screen edge to the box's visible edge. Each side
+  // adds only what the 3D box sticks out there: a lifted front moves (lift - 1) * dx against the
+  // offset, the back sits dx along it. With dx 1.5rem and lift 2 that is 1.5rem per side.
+  --grid-side-gap: 8rem
+  padding: calc(2rem + max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, var(--block-dx, 1.5rem), (1 - var(--block-lift, 2)) * var(--block-dx, 1.5rem))) calc(2rem + max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, -1 * var(--block-dx, 1.5rem), (var(--block-lift, 2) - 1) * var(--block-dx, 1.5rem)))
+
+// Side gap: wide > 1728px, desktop <= 1728px, tablet <= 1280px, mobile <= 768px.
+@media (max-width: 1728px)
+  .grid
+    --grid-side-gap: 4rem
+
+@media (max-width: 1280px)
+  .grid
+    --grid-side-gap: 2rem
+
+@media (max-width: 768px)
+  .grid
+    --grid-side-gap: 1rem
 
 // Breakpoints follow the events panel width (container on MapExperience .events), so a
 // narrower panel with the map open drops columns too. Viewport queries are the fallback
@@ -69,14 +88,12 @@
 .block
   position: relative
   cursor: pointer
-  // depth = base (1, or lift for .tall) + hover boost; back stays on the shared plane,
-  // the front translates toward the viewer by the extra depth
+  // depth = base (1, or lift for .tall) + hover boost; the block and the back stay on the shared
+  // plane, only the front (and BoxEdge) shift toward the viewer by the extra depth (.boxLift)
   --block-depth: calc(var(--depth-base, 1) + var(--depth-hover, 0))
-  transform: translate(calc((1 - var(--block-depth)) * var(--block-dx, 24px)), calc((1 - var(--block-depth)) * var(--block-dy, 24px)))
-  transition: transform 0.18s ease-out
   // stacking follows viewing direction on both axes: dx>0 = seen from the right (right neighbors closer),
   // dy>0 = seen from below (lower rows closer); row term dominates via the x100 weight
-  z-index: calc(mod(var(--block-i, 0), var(--cols, 4)) * sign(var(--block-dx, 24px)) + round(down, var(--block-i, 0) / var(--cols, 4), 1) * 100 * sign(var(--block-dy, 24px)))
+  z-index: calc(mod(var(--block-i, 0), var(--cols, 4)) * sign(var(--block-dx, 1.5rem)) + round(down, var(--block-i, 0) / var(--cols, 4), 1) * 100 * sign(var(--block-dy, 1.5rem)))
 
   // hover lift only on devices with real hover (not touch)
   @media (hover: hover)
@@ -86,61 +103,86 @@
 .tall
   --depth-base: var(--block-lift, 2)
 
-.back
+// Box lines are SVG strokes with vector-effect: non-scaling-stroke, so the skewed faces keep the
+// same line width as the straight edges. Each svg's viewport is the stroke centerline (inset by
+// half a stroke), so the outer edge lands where the front's box ends. Every edge is drawn once:
+// the faces draw the back's outer edges, and the right/left face draws the diagonal it shares
+// with the bottom/top face.
+.boxSides,
+.boxEdge
+  --box-w: var(--block-border-width, 2px)
+  --box-dx: calc(abs(var(--block-dx, 1.5rem)) * var(--block-depth, 1))
+  --box-dy: calc(abs(var(--block-dy, 1.5rem)) * var(--block-depth, 1))
+  // how far the lifted front sits from its resting spot, in the mirrored +x/+y frame
+  --box-ex: calc(abs(var(--block-dx, 1.5rem)) * (var(--block-depth, 1) - 1))
+  --box-ey: calc(abs(var(--block-dy, 1.5rem)) * (var(--block-depth, 1) - 1))
   position: absolute
-  inset: 0
-  border: var(--block-border-width, 2px) solid var(--color-text)
-  background: var(--color-background)
-  transform: translate(calc(var(--block-dx, 24px) * var(--block-depth, 1)), calc(var(--block-dy, 24px) * var(--block-depth, 1)))
-  transition: transform 0.18s ease-out
+  inset: calc(var(--box-w) / 2)
+  width: calc(100% - var(--box-w))
+  height: calc(100% - var(--box-w))
+  overflow: visible
+  pointer-events: none
+  fill: none
+  stroke: var(--color-text)
+  stroke-width: var(--box-w)
+  stroke-linejoin: round
+  stroke-linecap: round
 
-.face
-  position: absolute
-  border: var(--block-border-width, 2px) solid var(--color-text)
-  background: color-mix(in srgb, var(--color-background), var(--color-text) var(--block-shade, 12%))
-  transition: width 0.18s ease-out, height 0.18s ease-out
+  rect
+    vector-effect: non-scaling-stroke
+    transform-box: view-box
+    transform-origin: 0 0
+    transition: transform var(--block-motion, 0.18s ease-out), width var(--block-motion, 0.18s ease-out), height var(--block-motion, 0.18s ease-out)
 
-.faceRight
-  left: 100%
-  top: 0
-  height: 100%
-  width: max(calc(var(--block-dx, 24px) * var(--block-depth, 1)), 0px)
-  // no border on the front-junction edge (the front's own border draws that line);
-  // the back-junction edge is drawn here since the face fill covers the back's border
-  border-width: var(--block-border-width, 2px) min(var(--block-border-width, 2px), max(calc(var(--block-dx, 24px) * var(--block-depth, 1)), 0px)) var(--block-border-width, 2px) 0
-  transform-origin: left
-  transform: skewY(atan2(var(--block-dy, 24px), var(--block-dx, 24px)))
+.boxEdge
+  z-index: 2
 
-.faceLeft
-  right: 100%
-  top: 0
-  height: 100%
-  width: max(calc(-1 * var(--block-dx, 24px) * var(--block-depth, 1)), 0px)
-  border-width: var(--block-border-width, 2px) 0 var(--block-border-width, 2px) min(var(--block-border-width, 2px), max(calc(-1 * var(--block-dx, 24px) * var(--block-depth, 1)), 0px))
-  transform-origin: right
-  transform: skewY(atan2(var(--block-dy, 24px), var(--block-dx, 24px)))
+// The lift moves the front with left/top rather than a transform: transforms run on the compositor
+// while the svg animates on the main thread, and in Safari the two drift apart mid-transition.
+// Keeping the block and back still and moving everything on the main thread keeps them in step.
+.boxLift,
+.boxEdge
+  left: calc((1 - var(--block-depth, 1)) * var(--block-dx, 1.5rem))
+  top: calc((1 - var(--block-depth, 1)) * var(--block-dy, 1.5rem))
+  transition: left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out)
 
-.faceTop
-  bottom: 100%
-  left: 0
-  width: 100%
-  height: max(calc(-1 * var(--block-dy, 24px) * var(--block-depth, 1)), 0px)
-  border-width: min(var(--block-border-width, 2px), max(calc(-1 * var(--block-dy, 24px) * var(--block-depth, 1)), 0px)) var(--block-border-width, 2px) 0 var(--block-border-width, 2px)
-  transform-origin: bottom
-  transform: skewX(atan2(var(--block-dx, 24px), var(--block-dy, 24px)))
+.boxEdge
+  left: calc(var(--box-w) / 2 + (1 - var(--block-depth, 1)) * var(--block-dx, 1.5rem))
+  top: calc(var(--box-w) / 2 + (1 - var(--block-depth, 1)) * var(--block-dy, 1.5rem))
+  right: auto
+  bottom: auto
 
-.faceBottom
-  top: 100%
-  left: 0
-  width: 100%
-  height: max(calc(var(--block-dy, 24px) * var(--block-depth, 1)), 0px)
-  border-width: 0 var(--block-border-width, 2px) min(var(--block-border-width, 2px), max(calc(var(--block-dy, 24px) * var(--block-depth, 1)), 0px)) var(--block-border-width, 2px)
-  transform-origin: top
-  transform: skewX(atan2(var(--block-dx, 24px), var(--block-dy, 24px)))
+// the faces below only handle +x/+y; negative offsets mirror the whole box around its centre
+.boxOrient
+  transform-box: view-box
+  transform-origin: 50% 50%
+  transform: scale(calc(1 - 2 * max(0, -1 * sign(var(--block-dx, 1.5rem)))), calc(1 - 2 * max(0, -1 * sign(var(--block-dy, 1.5rem)))))
 
-:global([data-blocks='wireframe']) .face,
-:global([data-blocks='wireframe']) .back
-  background: transparent
+.boxBack
+  fill: var(--color-background)
+  transform: translate(abs(var(--block-dx, 1.5rem)), abs(var(--block-dy, 1.5rem)))
+  // the faces draw the back's right and bottom edges; its top and left only show in wireframe
+  clip-path: inset(calc(-1 * var(--box-w)) calc(var(--box-w) / 2) calc(var(--box-w) / 2) calc(-1 * var(--box-w)))
+
+.boxFaceY,
+.boxFaceX
+  fill: color-mix(in srgb, var(--color-background), var(--color-text) var(--block-shade, 12%))
+
+.boxFaceY
+  height: var(--box-dy)
+  transform: translate(calc(-1 * var(--box-ex)), calc(100% - var(--box-ey))) skewX(atan2(abs(var(--block-dx, 1.5rem)), abs(var(--block-dy, 1.5rem))))
+  // the side face draws the shared diagonal; clip this face's copy (the clip is skewed with the
+  // face, so its horizontal inset is half a stroke divided by the diagonal's cosine)
+  clip-path: inset(calc(-1 * var(--box-w)) calc(var(--box-w) / 2 / cos(atan2(abs(var(--block-dx, 1.5rem)), abs(var(--block-dy, 1.5rem))))) calc(-1 * var(--box-w)) calc(-1 * var(--box-w)))
+
+.boxFaceX
+  width: var(--box-dx)
+  transform: translate(calc(100% - var(--box-ex)), calc(-1 * var(--box-ey))) skewY(atan2(abs(var(--block-dy, 1.5rem)), abs(var(--block-dx, 1.5rem))))
+
+:global([data-blocks='wireframe']) .boxBack,
+:global([data-blocks='wireframe']) .boxFaceY,
+:global([data-blocks='wireframe']) .boxFaceX
+  fill: transparent
 
 .front
   position: relative
@@ -148,19 +190,26 @@
   display: flex
   flex-direction: column
   gap: 1rem
-  border: var(--block-border-width, 2px) solid var(--color-text)
+  // transparent so the layout keeps the stroke's room; BoxEdge draws the outline on top
+  border: var(--block-border-width, 2px) solid transparent
   background: var(--color-background)
-  padding: 0 0 2rem
+  padding: 0 0 1rem
 
 .media
   position: relative
   z-index: 3
   margin: 0.5rem 0.5rem 0
 
+// Figma 624:3858: venue and date above the title, 14px uppercase with a 2px line gap
 .meta
-  font-size: 0.66rem
+  display: flex
+  flex-direction: column
+  gap: 0.125rem
+  padding-inline: 0.5rem
+  font-size: var(--type-meta-size)
+  line-height: normal
+  letter-spacing: -0.01em
   text-transform: uppercase
-  padding-inline: 1rem
 
   p
     margin: 0
@@ -182,9 +231,11 @@
 
 .title
   margin: 0
+  // the design insets the title a further 8px past the meta
   padding-inline: 1rem
-  font-size: 1.25rem
-  line-height: 1.2
+  font-size: 1.625rem
+  line-height: normal
+  letter-spacing: -0.01em
   display: -webkit-box
   -webkit-box-orient: vertical
   -webkit-line-clamp: 3
@@ -193,7 +244,7 @@
 .detail
   position: relative
   z-index: 3
-  padding-inline: 1rem
+  padding-inline: 0.5rem
   font-size: 0.875rem
 
 .detail [data-event-card-part='description']
@@ -229,22 +280,7 @@
 // mobile: two smaller blocks per row
 @media (max-width: 560px)
   .grid
-    padding: calc(1rem + max(var(--block-dy, 24px), -1 * var(--block-dy, 24px)) * var(--block-lift, 2)) calc(0.75rem + max(var(--block-dx, 24px), -1 * var(--block-dx, 24px)) * var(--block-lift, 2))
-
-  .front
-    gap: 0.5rem
-    padding-bottom: 1.25rem
-
-  .media
-    margin: 0.375rem 0.375rem 0
-
-  .meta
-    padding-inline: 0.5rem
-    font-size: 0.6rem
-
-  .title
-    padding-inline: 0.5rem
-    font-size: 1rem
+    padding-block: calc(1rem + max(var(--block-dy, 1.5rem), -1 * var(--block-dy, 1.5rem)) * var(--block-lift, 2))
 
 .landing
   position: fixed
@@ -323,7 +359,8 @@
 
 .landingBlock
   --landing-block-width: 25vmin
-  --block-border-width: clamp(2px, calc(1.25vmin - 3px), 6px)
+  // twice the event cards' 2px line
+  --block-border-width: 4px
   --block-depth: 1
   position: absolute
   width: var(--landing-block-width)
@@ -336,8 +373,6 @@
   appearance: none
   cursor: pointer
   pointer-events: auto
-  transform: translate(calc((1 - var(--block-depth)) * var(--block-dx, 24px)), calc((1 - var(--block-depth)) * var(--block-dy, 24px)))
-  transition: transform 180ms ease-out
 
   &[data-position='1']
     top: 12.6%
@@ -362,14 +397,16 @@
     .landingTitle
       opacity: 1
 
-  .back,
-  .face,
-  .front
-    border-color: currentColor
-    background: transparent
+  .boxSides,
+  .boxEdge
+    stroke: currentColor
 
-  .back
-    background: rgb(0 0 0 / .25)
+  .boxFaceY,
+  .boxFaceX
+    fill: transparent
+
+  .boxBack
+    fill: rgb(0 0 0 / .25)
 
   .front
     width: 100%
@@ -381,19 +418,11 @@
     background: rgb(255 255 255 / .165)
     -webkit-backdrop-filter: blur(10px)
     backdrop-filter: blur(10px)
-    transition: background-color 180ms ease-out
+    transition: background-color 180ms ease-out, left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out)
     padding: .6vmin
     color: inherit
     text-align: left
     overflow: hidden
-
-    &::after
-      content: ''
-      position: absolute
-      z-index: 1
-      inset: 0
-      box-shadow: inset 0 0 0 var(--block-border-width, 2px) currentColor
-      pointer-events: none
 
   &:focus-visible
     outline: 0

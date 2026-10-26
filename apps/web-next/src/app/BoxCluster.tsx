@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { type ClusterBox, boxClusterHold, boxClusterLayout } from '@/lib/boxCluster';
-import blockStyles from './blocks/page.module.sass';
+import { BoxEdge, BoxSides, boxLift } from './blocks/BoxFrame';
 import styles from './BoxCluster.module.sass';
 
 export default function BoxCluster({
@@ -52,12 +52,9 @@ export default function BoxCluster({
               data-cluster-box
               style={{ '--bob-lift': box.lift } as React.CSSProperties}
             >
-              <span className={blockStyles.back} />
-              <span className={`${blockStyles.face} ${blockStyles.faceTop}`} />
-              <span className={`${blockStyles.face} ${blockStyles.faceBottom}`} />
-              <span className={`${blockStyles.face} ${blockStyles.faceLeft}`} />
-              <span className={`${blockStyles.face} ${blockStyles.faceRight}`} />
-              <span className={styles.front}>{box.label}</span>
+              <BoxSides />
+              <span className={`${styles.front} ${boxLift}`}>{box.label}</span>
+              <BoxEdge />
             </span>
           </span>
         ))}

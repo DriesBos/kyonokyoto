@@ -145,7 +145,7 @@ export function EventCardMedia({
   );
 }
 
-function ActionIcon({ name }: { name: 'calendar' | 'map' | 'exit' }) {
+export function ActionIcon({ name }: { name: 'calendar' | 'map' | 'exit' }) {
   if (name === 'exit') {
     return (
       <svg className={styles.icon} viewBox="0 -960 960 960" aria-hidden="true">

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { resolveBlocksLandingSlides, type BlocksLandingCandidate } from '@/lib/blocksLanding';
 import { landingMediaDeliveryUrl } from '@/lib/mediaDelivery';
+import { BoxEdge, BoxSides } from './BoxFrame';
 import styles from './page.module.sass';
 
 const slideHoldMs = 4000;
@@ -251,18 +252,15 @@ export default function BlocksLanding({
               onPointerEnter={(event) => hoverSlide(event, index)}
               onPointerLeave={leaveSlide}
             >
-              <span className={styles.back} aria-hidden="true" />
-              <span className={`${styles.face} ${styles.faceTop}`} aria-hidden="true" />
-              <span className={`${styles.face} ${styles.faceBottom}`} aria-hidden="true" />
-              <span className={`${styles.face} ${styles.faceLeft}`} aria-hidden="true" />
-              <span className={`${styles.face} ${styles.faceRight}`} aria-hidden="true" />
-              <span className={styles.front}>
+              <BoxSides />
+              <span className={`${styles.front} ${styles.boxLift}`}>
                 <span className={styles.landingMeta}>
                   <span>{slide.institution}</span>
                   <span>{slide.date}</span>
                 </span>
                 <span className={styles.landingTitle}>{slide.title}</span>
               </span>
+              <BoxEdge />
             </button>
           );
         })}

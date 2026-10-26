@@ -1,4 +1,4 @@
-// small 3D boxes reusing the event card's back/face styles at a quarter of the depth
+// small 3D boxes reusing the event card's BoxSides/BoxEdge svg at a quarter of the depth
 // the layout follows the cluster's own width (the list narrows when the map opens),
 // so the root is a size container and the grid lives on the field inside it
 .root
@@ -7,8 +7,8 @@
   margin-block: 2rem 3rem
 
 .field
-  --cluster-dx: calc(var(--block-dx, 24px) * 0.25)
-  --cluster-dy: calc(var(--block-dy, 24px) * 0.25)
+  --cluster-dx: calc(var(--block-dx, 1.5rem) * 0.25)
+  --cluster-dy: calc(var(--block-dy, 1.5rem) * 0.25)
   --cols: 7
   --rows: 3
   position: relative
@@ -30,19 +30,14 @@
 .box
   --block-dx: var(--cluster-dx)
   --block-dy: var(--cluster-dy)
-  // same mechanism as event cards: the back stays on the plane, the front moves
-  // toward the viewer by the extra depth, and transform/width/height transition
+  // same mechanism as event cards: the box and back stay on the plane, the front moves
+  // toward the viewer by the extra depth (.boxLift), and the svg faces stretch to follow
   --block-depth: 1
   --box-rise: 0.6s
   position: relative
   display: block
-  transform: translate(calc((1 - var(--block-depth)) * var(--block-dx)), calc((1 - var(--block-depth)) * var(--block-dy)))
-  transition: transform var(--box-rise) linear
-
-  // span outranks the card's own .back/.face transition shorthand
-  > span
-    transition-duration: var(--box-rise)
-    transition-timing-function: linear
+  // the shared box svg reads its timing from here
+  --block-motion: var(--box-rise) linear
 
   &[data-raised]
     --block-depth: calc(1 + var(--bob-lift, 1))
@@ -57,7 +52,7 @@
   z-index: 1
   display: block
   padding: 0.4em 0.7em
-  border: var(--block-border-width, 2px) solid var(--color-text)
+  border: var(--block-border-width, 2px) solid transparent
   background: var(--color-background)
   color: var(--color-text)
   font-size: clamp(0.875rem, 1.6vmin, 1.25rem)

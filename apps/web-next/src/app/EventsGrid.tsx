@@ -9,6 +9,7 @@ import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '@/lib/mediaDeli
 import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
 import BoxCluster from './BoxCluster';
+import { BoxEdge, BoxSides } from './blocks/BoxFrame';
 import styles from './blocks/page.module.sass';
 
 const groupOrder = ['ongoing', 'upcoming', 'permanent'] as const;
@@ -123,12 +124,8 @@ export default function EventsGrid({
                         } as React.CSSProperties
                       }
                     >
-                      <div className={styles.back} />
-                      <div className={`${styles.face} ${styles.faceTop}`} />
-                      <div className={`${styles.face} ${styles.faceBottom}`} />
-                      <div className={`${styles.face} ${styles.faceLeft}`} />
-                      <div className={`${styles.face} ${styles.faceRight}`} />
-                      <div className={styles.front}>
+                      <BoxSides />
+                      <div className={`${styles.front} ${styles.boxLift}`}>
                         <EventCardMedia
                           className={styles.media}
                           eventId={event.id}
@@ -139,8 +136,10 @@ export default function EventsGrid({
                             title: `${event.title} video`,
                           }))}
                         />
-                        <h2 className={styles.title}>{event.title}</h2>
                         <div className={styles.meta}>
+                          <p>
+                            {event.festival ? event.venue || event.institution : event.institution}
+                          </p>
                           <p>
                             {event.date}
                             {event.eventKind === 'festival' ? ' — FESTIVAL' : null}
@@ -159,10 +158,8 @@ export default function EventsGrid({
                               )}
                             </p>
                           )}
-                          <p>
-                            {event.festival ? event.venue || event.institution : event.institution}
-                          </p>
                         </div>
+                        <h2 className={styles.title}>{event.title}</h2>
                         <EventCardDisclosure
                           eventId={event.id}
                           detailId={detailId}
@@ -182,6 +179,7 @@ export default function EventsGrid({
                           locale={locale}
                         />
                       </div>
+                      <BoxEdge />
                     </article>
                   );
                 })}

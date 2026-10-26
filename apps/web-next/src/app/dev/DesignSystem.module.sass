@@ -1,0 +1,84 @@
+// Local-only /dev page: layout around the real components, no component styles of its own.
+.main
+  display: grid
+  gap: 3rem
+  padding: 2rem var(--page-padding-x) 4rem
+
+.section
+  display: grid
+  gap: 1rem
+  padding-top: 0.5rem
+  border-top: var(--stroke-width) solid var(--stroke)
+
+.heading
+  text-transform: lowercase
+
+.note
+  margin: 0
+  max-width: 40rem
+  font-size: var(--type-meta-size)
+
+.row
+  display: flex
+  flex-wrap: wrap
+  align-items: flex-end
+  gap: 2rem 3rem
+
+.specimen
+  display: grid
+  justify-items: start
+  gap: 0.5rem
+  margin: 0
+
+.sample
+  display: flex
+  align-items: center
+  min-height: 3rem
+
+.caption
+  font-size: var(--type-meta-size)
+
+.swatch
+  display: block
+  width: 6rem
+  height: 3rem
+  // Keeps the beige swatch visible on the beige page.
+  outline: var(--stroke-width) solid var(--stroke)
+  outline-offset: calc(-1 * var(--stroke-width))
+
+.actionIcon
+  font-size: 1.5rem
+
+.table
+  width: 100%
+  max-width: 40rem
+  border-collapse: collapse
+  font-variant-numeric: tabular-nums
+
+  th,
+  td
+    padding: 0.5rem 1rem 0.5rem 0
+    border-top: var(--stroke-width) solid var(--stroke)
+    font-weight: 400
+    text-align: left
+
+  td[data-active]
+    background: var(--color-pink)
+
+// Side padding of the live grid, measured from the real .grid styles.
+.liveGrid
+  position: relative
+
+.paddingGuide
+  position: absolute
+  top: 0
+  bottom: 0
+  background: var(--color-pink)
+  opacity: 0.25
+  pointer-events: none
+
+.cell
+  display: grid
+  place-items: center
+  aspect-ratio: 1
+  border: var(--stroke-width) solid var(--stroke)
