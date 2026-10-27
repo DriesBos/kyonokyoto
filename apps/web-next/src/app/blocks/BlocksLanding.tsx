@@ -31,6 +31,8 @@ const touchThreshold = 48;
 const introFadeMs = 1000;
 const introPauseMs = 500;
 const introRaiseMs = 600;
+// settle margin so the intro ends after the rise transitions have fully finished
+const introSettleMs = 100;
 const introImageWaitMs = 2500;
 
 // The events list scrolls inside [data-events-section] when the map is open, else the window.
@@ -240,7 +242,10 @@ export default function BlocksLanding({
     if (!hasSlides || boxesGrown) return;
     const raiseAt = introFadeMs + introPauseMs;
     const raise = window.setTimeout(() => setBoxesRaised(true), raiseAt);
-    const grown = window.setTimeout(() => setBoxesGrown(true), raiseAt + introRaiseMs);
+    const grown = window.setTimeout(
+      () => setBoxesGrown(true),
+      raiseAt + introRaiseMs + introSettleMs,
+    );
     return () => {
       window.clearTimeout(raise);
       window.clearTimeout(grown);

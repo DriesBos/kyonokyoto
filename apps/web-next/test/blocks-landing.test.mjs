@@ -155,7 +155,7 @@ test('Blocks landing changes slides with a direct fade and no shutter rows', asy
   // the 3D box svg clips its own duplicate lines; anything else clipping is a shutter coming back
   const withoutBox = styles.replace(/\/\/ Box lines are SVG strokes[\s\S]*?\n(?=\.front\n)/, '');
   assert.doesNotMatch(withoutBox, /landingShutter|clip-path/);
-  assert.match(styles, /transition: opacity 600ms ease/);
+  assert.match(styles, /transition: opacity 400ms ease/);
   assert.match(
     styles,
     /--landing-block-width: min\(calc\(\(100cqw - \(var\(--landing-cols\) - 1\) \* var\(--landing-col-gap\)\)/,

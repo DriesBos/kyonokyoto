@@ -113,6 +113,18 @@
     --cols-default: 1
     --grid-density: 0
 
+// Phones (under 500px): shallower boxes so the two columns get wider. Depth drops from 1.5 to 1
+// space unit and the tall cards lift 1.5x instead of 2x; the gaps and side padding follow both.
+@media (max-width: 499px)
+  .grid
+    --space-offset: var(--space)
+    --block-lift: 1.5
+
+@container (max-width: 499px)
+  .grid
+    --space-offset: var(--space)
+    --block-lift: 1.5
+
 .divider
   grid-column: 1 / -1
   width: 100%
@@ -462,7 +474,13 @@
   // twice the event cards' 2px line
   --block-border-width: 4px
   --block-depth: 1
+  // fade speed for fills, frost and copy: 180ms, 600ms during the intro (set below). One
+  // transition list throughout, so the intro ending never cancels a running transition
+  --landing-fade: 180ms
   position: absolute
+  // always its own stacking context: activation only raises z-index 0 → 1, so the frosted
+  // fronts are never re-layered (that re-layering flickered box 3 when box 1 activated)
+  z-index: 0
   width: var(--landing-block-width)
   // fixed 3:4 height: aspect-ratio alone lets long titles stretch the box past its slot
   height: var(--landing-block-height)
@@ -518,6 +536,7 @@
 
   .boxBack
     fill: rgb(0 0 0 / .25)
+    transition: fill var(--landing-fade) ease-out, transform var(--block-motion, 0.18s ease-out), width var(--block-motion, 0.18s ease-out), height var(--block-motion, 0.18s ease-out)
 
   .front
     width: 100%
@@ -529,7 +548,7 @@
     background: rgb(255 255 255 / .165)
     -webkit-backdrop-filter: blur(10px)
     backdrop-filter: blur(10px)
-    transition: background-color 180ms ease-out, left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out)
+    transition: background-color var(--landing-fade) ease-out, backdrop-filter var(--landing-fade) ease-out, -webkit-backdrop-filter var(--landing-fade) ease-out, left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out)
     padding: 0.75rem 0.75rem 1rem
     color: inherit
     text-align: left
@@ -553,6 +572,13 @@
 @media (max-width: 768px)
   .landingBlocks
     --landing-side-gap: 1rem
+
+  // mobile: the site's normal line and the title one step smaller
+  .landingBlock
+    --block-border-width: var(--stroke-width, 2px)
+
+  .landingTitle
+    font-size: var(--type-step-1)
 
 @media (max-width: 1440px)
   .landingBlocks
@@ -592,6 +618,7 @@
 
 .landing:not([data-intro-done]) .landingBlock
   --block-motion: 600ms cubic-bezier(.22, 1, .36, 1)
+  --landing-fade: 600ms
 
 // the first image starts 200ms into the 600ms rise, so its 400ms fade ends as box 1 lands
 .landing:not([data-intro-done]) .landingImage
@@ -615,9 +642,6 @@
 .landing:not([data-boxes-raised]) .landingBlock .boxBack
   fill: transparent
 
-.landing:not([data-intro-done]) .landingBlock .boxBack
-  transition: fill 600ms ease-out, transform var(--block-motion), width var(--block-motion), height var(--block-motion)
-
 .landing:not([data-boxes-raised]) .landingBlock .front
   background: transparent
   -webkit-backdrop-filter: blur(0)
@@ -625,12 +649,6 @@
 
 .landing:not([data-boxes-raised]) :is(.landingMeta, .landingTitle)
   opacity: 0
-
-.landing:not([data-intro-done]) .landingBlock .front
-  transition: background-color 600ms ease-out, backdrop-filter 600ms ease-out, -webkit-backdrop-filter 600ms ease-out, left var(--block-motion), top var(--block-motion)
-
-.landing:not([data-intro-done]) :is(.landingMeta, .landingTitle)
-  transition: opacity 600ms ease-out, filter 180ms ease-out
 
 @media (prefers-reduced-motion: reduce)
   .landingBlock
@@ -646,7 +664,7 @@
   opacity: .33
   // inactive text is slightly out of focus
   filter: blur(1.5px)
-  transition: opacity 180ms ease-out, filter 180ms ease-out
+  transition: opacity var(--landing-fade, 180ms) ease-out, filter 180ms ease-out
 
 .landingMeta
   // one Minor Third step above the card meta
@@ -665,3 +683,9 @@
   line-height: 1.05
   letter-spacing: -.01em
   overflow-wrap: break-word
+  // long titles end in an ellipsis instead of running out of the box
+  display: -webkit-box
+  -webkit-box-orient: vertical
+  -webkit-line-clamp: 4
+  line-clamp: 4
+  overflow: hidden
