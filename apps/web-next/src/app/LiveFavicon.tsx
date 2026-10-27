@@ -6,7 +6,7 @@ import { faviconDataUrl } from '@/lib/favicon';
 const readColor = (style: CSSStyleDeclaration, name: string) => style.getPropertyValue(name).trim();
 
 // Keeps the tab icon in the colours on screen: the city colour on the light or dark background.
-// It follows data-city, the header toggle (data-color-scheme) and system dark mode. Safari keeps
+// It follows data-city and the header toggle (data-color-scheme). Safari keeps
 // the static icon, since it ignores favicon changes after load.
 export default function LiveFavicon() {
   useEffect(() => {
@@ -34,11 +34,8 @@ export default function LiveFavicon() {
       attributeFilter: ['data-city', 'data-color-scheme'],
     });
     observer.observe(document.head, { childList: true });
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    media.addEventListener('change', update);
     return () => {
       observer.disconnect();
-      media.removeEventListener('change', update);
       link.remove();
     };
   }, []);

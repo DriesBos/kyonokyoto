@@ -246,6 +246,8 @@
   // transparent so the layout keeps the stroke's room; BoxEdge draws the outline on top
   border: var(--block-border-width, 2px) solid transparent
   background: var(--color-background)
+  // adds to the content's (closed) or detail's (open) 1rem: 1.5rem at the bottom either way
+  padding-bottom: 0.5rem
 
 .media
   position: relative
@@ -260,7 +262,8 @@
   display: flex
   flex-direction: column
   gap: 1rem
-  padding: 1rem 0.5rem
+  // 0.75rem between the image and the meta
+  padding: 0.75rem 0.5rem 1rem
 
   // slider dots: 1rem under the image (level with the venue line), 0.5rem in from the right
   // (lined up with the image inset)
@@ -303,8 +306,9 @@
 
 .title
   margin: 0
-  // the design insets the title a further 8px past the meta
-  padding-inline: 0.5rem
+  // closed: in line with the meta (0.5rem from the card edge); open: the design's extra 8px
+  // inset (1rem from the edge, with the description and actions) plus 0.5rem above
+  padding: 0 0.5rem 0 0
   font-size: var(--type-step-1)
   line-height: normal
   letter-spacing: -0.01em
@@ -352,6 +356,8 @@
   --depth-hover: 0.35
 
   .title
+    padding-top: 0.5rem
+    padding-left: 0.5rem
     -webkit-line-clamp: unset
 
 .landing

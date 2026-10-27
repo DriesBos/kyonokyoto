@@ -26,8 +26,8 @@ body
   :root[data-city='#{$city}']
     --color-text: #{$color}
 
-// Dark mode: an explicit choice from the header toggle (data-color-scheme), else the system
-// setting. Only the background changes; each city keeps its type colour.
+// Dark mode: only when the header toggle sets data-color-scheme (never from the system setting;
+// every page load starts light). Only the background changes; each city keeps its type colour.
 @each $city, $background in (kyoto: $color-kyoto-dark-background, osaka: $color-osaka-dark-background, tokyo: $color-tokyo-dark-background, hong-kong: $color-hong-kong-dark-background)
   :root[data-city='#{$city}']
     --color-background-dark: #{$background}
@@ -38,11 +38,6 @@ body
 :root[data-color-scheme='dark']
   --color-background: var(--color-background-dark, #{$color-kyoto-dark-background})
   color-scheme: dark
-
-@media (prefers-color-scheme: dark)
-  :root:not([data-color-scheme='light'])
-    --color-background: var(--color-background-dark, #{$color-kyoto-dark-background})
-    color-scheme: dark
 
 // Header and control tokens ported from apps/web (src/styles/app.sass).
 :root

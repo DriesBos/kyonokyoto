@@ -5,7 +5,6 @@ import GoogleAnalytics from '@/app/GoogleAnalytics';
 import LiveFavicon from '@/app/LiveFavicon';
 import ServiceWorker from '@/app/ServiceWorker';
 import type { AppCity } from '@/lib/cities';
-import { colorSchemeInitScript } from '@/lib/colorScheme';
 import type { AppLocale } from '@/lib/i18n';
 import { siteOrigin } from '@/lib/seo';
 import '@/styles/globals.sass';
@@ -55,7 +54,6 @@ export default function RootDocument({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: colorSchemeInitScript }} />
       </head>
       <body>
         {children}

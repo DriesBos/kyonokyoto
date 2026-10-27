@@ -1,11 +1,11 @@
-// Light/dark colour scheme. Nothing stored means "follow prefers-color-scheme"; the header
-// square toggle stores a choice only while it differs from the system setting.
+// Light/dark colour scheme. Every page load starts light (Dries, 2026-10-26): no stored choice
+// and no prefers-color-scheme. Dark mode only comes from pressing the header square toggle, and
+// lasts until the next full page load.
 
 import type { AppCity } from './cities';
 
 export type ColorScheme = 'light' | 'dark';
 
-export const COLOR_SCHEME_STORAGE_KEY = 'kyo-color-scheme';
 export const COLOR_SCHEME_ATTRIBUTE = 'data-color-scheme';
 export const LIGHT_BACKGROUND = '#efefef';
 
@@ -17,12 +17,6 @@ export const DARK_BACKGROUNDS: Record<AppCity, string> = {
   tokyo: '#080b0f',
   'hong-kong': '#0f0d09',
 };
-
-export const normalizeColorScheme = (value: unknown): ColorScheme | null =>
-  value === 'light' || value === 'dark' ? value : null;
-
-// Runs in <head> before first paint so a saved scheme never flashes the other one.
-export const colorSchemeInitScript = `try{var s=localStorage.getItem('${COLOR_SCHEME_STORAGE_KEY}');if(s==='light'||s==='dark')document.documentElement.setAttribute('${COLOR_SCHEME_ATTRIBUTE}',s)}catch(e){}`;
 
 const channel = (value: number) => {
   const c = value / 255;

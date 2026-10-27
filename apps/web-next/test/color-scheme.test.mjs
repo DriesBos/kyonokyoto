@@ -2,22 +2,22 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const { DARK_BACKGROUNDS, colorSchemeInitScript, contrastRatio } =
-  await import('../src/lib/colorScheme.ts');
+const { DARK_BACKGROUNDS, contrastRatio } = await import('../src/lib/colorScheme.ts');
 const { cityConfigs } = await import('../src/lib/cities.ts');
 
-test('Colour scheme init script only sets light or dark', () => {
-  const run = (stored) => {
-    const attributes = {};
-    const document = { documentElement: { setAttribute: (k, v) => (attributes[k] = v) } };
-    const localStorage = { getItem: () => stored };
-    new Function('document', 'localStorage', colorSchemeInitScript)(document, localStorage);
-    return attributes['data-color-scheme'];
-  };
-  assert.equal(run('dark'), 'dark');
-  assert.equal(run('light'), 'light');
-  assert.equal(run('blue'), undefined);
-  assert.equal(run(null), undefined);
+test('Every page load starts light: no stored or system colour scheme', async () => {
+  const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
+  const [globals, toggle, root, favicon] = await Promise.all([
+    read('../src/styles/globals.sass'),
+    read('../src/app/ColorSchemeToggle.tsx'),
+    read('../src/app/RootDocument.tsx'),
+    read('../src/app/LiveFavicon.tsx'),
+  ]);
+  for (const source of [globals, toggle, root, favicon]) {
+    assert.doesNotMatch(source, /prefers-color-scheme/);
+  }
+  assert.doesNotMatch(toggle, /localStorage/);
+  assert.doesNotMatch(root, /colorScheme/);
 });
 
 test('Dark backgrounds match the sass tokens', async () => {

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const { faviconDataUrl, faviconPath, staticFaviconSvg } = await import('../src/lib/favicon.ts');
-const { DARK_BACKGROUNDS, LIGHT_BACKGROUND } = await import('../src/lib/colorScheme.ts');
+const { LIGHT_BACKGROUND } = await import('../src/lib/colorScheme.ts');
 const { cityConfigs } = await import('../src/lib/cities.ts');
 const { buildMetadata } = await import('../src/lib/seo.ts');
 
@@ -13,7 +13,8 @@ test('Static city favicons match the generator', async () => {
     assert.equal(file, staticFaviconSvg(slug));
     assert.ok(file.includes(`stroke="${themeColor}"`));
     assert.ok(file.includes(`fill="${LIGHT_BACKGROUND}"`));
-    assert.ok(file.includes(`fill:${DARK_BACKGROUNDS[slug]}`));
+    // Pages always load light, so the static icon has no dark variant.
+    assert.doesNotMatch(file, /prefers-color-scheme/);
   }
 });
 
