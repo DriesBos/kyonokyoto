@@ -15,7 +15,7 @@
   overflow: hidden;
   pointer-events: none;
 }
-.media[data-expanded=true] {
+.media[data-expanded='true'] {
   overflow-x: auto;
   overflow-y: hidden;
   pointer-events: auto;
@@ -65,23 +65,25 @@
   object-fit: cover;
 }
 
-.media[data-overflow=true] {
+.media[data-overflow='true'] {
   container-type: inline-size;
 }
-.media[data-overflow=true] .mediaTrack {
+.media[data-overflow='true'] .mediaTrack {
   width: max-content;
   min-width: 100%;
-  height: calc((100cqi - 2 * var(--media-inset, 0px) - var(--media-peek)) / var(--media-lead-aspect-ratio, 4/3));
+  height: calc(
+    (100cqi - 2 * var(--media-inset, 0px) - var(--media-peek)) / var(--media-lead-aspect-ratio, 4/3)
+  );
 }
-.media[data-overflow=true] .frame,
-.media[data-overflow=true] .embed {
+.media[data-overflow='true'] .frame,
+.media[data-overflow='true'] .embed {
   flex: 0 0 auto;
   height: 100%;
 }
-.media[data-overflow=true] .embed {
+.media[data-overflow='true'] .embed {
   aspect-ratio: 16/9;
 }
-.media[data-overflow=true] .frame img {
+.media[data-overflow='true'] .frame img {
   width: auto;
 }
 
@@ -148,7 +150,7 @@
   overflow: visible;
 }
 .actionContent::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0.5rem;

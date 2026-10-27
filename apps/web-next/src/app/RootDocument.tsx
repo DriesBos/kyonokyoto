@@ -53,8 +53,7 @@ export default function RootDocument({
       data-locale={locale}
       suppressHydrationWarning
     >
-      <head>
-      </head>
+      <head></head>
       <body>
         {children}
         <LiveFavicon />
