@@ -39,14 +39,21 @@
 
   svg,
   .wordmark
+    // Scroll-bound shrink from the logo size to the title size (step-2 / step-5 in
+    // typography.sass). It scales with a transform and only the height gives back space, so the
+    // logo keeps its full width: the nav never re-wraps (2 rows ↔ 1 row on phones) mid-scroll.
+    --logo-min-scale: calc(1.44 / 2.488)
+    --logo-scale: calc(1 - (1 - var(--logo-min-scale)) * var(--header-shrink, 0))
+    --logo-height: calc(var(--type-logo-size) * 1.22)
     display: block
     width: auto
-    // Scroll-bound shrink from the logo size to the title size.
-    --logo-size: calc(var(--type-logo-size) + (var(--type-title-size) - var(--type-logo-size)) * var(--header-shrink, 0))
-    height: calc(var(--logo-size) * 1.22)
-    font-size: var(--logo-size)
+    height: var(--logo-height)
+    margin-bottom: calc(var(--logo-height) * (var(--logo-scale) - 1))
+    font-size: var(--type-logo-size)
     line-height: 1.22
     color: inherit
+    transform: scale(var(--logo-scale))
+    transform-origin: left top
 
 .wordmark
   white-space: nowrap
