@@ -365,6 +365,80 @@
     outline: 3px solid var(--color-text)
     outline-offset: -6px
 
+// Favourite toggle (EventStarButton): always visible in the image's top-right corner, an outline
+// star that fills when starred. Lives in the lifted front so it rides the 3D lift, above the media
+// and the disclosure button. 28px hit area around a 20px star.
+.star
+  position: absolute
+  z-index: 4
+  top: calc(0.5rem + 6px)
+  right: calc(0.5rem + 6px)
+  display: grid
+  place-items: center
+  width: 28px
+  height: 28px
+  padding: 0
+  border: 0
+  appearance: none
+  -webkit-tap-highlight-color: transparent
+  background: transparent
+  color: var(--color-text)
+  cursor: pointer
+
+  svg
+    display: block
+    width: 20px
+    height: 20px
+    overflow: visible
+
+  path
+    fill: transparent
+    stroke: currentColor
+    stroke-width: 1.6px
+    stroke-linejoin: round
+    transform-box: fill-box
+    transform-origin: center
+    transition: fill 0.15s ease-out
+
+  &[aria-pressed='true'] .starShape
+    fill: currentColor
+
+  &:focus-visible
+    outline: 2px solid currentColor
+    outline-offset: 2px
+
+.starRing
+  opacity: 0
+  pointer-events: none
+  animation: starRing 0.45s ease-out forwards
+
+  & + .starRing
+    animation-delay: 0.1s
+
+.starShape[data-burst]
+  animation: starPop 0.3s ease-out
+
+@keyframes starRing
+  from
+    opacity: 1
+    transform: scale(1)
+  to
+    opacity: 0
+    transform: scale(2.4)
+
+@keyframes starPop
+  40%
+    transform: scale(1.25)
+
+@media (prefers-reduced-motion: reduce)
+  .starRing,
+  .starShape[data-burst]
+    animation: none
+
+// No media: keep the venue line clear of the star.
+.front:not(:has([data-event-card-part='media'])) .meta
+  padding-right: 2rem
+
 // Beta sources only render in dev; dim them so they read as unreleased.
 .block[data-beta]
   opacity: 0.5

@@ -11,6 +11,7 @@ import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
 import { EventCardMediaDots, EventCardMediaPager } from './EventCardMediaPager';
 import BoxCluster from './BoxCluster';
+import EventStarButton from './EventStarButton';
 import { BoxEdge, BoxSides } from './blocks/BoxFrame';
 import styles from './blocks/page.module.sass';
 
@@ -119,6 +120,12 @@ export default function EventsGrid({
                               videoId: embed.videoId,
                               title: `${event.title} video`,
                             }))}
+                          />
+                          <EventStarButton
+                            eventId={event.id}
+                            label={event.title}
+                            starLabel={copy.starEvent}
+                            unstarLabel={copy.unstarEvent}
                           />
                           <div className={styles.content}>
                             <EventCardMediaDots label={locale === 'ja' ? '画像' : 'Image'} />
