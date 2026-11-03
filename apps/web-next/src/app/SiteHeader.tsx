@@ -364,93 +364,95 @@ export default function SiteHeader({
             <ColorSchemeToggle />
           </div>
         </div>
-        {showFilterControls && (
-          <div
-            className={styles.panel}
-            id="site-header-filters"
-            ref={filterPanelRef}
-            data-filter-options
-            data-open={filterOpen || undefined}
-            aria-hidden={!filterOpen}
-            inert={!filterOpen ? true : undefined}
-          >
-            {categoryGroups.map((group) => (
-              <div
-                className={styles.group}
-                role="group"
-                aria-label={group.dimension.replace('_category', '')}
-                key={group.dimension}
-              >
-                {group.categories.map((category) => (
-                  <GeneralButton
-                    key={category.slug}
-                    verticalPadding="full"
-                    label={`#${category.label}`}
-                    showDot
-                    pressed={activeCategories.has(category.slug)}
-                    tabIndex={filterOpen ? undefined : -1}
-                    data-panel-button
-                    data-filter-button
-                    data-category-button
-                    data-category={category.slug}
-                    data-category-dimension={category.dimension}
-                    onClick={() => toggleCategory(category.slug)}
-                  />
-                ))}
-              </div>
-            ))}
-            {timingFilters.map((timing) => (
-              <GeneralButton
-                key={timing.slug}
-                verticalPadding="full"
-                label={timing.label}
-                showDot
-                pressed={activeTiming === timing.slug}
-                tabIndex={filterOpen ? undefined : -1}
-                data-panel-button
-                data-filter-button
-                data-timing-button
-                data-timing={timing.slug}
-                onClick={() =>
-                  setActiveTiming((current) => (current === timing.slug ? '' : timing.slug))
-                }
-              />
-            ))}
-          </div>
-        )}
+      </div>
+      {/* The panels sit outside the nav column so on phones they can span the header's full
+          width under the logo (SiteHeader.module.sass); on desktop they stay right-aligned. */}
+      {showFilterControls && (
         <div
           className={styles.panel}
-          id="site-header-cities"
-          ref={cityPanelRef}
-          data-city-options
-          data-open={citiesOpen || undefined}
-          aria-label={copy.citiesAria}
-          role="group"
-          aria-hidden={!citiesOpen}
-          inert={!citiesOpen ? true : undefined}
+          id="site-header-filters"
+          ref={filterPanelRef}
+          data-filter-options
+          data-open={filterOpen || undefined}
+          aria-hidden={!filterOpen}
+          inert={!filterOpen ? true : undefined}
         >
-          {cityConfigs.map((target) => {
-            const targetLocale = target.locales.includes(locale)
-              ? locale
-              : defaultLocaleForCity(target);
-            return (
-              <GeneralButton
-                key={target.slug}
-                className={styles.cityButton}
-                verticalPadding="full"
-                href={routePathFor({ city: target.slug, locale: targetLocale })}
-                label={target.label}
-                showDot
-                tabIndex={citiesOpen ? undefined : -1}
-                data-panel-button
-                data-city-button
-                data-city-option={target.slug}
-                aria-current={target.slug === city ? 'page' : undefined}
-                onClick={() => persistPreference(target.slug, targetLocale)}
-              />
-            );
-          })}
+          {categoryGroups.map((group) => (
+            <div
+              className={styles.group}
+              role="group"
+              aria-label={group.dimension.replace('_category', '')}
+              key={group.dimension}
+            >
+              {group.categories.map((category) => (
+                <GeneralButton
+                  key={category.slug}
+                  verticalPadding="full"
+                  label={`#${category.label}`}
+                  showDot
+                  pressed={activeCategories.has(category.slug)}
+                  tabIndex={filterOpen ? undefined : -1}
+                  data-panel-button
+                  data-filter-button
+                  data-category-button
+                  data-category={category.slug}
+                  data-category-dimension={category.dimension}
+                  onClick={() => toggleCategory(category.slug)}
+                />
+              ))}
+            </div>
+          ))}
+          {timingFilters.map((timing) => (
+            <GeneralButton
+              key={timing.slug}
+              verticalPadding="full"
+              label={timing.label}
+              showDot
+              pressed={activeTiming === timing.slug}
+              tabIndex={filterOpen ? undefined : -1}
+              data-panel-button
+              data-filter-button
+              data-timing-button
+              data-timing={timing.slug}
+              onClick={() =>
+                setActiveTiming((current) => (current === timing.slug ? '' : timing.slug))
+              }
+            />
+          ))}
         </div>
+      )}
+      <div
+        className={styles.panel}
+        id="site-header-cities"
+        ref={cityPanelRef}
+        data-city-options
+        data-open={citiesOpen || undefined}
+        aria-label={copy.citiesAria}
+        role="group"
+        aria-hidden={!citiesOpen}
+        inert={!citiesOpen ? true : undefined}
+      >
+        {cityConfigs.map((target) => {
+          const targetLocale = target.locales.includes(locale)
+            ? locale
+            : defaultLocaleForCity(target);
+          return (
+            <GeneralButton
+              key={target.slug}
+              className={styles.cityButton}
+              verticalPadding="full"
+              href={routePathFor({ city: target.slug, locale: targetLocale })}
+              label={target.label}
+              showDot
+              tabIndex={citiesOpen ? undefined : -1}
+              data-panel-button
+              data-city-button
+              data-city-option={target.slug}
+              aria-current={target.slug === city ? 'page' : undefined}
+              onClick={() => persistPreference(target.slug, targetLocale)}
+            />
+          );
+        })}
       </div>
     </header>
   );

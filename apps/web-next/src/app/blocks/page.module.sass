@@ -39,11 +39,11 @@
   // Gaps leave room for both neighbours' depth (one box's back plus a lifted neighbour's front
   // is |offset| * lift), plus one space unit, so boxes never touch at any width.
   gap: var(--block-gap-y, calc(max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2) + var(--space))) var(--block-gap-x, calc(max(var(--block-dx, var(--space-offset, 1.5rem)), -1 * var(--block-dx, var(--space-offset, 1.5rem))) * var(--block-lift, 2) + var(--space)))
-  // Side padding: a per-breakpoint gap from the screen edge to the box's visible edge. Each side
-  // adds only what the 3D box sticks out there: a lifted front moves (lift - 1) * dx against the
-  // offset, the back sits dx along it. With the default offset and lift 2 that is 1.5 space units per side.
+  // Side padding: a per-breakpoint gap from the screen edge to the resting box's visible edge, so
+  // both sides match for normal cards. Only the back's dx along the offset is added; lifted (.tall,
+  // hovered, expanded) fronts deliberately poke (depth - 1) * dx past the gap so they stand out.
   --grid-side-gap: calc(8 * var(--space))
-  padding: calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, var(--block-dx, var(--space-offset, 1.5rem)), (1 - var(--block-lift, 2)) * var(--block-dx, var(--space-offset, 1.5rem)))) calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, -1 * var(--block-dx, var(--space-offset, 1.5rem)), (var(--block-lift, 2) - 1) * var(--block-dx, var(--space-offset, 1.5rem))))
+  padding: calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, var(--block-dx, var(--space-offset, 1.5rem)))) calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, -1 * var(--block-dx, var(--space-offset, 1.5rem))))
 
 // Side gap: wide > 1728px, desktop <= 1728px, tablet <= 1280px, mobile <= 768px. Like the
 // columns, the container queries (events panel width) win over the viewport fallback.
@@ -115,15 +115,21 @@
 
 // Phones (under 500px): shallower boxes so the two columns get wider. Depth drops from 1.5 to 1
 // space unit and the tall cards lift 1.5x instead of 2x; the gaps and side padding follow both.
+// Column and row gaps only clear the back's depth, so normal cards show one space unit between
+// them (12px), like the side padding; a lifted (tall) front deliberately cuts into that gap.
 @media (max-width: 499px)
   .grid
     --space-offset: var(--space)
     --block-lift: 1.5
+    --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + var(--space))
+    --block-gap-y: calc(abs(var(--block-dy, var(--space-offset))) + var(--space))
 
 @container (max-width: 499px)
   .grid
     --space-offset: var(--space)
     --block-lift: 1.5
+    --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + var(--space))
+    --block-gap-y: calc(abs(var(--block-dy, var(--space-offset))) + var(--space))
 
 .divider
   grid-column: 1 / -1
@@ -152,6 +158,9 @@
 .block
   position: relative
   cursor: pointer
+  // room kept around a card scrolled into view on expand (ExpandableGrid): the sticky header plus
+  // the lifted front above, the back's depth below, and one space unit of air on each side
+  scroll-margin-block: calc(var(--scroll-header, 0px) + 2 * var(--space, 1rem)) calc(2 * var(--space, 1rem))
   // depth = base (1, or lift for .tall) + hover boost; the block and the back stay on the shared
   // plane, only the front (and BoxEdge) shift toward the viewer by the extra depth (.boxLift)
   --block-depth: calc(var(--depth-base, 1) + var(--depth-hover, 0))
@@ -366,6 +375,10 @@
   // expanded cards get the same lift as hover; both set the same var, so
   // hovering an expanded card never double-lifts
   --depth-hover: 0.35
+  // Touch only: the card widens first, then rises slowly to the lifted depth. A transition takes
+  // the timing of the state it moves into, so collapsing keeps the default quick motion.
+  @media (hover: none)
+    --block-motion: 600ms cubic-bezier(.22, 1, .36, 1) 200ms
 
   .title
     padding-top: 0.5rem
@@ -447,14 +460,14 @@
 
 .landingBlocks
   // Same box area and box width as the default event grid (density 0) at this viewport: the
-  // .grid padding (4rem + 3rem depth top/bottom, side gap + 1.5rem overhang per side), its
+  // .grid padding (4rem + 3rem depth top/bottom, side gap left, side gap + 1.5rem back depth right), its
   // columns and 4rem column gap, mirrored as media queries below because the landing is a
   // fixed overlay outside the events panel container.
   --landing-cols: 5
   --landing-side-gap: 8rem
   --landing-col-gap: 4rem
   --landing-row-gap: 4rem
-  inset: 7rem calc(var(--landing-side-gap) + 1.5rem)
+  inset: 7rem calc(var(--landing-side-gap) + 1.5rem) 7rem var(--landing-side-gap)
   // size container so boxes can use cqw/cqh: width follows the area's width, top its height
   container-type: size
   z-index: 3

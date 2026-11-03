@@ -6,9 +6,10 @@
   top: 0
   z-index: 100
   isolation: isolate
-  display: flex
-  justify-content: space-between
-  align-items: flex-start
+  // logo | toolbar on the first row; the filter and city panels get their own row under both
+  display: grid
+  grid-template-columns: auto minmax(0, 1fr)
+  align-items: start
   gap: 0
   min-width: 0
   padding: 0.5rem 0
@@ -98,6 +99,8 @@
   flex-wrap: wrap
   justify-content: flex-end
   column-gap: 0
+  grid-column: 1 / -1
+  justify-self: end
   width: min(100%, 48rem)
   padding-right: 0.5rem
   height: 0
@@ -115,10 +118,6 @@
   text-transform: capitalize
 
 @media (max-width: $mobile-breakpoint)
-  .header
-    flex-direction: row
-    align-items: flex-start
-
   .filterToggle
     display: inline-flex
     align-items: center
@@ -129,9 +128,25 @@
     flex-direction: column
     align-items: flex-end
 
-  .toolbar,
+  .toolbar
+    width: 100%
+
+  // Phones: the panels span the full header width, justified: tags grow so each row runs from
+  // margin to margin (their top line stretches with them), and the last row keeps natural widths,
+  // left-aligned, because the ::after spacer takes its free space.
   .panel
     width: 100%
+    padding-inline: 0.5rem
+
+    &::after
+      content: ''
+      flex: 1000 1 0
+
+    [data-panel-button]
+      flex: 1 1 auto
+
+      > span:first-child
+        flex: 1 1 auto
 
   .panel
     [data-filter-button],
