@@ -132,11 +132,13 @@
     --block-gap-y: calc(abs(var(--block-dy, var(--space-offset))) + var(--space))
 
 // Phones and small tablets with the header + pressed (3 columns from the default 2, Dries
-// 2026-11-04): column gaps only clear the back's depth plus one space unit, like under 500px, so
-// the narrower columns don't lose width to 48px gutters; tall fronts cut into the gap on purpose.
+// 2026-11-04): shallower 8px boxes, 6px air between columns (past the back's depth) and 8px side
+// padding, so the narrower columns keep their width; tall fronts cut into the gap on purpose.
 @media (max-width: 800px)
   :global(:root[data-grid-density='1']) .grid
-    --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + var(--space))
+    --space-offset: 8px
+    --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + 6px)
+    --grid-side-gap: 8px
 
 .divider
   grid-column: 1 / -1
