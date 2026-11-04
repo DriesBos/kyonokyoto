@@ -36,3 +36,34 @@ test('page cache purge is skipped without Netlify credentials and reports API fa
     /Netlify cache purge failed \(401\): nope/,
   );
 });
+
+test('landing image warm requests every listed transform as AVIF and WebP', async () => {
+  const { warmLandingImages } = await import('../../../scripts/crawl-cycle-utils.mjs');
+  const calls = [];
+  const result = await warmLandingImages(
+    { SITE_URL: 'https://example.test/' },
+    'kyoto',
+    async (url, options) => {
+      calls.push({ url, accept: options.headers?.accept });
+      if (url.endsWith('/api/landing-images/kyoto/')) {
+        return Response.json({ urls: ['/.netlify/images?url=a', '/.netlify/images?url=b'] });
+      }
+      return new Response(url.endsWith('b') ? null : 'img', {
+        status: url.endsWith('b') ? 500 : 200,
+      });
+    },
+  );
+
+  assert.deepEqual(result, { skipped: false, urls: 2, warmed: 2, failed: 2 });
+  assert.equal(calls[0].url, 'https://example.test/api/landing-images/kyoto/');
+  assert.deepEqual(
+    calls
+      .slice(1)
+      .map((call) => call.accept)
+      .sort(),
+    ['image/avif,image/webp,*/*', 'image/avif,image/webp,*/*', 'image/webp,*/*', 'image/webp,*/*'],
+  );
+  assert.deepEqual(await warmLandingImages({ LANDING_WARM: '0' }, 'kyoto', () => assert.fail()), {
+    skipped: true,
+  });
+});

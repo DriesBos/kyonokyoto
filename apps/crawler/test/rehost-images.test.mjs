@@ -65,3 +65,21 @@ test('leaves sources without rehost_images untouched', async () => {
   assert.equal(result, event);
   assert.equal(called, false);
 });
+
+test('rehosts landing slider sources without rehost_images', async () => {
+  let called = false;
+  await rehostEventImages(
+    event,
+    { slug: 'landing-source', landing_slider: true },
+    {
+      env,
+      downloadImageFn: async () => {
+        called = true;
+        return image;
+      },
+      uploadFn: async () => {},
+    },
+  );
+
+  assert.equal(called, true);
+});

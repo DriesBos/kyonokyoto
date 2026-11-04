@@ -169,6 +169,8 @@ Optional. Set `true` when a source's origin blocks image requests from outside J
 
 After the final media boundary, the crawler (which runs in Japan) downloads each accepted image and uploads it to the public `event-media` Supabase Storage bucket at `<slug>/<sha256(url)>.<ext>`, then stores that public URL instead. Images that fail to download or upload keep their original URL. Requires the `event-media` bucket migration.
 
+Sources with `landing_slider: true` are always rehosted this way, so landing images load from Supabase instead of the museum's own server.
+
 ## `crawl_hints`
 
 Optional. Use for fetch/crawl behavior exceptions.

@@ -19,6 +19,7 @@ import {
 import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
+import { checkLandingImages } from './landing-image-check.mjs';
 import {
   buildEventDedupeKey,
   canonicalizeEventUrl,
@@ -9805,8 +9806,10 @@ const REHOSTED_IMAGE_EXTENSIONS = {
   'image/webp': 'webp',
 };
 
+// Landing-slider sources are rehosted too: their images are fullscreen on the landing, and
+// Netlify Image CDN fetching them from Supabase is faster and steadier than from museum sites.
 function shouldRehostSourceImages(source) {
-  return source?.rehost_images === true;
+  return source?.rehost_images === true || source?.landing_slider === true;
 }
 
 function rehostedImageObjectPath(source, imageUrl, extension) {
@@ -9935,6 +9938,7 @@ async function normalizeEventImagesForSource(
     diagnostics = null,
     fetchImageDimensionsFn = fetchImageDimensions,
     rehostImagesFn = rehostEventImages,
+    checkLandingImagesFn = checkLandingImages,
   } = {},
 ) {
   const baseUrl = eventData?.source_url ?? source?.base_url;
@@ -9984,11 +9988,31 @@ async function normalizeEventImagesForSource(
     }
   }
 
-  return rehostImagesFn(
+  const rehosted = await rehostImagesFn(
     withNormalizedEventImages(eventData, acceptedImageUrls, acceptedImageMetadata),
     source,
     { env, userAgent, diagnostics },
   );
+  return checkLandingImagesFn(rehosted, source, {
+    env,
+    lookupVerdictFn: (imageUrl) => storedLandingVerdict(env, imageUrl),
+    log: (message) => console.log(message),
+  });
+}
+
+// Earlier crawls' landing check verdict for this image URL, so each image is only sent once.
+async function storedLandingVerdict(env, imageUrl) {
+  const rows = await supabaseRequest({
+    env,
+    path: `events?select=image_metadata&image_metadata=cs.${encodeURIComponent(
+      JSON.stringify([{ url: imageUrl }]),
+    )}&limit=5`,
+  });
+  for (const row of rows ?? []) {
+    const image = (row.image_metadata ?? []).find((item) => item?.url === imageUrl);
+    if (typeof image?.landing_ok === 'boolean') return image.landing_ok;
+  }
+  return null;
 }
 
 function festivalEditionEventFromSource(source) {

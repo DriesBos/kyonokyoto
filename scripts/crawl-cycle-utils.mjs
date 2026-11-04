@@ -84,3 +84,46 @@ export async function purgeCityPageCache(env, city, fetchImpl = fetch) {
 
   return { skipped: false };
 }
+
+const landingWarmAccepts = ['image/avif,image/webp,*/*', 'image/webp,*/*'];
+
+// Requests the city's landing image transforms (listed by the site's /api/landing-images/<city>/
+// route) so Netlify Image CDN has them cached before visitors arrive. Each URL is requested as
+// AVIF and WebP, the two formats browsers negotiate. Only reports; failures never fail a crawl.
+export async function warmLandingImages(env, city, fetchImpl = fetch, { concurrency = 4 } = {}) {
+  if (env.LANDING_WARM === '0') return { skipped: true };
+  const origin = (env.SITE_URL || 'https://kyonokyoto.xyz').replace(/\/+$/, '');
+  const listResponse = await fetchImpl(`${origin}/api/landing-images/${city}/`, {
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!listResponse.ok) {
+    throw new Error(`Landing image list failed (${listResponse.status}) for ${city}`);
+  }
+  const { urls = [] } = await listResponse.json();
+  const requests = urls.flatMap((url) =>
+    landingWarmAccepts.map((accept) => ({ url: new URL(url, origin).href, accept })),
+  );
+
+  let warmed = 0;
+  let failed = 0;
+  let next = 0;
+  const worker = async () => {
+    while (next < requests.length) {
+      const { url, accept } = requests[next++];
+      try {
+        const response = await fetchImpl(url, {
+          headers: { accept },
+          signal: AbortSignal.timeout(60000),
+        });
+        await response.arrayBuffer();
+        if (response.ok) warmed += 1;
+        else failed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, requests.length) }, worker));
+
+  return { skipped: false, urls: urls.length, warmed, failed };
+}

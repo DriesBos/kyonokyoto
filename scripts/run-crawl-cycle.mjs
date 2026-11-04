@@ -10,6 +10,7 @@ import {
   maintainCrawlerStorage,
   postStatus,
   purgeCityPageCache,
+  warmLandingImages,
 } from './crawl-cycle-utils.mjs';
 
 const projectRoot = process.cwd();
@@ -181,6 +182,20 @@ try {
         purge.skipped
           ? 'Page cache purge skipped: NETLIFY_SITE_ID or NETLIFY_PURGE_TOKEN missing.'
           : `Purged ${city} page cache.`,
+      );
+    } catch (error) {
+      console.warn(error instanceof Error ? error.message : String(error));
+    }
+
+    currentStep = 'warm_landing_images';
+    // Give the purge a moment to reach the CDN so the image list comes from fresh data.
+    await new Promise((resolveWait) => setTimeout(resolveWait, 10000));
+    try {
+      const warm = await warmLandingImages(env, city);
+      console.log(
+        warm.skipped
+          ? 'Landing image warm skipped (LANDING_WARM=0).'
+          : `Warmed ${city} landing images: ${warm.warmed} ok, ${warm.failed} failed (${warm.urls} URLs).`,
       );
     } catch (error) {
       console.warn(error instanceof Error ? error.message : String(error));
