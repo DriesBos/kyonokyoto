@@ -286,7 +286,8 @@
 
   // Experiment (Dries, 2026-11-04): on phones and small tablets (768px and below) the image runs to the card's left, top and right edges
   @media (max-width: 768px)
-    --media-inset: 0
+    // keep the unit: EventCardDetail's track height calc() goes invalid with a unitless 0
+    --media-inset: 0px
     margin: 0
 
 // Figma 624:3858: meta and title sit in one padded content box below the image
