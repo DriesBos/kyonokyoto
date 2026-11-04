@@ -8,13 +8,11 @@
 !**/.env.example
 !**/.env.*.example
 
-# Node / Astro
+# Node / Next
 node_modules/
 **/node_modules/
 dist/
 **/dist/
-.astro/
-**/.astro/
 .next/
 **/.next/
 next-env.d.ts

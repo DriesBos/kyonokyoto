@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: npm
-    directory: /apps/web
+    directory: /apps/web-next
     schedule:
       interval: weekly
   - package-ecosystem: npm

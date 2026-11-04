@@ -59,7 +59,6 @@ Ask Codex for more complex tuning:
 Run structural checks after JSON edits:
 
 ```bash
-node --test apps/web/test/cities.test.mjs
 node - <<'NODE'
 import { loadAllSourcesConfig, validateSourceConfig } from './data/sources/source-config.mjs';
 const warnings = (await loadAllSourcesConfig()).flatMap(validateSourceConfig);

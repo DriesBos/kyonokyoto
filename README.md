@@ -2,11 +2,11 @@
 
 Multi-city cultural events app for Kyoto, Osaka, Tokyo, and Hong Kong.
 
-Source JSON defines venue truth. VPS crawler fetches event pages, stores normalized events and raw evidence in Supabase, and Astro serves city/locale routes from Netlify SSR with CDN revalidation.
+Source JSON defines venue truth. VPS crawler fetches event pages, stores normalized events and raw evidence in Supabase, and Next.js serves city/locale routes from Netlify SSR with CDN revalidation.
 
 ## Structure
 
-- `apps/web` — Astro SSR frontend
+- `apps/web-next` — Next.js (App Router) frontend
 - `apps/crawler` — Node crawler plus Crawl4AI bridge
 - `data/sources` — authoritative city source config
 - `packages/shared` — shared event schedule/dedupe helpers
@@ -114,8 +114,8 @@ See `docs/adding-sources.md`, `docs/source-config.md`, and `QA-routine.md` for s
 ```bash
 pnpm format:check
 pnpm --filter kyo-no-kyoto-crawler test
-pnpm --filter kyo-no-kyoto-web test
-pnpm --filter kyo-no-kyoto-web build
+pnpm --filter kyo-no-kyoto-web-next test
+pnpm --filter kyo-no-kyoto-web-next build
 node scripts/source-sync-safety.mjs
 ```
 

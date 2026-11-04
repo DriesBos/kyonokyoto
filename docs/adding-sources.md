@@ -205,4 +205,4 @@ First matching location wins. If nothing matches, source `lat`/`lng` are used.
    - date parsed
    - image present
    - translations native or machine-filled
-6. Run `pnpm --filter kyo-no-kyoto-web build`.
+6. Run `pnpm --filter kyo-no-kyoto-web-next build`.

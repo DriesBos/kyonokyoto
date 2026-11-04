@@ -65,7 +65,7 @@ export async function postStatus(url, payload, fetchImpl = fetch) {
 }
 
 // Web pages cache on the Netlify CDN until the city's midnight, tagged per city
-// (apps/web/src/lib/cdnCache.ts). Purging the tag makes fresh crawl data visible right away.
+// (apps/web-next/src/lib/cdnCache.ts). Purging the tag makes fresh crawl data visible right away.
 export async function purgeCityPageCache(env, city, fetchImpl = fetch) {
   if (!env.NETLIFY_SITE_ID || !env.NETLIFY_PURGE_TOKEN) return { skipped: true };
   const response = await fetchImpl('https://api.netlify.com/api/v1/purge', {

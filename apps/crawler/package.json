@@ -26,6 +26,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
-    "@google-cloud/translate": "^9.4.2"
+    "@google-cloud/translate": "^10.3.0"
   }
 }

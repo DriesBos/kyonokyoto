@@ -3,13 +3,13 @@ name: Fallow
 on:
   pull_request:
     paths:
-      - 'apps/web/**'
+      - 'apps/web-next/**'
       - '.github/workflows/fallow.yml'
   push:
     branches:
       - main
     paths:
-      - 'apps/web/**'
+      - 'apps/web-next/**'
       - '.github/workflows/fallow.yml'
 
 permissions:
@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   analyze-web:
-    name: Analyze apps/web
+    name: Analyze apps/web-next
     runs-on: ubuntu-latest
 
     steps:
@@ -29,7 +29,7 @@ jobs:
       - name: Run Fallow
         uses: fallow-rs/fallow@main
         with:
-          root: apps/web
+          root: apps/web-next
           format: json
           auto-changed-since: true
           annotations: true

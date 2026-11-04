@@ -1,17 +1,17 @@
 # apps/web-next
 
-Next.js (App Router) rewrite of the site. `apps/web` (Astro) stays in production until this app reaches parity.
+Next.js (App Router) site, in production. Replaced the retired Astro app (`apps/web`, removed).
 
 ## Styling
 
-- We use SASS (indented `.sass` syntax, matching `apps/web`).
+- We use SASS (indented `.sass` syntax).
 - Global files in `src/styles/` (`globals.sass`, `typography.sass`, `variables.sass`) hold the design system: tokens, resets, and base typography. Add new design-system concerns as global files here.
 - City colours, dark mode backgrounds and contrast checks: see `docs/color-palettes.md`.
 - Components use React style modules (`Component.module.sass`), colocated with the component. Pull shared tokens in with `@use '@/styles/variables' as *`.
 
 ## Images
 
-- Do not use `next/image` for remote event images. Event media goes through the Netlify Image CDN (`/.netlify/images`) with the allowlist in `netlify.toml`, same pipeline as `apps/web` (see `src/lib/mediaDelivery.ts`, which also serves self-hosted `/venues/` photos and proxies Yutaka Kikutake images). Next's `images.remotePatterns` caps at 50 entries; our allowlist is larger.
+- Do not use `next/image` for remote event images. Event media goes through the Netlify Image CDN (`/.netlify/images`) with the allowlist in `netlify.toml`, (see `src/lib/mediaDelivery.ts`, which also serves self-hosted `/venues/` photos and proxies Yutaka Kikutake images). Next's `images.remotePatterns` caps at 50 entries; our allowlist is larger.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

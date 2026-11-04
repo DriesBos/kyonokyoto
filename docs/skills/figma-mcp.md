@@ -8,11 +8,11 @@ Set `FIGMA_API_KEY` in the shell or app environment that launches the agent. Do 
 export FIGMA_API_KEY="<figma-token>"
 ```
 
-If the token lives in `apps/web/.env`, load it before launching the agent:
+If the token lives in `apps/web-next/.env.local`, load it before launching the agent:
 
 ```zsh
 set -a
-source apps/web/.env
+source apps/web-next/.env.local
 set +a
 ```
 
@@ -23,4 +23,4 @@ For Figma-driven UI work:
 1. Paste the exact Figma frame or layer URL.
 2. Fetch design context for that node.
 3. Fetch screenshot for visual reference.
-4. Implement using this repo's Astro and Sass conventions.
+4. Implement using this repo's Next.js and Sass conventions (see `apps/web-next/AGENTS.md`).
