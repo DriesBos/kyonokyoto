@@ -140,6 +140,12 @@
     --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + 6px)
     --grid-side-gap: 8px
 
+// Phones with the map open (Dries 2026-11-04): no empty band under the map's resize handle, the
+// list starts one space unit (plus room for a lifted tall front) below it
+@media (max-width: 768px)
+  :global([data-map-visible]) .grid
+    padding-top: calc(var(--space) + abs(var(--block-dy, var(--space-offset))) * var(--block-lift, 2))
+
 .divider
   grid-column: 1 / -1
   width: 100%

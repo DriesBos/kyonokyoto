@@ -120,7 +120,15 @@
     flex-direction: column
     // Dries 2026-11-04: with the logo hidden while the map is open (SiteHeader), the map takes the
     // top half of the screen and the event list the bottom half
-    --default-map-panel-size: 50svh
+    --default-map-panel-size: 50vh
+    --default-map-panel-size: 50lvh
+
+  // Dries 2026-11-04: on phones the open map runs up under the status bar and the event list down
+  // under the floating box and Safari's bottom bar, so the shell takes the large viewport (the one
+  // behind Safari's bars) instead of svh
+  .shell:has(.content[data-map-mounted])
+    height: 100vh
+    height: 100lvh
 
   .map
     order: -2
@@ -136,12 +144,14 @@
     .map
       flex: 0 0 var(--map-panel-size, var(--default-map-panel-size))
       max-height: var(--map-panel-size, var(--default-map-panel-size))
-      // Separates the map from the header above it.
-      box-sizing: border-box
-      border-top: var(--stroke-width) solid var(--color-text)
 
     .events
       flex: 1 1 auto
+
+  // the last cards scroll clear of the floating box (SiteHeader .dock: ~72px from the bottom edge
+  // plus the home indicator), the others still pass underneath it
+  .content[data-map-mounted] .events
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom))
 
   .resizer
     order: -1
