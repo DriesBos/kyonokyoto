@@ -593,8 +593,6 @@
   width: var(--landing-block-width)
   // fixed 3:4 height: aspect-ratio alone lets long titles stretch the box past its slot
   height: var(--landing-block-height)
-  // intro: fades in flat, 100ms apart per position; depth rises once the landing is raised
-  animation: landingBlockFade 800ms ease-out calc((var(--landing-position, 1) - 1) * 100ms) backwards
   padding: 0
   border: 0
   background: transparent
@@ -638,6 +636,10 @@
   .boxSides,
   .boxEdge
     stroke: currentColor
+    // intro: the box lines fade in flat, 100ms apart per position; depth rises once the landing
+    // is raised. Only the lines fade, never the block: opacity below 1 on the block would cut the
+    // front's backdrop-filter off from the image behind it, so the blur popped in when the fade ended.
+    animation: landingBlockFade 800ms ease-out calc((var(--landing-position, 1) - 1) * 100ms) backwards
 
   .boxFaceY,
   .boxFaceX
@@ -761,7 +763,7 @@
   opacity: 0
 
 @media (prefers-reduced-motion: reduce)
-  .landingBlock
+  .landingBlock :is(.boxSides, .boxEdge)
     animation: none
 
   .landingImage
