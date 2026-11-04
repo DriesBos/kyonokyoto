@@ -94,7 +94,8 @@ type EventRow = {
   occurrence_dates: string[] | null;
   primary_image_url: string | null;
   image_urls: string[] | null;
-  image_metadata: { url: string; width: number | null; height: number | null }[] | null;
+  image_metadata:
+    { url: string; width: number | null; height: number | null; landing_ok?: boolean }[] | null;
   source_url: string;
   sources: SourceRelation;
   updated_at: string | null;
@@ -159,7 +160,13 @@ export type CityEvent = {
   imageUrls: string[];
   imageWidth: number | null;
   imageHeight: number | null;
-  images: { url: string; width: number | null; height: number | null }[];
+  // landingOk: the crawler's landing check verdict (no flyers or overlaid text); null = unchecked
+  images: {
+    url: string;
+    width: number | null;
+    height: number | null;
+    landingOk?: boolean | null;
+  }[];
   sourceUrl: string | null;
   mapsUrl: string;
   googleCalendarUrl: string | null;
@@ -387,7 +394,12 @@ const imageRecords = (
   const display = urls.length ? urls : event.primary_image_url ? [event.primary_image_url] : [];
   return display.map((url) => {
     const metadata = event.image_metadata?.find((image) => image.url === url) ?? null;
-    return { url, width: metadata?.width ?? null, height: metadata?.height ?? null };
+    return {
+      url,
+      width: metadata?.width ?? null,
+      height: metadata?.height ?? null,
+      landingOk: typeof metadata?.landing_ok === 'boolean' ? metadata.landing_ok : null,
+    };
   });
 };
 

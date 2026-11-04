@@ -158,3 +158,130 @@
     [data-filter-button],
     [data-city-button]
       pointer-events: auto
+
+// Everywhere but phones the dock adds no box: the toolbar and panels stay in the header grid.
+.dock,
+.dockBody
+  display: contents
+
+.dockFrame
+  display: none
+
+// Header version 1 (Dries, 2026-11-04): on phones the header no longer sticks, so the logo scrolls
+// away and content can run up under the Dynamic Island. The controls float at the bottom in one
+// box drawn like the event cards (BoxSides/BoxEdge from blocks/BoxFrame, same depth as the phone
+// grid), above Safari's bottom bar; the filter and city panels open above them.
+@media (max-width: $mobile-breakpoint)
+  .header
+    position: relative
+
+    &::after
+      display: none
+
+    // map open: no logo, just the map (top half) and the events (bottom half); the box stays
+    &[data-map-open]
+      padding: 0
+
+      .logo
+        display: none
+
+  .logo
+    svg,
+    .wordmark
+      --logo-scale: 1
+
+  .dock
+    // the phone grid's box depth (blocks/page.module.sass .grid: 1.5 space, 1 space under 500px)
+    --space: 12px
+    --space-offset: calc(1.5 * var(--space))
+    // Dries 2026-11-04: normal card depth at rest; while a panel is open it rises to the tall
+    // cards' depth (.tall: --block-lift, 2, or 1.5 under 500px like the grid). The front lifts
+    // up-left by the extra depth, so the left inset keeps room for that lift.
+    --block-lift: 2
+    --block-depth: 1
+    position: fixed
+    z-index: 100
+    left: calc(max(0.75rem, env(safe-area-inset-left)) + var(--space-offset) * (var(--block-lift) - 1))
+    right: calc(max(0.75rem, env(safe-area-inset-right)) + var(--space-offset))
+    bottom: calc(0.75rem + var(--space-offset) + env(safe-area-inset-bottom))
+    display: block
+
+    @media (max-width: 499px)
+      --space-offset: var(--space)
+      --block-lift: 1.5
+
+    &:has(.panel[data-open])
+      --block-depth: var(--block-lift)
+
+    // At the footer (SiteHeader.tsx footerReached) the box first sinks flat (depth 0, the cards'
+    // own lift animation), then fades out; coming back it fades in and rises together.
+    --block-motion: 0.3s ease
+    transition: opacity 0.2s ease
+
+    // [data-header-dock] so this beats the open-panel lift above
+    &[data-footer-reached][data-header-dock]
+      --block-depth: 0
+      opacity: 0
+      pointer-events: none
+      transition: opacity 0.2s ease 0.3s
+
+  .dockFrame
+    display: contents
+
+  // the front: same 2px room as the cards' .front, BoxEdge draws the outline over it
+  .dockBody
+    position: relative
+    z-index: 1
+    display: flex
+    flex-direction: column-reverse
+    max-height: calc(100dvh - 4rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+    overflow-y: auto
+    overscroll-behavior: contain
+    border: var(--block-border-width, 2px) solid transparent
+    background: var(--color-background)
+
+  .controls
+    margin-left: 0
+
+  .toolbar
+    justify-content: space-between
+    align-items: center
+    flex-wrap: nowrap
+    min-height: 3.25rem
+
+    // no top lines on the toolbar buttons here, the box is the frame
+    :has(> [data-general-button-label])
+      padding-top: 0
+
+      &::before
+        display: none
+
+  .icons
+    margin-left: auto
+    align-items: center
+
+    // Dries 2026-11-04: the bottom box has room for them, so keep them on the smallest phones too
+    @media (max-width: 399px)
+      display: inline-flex
+
+    // the icons (GridDensityControls/ColorSchemeToggle) are padded to line their tops up with the
+    // buttons' top lines; with no lines here, give them even padding and centre each icon
+    > *
+      align-items: center
+
+    button
+      align-items: center
+      padding-block: 0.75rem
+
+      > span
+        margin-top: 0
+
+  // the panels open above the toolbar, inside the box. The top air is a full-width first row, not
+  // padding, so it folds away with the panel's height animation (padding would show at height 0).
+  .panel
+    padding-top: 0
+
+    &::before
+      content: ''
+      flex: 0 0 100%
+      height: 0.75rem

@@ -241,7 +241,9 @@ export default function MapExperience({
                 onPointerUp={onPointerEnd}
                 onPointerCancel={onPointerEnd}
                 onKeyDown={onSeparatorKeyDown}
-              />
+              >
+                <span className={styles.handle} aria-hidden="true" />
+              </div>
               <section
                 className={styles.map}
                 id="map-section"

@@ -5,6 +5,8 @@ import test from 'node:test';
 const {
   blocksLandingCandidatesForEvents,
   blocksLandingCandidatesWithHero,
+  firstReadySlideIndex,
+  nextReadySlideIndex,
   resolveBlocksLandingSlides,
 } = await import('../src/lib/blocksLanding.ts');
 const { landingPictureSourcesFor } = await import('../src/lib/landingImages.ts');
@@ -204,4 +206,81 @@ test('Blocks landing snaps transforms to shared size buckets', () => {
     viewportHeight: 768,
   });
   assert.deepEqual({ width: slide.width, height: slide.height }, { width: 1440, height: 810 });
+});
+
+test('Blocks landing leads with whichever image loaded first and rotates only ready slides', () => {
+  assert.equal(firstReadySlideIndex(['a', 'b', 'c'], []), -1);
+  assert.equal(firstReadySlideIndex(['a', 'b', 'c'], ['gone', 'c', 'a']), 2);
+  assert.equal(nextReadySlideIndex(2, [true, false, true]), 0);
+  assert.equal(nextReadySlideIndex(0, [true, false, true]), 2);
+  assert.equal(nextReadySlideIndex(0, [true, false, false]), 0);
+});
+
+test('Landing warm list covers the hero srcset and phone and desktop slides', async () => {
+  const { landingWarmUrls } = await import('../src/lib/landingWarm.ts');
+  const candidates = [
+    {
+      id: 'a',
+      title: 'A',
+      institution: 'I',
+      date: 'D',
+      sourceSlug: 's1',
+      images: [{ src: 'https://example.test/a.jpg', width: 3000, height: 2000 }],
+    },
+    {
+      id: 'b',
+      title: 'B',
+      institution: 'I',
+      date: 'D',
+      sourceSlug: 's2',
+      images: [{ src: 'https://example.test/b.jpg', width: 1600, height: 1200 }],
+    },
+  ];
+  const urls = landingWarmUrls(candidates, { id: 'a', ...candidates[0].images[0] });
+  const params = urls.map((url) => new URLSearchParams(url.split('?')[1]));
+
+  assert.equal(new Set(urls).size, urls.length);
+  assert.ok(params.every((p) => p.get('q') === '60' && p.get('fit') === 'cover'));
+  // portrait phone crop and landscape desktop crop for both images
+  for (const src of ['https://example.test/a.jpg', 'https://example.test/b.jpg']) {
+    const sizes = params
+      .filter((p) => p.get('url') === src)
+      .map((p) => [Number(p.get('w')), Number(p.get('h'))]);
+    assert.ok(
+      sizes.some(([w, h]) => h > w),
+      `${src} portrait`,
+    );
+    assert.ok(
+      sizes.some(([w, h]) => w > h),
+      `${src} landscape`,
+    );
+  }
+});
+
+test('Blocks landing drops images the landing check rejected and prefers approved ones', () => {
+  const [candidate] = blocksLandingCandidatesForEvents([
+    event({
+      id: 'checked',
+      sourceSlug: 'checked-source',
+      images: [
+        { url: 'https://example.test/flyer.jpg', width: 2400, height: 1600, landingOk: false },
+        { url: 'https://example.test/unchecked.jpg', width: 2400, height: 1600, landingOk: null },
+        { url: 'https://example.test/gallery.jpg', width: 2400, height: 1600, landingOk: true },
+      ],
+    }),
+  ]);
+  assert.deepEqual(
+    candidate.images.map((image) => image.src),
+    ['https://example.test/gallery.jpg', 'https://example.test/unchecked.jpg'],
+  );
+  assert.deepEqual(
+    blocksLandingCandidatesForEvents([
+      event({
+        images: [
+          { url: 'https://example.test/flyer.jpg', width: 2400, height: 1600, landingOk: false },
+        ],
+      }),
+    ]),
+    [],
+  );
 });

@@ -1,0 +1,58 @@
+// Local-only /dev/landing/ review page.
+.main
+  display: grid
+  gap: 1.5rem
+  padding: 2rem var(--page-padding-x) 4rem
+
+.cities
+  display: flex
+  gap: 1rem
+
+  [aria-current]
+    text-decoration: underline
+
+.note,
+.error
+  margin: 0
+  max-width: 40rem
+  font-size: var(--type-meta-size)
+
+.events
+  display: grid
+  gap: 2rem
+
+.event
+  display: grid
+  gap: 0.75rem
+
+  &[data-blocked]
+    opacity: 0.4
+
+.eventHeader,
+.image figcaption
+  display: flex
+  justify-content: space-between
+  gap: 1rem
+  font-size: var(--type-meta-size)
+
+.images
+  display: grid
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))
+  gap: 1rem
+
+.image
+  display: grid
+  gap: 0.5rem
+  margin: 0
+  padding: 0.25rem
+  outline: var(--stroke-width) solid transparent
+  opacity: 0.5
+
+  &[data-shown]
+    outline-color: var(--color-city, currentColor)
+    opacity: 1
+
+  img
+    width: 100%
+    aspect-ratio: 4 / 3
+    object-fit: cover

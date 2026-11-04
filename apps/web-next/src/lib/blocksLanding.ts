@@ -1,3 +1,4 @@
+import landingBlocklist from '../../../../data/landing-blocklist.json' with { type: 'json' };
 import { aspectClassFor, transformSizeFor } from './landingImages.ts';
 
 export type BlocksLandingCandidate = {
@@ -23,7 +24,12 @@ type BlocksLandingEvent = {
   group: 'ongoing' | 'upcoming' | 'permanent';
   sourceSlug: string | null;
   landingEligible: boolean;
-  images: { url: string; width: number | null; height: number | null }[];
+  images: {
+    url: string;
+    width: number | null;
+    height: number | null;
+    landingOk?: boolean | null;
+  }[];
 };
 
 const minimumCoverDensity = 1;
@@ -34,6 +40,10 @@ const maximumTransformWidth = 2560;
 const maximumTransformHeight = 1440;
 const defaultLandingSlideLimit = 3;
 const excludedLandingSourceSlugs = new Set(['kyoto-city-kyocera-museum-of-art', 'momak']);
+// Manual overrides on top of the crawler's landing check: image URLs or event ids that never
+// show on the landing. Edited from /dev/landing/ in local dev.
+const blockedLandingImages = new Set<string>(landingBlocklist.images);
+const blockedLandingEvents = new Set<string>(landingBlocklist.events);
 
 export const blocksLandingCandidatesForEvents = (
   events: BlocksLandingEvent[],
@@ -52,7 +62,14 @@ export const blocksLandingCandidatesForEvents = (
   return orderedEvents.flatMap((event) => {
     if (!event.sourceSlug) return [];
 
-    const images = event.images.flatMap((image) => {
+    if (blockedLandingEvents.has(event.id)) return [];
+    // images the landing check rejected never show; approved ones go before unchecked ones
+    const usableImages = event.images
+      .filter((image) => image.landingOk !== false && !blockedLandingImages.has(image.url))
+      .toSorted(
+        (left, right) => Number(right.landingOk === true) - Number(left.landingOk === true),
+      );
+    const images = usableImages.flatMap((image) => {
       return typeof image.url === 'string' &&
         image.url.length > 0 &&
         Number.isFinite(image.width) &&
@@ -195,4 +212,22 @@ export const blocksLandingCandidatesWithHero = (
     }
   }
   return { candidates, hero: null };
+};
+
+// Slides only become active once their image has decoded, so the landing never shows an empty
+// box. The first slide is whichever image finished first; rotation skips slides still loading.
+export const firstReadySlideIndex = (slideIds: string[], loadedOrder: string[]) => {
+  for (const id of loadedOrder) {
+    const index = slideIds.indexOf(id);
+    if (index >= 0) return index;
+  }
+  return -1;
+};
+
+export const nextReadySlideIndex = (current: number, ready: boolean[]) => {
+  for (let step = 1; step < ready.length; step += 1) {
+    const index = (current + step) % ready.length;
+    if (ready[index]) return index;
+  }
+  return current;
 };

@@ -9,6 +9,8 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import {
+  firstReadySlideIndex,
+  nextReadySlideIndex,
   resolveBlocksLandingSlides,
   type BlocksLandingCandidate,
   type BlocksLandingHero,
@@ -25,15 +27,14 @@ const slideHoldMs = 4000;
 const exitMs = 500;
 const wheelThreshold = 80;
 const touchThreshold = 48;
-// Intro: boxes fade in flat (depth 0; 800ms, 100ms apart, see .landingBlock), then after a
-// 500ms pause rise to their depth (600ms; box 1 straight to its active depth), then the first box activates and its image fades in, waiting
-// for that image up to introImageWaitMs.
-const introFadeMs = 1000;
-const introPauseMs = 500;
+// Intro: boxes fade in flat (depth 0; 800ms, 100ms apart, see .landingBlock). As soon as the
+// first image has decoded (and the boxes are at least introMinFadeMs in) they rise to their depth
+// (600ms); the box whose image loaded first goes straight to its active depth while its image
+// fades in, then becomes active. Without a loaded image the boxes stay flat and nothing activates.
+const introMinFadeMs = 600;
 const introRaiseMs = 600;
 // settle margin so the intro ends after the rise transitions have fully finished
 const introSettleMs = 100;
-const introImageWaitMs = 2500;
 
 // The events list scrolls inside [data-events-section] when the map is open, else the window.
 const eventsScrollRoot = () => {
@@ -106,7 +107,9 @@ export default function BlocksLanding({
   const [exiting, setExiting] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [hoverPaused, setHoverPaused] = useState(false);
-  const [loadedIds, setLoadedIds] = useState<Set<string>>(() => new Set());
+  // ids in the order their images finished decoding
+  const [loadedOrder, setLoadedOrder] = useState<string[]>([]);
+  const [introMinElapsed, setIntroMinElapsed] = useState(false);
   const [boxesRaised, setBoxesRaised] = useState(false);
   const [boxesGrown, setBoxesGrown] = useState(false);
   const [introDone, setIntroDone] = useState(false);
@@ -116,9 +119,7 @@ export default function BlocksLanding({
     image
       .decode()
       .catch(() => undefined)
-      .then(() =>
-        setLoadedIds((current) => (current.has(id) ? current : new Set(current).add(id))),
-      );
+      .then(() => setLoadedOrder((current) => (current.includes(id) ? current : [...current, id])));
   }, []);
   // The server-rendered hero can finish loading before hydration, when onLoad is never fired.
   const loadedRef = (id: string) => (image: HTMLImageElement | null) => {
@@ -153,13 +154,18 @@ export default function BlocksLanding({
       }),
     [rawSlides],
   );
+  const loadedIds = useMemo(() => new Set(loadedOrder), [loadedOrder]);
+  const slideIds = useMemo(() => slides.map((slide) => slide.id), [slides]);
+  const slideKey = slideIds.join('|');
+  const readySlides = useMemo(() => slideIds.map((id) => loadedIds.has(id)), [loadedIds, slideIds]);
+  const firstReadyIndex = firstReadySlideIndex(slideIds, loadedOrder);
   const normalizedActiveIndex = slides.length > 0 ? activeIndex % slides.length : 0;
-  // nothing is active until the intro has run; the first image fades in during the rise
-  // (delayed in CSS) so it is fully in when box 1 reaches its active depth
-  const shownIndex = introDone ? normalizedActiveIndex : -1;
-  const imageIndex = introDone ? normalizedActiveIndex : boxesRaised ? 0 : -1;
-  const firstSlideLoaded = slides.length > 0 && loadedIds.has(slides[0].id);
-  const slideKey = slides.map((slide) => slide.id).join('|');
+  const activeReady = readySlides[normalizedActiveIndex] ?? false;
+  // nothing is active until the intro has run, and a box only activates once its image is in;
+  // the first image fades in during the rise (delayed in CSS) so it is in when its box lands
+  const shownIndex = introDone && activeReady ? normalizedActiveIndex : -1;
+  const imageIndex = boxesRaised ? normalizedActiveIndex : -1;
+  const introIndex = boxesRaised && !introDone ? normalizedActiveIndex : -1;
 
   const useNetlifyImageCdn = imageCdnEnabled();
   const heroSources = useMemo(
@@ -195,7 +201,7 @@ export default function BlocksLanding({
   const canHover = (event: ReactPointerEvent) =>
     event.pointerType !== 'touch' && window.matchMedia('(hover: hover)').matches;
   const hoverSlide = (event: ReactPointerEvent, index: number) => {
-    if (!introDone || !canHover(event)) return;
+    if (!introDone || !canHover(event) || !readySlides[index]) return;
     setHoverPaused(true);
     if (index !== normalizedActiveIndex) setActiveIndex(index);
   };
@@ -239,28 +245,33 @@ export default function BlocksLanding({
   }, []);
 
   useEffect(() => {
-    if (!hasSlides || boxesGrown) return;
-    const raiseAt = introFadeMs + introPauseMs;
-    const raise = window.setTimeout(() => setBoxesRaised(true), raiseAt);
-    const grown = window.setTimeout(
-      () => setBoxesGrown(true),
-      raiseAt + introRaiseMs + introSettleMs,
-    );
-    return () => {
-      window.clearTimeout(raise);
-      window.clearTimeout(grown);
-    };
-  }, [boxesGrown, hasSlides]);
+    const timer = window.setTimeout(() => setIntroMinElapsed(true), introMinFadeMs);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // rise as soon as any image is ready, with the box whose image loaded first leading
+  useEffect(() => {
+    if (boxesRaised || !introMinElapsed || firstReadyIndex < 0) return;
+    setActiveIndex(firstReadyIndex);
+    setBoxesRaised(true);
+  }, [boxesRaised, firstReadyIndex, introMinElapsed]);
 
   useEffect(() => {
-    if (!boxesGrown || introDone) return;
-    if (firstSlideLoaded) {
-      setIntroDone(true);
-      return;
-    }
-    const timer = window.setTimeout(() => setIntroDone(true), introImageWaitMs);
-    return () => window.clearTimeout(timer);
-  }, [boxesGrown, firstSlideLoaded, introDone]);
+    if (!boxesRaised || boxesGrown) return;
+    const grown = window.setTimeout(() => setBoxesGrown(true), introRaiseMs + introSettleMs);
+    return () => window.clearTimeout(grown);
+  }, [boxesGrown, boxesRaised]);
+
+  useEffect(() => {
+    if (boxesGrown && !introDone) setIntroDone(true);
+  }, [boxesGrown, introDone]);
+
+  // the active slide lost its image (slides re-resolved, reduced motion skipped the intro):
+  // move to the first ready one
+  useEffect(() => {
+    if (!boxesRaised || activeReady || firstReadyIndex < 0) return;
+    setActiveIndex(firstReadyIndex);
+  }, [activeReady, boxesRaised, firstReadyIndex]);
 
   useEffect(() => {
     if (viewport.width > 0 && slides.length === 0) setHidden(true);
@@ -287,19 +298,21 @@ export default function BlocksLanding({
   useEffect(() => {
     if (!introDone || hidden || exiting || hoverPaused || slides.length === 0) return;
     const timer = window.setTimeout(
-      () => setActiveIndex((current) => (current + 1) % slides.length),
+      () => setActiveIndex((current) => nextReadySlideIndex(current % slides.length, readySlides)),
       slideHoldMs,
     );
     return () => window.clearTimeout(timer);
-  }, [activeIndex, cycleVersion, exiting, hidden, hoverPaused, introDone, slides.length]);
-
-  useEffect(() => {
-    if (hidden || slides.length < 2) return;
-    const next = slides[(normalizedActiveIndex + 1) % slides.length];
-    const image = new Image();
-    image.decoding = 'async';
-    image.src = next.src;
-  }, [hidden, normalizedActiveIndex, slides]);
+    // readySlides: a slide that finishes loading later joins the rotation on the next tick
+  }, [
+    activeIndex,
+    cycleVersion,
+    exiting,
+    hidden,
+    hoverPaused,
+    introDone,
+    readySlides,
+    slides.length,
+  ]);
 
   useEffect(() => {
     if (hidden || exiting) return;
@@ -411,8 +424,9 @@ export default function BlocksLanding({
               height={slide.height}
               alt=""
               decoding="async"
-              loading={index === 0 ? 'eager' : 'lazy'}
-              fetchPriority={index === 0 ? 'high' : 'low'}
+              // all slides load at once; whichever decodes first leads the intro
+              loading="eager"
+              fetchPriority={hero ? 'low' : 'auto'}
               onLoad={(event) => markLoaded(slide.id, event.currentTarget)}
               onError={() =>
                 setFailedIds((current) => {
@@ -439,6 +453,7 @@ export default function BlocksLanding({
               className={styles.landingBlock}
               data-position={index + 1}
               data-active={active || undefined}
+              data-intro-active={index === introIndex || undefined}
               key={slide.id}
               type="button"
               onClick={() => openSlide(slide.id)}

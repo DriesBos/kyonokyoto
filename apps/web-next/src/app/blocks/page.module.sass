@@ -131,6 +131,13 @@
     --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + var(--space))
     --block-gap-y: calc(abs(var(--block-dy, var(--space-offset))) + var(--space))
 
+// Phones and small tablets with the header + pressed (3 columns from the default 2, Dries
+// 2026-11-04): column gaps only clear the back's depth plus one space unit, like under 500px, so
+// the narrower columns don't lose width to 48px gutters; tall fronts cut into the gap on purpose.
+@media (max-width: 800px)
+  :global(:root[data-grid-density='1']) .grid
+    --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + var(--space))
+
 .divider
   grid-column: 1 / -1
   width: 100%
@@ -277,6 +284,11 @@
   --media-inset: 0.5rem
   margin: 0.5rem 0 0
 
+  // Experiment (Dries, 2026-11-04): on phones the image runs to the card's left, top and right edges
+  @media (max-width: 499px)
+    --media-inset: 0
+    margin: 0
+
 // Figma 624:3858: meta and title sit in one padded content box below the image
 .content
   position: relative
@@ -365,14 +377,19 @@
     outline: 3px solid var(--color-text)
     outline-offset: -6px
 
-// Favourite toggle (EventStarButton): always visible in the image's top-right corner, an outline
-// star that fills when starred. Lives in the lifted front so it rides the 3D lift, above the media
+// Favourite toggle (EventStarButton): in the image's top-right corner of the expanded card, an
+// outline star that fills when starred. Lives in the lifted front so it rides the 3D lift, above the media
 // and the disclosure button. 28px hit area around a 20px star.
 .star
   position: absolute
   z-index: 4
   top: calc(0.5rem + 6px)
   right: calc(0.5rem + 6px)
+
+  // follows the edge-to-edge phone image (see .media)
+  @media (max-width: 499px)
+    top: 6px
+    right: 6px
   display: grid
   place-items: center
   width: 28px
@@ -407,6 +424,10 @@
     outline: 2px solid currentColor
     outline-offset: 2px
 
+// Only on the open card: on closed blocks the star is distracting (Dries, 2026-11-04).
+.block:not(:has([data-event-card-detail][data-expanded='true'])) .star
+  display: none
+
 .starRing
   opacity: 0
   pointer-events: none
@@ -435,8 +456,8 @@
   .starShape[data-burst]
     animation: none
 
-// No media: keep the venue line clear of the star.
-.front:not(:has([data-event-card-part='media'])) .meta
+// No media: keep the venue line clear of the star (only shown when expanded).
+.block:has([data-event-card-detail][data-expanded='true']) .front:not(:has([data-event-card-part='media'])) .meta
   padding-right: 2rem
 
 // Beta sources only render in dev; dim them so they read as unreleased.
@@ -711,9 +732,10 @@
 .landing:not([data-intro-done]) .landingImage
   transition-delay: 200ms
 
-// box 1 becomes active after the rise, so during the rise it already takes its whole active
-// look (depth, front fill, sharp copy) in one motion; activation then changes nothing visible
-.landing[data-boxes-raised]:not([data-intro-done]) .landingBlock[data-position='1']
+// the box whose image loaded first becomes active after the rise, so during the rise it already
+// takes its whole active look (depth, front fill, sharp copy) in one motion; activation then
+// changes nothing visible
+.landing[data-boxes-raised]:not([data-intro-done]) .landingBlock[data-intro-active]
   --block-depth: 1.35
 
   .front

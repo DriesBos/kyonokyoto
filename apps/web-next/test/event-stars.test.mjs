@@ -27,7 +27,7 @@ test('toggleStarredId adds and removes', () => {
   assert.deepEqual(toggleStarredId(['a', 'b'], 'a'), ['b']);
 });
 
-test('every card gets an always-visible outline star that fills when starred', async () => {
+test('the outline star shows only on expanded cards and fills when starred', async () => {
   const [grid, button, styles] = await Promise.all([
     readFile(new URL('EventsGrid.tsx', app), 'utf8'),
     readFile(new URL('EventStarButton.tsx', app), 'utf8'),
@@ -41,6 +41,12 @@ test('every card gets an always-visible outline star that fills when starred', a
   assert.match(styles, /\.star\n  position: absolute\n  z-index: 4/);
   assert.match(styles, /path\n    fill: transparent/);
   assert.match(styles, /&\[aria-pressed='true'\] \.starShape\n    fill: currentColor/);
+  // hidden on closed cards, starred or not; shown once the card is expanded
+  assert.match(
+    styles,
+    /\.block:not\(:has\(\[data-event-card-detail\]\[data-expanded='true'\]\)\) \.star\n  display: none/,
+  );
+  assert.match(styles, /\n\.block:has\(\[data-event-card-detail\]\[data-expanded='true'\]\)\n/);
   // no hover-only reveal
   const starBlock = styles.slice(styles.indexOf('\n.star\n'), styles.indexOf('\n.starRing\n'));
   assert.doesNotMatch(starBlock, /opacity: 0\n|:hover/);

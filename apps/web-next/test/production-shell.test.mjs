@@ -32,53 +32,19 @@ test('production route renders block cards with groups, maps, and box-cluster di
 });
 
 test('block controls remain accessible and legacy routes canonicalize', async () => {
-  const [
-    panel,
-    styles,
-    themeStyles,
-    themeButton,
-    debugControls,
-    blocks,
-    blockStyles,
-    cityPage,
-    proxy,
-  ] = await Promise.all([
-    readFile(new URL('ControlPanel.tsx', app), 'utf8'),
-    readFile(new URL('ControlPanel.module.sass', app), 'utf8'),
+  const [themeStyles, blocks, blockStyles, cityPage, proxy] = await Promise.all([
     readFile(new URL('ThemeButton.module.sass', app), 'utf8'),
-    readFile(new URL('ThemeButton.tsx', app), 'utf8'),
-    readFile(new URL('DebugControls.tsx', app), 'utf8'),
     readFile(new URL('blocks/BlockControls.tsx', app), 'utf8'),
     readFile(new URL('blocks/page.module.sass', app), 'utf8'),
     readFile(new URL('[city]/(single)/page.tsx', app), 'utf8'),
     readFile(new URL('../proxy.ts', app), 'utf8'),
   ]);
 
-  assert.doesNotMatch(panel, /next\/link|href:/);
-  assert.doesNotMatch(panel, /columns/i);
-  assert.match(panel, /<ul className=\{styles\.controlList\}>/);
-  assert.match(panel, /setClosing\(true\)/);
-  assert.match(panel, />\s*Close\s*</);
-  assert.match(styles, /transform: translateY\(-100%\)/);
-  assert.match(styles, /flex-wrap: wrap/);
-  assert.match(styles, /justify-content: flex-end/);
-  assert.match(styles, /border: 1px solid currentColor/);
-  assert.match(styles, /accent-color: var\(--color-text\)/);
   assert.match(themeStyles, /display: flex/);
   assert.match(themeStyles, /gap: 1rem/);
   assert.match(themeStyles, /\.stepButton[\s\S]*color: var\(--color-text\)/);
-  assert.match(themeStyles, /transform: translateY\(-100%\)/);
-  assert.doesNotMatch(themeStyles, /\.controlsButton/);
-  assert.match(themeButton, /const holdDuration = 3000/);
-  assert.match(themeButton, /window\.setTimeout\([\s\S]*onLongPress\(\)[\s\S]*holdDuration/);
-  assert.match(themeButton, /longPressTriggered\.current[\s\S]*event\.preventDefault\(\)/);
-  assert.match(themeButton, /aria-expanded=\{controlsId \? controlsOpen : undefined\}/);
-  assert.match(debugControls, /controlsOpen=\{open\}/);
-  assert.match(debugControls, /data-open=\{open\}/);
-  assert.match(debugControls, /\{toolbarControls\}[\s\S]*<ThemeButton/);
-  assert.match(debugControls, /onLongPress=\{\(\) => setOpen\(\(current\) => !current\)\}/);
-  assert.doesNotMatch(debugControls, /controlsButton/);
-  assert.doesNotMatch(debugControls, /useSearchParams|\?debug/);
+  // the hold-for-3-seconds dot and its prototype drawer are gone (Dries 2026-11-04)
+  assert.doesNotMatch(blocks, /ControlPanel|DebugControls|<ThemeButton|onLongPress/);
   assert.match(
     proxy,
     /normalizeCity\(request\.cookies\.get\(CITY_COOKIE\)\?\.value\) \?\? 'kyoto'/,
@@ -86,8 +52,6 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
   assert.match(proxy, /citySupportsLocale\(city, requestedLocale\)/);
   assert.match(proxy, /routePathFor\(\{ city: city\.slug, locale \}\)/);
   assert.match(cityPage, /redirect\(routePathFor\(\{ city: city\.slug, locale \}\)\)/);
-  assert.match(blocks, /<ControlPanel/);
-  assert.match(blocks, /<RangeControl/);
   assert.match(blocks, /aria-label="Show fewer items per row"/);
   assert.match(blocks, /aria-label="Show more items per row"/);
   assert.match(blocks, /style\.setProperty\('--block-cols', String\(next\)\)/);
@@ -99,7 +63,6 @@ test('block controls remain accessible and legacy routes canonicalize', async ()
     blockStyles,
     /--cols: var\(--block-cols, max\(1, calc\(var\(--cols-default, 5\) \+ var\(--grid-density, 0\)\)\)\)/,
   );
-  assert.match(blocks, /label: 'Gap [XY]'[\s\S]*unit: 'rem'/);
   assert.match(
     blockStyles,
     /gap: var\(--block-gap-y, calc\(.*--block-lift, 2\) \+ var\(--space\)\)\) var\(--block-gap-x, calc\(/,

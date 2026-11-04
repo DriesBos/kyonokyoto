@@ -3,7 +3,6 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   CITY_COOKIE,
@@ -13,7 +12,6 @@ import {
   defaultLocaleForCity,
   type AppCity,
 } from '@/lib/cities';
-import { DEV_PAGE_ENABLED, DEV_PAGE_PATH } from '@/lib/devPage';
 import { LOCALE_COOKIE, uiText, type AppLocale } from '@/lib/i18n';
 import { CATEGORY_DIMENSIONS } from '../../../../data/categories.mjs';
 import {
@@ -32,6 +30,7 @@ import { routePathFor } from '@/lib/routeState';
 import ColorSchemeToggle from './ColorSchemeToggle';
 import GeneralButton from './GeneralButton';
 import GridDensityControls from './GridDensityControls';
+import { BoxEdge, BoxSides, boxLift } from './blocks/BoxFrame';
 import styles from './SiteHeader.module.sass';
 
 export type HeaderCategory = { slug: string; label: string; dimension: string };
@@ -125,7 +124,6 @@ export default function SiteHeader({
   onMapToggle,
 }: SiteHeaderProps) {
   const rootRef = useRef<HTMLElement>(null);
-  const pathname = usePathname();
   const [filterOpen, setFilterOpen] = useState(false);
   const [citiesOpen, setCitiesOpen] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(() => new Set());
@@ -191,6 +189,20 @@ export default function SiteHeader({
       onRefresh: (self) => setShrink(self.progress),
     });
     return () => trigger.kill();
+  }, [mapOpen]);
+
+  // Phones: the floating bottom box steps aside once the footer's content (credit, arrow) comes
+  // within the box's reach of the screen bottom, so it never covers it (desktop ignores the flag).
+  const [footerReached, setFooterReached] = useState(false);
+  useEffect(() => {
+    const content = document.querySelector<HTMLElement>('[data-site-footer] > *');
+    if (!content) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setFooterReached(entry.isIntersecting || entry.boundingClientRect.top < 0),
+      { rootMargin: '0px 0px 160px 0px' },
+    );
+    observer.observe(content);
+    return () => observer.disconnect();
   }, [mapOpen]);
 
   // Open panels close once the page has scrolled half a viewport away from where they opened.
@@ -276,7 +288,13 @@ export default function SiteHeader({
   };
 
   return (
-    <header className={styles.header} ref={rootRef} data-category-filter data-main-header>
+    <header
+      className={styles.header}
+      ref={rootRef}
+      data-category-filter
+      data-main-header
+      data-map-open={mapOpen || undefined}
+    >
       <Link
         className={styles.logo}
         href={homeHref}
@@ -286,173 +304,180 @@ export default function SiteHeader({
       >
         <Wordmark label={brandLabel} />
       </Link>
+      {/* Phones: the dock floats at the bottom as one box (toolbar + the panels that open above
+          it) while the logo scrolls away with the page; elsewhere it is display: contents. */}
       <div
-        className={styles.controls}
-        aria-label={showFilterControls ? copy.filtersAria : copy.controlsAria}
-        role="group"
+        className={styles.dock}
+        data-header-dock
+        data-footer-reached={footerReached || undefined}
       >
-        <div className={styles.toolbar}>
-          {DEV_PAGE_ENABLED && (
-            <GeneralButton
-              edge="first"
-              verticalPadding="full"
-              href={DEV_PAGE_PATH}
-              label="dev"
-              showDot
-              aria-current={pathname?.startsWith('/dev') ? 'page' : undefined}
-            />
-          )}
-          {showFilterControls && (
-            <GeneralButton
-              className={styles.filterToggle}
-              edge={DEV_PAGE_ENABLED ? undefined : 'first'}
-              verticalPadding="full"
-              label={copy.filter}
-              showDot
-              pressed={filterOpen || filteringActive}
-              data-filter-disclosure
-              data-filtering-active={String(filteringActive)}
-              aria-expanded={filterOpen}
-              aria-controls="site-header-filters"
-              onClick={() => {
-                setFilterOpen((open) => !open);
-                setCitiesOpen(false);
-              }}
-            />
-          )}
-          <GeneralButton
-            edge={showFilterControls || DEV_PAGE_ENABLED ? undefined : 'first'}
-            verticalPadding="full"
-            label={copy.map}
-            showDot
-            pressed={mapOpen}
-            data-map-toggle
-            aria-expanded={mapOpen}
-            aria-controls="map-section"
-            onClick={() => {
-              setFilterOpen(false);
-              setCitiesOpen(false);
-              onMapToggle();
-            }}
-          />
-          <GeneralButton
-            verticalPadding="full"
-            label={copy.cities}
-            showDot
-            pressed={citiesOpen}
-            aria-label={`${copy.cities}, ${copy.currentCity}: ${currentCityLabel}`}
-            data-city-disclosure
-            aria-expanded={citiesOpen}
-            aria-controls="site-header-cities"
-            onClick={() => {
-              setCitiesOpen((open) => !open);
-              setFilterOpen(false);
-            }}
-          />
-          {otherLocale && (
-            <GeneralButton
-              verticalPadding="full"
-              href={routePathFor({ city, locale: otherLocale })}
-              hrefLang={otherLocale}
-              label={otherLocale === 'en' ? 'eng' : 'jp'}
-              aria-label={`${copy.languageAria}: ${otherLocale === 'en' ? 'eng' : 'jp'}`}
-              onClick={() => persistPreference(city, otherLocale)}
-            />
-          )}
-          <div className={styles.icons}>
-            <GridDensityControls />
-            <ColorSchemeToggle />
-          </div>
-        </div>
-      </div>
-      {/* The panels sit outside the nav column so on phones they can span the header's full
-          width under the logo (SiteHeader.module.sass); on desktop they stay right-aligned. */}
-      {showFilterControls && (
-        <div
-          className={styles.panel}
-          id="site-header-filters"
-          ref={filterPanelRef}
-          data-filter-options
-          data-open={filterOpen || undefined}
-          aria-hidden={!filterOpen}
-          inert={!filterOpen ? true : undefined}
-        >
-          {categoryGroups.map((group) => (
-            <div
-              className={styles.group}
-              role="group"
-              aria-label={group.dimension.replace('_category', '')}
-              key={group.dimension}
-            >
-              {group.categories.map((category) => (
+        {/* the event cards' 3D box (phones only; hidden elsewhere) */}
+        <span className={styles.dockFrame}>
+          <BoxSides />
+        </span>
+        <div className={`${styles.dockBody} ${boxLift}`}>
+          <div
+            className={styles.controls}
+            aria-label={showFilterControls ? copy.filtersAria : copy.controlsAria}
+            role="group"
+          >
+            <div className={styles.toolbar}>
+              {showFilterControls && (
                 <GeneralButton
-                  key={category.slug}
+                  className={styles.filterToggle}
+                  edge="first"
                   verticalPadding="full"
-                  label={`#${category.label}`}
+                  label={copy.filter}
                   showDot
-                  pressed={activeCategories.has(category.slug)}
+                  pressed={filterOpen || filteringActive}
+                  data-filter-disclosure
+                  data-filtering-active={String(filteringActive)}
+                  aria-expanded={filterOpen}
+                  aria-controls="site-header-filters"
+                  onClick={() => {
+                    setFilterOpen((open) => !open);
+                    setCitiesOpen(false);
+                  }}
+                />
+              )}
+              <GeneralButton
+                edge={showFilterControls ? undefined : 'first'}
+                verticalPadding="full"
+                label={copy.map}
+                showDot
+                pressed={mapOpen}
+                data-map-toggle
+                aria-expanded={mapOpen}
+                aria-controls="map-section"
+                onClick={() => {
+                  setFilterOpen(false);
+                  setCitiesOpen(false);
+                  onMapToggle();
+                }}
+              />
+              <GeneralButton
+                verticalPadding="full"
+                label={copy.cities}
+                showDot
+                pressed={citiesOpen}
+                aria-label={`${copy.cities}, ${copy.currentCity}: ${currentCityLabel}`}
+                data-city-disclosure
+                aria-expanded={citiesOpen}
+                aria-controls="site-header-cities"
+                onClick={() => {
+                  setCitiesOpen((open) => !open);
+                  setFilterOpen(false);
+                }}
+              />
+              {otherLocale && (
+                <GeneralButton
+                  verticalPadding="full"
+                  href={routePathFor({ city, locale: otherLocale })}
+                  hrefLang={otherLocale}
+                  label={otherLocale === 'en' ? 'eng' : 'jp'}
+                  aria-label={`${copy.languageAria}: ${otherLocale === 'en' ? 'eng' : 'jp'}`}
+                  onClick={() => persistPreference(city, otherLocale)}
+                />
+              )}
+              <div className={styles.icons}>
+                <GridDensityControls />
+                <ColorSchemeToggle />
+              </div>
+            </div>
+          </div>
+          {/* The panels sit outside the nav column so on phones they can span the header's full
+              width under the logo (SiteHeader.module.sass); on desktop they stay right-aligned. */}
+          {showFilterControls && (
+            <div
+              className={styles.panel}
+              id="site-header-filters"
+              ref={filterPanelRef}
+              data-filter-options
+              data-open={filterOpen || undefined}
+              aria-hidden={!filterOpen}
+              inert={!filterOpen ? true : undefined}
+            >
+              {categoryGroups.map((group) => (
+                <div
+                  className={styles.group}
+                  role="group"
+                  aria-label={group.dimension.replace('_category', '')}
+                  key={group.dimension}
+                >
+                  {group.categories.map((category) => (
+                    <GeneralButton
+                      key={category.slug}
+                      verticalPadding="full"
+                      label={`#${category.label}`}
+                      showDot
+                      pressed={activeCategories.has(category.slug)}
+                      tabIndex={filterOpen ? undefined : -1}
+                      data-panel-button
+                      data-filter-button
+                      data-category-button
+                      data-category={category.slug}
+                      data-category-dimension={category.dimension}
+                      onClick={() => toggleCategory(category.slug)}
+                    />
+                  ))}
+                </div>
+              ))}
+              {timingFilters.map((timing) => (
+                <GeneralButton
+                  key={timing.slug}
+                  verticalPadding="full"
+                  label={timing.label}
+                  showDot
+                  pressed={activeTiming === timing.slug}
                   tabIndex={filterOpen ? undefined : -1}
                   data-panel-button
                   data-filter-button
-                  data-category-button
-                  data-category={category.slug}
-                  data-category-dimension={category.dimension}
-                  onClick={() => toggleCategory(category.slug)}
+                  data-timing-button
+                  data-timing={timing.slug}
+                  onClick={() =>
+                    setActiveTiming((current) => (current === timing.slug ? '' : timing.slug))
+                  }
                 />
               ))}
             </div>
-          ))}
-          {timingFilters.map((timing) => (
-            <GeneralButton
-              key={timing.slug}
-              verticalPadding="full"
-              label={timing.label}
-              showDot
-              pressed={activeTiming === timing.slug}
-              tabIndex={filterOpen ? undefined : -1}
-              data-panel-button
-              data-filter-button
-              data-timing-button
-              data-timing={timing.slug}
-              onClick={() =>
-                setActiveTiming((current) => (current === timing.slug ? '' : timing.slug))
-              }
-            />
-          ))}
+          )}
+          <div
+            className={styles.panel}
+            id="site-header-cities"
+            ref={cityPanelRef}
+            data-city-options
+            data-open={citiesOpen || undefined}
+            aria-label={copy.citiesAria}
+            role="group"
+            aria-hidden={!citiesOpen}
+            inert={!citiesOpen ? true : undefined}
+          >
+            {cityConfigs.map((target) => {
+              const targetLocale = target.locales.includes(locale)
+                ? locale
+                : defaultLocaleForCity(target);
+              return (
+                <GeneralButton
+                  key={target.slug}
+                  className={styles.cityButton}
+                  verticalPadding="full"
+                  href={routePathFor({ city: target.slug, locale: targetLocale })}
+                  label={target.label}
+                  showDot
+                  tabIndex={citiesOpen ? undefined : -1}
+                  data-panel-button
+                  data-city-button
+                  data-city-option={target.slug}
+                  aria-current={target.slug === city ? 'page' : undefined}
+                  onClick={() => persistPreference(target.slug, targetLocale)}
+                />
+              );
+            })}
+          </div>
         </div>
-      )}
-      <div
-        className={styles.panel}
-        id="site-header-cities"
-        ref={cityPanelRef}
-        data-city-options
-        data-open={citiesOpen || undefined}
-        aria-label={copy.citiesAria}
-        role="group"
-        aria-hidden={!citiesOpen}
-        inert={!citiesOpen ? true : undefined}
-      >
-        {cityConfigs.map((target) => {
-          const targetLocale = target.locales.includes(locale)
-            ? locale
-            : defaultLocaleForCity(target);
-          return (
-            <GeneralButton
-              key={target.slug}
-              className={styles.cityButton}
-              verticalPadding="full"
-              href={routePathFor({ city: target.slug, locale: targetLocale })}
-              label={target.label}
-              showDot
-              tabIndex={citiesOpen ? undefined : -1}
-              data-panel-button
-              data-city-button
-              data-city-option={target.slug}
-              aria-current={target.slug === city ? 'page' : undefined}
-              onClick={() => persistPreference(target.slug, targetLocale)}
-            />
-          );
-        })}
+        <span className={styles.dockFrame}>
+          <BoxEdge />
+        </span>
       </div>
     </header>
   );

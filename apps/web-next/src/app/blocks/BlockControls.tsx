@@ -1,94 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ControlPanel, { RangeControl, ToggleControl } from '../ControlPanel';
-import { DebugControls } from '../DebugControls';
 import toolbarStyles from '../ThemeButton.module.sass';
 
-type Control = {
-  varName: string;
-  label: string;
-  min: number;
-  max: number;
-  step: number;
-  initial: number;
-  unit: string;
-};
-
-const CONTROLS: Control[] = [
-  {
-    varName: '--block-dx',
-    label: 'Offset X',
-    min: -3,
-    max: 3,
-    step: 0.125,
-    initial: 1.5,
-    unit: 'rem',
-  },
-  {
-    varName: '--block-dy',
-    label: 'Offset Y',
-    min: -3,
-    max: 3,
-    step: 0.125,
-    initial: 1.5,
-    unit: 'rem',
-  },
-  { varName: '--block-lift', label: 'Lift', min: 1, max: 4, step: 0.25, initial: 2, unit: '' },
-  {
-    varName: '--block-gap-x',
-    label: 'Gap X',
-    min: 0,
-    max: 10,
-    step: 0.25,
-    initial: 4,
-    unit: 'rem',
-  },
-  {
-    varName: '--block-gap-y',
-    label: 'Gap Y',
-    min: 0,
-    max: 10,
-    step: 0.25,
-    initial: 4,
-    unit: 'rem',
-  },
-  { varName: '--block-shade-x', label: 'Shade X', min: 0, max: 30, step: 1, initial: 8, unit: '%' },
-  {
-    varName: '--block-shade-y',
-    label: 'Shade Y',
-    min: 0,
-    max: 30,
-    step: 1,
-    initial: 14,
-    unit: '%',
-  },
-];
-
-const defaults = Object.fromEntries(CONTROLS.map((control) => [control.varName, control.initial]));
+// Desktop column stepper (top right). The hold-to-open prototype drawer and its dot were removed
+// on 2026-11-04 (Dries); phones use the header box's +/- instead (hidden there in the sass).
 const minColumns = 1;
 const maxColumns = 8;
 
 const clearOverrides = () => {
-  CONTROLS.forEach((control) => document.documentElement.style.removeProperty(control.varName));
   document.documentElement.style.removeProperty('--block-cols');
   document.documentElement.style.removeProperty('--block-expanded-span');
-  document.documentElement.removeAttribute('data-blocks');
 };
 
 export default function BlockControls() {
-  const [values, setValues] = useState<Record<string, number>>(defaults);
-  const [wireframe, setWireframe] = useState(false);
   const [columns, setColumns] = useState<number | null>(null);
 
   useEffect(() => clearOverrides, []);
-
-  const reset = () => {
-    setValues(defaults);
-    setWireframe(false);
-    setColumns(null);
-    clearOverrides();
-  };
 
   const changeColumns = (delta: number) => {
     const grid = document.querySelector('[data-event-grid]');
@@ -102,62 +30,25 @@ export default function BlockControls() {
   };
 
   return (
-    <DebugControls
-      toolbarControls={
-        <>
-          <button
-            className={toolbarStyles.stepButton}
-            type="button"
-            aria-label="Show fewer items per row"
-            disabled={columns === minColumns}
-            onClick={() => changeColumns(-1)}
-          >
-            <span aria-hidden="true">−</span>
-          </button>
-          <button
-            className={toolbarStyles.stepButton}
-            type="button"
-            aria-label="Show more items per row"
-            disabled={columns === maxColumns}
-            onClick={() => changeColumns(1)}
-          >
-            <span aria-hidden="true">+</span>
-          </button>
-        </>
-      }
-    >
-      <ControlPanel onReset={reset}>
-        {CONTROLS.map((control) => (
-          <RangeControl
-            id={`blocks-${control.varName.slice(2)}`}
-            key={control.varName}
-            label={control.label}
-            min={control.min}
-            max={control.max}
-            step={control.step}
-            suffix={control.unit}
-            value={values[control.varName]}
-            onChange={(value) => {
-              setValues((current) => ({ ...current, [control.varName]: value }));
-              document.documentElement.style.setProperty(
-                control.varName,
-                `${value}${control.unit}`,
-              );
-            }}
-          />
-        ))}
-        <ToggleControl
-          label="Mode"
-          pressed={wireframe}
-          activeLabel="Wireframe"
-          inactiveLabel="Solid"
-          onToggle={() => {
-            const next = !wireframe;
-            setWireframe(next);
-            document.documentElement.dataset.blocks = next ? 'wireframe' : 'solid';
-          }}
-        />
-      </ControlPanel>
-    </DebugControls>
+    <div className={toolbarStyles.toolbar}>
+      <button
+        className={toolbarStyles.stepButton}
+        type="button"
+        aria-label="Show fewer items per row"
+        disabled={columns === minColumns}
+        onClick={() => changeColumns(-1)}
+      >
+        <span aria-hidden="true">−</span>
+      </button>
+      <button
+        className={toolbarStyles.stepButton}
+        type="button"
+        aria-label="Show more items per row"
+        disabled={columns === maxColumns}
+        onClick={() => changeColumns(1)}
+      >
+        <span aria-hidden="true">+</span>
+      </button>
+    </div>
   );
 }
