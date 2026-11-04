@@ -16,7 +16,11 @@ function headerOverlap(card: HTMLElement): number {
       break;
     }
   }
-  return Math.max(0, header.getBoundingClientRect().bottom - scrollerTop, stickyMapOverlap() - scrollerTop);
+  return Math.max(
+    0,
+    header.getBoundingClientRect().bottom - scrollerTop,
+    stickyMapOverlap() - scrollerTop,
+  );
 }
 
 // Lets code outside the grid (the landing) open a card: dispatch with { detail: { eventId } }.

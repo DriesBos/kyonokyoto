@@ -264,9 +264,13 @@ export default function GoogleMapCanvas({
             });
           } else if (stickyMapOverlap() > 0) {
             // phones: the list scrolls as the document under the sticky map, so land below it
-            const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+            const rem =
+              Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
             window.scrollTo({
-              top: Math.max(0, card.getBoundingClientRect().top + window.scrollY - stickyMapOverlap() - rem),
+              top: Math.max(
+                0,
+                card.getBoundingClientRect().top + window.scrollY - stickyMapOverlap() - rem,
+              ),
               behavior: 'smooth',
             });
           } else {

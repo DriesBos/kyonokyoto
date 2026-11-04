@@ -66,7 +66,8 @@ const scrollToEventCard = (eventId: string) => {
     const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const rootTop = root ? root.getBoundingClientRect().top : 0;
     const scrollTop = root ? root.scrollTop : window.scrollY;
-    const offset = Math.max(header?.getBoundingClientRect().height ?? 0, stickyMapOverlap()) + 2 * rem;
+    const offset =
+      Math.max(header?.getBoundingClientRect().height ?? 0, stickyMapOverlap()) + 2 * rem;
     return Math.max(0, card.getBoundingClientRect().top - rootTop + scrollTop - offset);
   };
   const currentTop = () => (root ? root.scrollTop : window.scrollY);

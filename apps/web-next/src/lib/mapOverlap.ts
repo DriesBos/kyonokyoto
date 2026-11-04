@@ -5,5 +5,9 @@ export function stickyMapOverlap(): number {
   const map = document.querySelector<HTMLElement>('[data-map-section]');
   if (!map || getComputedStyle(map).position !== 'sticky') return 0;
   const resizer = document.querySelector<HTMLElement>('[data-map-resizer]');
-  return Math.max(0, map.getBoundingClientRect().bottom, resizer?.getBoundingClientRect().bottom ?? 0);
+  return Math.max(
+    0,
+    map.getBoundingClientRect().bottom,
+    resizer?.getBoundingClientRect().bottom ?? 0,
+  );
 }
