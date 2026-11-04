@@ -4,13 +4,15 @@
   width: 100%
   min-height: 0
 
-  &:has(.content[data-map-mounted])
-    height: 100svh
-    overflow: hidden
+  // Desktop: events and map side by side in one screen-high shell, the events scroll in their
+  // own panel. Phones keep the normal document scroll (see the phone block below).
+  @media (min-width: 769px)
+    &:has(.content[data-map-mounted])
+      height: 100svh
+      overflow: hidden
 
 .content
   --default-events-panel-size: clamp(400px, 50%, 600px)
-  --default-map-panel-size: min(45svh, 24.5rem)
   // Same timing as apps/web's map panel.
   --layout-transition-duration: 260ms
   --layout-transition-ease: cubic-bezier(0.16, 1, 0.3, 1)
@@ -45,30 +47,34 @@
   > *
     flex: 1 1 auto
 
-.content[data-map-mounted]
-  overflow: hidden
-
-  .events
-    overflow-x: hidden
-    overflow-y: auto
-    overscroll-behavior-x: contain
-    overscroll-behavior-y: none
-    scrollbar-width: none
-
-    &::-webkit-scrollbar
-      display: none
-
 .content[data-map-visible]
-  .events
-    flex: 0 0 var(--events-panel-size, var(--default-events-panel-size))
-
   .map
-    flex: 1 1 0
     max-width: 100%
     opacity: 1
 
   .resizer
     opacity: 1
+
+@media (min-width: 769px)
+  .content[data-map-mounted]
+    overflow: hidden
+
+    .events
+      overflow-x: hidden
+      overflow-y: auto
+      overscroll-behavior-x: contain
+      overscroll-behavior-y: none
+      scrollbar-width: none
+
+      &::-webkit-scrollbar
+        display: none
+
+  .content[data-map-visible]
+    .events
+      flex: 0 0 var(--events-panel-size, var(--default-events-panel-size))
+
+    .map
+      flex: 1 1 0
 
 // Dragging should follow the pointer, not ease towards it.
 .content[data-map-resizing]
@@ -115,47 +121,35 @@
   -webkit-mask: url('/divider.svg') center / contain no-repeat
   mask: url('/divider.svg') center / contain no-repeat
 
+// Phones (Dries 2026-11-04): no locked shell, no inner scroller, no viewport units. The event
+// list stays in the document so the page itself scrolls, which is what lets iOS Safari draw it
+// under the status bar and its floating bottom bar. The map sticks to the top of the screen
+// (under the status bar and Dynamic Island) above the list; the handle resizes it through
+// --map-panel-size.
 @media (max-width: 768px)
   .content
     flex-direction: column
-    // Dries 2026-11-04: with the logo hidden while the map is open (SiteHeader), the map takes the
-    // top half of the screen and the event list the bottom half
-    --default-map-panel-size: 50vh
-    --default-map-panel-size: 50lvh
-
-  // Dries 2026-11-04: on phones the open map runs up under the status bar and the event list down
-  // under the floating box and Safari's bottom bar, so the shell takes the large viewport (the one
-  // behind Safari's bars) instead of svh
-  .shell:has(.content[data-map-mounted])
-    height: 100vh
-    height: 100lvh
 
   .map
+    position: sticky
+    z-index: 50
+    top: 0
     order: -2
-    flex: 0 0 0
-    width: 100%
-    max-width: 100%
+    flex: none
+    max-width: none
+    // full height from the start, only max-height animates, so the map never resizes mid-slide
+    height: var(--map-panel-size, 30rem)
     max-height: 0
 
-  .events
-    flex: 1 1 auto
-
-  .content[data-map-visible]
-    .map
-      flex: 0 0 var(--map-panel-size, var(--default-map-panel-size))
-      max-height: var(--map-panel-size, var(--default-map-panel-size))
-
-    .events
-      flex: 1 1 auto
-
-  // the last cards scroll clear of the floating box (SiteHeader .dock: ~72px from the bottom edge
-  // plus the home indicator), the others still pass underneath it
-  .content[data-map-mounted] .events
-    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom))
+  .content[data-map-visible] .map
+    max-height: var(--map-panel-size, 30rem)
 
   .resizer
+    position: sticky
+    z-index: 51
+    top: var(--map-panel-size, 30rem)
     order: -1
-    flex-basis: var(--stroke-width)
+    flex: none
     width: 100%
     height: var(--stroke-width)
     cursor: row-resize
@@ -167,6 +161,11 @@
       left: 0
       width: auto
       height: var(--resizer-hit-size)
+
+  // the last cards scroll clear of the floating box (SiteHeader .dock: ~72px from the bottom edge
+  // plus the home indicator), the others still pass underneath it
+  .content[data-map-mounted] .events
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom))
 
   .handle
     transform: translate(-50%, -50%)

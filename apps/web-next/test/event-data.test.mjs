@@ -184,11 +184,18 @@ test('lead image owns media ratio and becomes the scrollable track only while op
 test('events use page scrolling until map opens an independently scrollable panel', async () => {
   const styles = await readFile(new URL('MapExperience.module.sass', app), 'utf8');
   const eventsStyles = styles.slice(styles.indexOf('.events'), styles.indexOf('.map'));
-  // The panel keeps scrolling while the map is mounted, including while it slides out.
+  // Desktop: the panel keeps scrolling while the map is mounted, including while it slides out.
+  const desktopStart = styles.indexOf('@media (min-width: 769px)\n  .content[data-map-mounted]');
   const mapVisibleStyles = styles.slice(
-    styles.indexOf('.content[data-map-mounted]'),
-    styles.indexOf('.content[data-map-visible]'),
+    desktopStart,
+    styles.indexOf('.content[data-map-visible]', desktopStart),
   );
+  // Phones: no inner scroller and no viewport units, the document scrolls under Safari's bars.
+  const phoneStyles = styles.slice(styles.indexOf('@media (max-width: 768px)'));
+
+  assert.ok(desktopStart >= 0);
+  assert.doesNotMatch(phoneStyles, /overflow-y: auto|\d(s|l|d)?vh/);
+  assert.match(phoneStyles, /position: sticky/);
 
   assert.match(eventsStyles, /overflow: visible/);
   assert.doesNotMatch(eventsStyles, /overscroll-behavior/);

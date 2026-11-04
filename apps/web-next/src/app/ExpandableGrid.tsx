@@ -1,12 +1,14 @@
 'use client';
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { stickyMapOverlap } from '@/lib/mapOverlap';
 
 // How much of the scroll container's top the sticky header covers: all of it on the page, none
-// when the cards scroll in their own panel below the header (map open).
+// when the cards scroll in their own panel below the header (map open). On phones with the map
+// open the sticky map covers the top instead.
 function headerOverlap(card: HTMLElement): number {
   const header = document.querySelector<HTMLElement>('[data-main-header]');
-  if (!header) return 0;
+  if (!header) return stickyMapOverlap();
   let scrollerTop = 0;
   for (let node = card.parentElement; node && node !== document.body; node = node.parentElement) {
     if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) {
@@ -14,7 +16,7 @@ function headerOverlap(card: HTMLElement): number {
       break;
     }
   }
-  return Math.max(0, header.getBoundingClientRect().bottom - scrollerTop);
+  return Math.max(0, header.getBoundingClientRect().bottom - scrollerTop, stickyMapOverlap() - scrollerTop);
 }
 
 // Lets code outside the grid (the landing) open a card: dispatch with { detail: { eventId } }.

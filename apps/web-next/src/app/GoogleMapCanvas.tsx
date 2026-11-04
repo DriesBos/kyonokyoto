@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { uiText, type AppLocale } from '@/lib/i18n';
+import { stickyMapOverlap } from '@/lib/mapOverlap';
 import styles from './GoogleMapCanvas.module.sass';
 
 export type MapSource = {
@@ -259,6 +260,13 @@ export default function GoogleMapCanvas({
           if (events && events.scrollHeight > events.clientHeight) {
             events.scrollTo({
               top: Math.max(0, card.offsetTop - events.offsetTop),
+              behavior: 'smooth',
+            });
+          } else if (stickyMapOverlap() > 0) {
+            // phones: the list scrolls as the document under the sticky map, so land below it
+            const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+            window.scrollTo({
+              top: Math.max(0, card.getBoundingClientRect().top + window.scrollY - stickyMapOverlap() - rem),
               behavior: 'smooth',
             });
           } else {
