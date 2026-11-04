@@ -75,7 +75,6 @@ export const buildMetadata = ({ city, locale }: { city: AppCity; locale: AppLoca
       languages: { ...languages, 'x-default': routeUrl(city, defaultLocaleForCity(config)) },
     },
     robots: 'index, follow, max-image-preview:large',
-    manifest: '/site.webmanifest',
     icons: {
       icon: [
         { url: faviconPath(city), type: 'image/svg+xml' },

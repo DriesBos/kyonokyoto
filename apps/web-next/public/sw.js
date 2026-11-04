@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kyo-no-kyoto-v5';
+const CACHE_NAME = 'kyo-no-kyoto-v6';
 // Runtime entries live in their own capped caches so hashed assets and visited pages from old
 // deploys cannot pile up forever. The oldest entries are evicted first.
 const PAGE_CACHE_NAME = 'kyo-no-kyoto-pages-v1';
@@ -17,7 +17,7 @@ const putCapped = async (cacheName, request, response) => {
 };
 
 const APP_SHELL = [
-  '/site.webmanifest',
+  '/manifest.webmanifest',
   '/favicon.svg',
   '/favicon-32x32.png',
   '/favicon-16x16.png',
