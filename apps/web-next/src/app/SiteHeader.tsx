@@ -199,7 +199,7 @@ export default function SiteHeader({
     if (!content) return;
     const observer = new IntersectionObserver(
       ([entry]) => setFooterReached(entry.isIntersecting || entry.boundingClientRect.top < 0),
-      { rootMargin: '0px 0px 160px 0px' },
+      { rootMargin: '0px 0px 240px 0px' },
     );
     observer.observe(content);
     return () => observer.disconnect();

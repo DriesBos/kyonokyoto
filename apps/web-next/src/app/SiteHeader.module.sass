@@ -175,20 +175,15 @@
   .header
     position: relative
 
+    // Dries 2026-11-04: no logo on phones, the page starts with the event grid (or the map when
+    // open); the header stays only to hold the fixed bottom box
+    padding: 0
+
     &::after
       display: none
 
-    // map open: no logo, just the map (top half) and the events (bottom half); the box stays
-    &[data-map-open]
-      padding: 0
-
-      .logo
-        display: none
-
   .logo
-    svg,
-    .wordmark
-      --logo-scale: 1
+    display: none
 
   .dock
     // the phone grid's box depth (blocks/page.module.sass .grid: 1.5 space, 1 space under 500px)
@@ -213,17 +208,16 @@
     &:has(.panel[data-open])
       --block-depth: var(--block-lift)
 
-    // At the footer (SiteHeader.tsx footerReached) the box first sinks flat (depth 0, the cards'
-    // own lift animation), then fades out; coming back it fades in and rises together.
+    // At the footer (SiteHeader.tsx footerReached) the box fades out quickly, no sink, and fades
+    // back in as quickly (Dries 2026-11-04). --block-motion drives the panel-open lift.
     --block-motion: 0.3s ease
-    transition: opacity 0.2s ease
+    transition: opacity 0.15s ease
 
     // [data-header-dock] so this beats the open-panel lift above
     &[data-footer-reached][data-header-dock]
-      --block-depth: 0
       opacity: 0
       pointer-events: none
-      transition: opacity 0.2s ease 0.3s
+      transition: opacity 0.15s ease
 
   .dockFrame
     display: contents
@@ -243,35 +237,53 @@
   .controls
     margin-left: 0
 
+  // Dries 2026-11-04: filter / map / cities / jp / + / − / ■ spread over the full width with even
+  // gaps, a double gap between jp and +. Every item is a direct flex item with the same side
+  // padding (labels and icons alike), so space-between gives equal gaps between what you see.
   .toolbar
+    --dock-item-pad: 0.5rem
     justify-content: space-between
     align-items: center
     flex-wrap: nowrap
     min-height: 3.25rem
+    // Dries 2026-11-04: outer items twice as far from the box edges (~21px instead of ~10.5px)
+    padding: 0 calc(0.75rem + 10.5px - var(--dock-item-pad))
+
+    // no page-padding edge on the first button here, the box sets the margin
+    > :not(.icons)
+      padding-inline: 0
 
     // no top lines on the toolbar buttons here, the box is the frame
     :has(> [data-general-button-label])
       padding-top: 0
+      padding-inline: var(--dock-item-pad)
 
       &::before
         display: none
 
   .icons
-    margin-left: auto
-    align-items: center
+    display: contents
+
+    // a spacer as wide as two item paddings: with its extra space-between slot the jp → + gap
+    // comes out exactly double
+    &::before
+      content: ''
+      flex: 0 0 calc(2 * var(--dock-item-pad))
 
     // Dries 2026-11-04: the bottom box has room for them, so keep them on the smallest phones too
     @media (max-width: 399px)
-      display: inline-flex
+      display: contents
 
-    // the icons (GridDensityControls/ColorSchemeToggle) are padded to line their tops up with the
-    // buttons' top lines; with no lines here, give them even padding and centre each icon
-    > *
-      align-items: center
+    // GridDensityControls wraps + and − in a group div: flatten it too
+    > [role='group']
+      display: contents
 
+    // even padding, icon centred, at least 44px tall to tap
     button
       align-items: center
-      padding-block: 0.75rem
+      min-width: 0
+      min-height: 44px
+      padding: 0.75rem var(--dock-item-pad)
 
       > span
         margin-top: 0
