@@ -23,10 +23,13 @@ export const rootMetadata: Metadata = {
   applicationName: 'KyōNoKyōto',
   metadataBase: new URL(siteOrigin()),
   robots: { index: true, follow: true },
+  appleWebApp: { statusBarStyle: 'black-translucent' },
 };
 
 // viewport-fit=cover lets the page run under notches and the home indicator, so the
-// env(safe-area-inset-*) paddings in the styles take effect. Pages add their themeColor on top.
+// env(safe-area-inset-*) paddings in the styles take effect. Every route uses this one (via the
+// layouts). No themeColor anywhere (Dries 2026-11-04): Safari tints and blurs the status bar area
+// with it; without one the content shows through around the Dynamic Island.
 export const rootViewport: Viewport = {
   width: 'device-width',
   initialScale: 1,

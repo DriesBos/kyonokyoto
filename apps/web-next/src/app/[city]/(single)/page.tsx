@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import CityEventsPage from '@/app/CityEventsPage';
 import { cityConfigFor, defaultLocaleForCity } from '@/lib/cities';
@@ -22,16 +22,6 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
   return city?.locales.length === 1
     ? buildMetadata({ city: city.slug, locale: defaultLocaleForCity(city) })
     : {};
-}
-
-export async function generateViewport({ params }: RouteProps): Promise<Viewport> {
-  const city = await cityForParams(params);
-  return {
-    themeColor: city?.themeColor ?? '#efefef',
-    width: 'device-width',
-    initialScale: 1,
-    viewportFit: 'cover',
-  };
 }
 
 export default async function CityRoute({ params }: RouteProps) {

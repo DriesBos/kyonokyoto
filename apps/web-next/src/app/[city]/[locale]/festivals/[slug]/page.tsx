@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import FestivalPage from '@/app/FestivalPage';
 import { cityConfigFor, citySupportsLocale } from '@/lib/cities';
@@ -22,16 +22,6 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
   const locale = normalizeLocale(values.locale);
   if (!city || !locale || !citySupportsLocale(city, locale)) return {};
   return buildFestivalMetadata({ city, locale, slug: values.slug });
-}
-
-export async function generateViewport({ params }: RouteProps): Promise<Viewport> {
-  const city = cityConfigFor((await params).city);
-  return {
-    themeColor: city?.themeColor ?? '#efefef',
-    width: 'device-width',
-    initialScale: 1,
-    viewportFit: 'cover',
-  };
 }
 
 export default async function FestivalRoute({ params }: RouteProps) {

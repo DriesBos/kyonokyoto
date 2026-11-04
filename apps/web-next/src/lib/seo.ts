@@ -88,7 +88,8 @@ export const buildMetadata = ({ city, locale }: { city: AppCity; locale: AppLoca
         { url: '/apple-touch-icon.png', sizes: '180x180' },
       ],
     },
-    appleWebApp: { capable: true, statusBarStyle: 'default', title: APP_NAME },
+    // black-translucent: home-screen launches run under the status bar, like Safari with no theme colour
+    appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: APP_NAME },
     openGraph: {
       type: 'website',
       siteName: APP_NAME,
