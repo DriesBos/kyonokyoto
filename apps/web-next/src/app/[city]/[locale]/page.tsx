@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import CityEventsPage from '@/app/CityEventsPage';
-import { cityConfigFor, cityConfigs, citySupportsLocale, defaultLocaleForCity } from '@/lib/cities';
+import { cityConfigFor, citySupportsLocale, defaultLocaleForCity } from '@/lib/cities';
 import { normalizeLocale } from '@/lib/i18n';
 import { routePathFor } from '@/lib/routeState';
 import { buildMetadata } from '@/lib/seo';
@@ -17,8 +17,10 @@ const routeState = async (params: RouteProps['params']) => {
 
 export const revalidate = 300;
 
+// Rendered on first request, not at build (CI builds without Supabase); each page is then cached
+// (ISR, CDN-tagged city-<slug>), and a failed render is never stored.
 export function generateStaticParams() {
-  return cityConfigs.flatMap((city) => city.locales.map((locale) => ({ city: city.slug, locale })));
+  return [];
 }
 
 export async function generateMetadata({ params }: RouteProps): Promise<Metadata> {
