@@ -15,6 +15,10 @@ import EventStarButton from './EventStarButton';
 import { BoxEdge, BoxSides } from './blocks/BoxFrame';
 import styles from './blocks/page.module.sass';
 
+// First cards cover the first viewport on phone (3 columns) and desktop grids.
+const HIGH_PRIORITY_CARD_COUNT = 3;
+const EAGER_CARD_COUNT = 6;
+
 const groupOrder = ['ongoing', 'upcoming', 'permanent'] as const;
 
 export default function EventsGrid({
@@ -115,7 +119,11 @@ export default function EventsGrid({
                             locale={locale}
                             images={event.images}
                             useImageCdn={useImageCdn}
-                            priority={index === 0}
+                            // The LCP is usually one of the first cards, and which one depends on
+                            // column count and tall cards, so the first rows load eagerly and the
+                            // first few get high fetch priority (Lighthouse lcp-lazy-loaded).
+                            priority={index < HIGH_PRIORITY_CARD_COUNT}
+                            eager={index < EAGER_CARD_COUNT}
                             embeds={event.mediaEmbeds.map((embed) => ({
                               videoId: embed.videoId,
                               title: `${event.title} video`,

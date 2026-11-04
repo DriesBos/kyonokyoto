@@ -20,6 +20,26 @@ test('every route carries the security headers apps/web sends', async () => {
   assert.match(contentSecurityPolicy({ dev: true }), /unsafe-eval/);
 });
 
+test('netlify.toml headers match next.config and x-powered-by is off', async () => {
+  const config = await import(new URL('next.config.mjs', root));
+  const toml = await readFile(new URL('../../netlify.toml', root), 'utf8');
+  // netlify.toml covers what Netlify serves without Next (CSP stays in next.config only, since
+  // /.netlify/images sends its own). Both copies must say the same thing.
+  const block = toml.split('[[headers]]')[1].split('\n[')[0];
+  const tomlHeaders = Object.fromEntries(
+    [...block.matchAll(/^\s*([A-Za-z-]+)\s*=\s*"([^"]*)"/gm)].map(([, key, value]) => [key, value]),
+  );
+  const nextHeaders = Object.fromEntries(
+    config
+      .securityHeaders()
+      .filter(({ key }) => key !== 'Content-Security-Policy')
+      .map(({ key, value }) => [key, value]),
+  );
+  delete tomlHeaders.for;
+  assert.deepEqual(tomlHeaders, nextHeaders);
+  assert.equal(config.default.poweredByHeader, false);
+});
+
 test('service worker ships and only registers in production', async () => {
   const [worker, layout, register] = await Promise.all([
     readFile(new URL('../public/sw.js', import.meta.url), 'utf8'),
@@ -30,6 +50,9 @@ test('service worker ships and only registers in production', async () => {
   // next/font serves the font from /_next/static, so the precache list must not name /fonts.
   assert.doesNotMatch(worker, /\/fonts\//);
   assert.match(worker, /url\.pathname === '\/\.netlify\/images'/);
+  // Only hashed build output is cache-final; other assets revalidate in the background.
+  assert.match(worker, /const immutable = url\.pathname\.startsWith\('\/_next\/static\/'\)/);
+  assert.match(worker, /if \(!immutable\) event\.waitUntil\(refresh\(\)/);
   assert.match(layout, /<ServiceWorker register=\{process\.env\.NODE_ENV === 'production'\} \/>/);
   assert.match(register, /navigator\.serviceWorker\.register\('\/sw\.js'\)/);
   assert.match(register, /registration\.unregister\(\)/);

@@ -38,6 +38,8 @@ export const securityHeaders = ({ dev = false } = {}) => [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // No x-powered-by: Next.js on responses.
+  poweredByHeader: false,
   allowedDevOrigins: ['127.0.0.1'],
   trailingSlash: true,
   // Several root layouts (src/app/[city]/..., src/app/dev), so unmatched URLs need

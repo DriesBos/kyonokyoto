@@ -2,7 +2,8 @@ const CACHE_NAME = 'kyo-no-kyoto-v6';
 // Runtime entries live in their own capped caches so hashed assets and visited pages from old
 // deploys cannot pile up forever. The oldest entries are evicted first.
 const PAGE_CACHE_NAME = 'kyo-no-kyoto-pages-v1';
-const ASSET_CACHE_NAME = 'kyo-no-kyoto-assets-v1';
+// v2: drops assets cached by the old cache-first worker, which never revalidated them.
+const ASSET_CACHE_NAME = 'kyo-no-kyoto-assets-v2';
 const CACHE_LIMITS = { [PAGE_CACHE_NAME]: 24, [ASSET_CACHE_NAME]: 120 };
 const CURRENT_CACHES = new Set([CACHE_NAME, PAGE_CACHE_NAME, ASSET_CACHE_NAME]);
 const putCapped = async (cacheName, request, response) => {
@@ -95,21 +96,30 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (['style', 'script', 'font', 'image'].includes(request.destination)) {
+    // Hashed build output never changes under the same URL, so the cached copy is final.
+    // Everything else (venue photos, icons, og.png) can change across deploys under the same URL:
+    // serve the cached copy for speed, then refresh it in the background (stale-while-revalidate).
+    const immutable = url.pathname.startsWith('/_next/static/');
     event.respondWith(
       (async () => {
         const cachedResponse = await caches.match(request);
+        const refresh = () =>
+          fetch(request).then((response) => {
+            if (response.ok) {
+              event.waitUntil(putCapped(ASSET_CACHE_NAME, request, response.clone()));
+            }
+            return response;
+          });
+
         if (cachedResponse) {
+          if (!immutable) event.waitUntil(refresh().catch(() => undefined));
           return cachedResponse;
         }
 
         try {
-          const response = await fetch(request);
-          if (response.ok) {
-            event.waitUntil(putCapped(ASSET_CACHE_NAME, request, response.clone()));
-          }
-          return response;
+          return await refresh();
         } catch {
-          return cachedResponse ?? Response.error();
+          return Response.error();
         }
       })(),
     );

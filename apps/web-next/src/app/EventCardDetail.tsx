@@ -60,6 +60,7 @@ export function EventCardMedia({
   embeds = [],
   useImageCdn,
   priority = false,
+  eager = priority,
   className,
   locale = 'en',
 }: {
@@ -69,7 +70,10 @@ export function EventCardMedia({
   images?: EventCardImage[];
   embeds?: EventCardEmbed[];
   useImageCdn: boolean;
+  /** First image fetched with high priority (likely LCP). */
   priority?: boolean;
+  /** First image loaded eagerly (in or near the first viewport). Defaults to priority. */
+  eager?: boolean;
   className?: string;
 }) {
   const { expanded } = useEventCardExpansion(eventId);
@@ -213,7 +217,7 @@ export function EventCardMedia({
               width={image.width ?? undefined}
               height={image.height ?? undefined}
               alt={label}
-              loading={priority && imageIndex === 0 ? 'eager' : 'lazy'}
+              loading={eager && imageIndex === 0 ? 'eager' : 'lazy'}
               fetchPriority={priority && imageIndex === 0 ? 'high' : 'auto'}
               decoding="async"
               ref={(element) => {
