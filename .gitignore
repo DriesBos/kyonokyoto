@@ -59,6 +59,8 @@ temp/
 .playwright-mcp/
 test-results/
 /divider*.png
+.claude-tmp/
+*.tsbuildinfo
 
 # Deployment tooling
 .netlify/
