@@ -84,6 +84,7 @@
       "base_url": "https://www.bunpaku.or.jp/en/exhi_special/",
       "start_urls": ["https://www.bunpaku.or.jp/en/exhi_special/"],
       "allowed_domains": ["www.bunpaku.or.jp", "bunpaku.or.jp"],
+      "rehost_images": true,
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhi_special_post_en/", "/exhi_special_post/"],
       "notes": "Official special exhibition listing for The Museum of Kyoto. Follow only current/upcoming special exhibition cards.",
