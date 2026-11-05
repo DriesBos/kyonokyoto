@@ -126,6 +126,16 @@
 .cityButton [data-general-button-label]
   text-transform: capitalize
 
+// Testing aid (local builds only): venues button + panel, desktop only. On phones the filter
+// button is first again, so it takes back the edge padding.
+@media (max-width: $mobile-breakpoint)
+  .venuesToggle,
+  .venuesPanel
+    display: none !important
+
+  .toolbar .venuesToggle + .filterToggle
+    padding-left: var(--page-padding-x)
+
 @media (max-width: $mobile-breakpoint)
   .filterToggle
     display: inline-flex

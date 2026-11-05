@@ -9,7 +9,7 @@ test('Grid density stays one step either side of the default', () => {
   assert.equal(stepGridDensity(0, -1), -1);
   assert.equal(stepGridDensity(-1, -1), -1);
   assert.equal(stepGridDensity(-1, 1), 0);
-  // one-column phones: − stops at the default, + still adds a column
+  // one-column phones: + (bigger cards) stops at the default, − still adds a column
   assert.equal(stepGridDensity(0, -1, 0), 0);
   assert.equal(stepGridDensity(0, 1, 0), 1);
 });

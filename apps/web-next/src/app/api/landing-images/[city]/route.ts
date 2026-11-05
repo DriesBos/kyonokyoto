@@ -1,7 +1,4 @@
-import {
-  blocksLandingCandidatesForEvents,
-  blocksLandingCandidatesWithHero,
-} from '@/lib/blocksLanding';
+import { blocksLandingCandidatesForEvents, blocksLandingHeroOptions } from '@/lib/blocksLanding';
 import { cityConfigFor } from '@/lib/cities';
 import { fetchCityEvents } from '@/lib/cityEvents';
 import { landingWarmUrls } from '@/lib/landingWarm';
@@ -21,8 +18,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cit
   if (!city) return Response.json({ error: 'Unknown city' }, { status: 404 });
 
   const events = await fetchCityEvents({ city: city.slug, locale: city.locales[0] });
-  const { candidates, hero } = blocksLandingCandidatesWithHero(
-    blocksLandingCandidatesForEvents(events),
-  );
-  return Response.json({ city: city.slug, urls: landingWarmUrls(candidates, hero) });
+  const candidates = blocksLandingCandidatesForEvents(events);
+  return Response.json({
+    city: city.slug,
+    urls: landingWarmUrls(candidates, blocksLandingHeroOptions(candidates)),
+  });
 }

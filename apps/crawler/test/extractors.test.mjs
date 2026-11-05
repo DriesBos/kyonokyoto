@@ -196,11 +196,11 @@ test('approved source allowlist is public without changing nearby beta sources',
     'villepin',
     'ora-ora',
     'asia-society-hong-kong',
+    'taro-okamoto-memorial-museum',
   ];
   const unchangedBetaSlugs = [
     'itsuo-art-museum',
     'gallery-nomart',
-    'taro-okamoto-memorial-museum',
     'gyre-gallery',
     'gagosian-hong-kong',
     'hong-kong-art-school-gallery',
@@ -6075,47 +6075,63 @@ test('landing slider sources measure final image dimensions without a second opt
   assert.deepEqual(normalized.image_metadata, [{ url: imageUrl, width: 2000, height: 1500 }]);
 });
 
-test('requested Kyoto sources are landing slider sources', async () => {
-  const sources = await loadSourcesConfig({ city: 'kyoto' });
+test('landing slider sources match the lists Dries picked (2026-11-05)', async () => {
+  const expected = {
+    kyoto: [
+      'arts-science-kyoto',
+      'gallery-yamahon',
+      'hakari-contemporary',
+      'huko',
+      'kcua',
+      'leica-gallery-kyoto',
+      'mtk',
+      'sokyo-kyoto',
+      'zenbi',
+    ],
+    osaka: [
+      'abeno-harukas-art-museum',
+      'hyogo-prefectural-museum-of-art',
+      'i-gallery-osaka',
+      'yoshimi-arts',
+    ],
+    tokyo: [
+      'lurf-museum',
+      'mori-art-museum',
+      'national-museum-of-modern-art-tokyo',
+      'ota-fine-arts',
+      'perrotin-tokyo',
+      'scai-the-bathhouse',
+      'setagaya-art-museum',
+      'standing-pine-tokyo',
+      'sumida-hokusai-museum',
+      'taro-okamoto-memorial-museum',
+      'tokyo-photographic-art-museum',
+      'what-museum',
+      'yayoi-kusama-museum',
+      'yutaka-kikutake-gallery',
+    ],
+    'hong-kong': [
+      '10-chancery-lane-gallery',
+      'david-zwirner',
+      'hong-kong-palace-museum',
+      'kiang-malingue',
+      'm-plus',
+      'villepin',
+      'white-cube-hong-kong',
+      'whitestone-gallery-hong-kong',
+    ],
+  };
 
-  for (const slug of [
-    'leica-gallery-kyoto',
-    'sokyo-kyoto',
-    'gallery-yamahon',
-    'hakari-contemporary',
-    'zenbi',
-  ]) {
-    assert.equal(sources.find((source) => source.slug === slug)?.landing_slider, true, slug);
-  }
-});
-
-test('requested Tokyo sources are landing slider sources', async () => {
-  const sources = await loadSourcesConfig({ city: 'tokyo' });
-
-  for (const slug of [
-    'yayoi-kusama-museum',
-    'sumida-hokusai-museum',
-    'university-art-museum-tokyo-geidai',
-    'what-museum',
-    'mori-art-museum',
-    'scai-the-bathhouse',
-    'yutaka-kikutake-gallery',
-    'setagaya-art-museum',
-  ]) {
-    assert.equal(sources.find((source) => source.slug === slug)?.landing_slider, true, slug);
-  }
-});
-
-test('requested Osaka sources are landing slider sources', async () => {
-  const sources = await loadSourcesConfig({ city: 'osaka' });
-
-  for (const slug of [
-    'tezukayama-gallery',
-    'yoshimi-arts',
-    'hyogo-prefectural-museum-of-art',
-    'abeno-harukas-art-museum',
-  ]) {
-    assert.equal(sources.find((source) => source.slug === slug)?.landing_slider, true, slug);
+  for (const [city, slugs] of Object.entries(expected)) {
+    const sources = await loadSourcesConfig({ city });
+    assert.deepEqual(
+      sources
+        .filter((source) => source.landing_slider)
+        .map((source) => source.slug)
+        .toSorted(),
+      slugs,
+      city,
+    );
   }
 });
 

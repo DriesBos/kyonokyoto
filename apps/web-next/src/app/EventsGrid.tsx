@@ -100,6 +100,7 @@ export default function EventsGrid({
                       data-event-group-name={event.group}
                       data-beta={event.beta || undefined}
                       data-categories={event.categories.join('|')}
+                      data-source={event.sourceSlug ?? undefined}
                       data-map-location-id={mapLocationIdForEvent(event) ?? undefined}
                       key={event.id}
                       style={

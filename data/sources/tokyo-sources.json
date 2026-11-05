@@ -507,7 +507,8 @@
       },
       "crawl_hints": {
         "max_detail_pages": 10
-      }
+      },
+      "landing_slider": true
     },
     {
       "slug": "sumida-hokusai-museum",
@@ -759,7 +760,8 @@
       "crawl_hints": {
         "max_detail_pages": 6
       },
-      "beta": false
+      "beta": false,
+      "landing_slider": true
     },
     {
       "slug": "take-ninagawa",
@@ -819,7 +821,8 @@
       "crawl_hints": {
         "max_detail_pages": 6
       },
-      "beta": true
+      "beta": false,
+      "landing_slider": true
     },
     {
       "slug": "what-museum",
@@ -867,7 +870,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/en/exhibit/", "/exhibit/"],
       "notes": "Purple art marker from Google My Maps.",
-      "landing_slider": true,
       "locales": {
         "ja": {
           "start_urls": ["https://museum.geidai.ac.jp/exhibit/"],
@@ -1037,7 +1039,8 @@
         "skip_patterns": ["/artists/", "/news/", "/viewing-room/"],
         "max_detail_pages": 8
       },
-      "beta": false
+      "beta": false,
+      "landing_slider": true
     },
     {
       "slug": "nanzuka",
@@ -1158,7 +1161,8 @@
       "crawl_hints": {
         "max_detail_pages": 6
       },
-      "beta": false
+      "beta": false,
+      "landing_slider": true
     },
     {
       "slug": "gyre-gallery",
@@ -1305,7 +1309,8 @@
       },
       "crawl_hints": {
         "max_detail_pages": 8
-      }
+      },
+      "landing_slider": true
     },
     {
       "slug": "tokyo-node",

@@ -260,7 +260,6 @@
         "/exhibitions/"
       ],
       "notes": "Purple art marker from Google My Maps. Official current/upcoming exhibitions page.",
-      "landing_slider": true,
       "measure_image_dimensions": true,
       "selectors": {
         "listing_links": ".ex_poster a",
@@ -581,7 +580,8 @@
           "description": "First two substantive detail-page paragraphs.",
           "images": "Images inside the detail-page main element."
         }
-      }
+      },
+      "landing_slider": true
     },
     {
       "slug": "ichion-contemporary",
@@ -993,7 +993,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "Current and future status pages are authoritative and link to exhibition detail pages. Details expose title, date, description, then a gallery whose anchor hrefs are the full-resolution images.",
-      "landing_slider": true,
       "measure_image_dimensions": true,
       "beta": false,
       "selectors": {

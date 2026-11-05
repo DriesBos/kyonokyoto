@@ -5,14 +5,13 @@ import EventsGrid from '@/app/EventsGrid';
 import ExperienceHeader from '@/app/ExperienceHeader';
 import MapExperience from '@/app/MapExperience';
 import SiteFooter from '@/app/SiteFooter';
-import {
-  blocksLandingCandidatesForEvents,
-  blocksLandingCandidatesWithHero,
-} from '@/lib/blocksLanding';
+import { blocksLandingCandidatesForEvents, blocksLandingHeroOptions } from '@/lib/blocksLanding';
 import type { CityConfig } from '@/lib/cities';
 import { categoriesForEvents, fetchCityEvents, mapSourcesForEvents } from '@/lib/cityEvents';
-import { googleMapsEnv } from '@/lib/env';
+import { DEV_PAGE_ENABLED } from '@/lib/devPage';
+import { googleMapsEnv, imageCdnEnabled } from '@/lib/env';
 import { uiText, type AppLocale } from '@/lib/i18n';
+import { landingHeroScript } from '@/lib/landingHero';
 import { structuredData } from '@/lib/seo';
 
 export default async function CityEventsPage({
@@ -23,9 +22,28 @@ export default async function CityEventsPage({
   locale: AppLocale;
 }) {
   const events = await fetchCityEvents({ city: city.slug, locale });
-  const landing = blocksLandingCandidatesWithHero(blocksLandingCandidatesForEvents(events));
+  const landingCandidates = blocksLandingCandidatesForEvents(events);
+  const landingHeroes = blocksLandingHeroOptions(landingCandidates);
+  const heroScript = landingHeroScript(landingHeroes, imageCdnEnabled());
   const categories = categoriesForEvents(events);
   const mapSources = mapSourcesForEvents(events);
+  // Testing aid (local builds only): the header's venue filter lists every source with events.
+  const venues = DEV_PAGE_ENABLED
+    ? Array.from(
+        events
+          .reduce((bySlug, event) => {
+            if (!event.sourceSlug) return bySlug;
+            const venue = bySlug.get(event.sourceSlug) ?? {
+              slug: event.sourceSlug,
+              label: event.institution || event.sourceSlug,
+              count: 0,
+            };
+            venue.count += 1;
+            return bySlug.set(event.sourceSlug, venue);
+          }, new Map<string, { slug: string; label: string; count: number }>())
+          .values(),
+      ).sort((a, b) => a.label.localeCompare(b.label))
+    : [];
   const jsonLd = JSON.stringify(
     structuredData({
       city: city.slug,
@@ -49,10 +67,14 @@ export default async function CityEventsPage({
       <a className={styles.skipLink} href="#events">
         {copy.skipToEvents}
       </a>
-      {landing.candidates.length > 0 && (
+      {landingCandidates.length > 0 && heroScript && (
+        // picks this visit's first slide and preloads it before hydration (lib/landingHero.ts)
+        <script dangerouslySetInnerHTML={{ __html: heroScript }} />
+      )}
+      {landingCandidates.length > 0 && (
         <BlocksLanding
-          candidates={landing.candidates}
-          hero={landing.hero}
+          candidates={landingCandidates}
+          heroOptions={landingHeroes}
           cityLabel={city.label}
           locale={locale}
         />
@@ -64,6 +86,7 @@ export default async function CityEventsPage({
             locale={locale}
             brandLabel={city.brandLabel}
             categories={categories}
+            venues={venues}
           />
         }
         cityLabel={city.label}

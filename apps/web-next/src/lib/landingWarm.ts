@@ -30,11 +30,12 @@ export const landingWarmViewports: [number, number, number][] = [
   [2560, 1440, 1],
 ];
 
-// Same URLs the client builds: every srcset entry of the server-rendered hero (the browser picks
-// one by screen), plus the resolved slides for each common viewport.
+// Same URLs the client builds: every srcset entry of each possible hero (the browser picks one by
+// screen), plus every event in the pool for each common viewport, since each visit picks its
+// own random order and rotation runs through the whole pool.
 export const landingWarmUrls = (
   candidates: BlocksLandingCandidate[],
-  hero: BlocksLandingHero | null,
+  heroes: BlocksLandingHero[],
 ): string[] => {
   const urls = new Set<string>();
   const add = (src: string, width: number, height: number) => {
@@ -42,7 +43,7 @@ export const landingWarmUrls = (
     if (url) urls.add(url);
   };
 
-  if (hero) {
+  for (const hero of heroes) {
     for (const aspectClass of landingAspectClasses) {
       for (const size of transformCandidatesFor(hero, aspectClass)) {
         add(hero.src, size.width, size.height);
@@ -56,6 +57,7 @@ export const landingWarmUrls = (
       viewportWidth,
       viewportHeight,
       devicePixelRatio,
+      limit: candidates.length,
     });
     for (const slide of slides) add(slide.src, slide.width, slide.height);
   }

@@ -118,3 +118,21 @@ export const landingPictureSourcesFor = (
     ];
   });
 };
+
+// <link rel="preload"> equivalents of landingPictureSourcesFor. A <picture> takes the first
+// matching source, but every matching preload downloads, so each preload's media also excludes
+// the ranges of the sources before it.
+export const landingPreloadsFor = (
+  image: { src: string } & LandingImageSize,
+  useNetlifyImageCdn: boolean,
+) => {
+  const sources = landingPictureSourcesFor(image, useNetlifyImageCdn);
+  return sources.map((source, index) => {
+    const previous = sources[index - 1]?.media?.replace('max-aspect-ratio', 'min-aspect-ratio');
+    return {
+      media: [previous, source.media].filter(Boolean).join(' and ') || undefined,
+      srcSet: source.srcSet,
+      sizes: source.sizes,
+    };
+  });
+};

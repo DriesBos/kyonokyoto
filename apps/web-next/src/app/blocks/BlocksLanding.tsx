@@ -10,11 +10,14 @@ import {
 } from 'react';
 import {
   firstReadySlideIndex,
+  landingVisitOrder,
   nextReadySlideIndex,
   resolveBlocksLandingSlides,
   type BlocksLandingCandidate,
-  type BlocksLandingHero,
+  type BlocksLandingHeroOption,
 } from '@/lib/blocksLanding';
+import { LANDING_HERO_GLOBAL } from '@/lib/landingHero';
+import { readLandingSeen, rememberLandingSeen } from '@/lib/landingSeen';
 import { imageCdnEnabled } from '@/lib/env';
 import { uiText, type AppLocale } from '@/lib/i18n';
 import { stickyMapOverlap } from '@/lib/mapOverlap';
@@ -25,7 +28,11 @@ import { BoxEdge, BoxSides } from './BoxFrame';
 import { readLocaleHandoff } from '@/lib/localeHandoff';
 import styles from './page.module.sass';
 
+// stable default, so the visit effect doesn't re-run on every render
+const noHeroOptions: BlocksLandingHeroOption[] = [];
 const slideHoldMs = 3000;
+// a box gets its next event once the image it just showed has faded out (.landingImage 400ms)
+const replaceAfterMs = 800;
 const exitMs = 500;
 const wheelThreshold = 80;
 const touchThreshold = 48;
@@ -88,13 +95,13 @@ const scrollToEventCard = (eventId: string) => {
 
 export default function BlocksLanding({
   candidates,
-  hero = null,
+  heroOptions = noHeroOptions,
   slideLimit = 3,
   cityLabel = 'Kyoto',
   locale = 'en',
 }: {
   candidates: BlocksLandingCandidate[];
-  hero?: BlocksLandingHero | null;
+  heroOptions?: BlocksLandingHeroOption[];
   slideLimit?: number;
   cityLabel?: string;
   locale?: AppLocale;
@@ -130,24 +137,51 @@ export default function BlocksLanding({
     if (image?.complete && image.naturalWidth > 0) markLoaded(id, image);
   };
 
+  // This visit's order (random, unseen first) and first slide (picked by the page's inline script,
+  // lib/landingHero.ts). Set after mount: the server-rendered page is shared by every visitor.
+  const [visit, setVisit] = useState<{
+    order: BlocksLandingCandidate[];
+    hero: BlocksLandingHeroOption | null;
+  } | null>(null);
+  useEffect(() => {
+    const picked = (window as unknown as Record<string, unknown>)[LANDING_HERO_GLOBAL];
+    const hero = heroOptions.find((option) => option.id === picked) ?? null;
+    const order = landingVisitOrder(candidates, readLandingSeen(), Math.random, hero?.id).map(
+      (candidate) =>
+        // the hero's slide uses the image the script preloaded
+        candidate.id === hero?.id
+          ? {
+              ...candidate,
+              images: [
+                { src: hero.src, width: hero.width, height: hero.height },
+                ...candidate.images.filter((image) => image.src !== hero.src),
+              ],
+            }
+          : candidate,
+    );
+    setVisit({ order, hero });
+  }, [candidates, heroOptions]);
+  const hero = visit?.hero ?? null;
+
   const usableCandidates = useMemo(
-    () => candidates.filter((candidate) => !failedIds.has(candidate.id)),
-    [candidates, failedIds],
+    () => (visit?.order ?? []).filter((candidate) => !failedIds.has(candidate.id)),
+    [visit, failedIds],
   );
-  const rawSlides = useMemo(
+  // every event of the pool, one per source first; the boxes show `slideLimit` of them at a time
+  const rawPool = useMemo(
     () =>
       resolveBlocksLandingSlides({
         candidates: usableCandidates,
         viewportWidth: viewport.width,
         viewportHeight: viewport.height,
         devicePixelRatio: viewport.density,
-        limit: slideLimit,
+        limit: usableCandidates.length,
       }),
-    [slideLimit, usableCandidates, viewport],
+    [usableCandidates, viewport],
   );
-  const slides = useMemo(
+  const pool = useMemo(
     () =>
-      rawSlides.flatMap((slide) => {
+      rawPool.flatMap((slide) => {
         const src = landingMediaDeliveryUrl(
           slide.src,
           slide.width,
@@ -156,11 +190,56 @@ export default function BlocksLanding({
         );
         return src ? [{ ...slide, src }] : [];
       }),
-    [rawSlides],
+    [rawPool],
   );
+  const poolKey = pool.map((slide) => slide.id).join('|');
+  // the events in the boxes, by position; rotation swaps in the rest of the pool one by one
+  const [slotIds, setSlotIds] = useState<string[]>([]);
+  // pool events waiting for a box, in order; a replaced event goes to the back
+  const queueRef = useRef<string[]>([]);
+  const replaceTimer = useRef<number | null>(null);
+  useEffect(() => {
+    const available = new Set(poolKey ? poolKey.split('|') : []);
+    const poolIds = [...available];
+    setSlotIds((current) => {
+      const kept = current.map((id) => (available.has(id) ? id : null));
+      const used = new Set(kept);
+      const free = poolIds.filter((id) => !used.has(id));
+      const filled = kept.map((id) => id ?? free.shift() ?? null);
+      while (filled.length < Math.min(slideLimit, poolIds.length))
+        filled.push(free.shift() ?? null);
+      const next = filled.filter((id): id is string => Boolean(id));
+      return next.join('|') === current.join('|') ? current : next;
+    });
+  }, [poolKey, slideLimit]);
+  const slides = useMemo(() => {
+    const byId = new Map(pool.map((slide) => [slide.id, slide]));
+    return slotIds.flatMap((id) => {
+      const slide = byId.get(id);
+      return slide ? [slide] : [];
+    });
+  }, [pool, slotIds]);
+  const takeFromQueue = useCallback(
+    (inSlots: string[], replaced: string) => {
+      const poolIds = poolKey ? poolKey.split('|') : [];
+      const waiting = poolIds.filter((id) => !inSlots.includes(id));
+      const queue = [
+        ...queueRef.current.filter((id) => waiting.includes(id)),
+        ...waiting.filter((id) => !queueRef.current.includes(id)),
+      ];
+      const next = queue.shift() ?? null;
+      if (next) queueRef.current = [...queue, replaced];
+      return next;
+    },
+    [poolKey],
+  );
+  // read by the rotation timer, so a box swap doesn't restart the current slide's hold
+  const slidesRef = useRef(slides);
+  slidesRef.current = slides;
+  const takeFromQueueRef = useRef(takeFromQueue);
+  takeFromQueueRef.current = takeFromQueue;
   const loadedIds = useMemo(() => new Set(loadedOrder), [loadedOrder]);
   const slideIds = useMemo(() => slides.map((slide) => slide.id), [slides]);
-  const slideKey = slideIds.join('|');
   const readySlides = useMemo(() => slideIds.map((id) => loadedIds.has(id)), [loadedIds, slideIds]);
   const firstReadyIndex = firstReadySlideIndex(slideIds, loadedOrder);
   const normalizedActiveIndex = slides.length > 0 ? activeIndex % slides.length : 0;
@@ -238,7 +317,13 @@ export default function BlocksLanding({
   useEffect(() => {
     setActiveIndex(0);
     setCycleVersion((current) => current + 1);
-  }, [slideKey]);
+  }, [poolKey]);
+
+  // what this visitor has seen leads to something else next visit (lib/landingSeen.ts)
+  const shownId = shownIndex >= 0 ? slides[shownIndex]?.id : undefined;
+  useEffect(() => {
+    if (shownId) rememberLandingSeen(shownId);
+  }, [shownId]);
 
   const hasSlides = slides.length > 0;
   useEffect(() => {
@@ -277,9 +362,10 @@ export default function BlocksLanding({
     setActiveIndex(firstReadyIndex);
   }, [activeReady, boxesRaised, firstReadyIndex]);
 
+  // nothing to show once this visit's pool resolved empty (slots fill one render after the pool)
   useEffect(() => {
-    if (viewport.width > 0 && slides.length === 0) setHidden(true);
-  }, [slides.length, viewport.width]);
+    if (visit && viewport.width > 0 && pool.length === 0) setHidden(true);
+  }, [pool.length, viewport.width, visit]);
 
   useEffect(() => {
     if (hidden) {
@@ -301,10 +387,24 @@ export default function BlocksLanding({
 
   useEffect(() => {
     if (!introDone || hidden || exiting || hoverPaused || slides.length === 0) return;
-    const timer = window.setTimeout(
-      () => setActiveIndex((current) => nextReadySlideIndex(current % slides.length, readySlides)),
-      slideHoldMs,
-    );
+    const timer = window.setTimeout(() => {
+      const slides = slidesRef.current;
+      const current = activeIndex % slides.length;
+      const next = nextReadySlideIndex(current, readySlides);
+      setActiveIndex(next);
+      if (next === current) return;
+      // the box just left gets the next pool event, once its image has faded out
+      const leaving = slides[current].id;
+      if (replaceTimer.current !== null) window.clearTimeout(replaceTimer.current);
+      replaceTimer.current = window.setTimeout(() => {
+        replaceTimer.current = null;
+        setSlotIds((ids) => {
+          if (!ids.includes(leaving)) return ids;
+          const replacement = takeFromQueueRef.current(ids, leaving);
+          return replacement ? ids.map((id) => (id === leaving ? replacement : id)) : ids;
+        });
+      }, replaceAfterMs);
+    }, slideHoldMs);
     return () => window.clearTimeout(timer);
     // readySlides: a slide that finishes loading later joins the rotation on the next tick
   }, [
@@ -369,6 +469,7 @@ export default function BlocksLanding({
   useEffect(
     () => () => {
       if (exitTimer.current !== null) window.clearTimeout(exitTimer.current);
+      if (replaceTimer.current !== null) window.clearTimeout(replaceTimer.current);
     },
     [],
   );
@@ -387,7 +488,8 @@ export default function BlocksLanding({
       <h2 className={styles.visuallyHidden}>{copy.eventHighlights(cityLabel)}</h2>
       <div className={styles.landingSlides} aria-hidden="true">
         {heroVisible && hero && (
-          // Server-rendered first slide so the browser fetches it from the HTML, before hydration
+          // This visit's first slide: the page's inline script picked it and preloaded these
+          // exact sources before hydration (lib/landingHero.ts).
           // and the viewport measure; it stays mounted as the hero's slide afterwards.
           <picture key={hero.id}>
             {heroSources.map((source) => (
@@ -458,7 +560,8 @@ export default function BlocksLanding({
               data-position={index + 1}
               data-active={active || undefined}
               data-intro-active={index === introIndex || undefined}
-              key={slide.id}
+              // by position: rotation swaps a box's event in place
+              key={index}
               type="button"
               onClick={() => openSlide(slide.id)}
               onPointerEnter={(event) => hoverSlide(event, index)}

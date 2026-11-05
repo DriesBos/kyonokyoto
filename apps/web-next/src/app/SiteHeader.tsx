@@ -34,12 +34,15 @@ import { BoxEdge, BoxSides, boxLift } from './blocks/BoxFrame';
 import styles from './SiteHeader.module.sass';
 
 export type HeaderCategory = { slug: string; label: string; dimension: string };
+// Local builds only (testing aid): filter the grid by source.
+export type HeaderVenue = { slug: string; label: string; count: number };
 
 type SiteHeaderProps = {
   city: AppCity;
   locale: AppLocale;
   brandLabel: string;
   categories?: HeaderCategory[];
+  venues?: HeaderVenue[];
   mapOpen: boolean;
   onMapToggle: () => void;
 };
@@ -210,6 +213,7 @@ export default function SiteHeader({
   locale,
   brandLabel,
   categories = [],
+  venues = [],
   mapOpen,
   onMapToggle,
 }: SiteHeaderProps) {
@@ -218,6 +222,8 @@ export default function SiteHeader({
   const [handoff] = useState(() => readLocaleHandoff(locale));
   const [filterOpen, setFilterOpen] = useState(false);
   const [citiesOpen, setCitiesOpen] = useState(false);
+  const [venuesOpen, setVenuesOpen] = useState(false);
+  const [activeVenues, setActiveVenues] = useState<Set<string>>(() => new Set());
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
     () => new Set(handoff?.categories),
   );
@@ -239,6 +245,8 @@ export default function SiteHeader({
   const currentCityLabel = cityConfigs.find((config) => config.slug === city)?.label ?? city;
   const filterPanelRef = useDisclosurePanel(filterOpen);
   const cityPanelRef = useDisclosurePanel(citiesOpen);
+  const venuePanelRef = useDisclosurePanel(venuesOpen);
+  const showVenueControls = venues.length > 0;
   const mapOpenRef = useRef(mapOpen);
   mapOpenRef.current = mapOpen;
 
@@ -271,11 +279,13 @@ export default function SiteHeader({
       if (rootRef.current?.contains(event.target as Node)) return;
       setFilterOpen(false);
       setCitiesOpen(false);
+      setVenuesOpen(false);
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       setFilterOpen(false);
       setCitiesOpen(false);
+      setVenuesOpen(false);
       if (mapOpenRef.current) onMapToggle();
     };
     document.addEventListener('mousedown', close);
@@ -304,7 +314,7 @@ export default function SiteHeader({
 
   // Open panels close once the page has scrolled half a viewport away from where they opened.
   useEffect(() => {
-    if (!filterOpen && !citiesOpen) return;
+    if (!filterOpen && !citiesOpen && !venuesOpen) return;
     const root = scrollRoot();
     const target = root ?? window;
     const scrollTop = () => (root ? root.scrollTop : window.scrollY);
@@ -314,10 +324,11 @@ export default function SiteHeader({
       if (Math.abs(scrollTop() - origin) <= viewport() * 0.5) return;
       setFilterOpen(false);
       setCitiesOpen(false);
+      setVenuesOpen(false);
     };
     target.addEventListener('scroll', onScroll, { passive: true });
     return () => target.removeEventListener('scroll', onScroll);
-  }, [filterOpen, citiesOpen]);
+  }, [filterOpen, citiesOpen, venuesOpen]);
 
   useEffect(() => {
     const activeByDimension = new Map<string, Set<string>>();
@@ -345,7 +356,8 @@ export default function SiteHeader({
       const categoryMatches = Array.from(activeByDimension.values()).every((selected) =>
         Array.from(selected).some((slug) => cardCategories.has(slug)),
       );
-      const matches = categoryMatches && (!activeTiming || timing === activeTiming);
+      const venueMatches = activeVenues.size === 0 || activeVenues.has(card.dataset.source ?? '');
+      const matches = categoryMatches && venueMatches && (!activeTiming || timing === activeTiming);
       card.toggleAttribute('hidden', !matches);
     });
     groups.forEach((group) => {
@@ -369,7 +381,7 @@ export default function SiteHeader({
       .querySelector<HTMLElement>('[data-filter-empty]')
       ?.toggleAttribute('hidden', visibleGroups > 0);
     document.dispatchEvent(new CustomEvent('event-filter:updated'));
-  }, [activeCategories, activeTiming, categories]);
+  }, [activeCategories, activeTiming, activeVenues, categories]);
 
   // After a language switch, put the reader back on the card they were looking at, once the
   // filter effect above (same commit, runs first) has hidden what it hides. React may keep this
@@ -427,10 +439,28 @@ export default function SiteHeader({
             role="group"
           >
             <div className={styles.toolbar}>
+              {showVenueControls && (
+                <GeneralButton
+                  className={styles.venuesToggle}
+                  edge="first"
+                  verticalPadding="full"
+                  label="venues"
+                  showDot
+                  pressed={venuesOpen || activeVenues.size > 0}
+                  aria-expanded={venuesOpen}
+                  aria-controls="site-header-venues"
+                  onClick={() => {
+                    setVenuesOpen((open) => !open);
+                    setFilterOpen(false);
+                    setCitiesOpen(false);
+                  }}
+                />
+              )}
               {showFilterControls && (
                 <GeneralButton
                   className={styles.filterToggle}
-                  edge="first"
+                  // the dev-only venues button takes the first slot on desktop (see the sass)
+                  edge={showVenueControls ? undefined : 'first'}
                   verticalPadding="full"
                   label={copy.filter}
                   showDot
@@ -442,6 +472,7 @@ export default function SiteHeader({
                   onClick={() => {
                     setFilterOpen((open) => !open);
                     setCitiesOpen(false);
+                    setVenuesOpen(false);
                   }}
                 />
               )}
@@ -457,6 +488,7 @@ export default function SiteHeader({
                 onClick={() => {
                   setFilterOpen(false);
                   setCitiesOpen(false);
+                  setVenuesOpen(false);
                   onMapToggle();
                 }}
               />
@@ -472,6 +504,7 @@ export default function SiteHeader({
                 onClick={() => {
                   setCitiesOpen((open) => !open);
                   setFilterOpen(false);
+                  setVenuesOpen(false);
                 }}
               />
               {otherLocale && (
@@ -503,6 +536,38 @@ export default function SiteHeader({
           </div>
           {/* The panels sit outside the nav column so on phones they can span the header's full
               width under the logo (SiteHeader.module.sass); on desktop they stay right-aligned. */}
+          {showVenueControls && (
+            <div
+              className={`${styles.panel} ${styles.venuesPanel}`}
+              id="site-header-venues"
+              ref={venuePanelRef}
+              data-open={venuesOpen || undefined}
+              aria-label="venues"
+              role="group"
+              aria-hidden={!venuesOpen}
+              inert={!venuesOpen ? true : undefined}
+            >
+              {venues.map((venue) => (
+                <GeneralButton
+                  key={venue.slug}
+                  verticalPadding="full"
+                  label={`${venue.label} (${venue.count})`}
+                  showDot
+                  pressed={activeVenues.has(venue.slug)}
+                  tabIndex={venuesOpen ? undefined : -1}
+                  data-panel-button
+                  data-venue={venue.slug}
+                  onClick={() =>
+                    setActiveVenues((current) => {
+                      const next = new Set(current);
+                      next.has(venue.slug) ? next.delete(venue.slug) : next.add(venue.slug);
+                      return next;
+                    })
+                  }
+                />
+              ))}
+            </div>
+          )}
           {showFilterControls && (
             <div
               className={styles.panel}

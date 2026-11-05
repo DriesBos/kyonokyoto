@@ -30,6 +30,7 @@
     },
     {
       "slug": "m-plus",
+      "landing_slider": true,
       "name": "M+",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -249,6 +250,7 @@
     },
     {
       "slug": "whitestone-gallery-hong-kong",
+      "landing_slider": true,
       "name": "Whitestone Gallery Hong Kong",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -281,6 +283,7 @@
     },
     {
       "slug": "white-cube-hong-kong",
+      "landing_slider": true,
       "name": "White Cube Hong Kong",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -374,6 +377,7 @@
     },
     {
       "slug": "hong-kong-palace-museum",
+      "landing_slider": true,
       "name": "Hong Kong Palace Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -595,7 +599,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/20"],
       "notes": "Official exhibition index uses year-number detail pages and surfaces current entries first.",
-      "landing_slider": true,
       "measure_image_dimensions": true,
       "beta": false,
       "capabilities": { "native_locales": ["en"], "machine_translate_missing_locales": true },
@@ -701,6 +704,7 @@
     },
     {
       "slug": "villepin",
+      "landing_slider": true,
       "name": "Villepin",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -731,6 +735,7 @@
     },
     {
       "slug": "10-chancery-lane-gallery",
+      "landing_slider": true,
       "name": "10 Chancery Lane Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],

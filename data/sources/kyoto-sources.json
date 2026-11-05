@@ -656,7 +656,8 @@
           "start_urls": ["https://huko.jp/en/blogs/exhibition/"],
           "event_page_patterns": ["/en/blogs/exhibition/"]
         }
-      }
+      },
+      "landing_slider": true
     },
     {
       "slug": "hakari-contemporary",
@@ -1064,7 +1065,8 @@
           "start_urls": ["https://mtkcontemporaryart.com/en/exhibition/"],
           "event_page_patterns": ["/en/exhibition/"]
         }
-      }
+      },
+      "landing_slider": true
     },
     {
       "slug": "dnp-foundation-for-cultural-promotion-gallery-ddd",
@@ -1487,7 +1489,6 @@
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/"],
       "notes": "English-only site. Use the dedicated exhibition listing page.",
-      "landing_slider": true,
       "skip_og_image": true,
       "measure_image_dimensions": true,
       "selectors": {
@@ -2295,7 +2296,8 @@
         },
         "image_rules": "Use the detail-page hero image only."
       },
-      "beta": false
+      "beta": false,
+      "landing_slider": true
     },
     {
       "slug": "issey-miyake-kyoto-kura",

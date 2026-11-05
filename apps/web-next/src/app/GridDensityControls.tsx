@@ -24,7 +24,7 @@ const applyDensity = (density: GridDensity) => {
 export default function GridDensityControls({ locale = 'en' }: { locale?: AppLocale }) {
   const copy = uiText[locale];
   const [density, setDensity] = useState<GridDensity>(0);
-  // At 375px and below the default is already one column, so − stops at the default there
+  // At 375px and below the default is already one column, so + (fewer columns) stops at the default there
   const [minDensity, setMinDensity] = useState<GridDensity>(MIN_GRID_DENSITY);
 
   useEffect(() => {
@@ -58,16 +58,7 @@ export default function GridDensityControls({ locale = 'en' }: { locale?: AppLoc
 
   return (
     <div className={styles.controls} role="group" aria-label={copy.itemsPerRow}>
-      <button
-        type="button"
-        className={styles.step}
-        aria-label={copy.moreItemsPerRow}
-        aria-disabled={atMax || undefined}
-        data-grid-density-step="up"
-        onClick={() => change(1)}
-      >
-        <span className={`${styles.icon} ${styles.plus}`} aria-hidden="true" />
-      </button>
+      {/* Dries 2026-11-05: + means bigger cards (fewer columns), − smaller cards (more) */}
       <button
         type="button"
         className={styles.step}
@@ -75,6 +66,16 @@ export default function GridDensityControls({ locale = 'en' }: { locale?: AppLoc
         aria-disabled={atMin || undefined}
         data-grid-density-step="down"
         onClick={() => change(-1)}
+      >
+        <span className={`${styles.icon} ${styles.plus}`} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className={styles.step}
+        aria-label={copy.moreItemsPerRow}
+        aria-disabled={atMax || undefined}
+        data-grid-density-step="up"
+        onClick={() => change(1)}
       >
         <span className={styles.icon} aria-hidden="true" />
       </button>

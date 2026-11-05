@@ -94,8 +94,8 @@
   .grid
     --cols-default: 2
 
-// At 375px and below (Dries 2026-11-05): one column by default; + gives two (zoomed iPhones are ~375px
-// wide and the dock shows +/- there). The minus is disabled at one column (GridDensityControls).
+// At 375px and below (Dries 2026-11-05): one column by default; − gives two (zoomed iPhones are ~375px
+// wide and the dock shows +/- there). The plus is disabled at one column (GridDensityControls).
 @media (max-width: 375px)
   .grid
     --cols-default: 1
@@ -134,7 +134,7 @@
     --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + var(--space))
     --block-gap-y: calc(abs(var(--block-dy, var(--space-offset))) + var(--space))
 
-// Phones and small tablets with the header + pressed (3 columns from the default 2, Dries
+// Phones and small tablets with the header − pressed (3 columns from the default 2, Dries
 // 2026-11-04): shallower 8px boxes, 6px air between columns (past the back's depth) and 8px side
 // padding, so the narrower columns keep their width; tall fronts cut into the gap on purpose.
 @media (max-width: 800px)
@@ -143,7 +143,7 @@
     --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + 6px)
     --grid-side-gap: 8px
 
-// At 375px and below the + gives two columns, not three: keep the normal phone spacing (12px gaps)
+// At 375px and below the − gives two columns, not three: keep the normal phone spacing (12px gaps)
 @media (max-width: 375px)
   :global(:root[data-grid-density='1']) .grid
     --space-offset: var(--space)
@@ -196,7 +196,8 @@
   // hover lift only on devices with real hover (not touch)
   @media (hover: hover)
     &:hover
-      --depth-hover: 0.35
+      // Dries 2026-11-05: hover/active lifts the front by 0.25 depth (1.25x)
+      --depth-hover: 0.25
 
 .tall
   --depth-base: var(--block-lift, 2)
@@ -506,7 +507,7 @@
   grid-column: span min(var(--block-expanded-span, 2), var(--cols))
   // expanded cards get the same lift as hover; both set the same var, so
   // hovering an expanded card never double-lifts
-  --depth-hover: 0.35
+  --depth-hover: 0.25
   // Touch only: the card widens first, then rises slowly to the lifted depth. A transition takes
   // the timing of the state it moves into, so collapsing keeps the default quick motion.
   @media (hover: none)
@@ -525,8 +526,9 @@
   height: 100svh
   overflow: hidden
   isolation: isolate
-  // type colour while the first image loads
-  background: var(--color-text)
+  // Black while the first image loads. iOS 26 Safari tints the status bar with this fixed
+  // overlay's background (no theme-color), so black keeps it in line with the dim layer and boxes.
+  background: #000
   color: #fff
   transform: translateY(0)
   transition: transform 500ms cubic-bezier(.65, 0, .35, 1)
@@ -606,19 +608,20 @@
   pointer-events: none
 
 // Every box, depth included, stays inside the area: the back reaches one depth (--landing-depth)
-// right and below the block, and the active front lifts 0.35 depth up and left. Boxes 1 and 3
+// right and below the block, and the active front lifts 0.5 depth up and left. Boxes 1 and 3
 // share a column, so the width is also capped so both fit above each other (two heights, a row
 // gap, the lift above and the depth below), and the tops are clamped against the bottom edge.
 .landingBlock
   --landing-depth: var(--space-offset, 1.5rem)
-  --landing-block-width: min(calc((100cqw - (var(--landing-cols) - 1) * var(--landing-col-gap)) / var(--landing-cols)), calc((100cqh - var(--landing-row-gap) - 1.35 * var(--landing-depth)) * 3 / 8))
+  --landing-block-width: min(calc((100cqw - (var(--landing-cols) - 1) * var(--landing-col-gap)) / var(--landing-cols)), calc((100cqh - var(--landing-row-gap) - 1.5 * var(--landing-depth)) * 3 / 8))
   --landing-block-height: calc(var(--landing-block-width) * 4 / 3)
-  --landing-top-min: calc(0.35 * var(--landing-depth))
+  --landing-top-min: calc(0.5 * var(--landing-depth))
   --landing-top-max: calc(100cqh - var(--landing-depth) - var(--landing-block-height))
   --landing-top-1: clamp(var(--landing-top-min), 12.6cqh, calc(var(--landing-top-max) - var(--landing-block-height) - var(--landing-row-gap)))
   --block-depth: 1
-  // fade speed for fills, frost and copy: 180ms, 600ms during the intro (set below). One
-  // transition list throughout, so the intro ending never cancels a running transition
+  // fade speed for fills and frost: 180ms, 600ms during the intro (set below); copy uses
+  // --landing-copy-fade (400ms). One transition list throughout, so the intro ending never
+  // cancels a running transition
   --landing-fade: 180ms
   // translucent black fills, darker away from the top-left light like the event cards' faces
   --landing-front-fill: rgb(0 0 0 / .14)
@@ -659,9 +662,9 @@
     top: clamp(calc(var(--landing-top-1) + var(--landing-block-height) + var(--landing-row-gap)), 57.2cqh, var(--landing-top-max))
     left: 15.9%
 
-  // active: only the depth changes (taller box); fill and copy stay the same
+  // active: the depth rises 1 → 1.5 (Dries 2026-11-05); the copy fades in (below)
   &[data-active]
-    --block-depth: 1.35
+    --block-depth: 1.5
     z-index: 1
 
   .boxSides,
@@ -770,7 +773,7 @@
 // takes its whole active look (depth) in one motion; activation then
 // changes nothing visible
 .landing[data-boxes-raised]:not([data-intro-done]) .landingBlock[data-intro-active]
-  --block-depth: 1.35
+  --block-depth: 1.5
 
 // the front panel (fill + frost), the faces and the copy stay off while the boxes fade in flat,
 // then fade in together as the boxes rise to their depth
@@ -782,10 +785,16 @@
 .landing:not([data-boxes-raised]) :is(.landingMeta, .landingTitle)
   opacity: 0
 
+// Copy shows only on the active box (and the box leading the intro): it fades in as the box
+// activates and out as it deactivates, so rotation can swap an inactive box's event unseen
+// (BlocksLanding swaps it 800ms after it deactivates, once this fade is done).
+.landing[data-boxes-raised] .landingBlock:not([data-active], [data-intro-active]) :is(.landingMeta, .landingTitle)
+  opacity: 0
+
 // Frosted side faces of the landing boxes. The SVG faces can't blur what's behind them, so each
 // face is an HTML layer with the front's backdrop blur, skewed into the face's shape the same way
 // the SVG faces are. Depth
-// follows --block-depth like the SVG (0 flat, 1 resting, 1.35 active) and the faces move with the
+// follows --block-depth like the SVG (0 flat, 1 resting, 1.5 active) and the faces move with the
 // same main-thread left/top/width/height motion, so they stay in step with the lines. The landing
 // uses the default +x/+y offset with dx = dy, hence the fixed 45deg skew and no mirroring.
 .landingFace
@@ -829,7 +838,7 @@
   width: 100%
   // full white on every box, never blurred: a filter here made iPad Safari paint a coloured seam
   // (a purple line down the title's right edge) inside the frosted front
-  transition: opacity var(--landing-fade, 180ms) ease-out
+  transition: opacity var(--landing-copy-fade, 400ms) ease-out
 
 .landingMeta
   // one Minor Third step above the card meta

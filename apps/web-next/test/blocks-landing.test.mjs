@@ -4,12 +4,15 @@ import test from 'node:test';
 
 const {
   blocksLandingCandidatesForEvents,
-  blocksLandingCandidatesWithHero,
+  blocksLandingHeroOptions,
+  landingVisitOrder,
   firstReadySlideIndex,
   nextReadySlideIndex,
   resolveBlocksLandingSlides,
 } = await import('../src/lib/blocksLanding.ts');
-const { landingPictureSourcesFor } = await import('../src/lib/landingImages.ts');
+const { landingPictureSourcesFor, landingPreloadsFor } =
+  await import('../src/lib/landingImages.ts');
+const { landingHeroScript } = await import('../src/lib/landingHero.ts');
 const { landingMediaDeliveryUrl } = await import('../src/lib/mediaDelivery.ts');
 const { sourceSlugForEvent } = await import('../src/lib/sourceMatching.ts');
 
@@ -53,7 +56,8 @@ test('Blocks landing prioritizes curated measured events and resolves three uniq
 
   assert.deepEqual(
     candidates.map((candidate) => candidate.id),
-    ['one', 'duplicate', 'small', 'two', 'three', 'four', 'five', 'six', 'seven', 'not-curated'],
+    // landing_slider sources only, once at least three of them have events
+    ['one', 'duplicate', 'small', 'two', 'three', 'four', 'five', 'six', 'seven'],
   );
 
   const slides = resolveBlocksLandingSlides({
@@ -164,8 +168,8 @@ test('Blocks landing changes slides with a direct fade and no shutter rows', asy
   );
 });
 
-test('Blocks landing moves the first large-screen image to the front as the server hero', () => {
-  const { candidates, hero } = blocksLandingCandidatesWithHero(
+test('Blocks landing offers one large-screen hero per source', () => {
+  const heroes = blocksLandingHeroOptions(
     blocksLandingCandidatesForEvents([
       event({
         id: 'small',
@@ -173,30 +177,92 @@ test('Blocks landing moves the first large-screen image to the front as the serv
       }),
       event({
         id: 'big',
+        sourceSlug: 'a',
         images: [
           { url: 'https://example.com/big-a.jpg', width: 1000, height: 700 },
           { url: 'https://example.com/big-b.jpg', width: 3000, height: 2000 },
         ],
       }),
+      event({ id: 'big-too', sourceSlug: 'a' }),
+      event({ id: 'other', sourceSlug: 'b' }),
     ]),
   );
-  assert.deepEqual(
-    candidates.map((candidate) => candidate.id),
-    ['big', 'small'],
-  );
-  assert.equal(candidates[0].images[0].src, 'https://example.com/big-b.jpg');
-  assert.deepEqual(hero, {
-    id: 'big',
-    src: 'https://example.com/big-b.jpg',
-    width: 3000,
-    height: 2000,
-  });
+  assert.deepEqual(heroes, [
+    { id: 'big', sourceSlug: 'a', src: 'https://example.com/big-b.jpg', width: 3000, height: 2000 },
+    {
+      id: 'other',
+      sourceSlug: 'b',
+      src: 'https://example.com/other.jpg',
+      width: 2400,
+      height: 1600,
+    },
+  ]);
 
-  const sources = landingPictureSourcesFor(hero, true);
+  const sources = landingPictureSourcesFor(heroes[0], true);
   assert.equal(sources.length, 4);
   assert.equal(sources[3].media, undefined);
   assert.match(sources[3].srcSet, /w=1920&h=1080/);
-  assert.deepEqual(landingPictureSourcesFor(hero, false), []);
+  assert.deepEqual(landingPictureSourcesFor(heroes[0], false), []);
+
+  // a picture takes the first matching source, but every matching preload downloads
+  assert.deepEqual(
+    landingPreloadsFor(heroes[0], true).map((preload) => preload.media),
+    [
+      '(max-aspect-ratio: 11/18)',
+      '(min-aspect-ratio: 11/18) and (max-aspect-ratio: 1/1)',
+      '(min-aspect-ratio: 1/1) and (max-aspect-ratio: 20/13)',
+      '(min-aspect-ratio: 20/13)',
+    ],
+  );
+
+  const script = landingHeroScript(heroes, true);
+  assert.match(script, /"id":"big"/);
+  assert.match(script, /kyo-landing-seen/);
+  assert.doesNotMatch(script, /<\//);
+  assert.equal(landingHeroScript([], true), null);
+});
+
+test('Blocks landing falls back to other sources when fewer than three are curated', () => {
+  const candidates = blocksLandingCandidatesForEvents([
+    event({ id: 'one', sourceSlug: 'one' }),
+    event({ id: 'two', sourceSlug: 'two' }),
+    event({ id: 'other', sourceSlug: 'other', landingEligible: false }),
+  ]);
+  assert.deepEqual(
+    candidates.map((candidate) => candidate.id),
+    ['one', 'two', 'other'],
+  );
+});
+
+test('Landing visit order leads with unseen sources and puts the picked hero first', () => {
+  const candidates = blocksLandingCandidatesForEvents([
+    event({ id: 'a1', sourceSlug: 'a' }),
+    event({ id: 'a2', sourceSlug: 'a' }),
+    event({ id: 'b1', sourceSlug: 'b' }),
+    event({ id: 'c1', sourceSlug: 'c' }),
+    event({ id: 'd1', sourceSlug: 'd' }),
+  ]);
+  const ids = (order) => order.map((candidate) => candidate.id);
+
+  // one event per source before any second event of a source
+  for (let run = 0; run < 20; run += 1) {
+    const order = ids(landingVisitOrder(candidates, []));
+    assert.equal(order.length, 5);
+    assert.equal(new Set(order.slice(0, 4).map((id) => id[0])).size, 4);
+  }
+
+  // seen events go last, the one seen longest ago first; a source's unseen event leads it
+  const order = ids(landingVisitOrder(candidates, ['c1', 'a1', 'b1']));
+  assert.deepEqual(order.slice(0, 2).toSorted(), ['a2', 'd1']);
+  assert.deepEqual(order.slice(2), ['c1', 'b1', 'a1']);
+
+  assert.equal(ids(landingVisitOrder(candidates, [], Math.random, 'c1'))[0], 'c1');
+
+  // a random visit doesn't always start the same way
+  const firsts = new Set(
+    Array.from({ length: 40 }, () => ids(landingVisitOrder(candidates, []))[0]),
+  );
+  assert.ok(firsts.size > 1);
 });
 
 test('Blocks landing snaps transforms to shared size buckets', () => {
@@ -236,7 +302,7 @@ test('Landing warm list covers the hero srcset and phone and desktop slides', as
       images: [{ src: 'https://example.test/b.jpg', width: 1600, height: 1200 }],
     },
   ];
-  const urls = landingWarmUrls(candidates, { id: 'a', ...candidates[0].images[0] });
+  const urls = landingWarmUrls(candidates, [{ id: 'a', ...candidates[0].images[0] }]);
   const params = urls.map((url) => new URLSearchParams(url.split('?')[1]));
 
   assert.equal(new Set(urls).size, urls.length);

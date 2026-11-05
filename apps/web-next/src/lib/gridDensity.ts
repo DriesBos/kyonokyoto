@@ -25,7 +25,7 @@ export const SINGLE_COLUMN_QUERY = '(max-width: 375px)';
 
 // Default columns per events-panel width, widest first. blocks/page.module.sass holds the same
 // steps as media and container queries; test/grid-density.test.mjs keeps the two in sync.
-// At 375px and below the list is one column: + gives two, and − stops at one (minDensity 0).
+// At 375px and below the list is one column: − gives two, and + stops at one (minDensity 0).
 export const GRID_COLUMN_BREAKPOINTS = [
   { maxWidth: null, columns: 5, minDensity: -1 },
   { maxWidth: 1440, columns: 4, minDensity: -1 },

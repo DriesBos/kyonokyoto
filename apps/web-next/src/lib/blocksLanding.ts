@@ -39,6 +39,7 @@ const maximumRequiredHeight = 1080;
 const maximumTransformWidth = 2560;
 const maximumTransformHeight = 1440;
 const defaultLandingSlideLimit = 3;
+const minimumCuratedSources = 3;
 const excludedLandingSourceSlugs = new Set(['kyoto-city-kyocera-museum-of-art', 'momak']);
 // Manual overrides on top of the crawler's landing check: image URLs or event ids that never
 // show on the landing. Edited from /dev/landing/ in local dev.
@@ -54,10 +55,14 @@ export const blocksLandingCandidatesForEvents = (
       Boolean(event.sourceSlug) &&
       !excludedLandingSourceSlugs.has(event.sourceSlug ?? ''),
   );
-  const orderedEvents = [
-    ...eligibleEvents.filter((event) => event.landingEligible),
-    ...eligibleEvents.filter((event) => !event.landingEligible),
-  ];
+  // The landing pool is the landing_slider sources; other sources only fill in when fewer than
+  // three of them have events.
+  const curatedEvents = eligibleEvents.filter((event) => event.landingEligible);
+  const curatedSources = new Set(curatedEvents.map((event) => event.sourceSlug));
+  const orderedEvents =
+    curatedSources.size >= minimumCuratedSources
+      ? curatedEvents
+      : [...curatedEvents, ...eligibleEvents.filter((event) => !event.landingEligible)];
 
   return orderedEvents.flatMap((event) => {
     if (!event.sourceSlug) return [];
@@ -191,27 +196,88 @@ const heroCoverTargets = [
   { width: 1440, height: 900 },
 ];
 
-// Moves the first candidate with an image that covers a large screen to the front (with that
-// image first), so the server can render it as the first slide before the client measures.
-export const blocksLandingCandidatesWithHero = (
+export type BlocksLandingHeroOption = BlocksLandingHero & { sourceSlug: string };
+
+// One possible first slide per source: its first event with an image that covers a large screen.
+// The page's inline script (lib/landingHero.ts) picks one of these per visit, before first paint.
+export const blocksLandingHeroOptions = (
   candidates: BlocksLandingCandidate[],
-): { candidates: BlocksLandingCandidate[]; hero: BlocksLandingHero | null } => {
+): BlocksLandingHeroOption[] => {
+  const options = new Map<string, BlocksLandingHeroOption>();
   for (const target of heroCoverTargets) {
-    for (const [index, candidate] of candidates.entries()) {
+    for (const candidate of candidates) {
+      if (options.has(candidate.sourceSlug)) continue;
       const image = candidate.images.find(
         (item) => coverDensityFor(item, target.width, target.height) >= 1,
       );
-      if (!image) continue;
-      return {
-        candidates: [
-          { ...candidate, images: [image, ...candidate.images.filter((item) => item !== image)] },
-          ...candidates.filter((_, other) => other !== index),
-        ],
-        hero: { id: candidate.id, ...image },
-      };
+      if (image) {
+        options.set(candidate.sourceSlug, {
+          id: candidate.id,
+          sourceSlug: candidate.sourceSlug,
+          ...image,
+        });
+      }
     }
   }
-  return { candidates, hero: null };
+  return [...options.values()];
+};
+
+export const shuffled = <T>(items: T[], random: () => number = Math.random): T[] => {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const other = Math.floor(random() * (index + 1));
+    [result[index], result[other]] = [result[other], result[index]];
+  }
+  return result;
+};
+
+// Unseen first (shuffled), then seen ones from the longest ago. `seen` lists event ids oldest
+// first (lib/landingSeen.ts).
+const freshestFirst = <T>(
+  items: T[],
+  idOf: (item: T) => string,
+  seen: string[],
+  random: () => number,
+): T[] => {
+  const rank = (item: T) => seen.indexOf(idOf(item));
+  return [
+    ...shuffled(
+      items.filter((item) => rank(item) < 0),
+      random,
+    ),
+    ...items.filter((item) => rank(item) >= 0).toSorted((a, b) => rank(a) - rank(b)),
+  ];
+};
+
+// This visit's landing order: one event per source first (the visitor's unseen events and
+// sources lead, in random order), then every other event, so rotation can run through the whole
+// pool. `firstId` (the hero the inline script picked) goes first.
+export const landingVisitOrder = (
+  candidates: BlocksLandingCandidate[],
+  seen: string[],
+  random: () => number = Math.random,
+  firstId: string | null = null,
+): BlocksLandingCandidate[] => {
+  const bySource = new Map<string, BlocksLandingCandidate[]>();
+  for (const candidate of candidates) {
+    bySource.set(candidate.sourceSlug, [...(bySource.get(candidate.sourceSlug) ?? []), candidate]);
+  }
+  const leads: BlocksLandingCandidate[] = [];
+  const rest: BlocksLandingCandidate[] = [];
+  for (const group of bySource.values()) {
+    const ordered = freshestFirst(group, (candidate) => candidate.id, seen, random);
+    const first = ordered.find((candidate) => candidate.id === firstId) ?? ordered[0];
+    leads.push(first);
+    rest.push(...ordered.filter((candidate) => candidate !== first));
+  }
+  const order = [
+    ...freshestFirst(leads, (candidate) => candidate.id, seen, random),
+    ...freshestFirst(rest, (candidate) => candidate.id, seen, random),
+  ];
+  const firstIndex = order.findIndex((candidate) => candidate.id === firstId);
+  return firstIndex > 0
+    ? [order[firstIndex], ...order.filter((_, index) => index !== firstIndex)]
+    : order;
 };
 
 // Slides only become active once their image has decoded, so the landing never shows an empty
