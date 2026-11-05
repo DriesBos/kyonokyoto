@@ -144,11 +144,29 @@ const defaultClient = async (env) => {
   return anthropicClient;
 };
 
+// Yutaka Kikutake Gallery blocks the image CDN's fetcher, so the web routes its images through the
+// site's own proxy (apps/web-next/src/lib/mediaDelivery.ts); the CDN source here must match.
+const YUTAKA_IMAGE_ORIGIN = 'https://www.yutakakikutakegallery.com';
+const YUTAKA_IMAGE_PATH_PREFIX = '/ykgg/wp-content/uploads/';
+const YUTAKA_IMAGE_PROXY_PATH = '/api/yutaka-image/';
+
+export const cdnSourceUrl = (imageUrl) => {
+  try {
+    const url = new URL(imageUrl);
+    if (url.origin === YUTAKA_IMAGE_ORIGIN && url.pathname.startsWith(YUTAKA_IMAGE_PATH_PREFIX)) {
+      return `${YUTAKA_IMAGE_PROXY_PATH}?url=${encodeURIComponent(imageUrl)}`;
+    }
+  } catch {
+    // not an absolute URL: pass it through
+  }
+  return imageUrl;
+};
+
 // Claude fetches the image through the site's Netlify Image CDN at a modest size: small, fast and
 // it works for museum hosts that block fetchers outside Japan once they are rehosted.
 export const landingCheckImageUrl = (env, imageUrl) => {
   const origin = (env.SITE_URL || 'https://kyonokyoto.xyz').replace(/\/+$/, '');
-  return `${origin}/.netlify/images?${new URLSearchParams({ url: imageUrl, w: '1024', q: '70' })}`;
+  return `${origin}/.netlify/images?${new URLSearchParams({ url: cdnSourceUrl(imageUrl), w: '1024', q: '70' })}`;
 };
 
 export async function classifyLandingImage(
@@ -180,17 +198,18 @@ export async function classifyLandingImage(
   }
 }
 
-// Dead images (the origin 404s, or the URL isn't an image) fail on the site's image CDN with a
-// 4xx. Checked before tagging a new image; transient failures (429, 5xx, network) keep it.
+// Dead images (the origin is gone) fail on the site's image CDN with 404 or 410. Checked before
+// tagging a new image. Only those count: 400 (host not on the Netlify remote_images allowlist),
+// 403 (blocked), 429, 5xx and network errors keep the image.
 export async function isDeadImage(env, imageUrl, fetchFn = fetch) {
   try {
     const origin = (env.SITE_URL || 'https://kyonokyoto.xyz').replace(/\/+$/, '');
     const response = await fetchFn(
-      `${origin}/.netlify/images?${new URLSearchParams({ url: imageUrl, w: '64', q: '30' })}`,
+      `${origin}/.netlify/images?${new URLSearchParams({ url: cdnSourceUrl(imageUrl), w: '64', q: '30' })}`,
       { signal: AbortSignal.timeout(15000) },
     );
     await response.body?.cancel?.();
-    return response.status >= 400 && response.status < 500 && response.status !== 429;
+    return response.status === 404 || response.status === 410;
   } catch {
     return false;
   }

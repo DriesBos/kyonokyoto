@@ -181,12 +181,15 @@ test('dead images are dropped from the event before tagging', async () => {
   assert.equal(result.image_metadata.length, 3);
 });
 
-test('dead image check: 4xx is dead, 429/5xx/network are not', async () => {
+test('dead image check: only 404/410 are dead, 400/403/429/5xx/network are not', async () => {
   const { isDeadImage } = await import('../src/landing-image-check.mjs');
   const status = (code) => async () => ({ status: code });
   assert.equal(await isDeadImage(env, 'x', status(404)), true);
-  assert.equal(await isDeadImage(env, 'x', status(400)), true);
+  assert.equal(await isDeadImage(env, 'x', status(410)), true);
+  assert.equal(await isDeadImage(env, 'x', status(400)), false);
+  assert.equal(await isDeadImage(env, 'x', status(403)), false);
   assert.equal(await isDeadImage(env, 'x', status(429)), false);
+  assert.equal(await isDeadImage(env, 'x', status(500)), false);
   assert.equal(await isDeadImage(env, 'x', status(502)), false);
   assert.equal(await isDeadImage(env, 'x', status(200)), false);
   assert.equal(
@@ -195,4 +198,32 @@ test('dead image check: 4xx is dead, 429/5xx/network are not', async () => {
     }),
     false,
   );
+});
+
+test('Yutaka Kikutake images go through the site proxy in CDN URLs', async () => {
+  const { isDeadImage, cdnSourceUrl } = await import('../src/landing-image-check.mjs');
+  const yutaka = 'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/10/x.jpg';
+  const proxied = `/api/yutaka-image/?url=${encodeURIComponent(yutaka)}`;
+  assert.equal(cdnSourceUrl(yutaka), proxied);
+
+  const landing = new URL(landingCheckImageUrl(env, yutaka));
+  assert.equal(landing.searchParams.get('url'), proxied);
+  assert.equal(landing.searchParams.get('w'), '1024');
+
+  let fetched = null;
+  await isDeadImage(env, yutaka, async (url) => {
+    fetched = new URL(url);
+    return { status: 200 };
+  });
+  assert.equal(fetched.origin + fetched.pathname, 'https://example.test/.netlify/images');
+  assert.equal(fetched.searchParams.get('url'), proxied);
+  assert.equal(fetched.searchParams.get('w'), '64');
+
+  const other = 'https://img.test/a.jpg';
+  const outsidePrefix = 'https://www.yutakakikutakegallery.com/ykgg/other/x.jpg';
+  for (const unchanged of [other, outsidePrefix]) {
+    assert.equal(cdnSourceUrl(unchanged), unchanged);
+    assert.equal(new URL(landingCheckImageUrl(env, unchanged)).searchParams.get('url'), unchanged);
+  }
+  assert.equal(cdnSourceUrl('not a url'), 'not a url');
 });
