@@ -22,7 +22,12 @@ type SharedProps = {
 type ButtonProps = SharedProps &
   Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> & { href?: undefined };
 type LinkProps = SharedProps &
-  Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'className' | 'href'> & { href: string };
+  Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'className' | 'href'> & {
+    href: string;
+    // passed through to next/link
+    prefetch?: boolean;
+    scroll?: boolean;
+  };
 
 const randomBetween = (min: number, max: number) => min + Math.random() * (max - min);
 

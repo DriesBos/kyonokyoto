@@ -14,18 +14,24 @@ export const normalizeGridDensity = (value: unknown): GridDensity => {
   return Math.min(MAX_GRID_DENSITY, Math.max(MIN_GRID_DENSITY, step)) as GridDensity;
 };
 
-export const stepGridDensity = (current: GridDensity, delta: number) =>
-  normalizeGridDensity(current + delta);
+export const stepGridDensity = (
+  current: GridDensity,
+  delta: number,
+  min: GridDensity = MIN_GRID_DENSITY,
+) => normalizeGridDensity(Math.max(min, current + delta));
+
+// Viewport where the default is one column, so the lowest step would change nothing
+export const SINGLE_COLUMN_QUERY = '(max-width: 375px)';
 
 // Default columns per events-panel width, widest first. blocks/page.module.sass holds the same
 // steps as media and container queries; test/grid-density.test.mjs keeps the two in sync.
-// Below 400px the list is one column and the +/- are hidden, so the offset is ignored there.
+// At 375px and below the list is one column: + gives two, and − stops at one (minDensity 0).
 export const GRID_COLUMN_BREAKPOINTS = [
-  { maxWidth: null, columns: 5, lockDensity: false },
-  { maxWidth: 1440, columns: 4, lockDensity: false },
-  { maxWidth: 1100, columns: 3, lockDensity: false },
-  { maxWidth: 800, columns: 2, lockDensity: false },
-  { maxWidth: 399, columns: 1, lockDensity: true },
+  { maxWidth: null, columns: 5, minDensity: -1 },
+  { maxWidth: 1440, columns: 4, minDensity: -1 },
+  { maxWidth: 1100, columns: 3, minDensity: -1 },
+  { maxWidth: 800, columns: 2, minDensity: -1 },
+  { maxWidth: 375, columns: 1, minDensity: 0 },
 ] as const;
 
 export const columnsForDensity = (columns: number, density: GridDensity) =>

@@ -1,9 +1,8 @@
 'use client';
 
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   CITY_COOKIE,
   CITY_STORAGE_KEY,
@@ -26,6 +25,7 @@ import {
   killHeightTransitionTweens,
   toHeight,
 } from '@/lib/heightTransition';
+import { readLocaleHandoff, restoreLocaleHandoff, setLocaleHandoff } from '@/lib/localeHandoff';
 import { routePathFor } from '@/lib/routeState';
 import ColorSchemeToggle from './ColorSchemeToggle';
 import GeneralButton from './GeneralButton';
@@ -42,6 +42,21 @@ type SiteHeaderProps = {
   categories?: HeaderCategory[];
   mapOpen: boolean;
   onMapToggle: () => void;
+};
+
+// While a city page loads, the event cards show as empty boxes (page.module.sass). Cleared when
+// the new page's header mounts, or when the page comes back from the back/forward cache.
+const ROUTE_PENDING_ATTR = 'data-route-pending';
+
+// A city whose route lives in the other root layout (single-locale /<city>/ vs /<city>/<locale>/)
+// is a full page load, which the router cannot prefetch; warm its HTML in the browser cache.
+const prefetchDocument = (href: string) => {
+  if (document.head.querySelector(`link[rel="prefetch"][href="${CSS.escape(href)}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'prefetch';
+  link.as = 'document';
+  link.href = href;
+  document.head.appendChild(link);
 };
 
 function Wordmark({ label }: { label: string }) {
@@ -99,10 +114,78 @@ function useDisclosurePanel(open: boolean) {
   return panelRef;
 }
 
-gsap.registerPlugin(ScrollTrigger);
+// Compact header: small logo + divider line. It is either on or off, never in between, and both
+// ways animate with the same tween, so a fast scroll and opening the map look alike. Compact
+// once the page scrolls past COMPACT_AT, back to full only under EXPAND_BELOW (no flicker at
+// the top), and always while the map is open above phones. --header-shrink runs 0 → 1.
+const COMPACT_AT = 24;
+const EXPAND_BELOW = 8;
+const COMPACT_DURATION = 0.35;
 
-// The logo shrinks and the divider line fades in over this much of the first scroll.
-const SHRINK_DISTANCE_VH = 10;
+function useHeaderCompact(rootRef: RefObject<HTMLElement | null>, mapOpen: boolean) {
+  // kept across map toggles so the effect re-run animates from the current state
+  const compactRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    const header = rootRef.current;
+    if (!header) return;
+    const desktop = window.matchMedia('(min-width: 769px)');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const apply = (compact: boolean) => {
+      if (compact === compactRef.current) return;
+      const first = compactRef.current === null;
+      compactRef.current = compact;
+      const value = compact ? 1 : 0;
+      if (first || reducedMotion.matches) {
+        gsap.killTweensOf(header);
+        gsap.set(header, { '--header-shrink': value });
+        return;
+      }
+      gsap.to(header, {
+        '--header-shrink': value,
+        duration: COMPACT_DURATION,
+        ease: 'power3.out',
+        overwrite: true,
+      });
+    };
+
+    const update = () => {
+      if (mapOpen && desktop.matches) return apply(true);
+      const root = scrollRoot();
+      const top = root ? root.scrollTop : window.scrollY;
+      apply(compactRef.current ? top > EXPAND_BELOW : top >= COMPACT_AT);
+    };
+
+    let frame = 0;
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        update();
+      });
+    };
+
+    update();
+    // capture catches the window and the events panel (its own scroller while the map is open)
+    document.addEventListener('scroll', schedule, { capture: true, passive: true });
+    document.addEventListener('map-layout:updated', schedule);
+    desktop.addEventListener('change', schedule);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('scroll', schedule, { capture: true });
+      document.removeEventListener('map-layout:updated', schedule);
+      desktop.removeEventListener('change', schedule);
+    };
+  }, [rootRef, mapOpen]);
+
+  useEffect(() => {
+    const header = rootRef.current;
+    return () => {
+      if (header) gsap.killTweensOf(header);
+    };
+  }, [rootRef]);
+}
 
 const scrollRoot = () => {
   const events = document.querySelector<HTMLElement>('[data-events-section]');
@@ -115,6 +198,13 @@ const scrollRoot = () => {
     : null;
 };
 
+const singleLocale = (slug: AppCity) =>
+  cityConfigs.find((config) => config.slug === slug)?.locales.length === 1;
+const sharesRootLayout = (a: AppCity, b: AppCity) => singleLocale(a) === singleLocale(b);
+
+const localeForCity = (target: (typeof cityConfigs)[number], locale: AppLocale) =>
+  target.locales.includes(locale) ? locale : defaultLocaleForCity(target);
+
 export default function SiteHeader({
   city,
   locale,
@@ -124,10 +214,14 @@ export default function SiteHeader({
   onMapToggle,
 }: SiteHeaderProps) {
   const rootRef = useRef<HTMLElement>(null);
+  // set when this page was reached through the language switch (lib/localeHandoff)
+  const [handoff] = useState(() => readLocaleHandoff(locale));
   const [filterOpen, setFilterOpen] = useState(false);
   const [citiesOpen, setCitiesOpen] = useState(false);
-  const [activeCategories, setActiveCategories] = useState<Set<string>>(() => new Set());
-  const [activeTiming, setActiveTiming] = useState('');
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(
+    () => new Set(handoff?.categories),
+  );
+  const [activeTiming, setActiveTiming] = useState(handoff?.timing ?? '');
   // apps/web keeps the header controls in English in every locale.
   const copy = uiText.en;
   const timingFilters = [
@@ -155,6 +249,24 @@ export default function SiteHeader({
   }, [city, locale]);
 
   useEffect(() => {
+    document.documentElement.removeAttribute(ROUTE_PENDING_ATTR);
+    const clear = () => document.documentElement.removeAttribute(ROUTE_PENDING_ATTR);
+    window.addEventListener('pageshow', clear);
+    return () => window.removeEventListener('pageshow', clear);
+  }, [city, locale]);
+
+  // Opening the city panel warms every other city, so the click finds its page already loaded:
+  // the links in the same root layout prefetch themselves (prefetch={citiesOpen} below), the
+  // others get their HTML warmed.
+  useEffect(() => {
+    if (!citiesOpen) return;
+    cityConfigs.forEach((target) => {
+      if (target.slug === city || sharesRootLayout(target.slug, city)) return;
+      prefetchDocument(routePathFor({ city: target.slug, locale: localeForCity(target, locale) }));
+    });
+  }, [citiesOpen, city, locale]);
+
+  useEffect(() => {
     const close = (event: MouseEvent) => {
       if (rootRef.current?.contains(event.target as Node)) return;
       setFilterOpen(false);
@@ -174,22 +286,7 @@ export default function SiteHeader({
     };
   }, [onMapToggle]);
 
-  // The logo shrinks and the divider line fades in with the scroll position, over the first
-  // SHRINK_DISTANCE_VH of scroll. --header-shrink runs from 0 (top) to 1.
-  useEffect(() => {
-    const header = rootRef.current;
-    if (!header) return;
-    const setShrink = (progress: number) =>
-      header.style.setProperty('--header-shrink', progress.toFixed(4));
-    const trigger = ScrollTrigger.create({
-      scroller: scrollRoot() ?? window,
-      start: 0,
-      end: () => (window.innerHeight * SHRINK_DISTANCE_VH) / 100,
-      onUpdate: (self) => setShrink(self.progress),
-      onRefresh: (self) => setShrink(self.progress),
-    });
-    return () => trigger.kill();
-  }, [mapOpen]);
+  useHeaderCompact(rootRef, mapOpen);
 
   // Phones: the floating bottom box steps aside once the footer's content (credit, arrow) comes
   // within the box's reach of the screen bottom, so it never covers it (desktop ignores the flag).
@@ -273,6 +370,14 @@ export default function SiteHeader({
       ?.toggleAttribute('hidden', visibleGroups > 0);
     document.dispatchEvent(new CustomEvent('event-filter:updated'));
   }, [activeCategories, activeTiming, categories]);
+
+  // After a language switch, put the reader back on the card they were looking at, once the
+  // filter effect above (same commit, runs first) has hidden what it hides. React may keep this
+  // header (and its state) across the switch or mount a fresh one, so this keys on the locale.
+  useEffect(() => {
+    const pending = readLocaleHandoff(locale);
+    if (pending) restoreLocaleHandoff(pending);
+  }, [locale]);
 
   const toggleCategory = (slug: string) => {
     setActiveCategories((current) => {
@@ -374,9 +479,20 @@ export default function SiteHeader({
                   verticalPadding="full"
                   href={routePathFor({ city, locale: otherLocale })}
                   hrefLang={otherLocale}
+                  // warm the other language so the switch is instant; the page stays in place
+                  prefetch
+                  scroll={false}
                   label={otherLocale === 'en' ? 'eng' : 'jp'}
                   aria-label={`${copy.languageAria}: ${otherLocale === 'en' ? 'eng' : 'jp'}`}
-                  onClick={() => persistPreference(city, otherLocale)}
+                  onClick={() => {
+                    persistPreference(city, otherLocale);
+                    setLocaleHandoff({
+                      locale: otherLocale,
+                      mapOpen,
+                      categories: Array.from(activeCategories),
+                      timing: activeTiming,
+                    });
+                  }}
                 />
               )}
               <div className={styles.icons}>
@@ -453,15 +569,14 @@ export default function SiteHeader({
             inert={!citiesOpen ? true : undefined}
           >
             {cityConfigs.map((target) => {
-              const targetLocale = target.locales.includes(locale)
-                ? locale
-                : defaultLocaleForCity(target);
+              const targetLocale = localeForCity(target, locale);
               return (
                 <GeneralButton
                   key={target.slug}
                   className={styles.cityButton}
                   verticalPadding="full"
                   href={routePathFor({ city: target.slug, locale: targetLocale })}
+                  prefetch={citiesOpen && sharesRootLayout(target.slug, city)}
                   label={target.label}
                   showDot
                   tabIndex={citiesOpen ? undefined : -1}
@@ -469,7 +584,11 @@ export default function SiteHeader({
                   data-city-button
                   data-city-option={target.slug}
                   aria-current={target.slug === city ? 'page' : undefined}
-                  onClick={() => persistPreference(target.slug, targetLocale)}
+                  onClick={() => {
+                    persistPreference(target.slug, targetLocale);
+                    if (target.slug !== city)
+                      document.documentElement.setAttribute(ROUTE_PENDING_ATTR, '');
+                  }}
                 />
               );
             })}

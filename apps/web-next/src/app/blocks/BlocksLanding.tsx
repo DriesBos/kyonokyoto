@@ -22,9 +22,10 @@ import { landingPictureSourcesFor } from '@/lib/landingImages';
 import { landingMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import { EXPAND_EVENT_CARD_EVENT } from '../ExpandableGrid';
 import { BoxEdge, BoxSides } from './BoxFrame';
+import { readLocaleHandoff } from '@/lib/localeHandoff';
 import styles from './page.module.sass';
 
-const slideHoldMs = 4000;
+const slideHoldMs = 3000;
 const exitMs = 500;
 const wheelThreshold = 80;
 const touchThreshold = 48;
@@ -107,7 +108,8 @@ export default function BlocksLanding({
   const [activeIndex, setActiveIndex] = useState(0);
   const [cycleVersion, setCycleVersion] = useState(0);
   const [exiting, setExiting] = useState(false);
-  const [hidden, setHidden] = useState(false);
+  // after a language switch the landing stays dismissed if it was (lib/localeHandoff)
+  const [hidden, setHidden] = useState(() => readLocaleHandoff(locale)?.landingHidden ?? false);
   const [hoverPaused, setHoverPaused] = useState(false);
   // ids in the order their images finished decoding
   const [loadedOrder, setLoadedOrder] = useState<string[]>([]);
@@ -462,6 +464,8 @@ export default function BlocksLanding({
               onPointerEnter={(event) => hoverSlide(event, index)}
               onPointerLeave={leaveSlide}
             >
+              <span className={`${styles.landingFace} ${styles.landingFaceX}`} aria-hidden="true" />
+              <span className={`${styles.landingFace} ${styles.landingFaceY}`} aria-hidden="true" />
               <BoxSides />
               <span className={`${styles.front} ${styles.boxLift}`}>
                 <span className={styles.landingMeta}>

@@ -1,4 +1,7 @@
 .main
+  display: flex
+  flex: 1 0 auto
+  flex-direction: column
   width: 100%
 
   // Focus target of the skip link only; the events themselves carry the focus styles.
@@ -21,6 +24,7 @@
     transform: none
 
 .blocksFooter
+  margin-top: auto
   padding-top: 10vmin
 
 .grid
@@ -90,11 +94,11 @@
   .grid
     --cols-default: 2
 
-// Under 400px: one column, and the header +/- (hidden there) no longer apply.
-@media (max-width: 399px)
+// At 375px and below (Dries 2026-11-05): one column by default; + gives two (zoomed iPhones are ~375px
+// wide and the dock shows +/- there). The minus is disabled at one column (GridDensityControls).
+@media (max-width: 375px)
   .grid
     --cols-default: 1
-    --grid-density: 0
 
 @container (max-width: 1440px)
   .grid
@@ -108,10 +112,9 @@
   .grid
     --cols-default: 2
 
-@container (max-width: 399px)
+@container (max-width: 375px)
   .grid
     --cols-default: 1
-    --grid-density: 0
 
 // Phones (under 500px): shallower boxes so the two columns get wider. Depth drops from 1.5 to 1
 // space unit and the tall cards lift 1.5x instead of 2x; the gaps and side padding follow both.
@@ -139,6 +142,13 @@
     --space-offset: 8px
     --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + 6px)
     --grid-side-gap: 8px
+
+// At 375px and below the + gives two columns, not three: keep the normal phone spacing (12px gaps)
+@media (max-width: 375px)
+  :global(:root[data-grid-density='1']) .grid
+    --space-offset: var(--space)
+    --block-gap-x: calc(abs(var(--block-dx, var(--space-offset))) + var(--space))
+    --grid-side-gap: var(--space)
 
 // Phones with the map open (Dries 2026-11-04): no empty band under the map's resize handle, the
 // list starts one space unit (plus room for a lifted tall front) below it
@@ -284,6 +294,24 @@
   background: var(--color-background)
   // adds to the content's (closed) or detail's (open) 1rem: 1.5rem at the bottom either way
   padding-bottom: 0.5rem
+
+// While another city's page loads (SiteHeader sets data-route-pending on <html>), the cards
+// empty out to their box outlines and pulse, so the click answers at once.
+:global(html[data-route-pending]) .front
+  animation: route-pending 900ms ease-in-out infinite alternate
+
+  > *
+    visibility: hidden
+
+@keyframes route-pending
+  from
+    opacity: 1
+  to
+    opacity: 0.4
+
+@media (prefers-reduced-motion: reduce)
+  :global(html[data-route-pending]) .front
+    animation: none
 
 .media
   position: relative
@@ -588,12 +616,14 @@
   --landing-top-min: calc(0.35 * var(--landing-depth))
   --landing-top-max: calc(100cqh - var(--landing-depth) - var(--landing-block-height))
   --landing-top-1: clamp(var(--landing-top-min), 12.6cqh, calc(var(--landing-top-max) - var(--landing-block-height) - var(--landing-row-gap)))
-  // twice the event cards' 2px line
-  --block-border-width: 4px
   --block-depth: 1
   // fade speed for fills, frost and copy: 180ms, 600ms during the intro (set below). One
   // transition list throughout, so the intro ending never cancels a running transition
   --landing-fade: 180ms
+  // translucent black fills, darker away from the top-left light like the event cards' faces
+  --landing-front-fill: rgb(0 0 0 / .14)
+  --landing-face-x-fill: rgb(0 0 0 / .14)
+  --landing-face-y-fill: rgb(0 0 0 / .28)
   position: absolute
   // always its own stacking context: activation only raises z-index 0 → 1, so the frosted
   // fronts are never re-layered (that re-layering flickered box 3 when box 1 activated)
@@ -629,17 +659,10 @@
     top: clamp(calc(var(--landing-top-1) + var(--landing-block-height) + var(--landing-row-gap)), 57.2cqh, var(--landing-top-max))
     left: 15.9%
 
+  // active: only the depth changes (taller box); fill and copy stay the same
   &[data-active]
     --block-depth: 1.35
     z-index: 1
-
-    .front
-      background: rgb(255 255 255 / .33)
-
-    .landingMeta,
-    .landingTitle
-      opacity: 1
-      filter: none
 
   .boxSides,
   .boxEdge
@@ -653,18 +676,21 @@
   .boxFaceX
     fill: transparent
 
+  // the back stays clear and unlined: the frosted side faces (.landingFace) show the depth, and
+  // its top and left lines would show through the translucent front
   .boxBack
-    fill: rgb(0 0 0 / .25)
-    transition: fill var(--landing-fade) ease-out, transform var(--block-motion, 0.18s ease-out), width var(--block-motion, 0.18s ease-out), height var(--block-motion, 0.18s ease-out)
+    fill: transparent
+    stroke: transparent
 
   .front
     width: 100%
     height: 100%
-    justify-content: space-between
+    // like the event cards: the title sits right under the venue and date, not at the bottom
+    justify-content: flex-start
     align-items: flex-start
     gap: 1rem
     border: 0
-    background: rgb(255 255 255 / .165)
+    background: var(--landing-front-fill)
     -webkit-backdrop-filter: blur(10px)
     backdrop-filter: blur(10px)
     transition: background-color var(--landing-fade) ease-out, backdrop-filter var(--landing-fade) ease-out, -webkit-backdrop-filter var(--landing-fade) ease-out, left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out)
@@ -692,10 +718,7 @@
   .landingBlocks
     --landing-side-gap: 1rem
 
-  // mobile: the site's normal line and the title one step smaller
-  .landingBlock
-    --block-border-width: var(--stroke-width, 2px)
-
+  // mobile: the title one step smaller
   .landingTitle
     font-size: var(--type-step-1)
 
@@ -744,31 +767,54 @@
   transition-delay: 200ms
 
 // the box whose image loaded first becomes active after the rise, so during the rise it already
-// takes its whole active look (depth, front fill, sharp copy) in one motion; activation then
+// takes its whole active look (depth) in one motion; activation then
 // changes nothing visible
 .landing[data-boxes-raised]:not([data-intro-done]) .landingBlock[data-intro-active]
   --block-depth: 1.35
 
-  .front
-    background: rgb(255 255 255 / .33)
-
-  .landingMeta,
-  .landingTitle
-    opacity: 1
-    filter: none
-
-// the back panel fill, the front panel (fill + frost) and the copy stay off while the boxes
-// fade in flat, then fade in together as the boxes rise to their depth
-.landing:not([data-boxes-raised]) .landingBlock .boxBack
-  fill: transparent
-
-.landing:not([data-boxes-raised]) .landingBlock .front
+// the front panel (fill + frost), the faces and the copy stay off while the boxes fade in flat,
+// then fade in together as the boxes rise to their depth
+.landing:not([data-boxes-raised]) .landingBlock :is(.front, .landingFace)
   background: transparent
   -webkit-backdrop-filter: blur(0)
   backdrop-filter: blur(0)
 
 .landing:not([data-boxes-raised]) :is(.landingMeta, .landingTitle)
   opacity: 0
+
+// Frosted side faces of the landing boxes. The SVG faces can't blur what's behind them, so each
+// face is an HTML layer with the front's backdrop blur, skewed into the face's shape the same way
+// the SVG faces are. Depth
+// follows --block-depth like the SVG (0 flat, 1 resting, 1.35 active) and the faces move with the
+// same main-thread left/top/width/height motion, so they stay in step with the lines. The landing
+// uses the default +x/+y offset with dx = dy, hence the fixed 45deg skew and no mirroring.
+.landingFace
+  --d: var(--landing-depth)
+  --ex: calc(var(--d) * (var(--block-depth, 1) - 1))
+  position: absolute
+  pointer-events: none
+  transform-origin: 0 0
+  -webkit-backdrop-filter: blur(10px)
+  backdrop-filter: blur(10px)
+  transition: background-color var(--landing-fade) ease-out, backdrop-filter var(--landing-fade) ease-out, -webkit-backdrop-filter var(--landing-fade) ease-out, left var(--block-motion, 0.18s ease-out), top var(--block-motion, 0.18s ease-out), width var(--block-motion, 0.18s ease-out), height var(--block-motion, 0.18s ease-out)
+
+// right face: from the front's right edge to the back's
+.landingFaceX
+  left: calc(100% - var(--ex))
+  top: calc(-1 * var(--ex))
+  width: calc(var(--d) * var(--block-depth, 1))
+  height: 100%
+  background: var(--landing-face-x-fill)
+  transform: skewY(45deg)
+
+// bottom face: from the front's bottom edge to the back's
+.landingFaceY
+  left: calc(-1 * var(--ex))
+  top: calc(100% - var(--ex))
+  width: 100%
+  height: calc(var(--d) * var(--block-depth, 1))
+  background: var(--landing-face-y-fill)
+  transform: skewX(45deg)
 
 @media (prefers-reduced-motion: reduce)
   .landingBlock :is(.boxSides, .boxEdge)
@@ -781,10 +827,9 @@
 .landingTitle
   display: block
   width: 100%
-  opacity: .33
-  // inactive text is slightly out of focus
-  filter: blur(1.5px)
-  transition: opacity var(--landing-fade, 180ms) ease-out, filter 180ms ease-out
+  // full white on every box, never blurred: a filter here made iPad Safari paint a coloured seam
+  // (a purple line down the title's right edge) inside the frosted front
+  transition: opacity var(--landing-fade, 180ms) ease-out
 
 .landingMeta
   // one Minor Third step above the card meta

@@ -16,6 +16,7 @@ import {
 } from 'react';
 import dynamic from 'next/dynamic';
 import { uiText } from '@/lib/i18n';
+import { readLocaleHandoff } from '@/lib/localeHandoff';
 import type { GoogleMapCanvasProps } from './GoogleMapCanvas';
 import styles from './MapExperience.module.sass';
 
@@ -87,11 +88,15 @@ export default function MapExperience({
   ...mapProps
 }: MapExperienceProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [mapOpen, setMapOpen] = useState(defaultOpen);
+  // after a language switch the map stays as it was (lib/localeHandoff)
+  const [initialOpen] = useState(
+    () => readLocaleHandoff(mapProps.locale ?? 'en')?.mapOpen ?? defaultOpen,
+  );
+  const [mapOpen, setMapOpen] = useState(initialOpen);
   // The map stays mounted while it slides out, and only becomes visible a frame after
   // mounting so the panel can transition in from zero size.
-  const [mapMounted, setMapMounted] = useState(defaultOpen);
-  const [mapVisible, setMapVisible] = useState(defaultOpen);
+  const [mapMounted, setMapMounted] = useState(initialOpen);
+  const [mapVisible, setMapVisible] = useState(initialOpen);
   const [isMobile, setIsMobile] = useState(false);
   const [eventsPanelSize, setEventsPanelSize] = useState<number>();
   const [mapPanelSize, setMapPanelSize] = useState<number>();

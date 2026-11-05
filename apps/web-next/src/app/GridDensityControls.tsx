@@ -6,6 +6,7 @@ import {
   MAX_GRID_DENSITY,
   MIN_GRID_DENSITY,
   normalizeGridDensity,
+  SINGLE_COLUMN_QUERY,
   stepGridDensity,
   type GridDensity,
 } from '@/lib/gridDensity';
@@ -23,22 +24,37 @@ const applyDensity = (density: GridDensity) => {
 export default function GridDensityControls({ locale = 'en' }: { locale?: AppLocale }) {
   const copy = uiText[locale];
   const [density, setDensity] = useState<GridDensity>(0);
+  // At 375px and below the default is already one column, so − stops at the default there
+  const [minDensity, setMinDensity] = useState<GridDensity>(MIN_GRID_DENSITY);
 
   useEffect(() => {
     setDensity(
       normalizeGridDensity(document.documentElement.getAttribute(GRID_DENSITY_ATTRIBUTE) ?? 0),
     );
+    const query = window.matchMedia(SINGLE_COLUMN_QUERY);
+    const sync = () => {
+      const min: GridDensity = query.matches ? 0 : MIN_GRID_DENSITY;
+      setMinDensity(min);
+      setDensity((current) => {
+        if (current >= min) return current;
+        applyDensity(min);
+        return min;
+      });
+    };
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
   }, []);
 
   const change = (delta: number) => {
-    const next = stepGridDensity(density, delta);
+    const next = stepGridDensity(density, delta, minDensity);
     if (next === density) return;
     setDensity(next);
     applyDensity(next);
   };
 
   const atMax = density === MAX_GRID_DENSITY;
-  const atMin = density === MIN_GRID_DENSITY;
+  const atMin = density <= minDensity;
 
   return (
     <div className={styles.controls} role="group" aria-label={copy.itemsPerRow}>
