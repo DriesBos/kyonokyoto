@@ -57,7 +57,7 @@ Seven saved events have verified event-level venue/address, valid date ranges an
 - Needs tuning: Kobunka skipped all 32 for missing images; entries also lack verified postal addresses. Shunju skipped one missing title and one unverifiable date. Tourism skipped 71 missing verified locations, 18 unverifiable dates, nine missing images and one outside collection scope. Prefecture skipped 76 unverifiable dates and three missing images. Review-only rows remain absent from cards.
 - Looks close: Shunju's four Daitoku-ji openings, Tourism's Hōkyō-ji and Reikan-ji, and Prefecture's Jōruri-ji opening in Kizugawa. Review split closure dates, labels, descriptions, images and calendar links before approval.
 - Media delivery: Shunju's actual nested WordPress upload path is allowed by Netlify CDN. Tourism event photos use direct HTTPS publisher delivery because CDN requests return 403 while publisher requests return 200.
-- QA preview: https://deploy-preview-62--kyonokyoto.netlify.app/kyoto/en/ (Japanese: `/kyoto/ja/`). All beta; explicit promotion still required after QA.
+- QA preview: https://deploy-preview-63--kyonokyoto.netlify.app/kyoto/en/ (Japanese: `/kyoto/ja/`). All beta; explicit promotion still required after QA.
 
 Validation after rollout fixes: 306 crawler JavaScript tests, six Python tests, 84 web tests, source validation, formatting and production build pass in CI. Database security advisors report only informational RLS-with-no-policy findings for intentionally private crawler tables.
 
@@ -68,3 +68,24 @@ City directory indexes use `https://ja.kyoto.travel/tourism/search.php?category_
 Indexes and place details are cached per source crawl, with bounded detail/search counts and existing robots/domain checks. Evidence pages are saved in `raw_pages`; private observation facts retain `location_source_url` and `image_source_url` when they supply missing fields. No venue objects or new crawler sources are created. Existing event addresses/photos take precedence, and directory data never changes event dates.
 
 Tourism mixed `場所` labels are classified as venue or address. A narrow parser repairs literal control characters inside publisher JSON strings, preserving structured event location and dates. Explicit parenthetical/header closure dates split calendar segments; unresolved recurring/holiday rules remain review-only. All four sources remain beta during the coverage rerun.
+
+## Coverage rerun: 2026-11-05
+
+All four targeted VPS reruns completed sequentially under shared crawl lock, with `source_needs_review`, zero fatal errors, no browser renders and zero archives. All four sources remain beta.
+
+| Source           | Before saved | After saved | Current/upcoming | Run ID                                 |
+| ---------------- | -----------: | ----------: | ---------------: | -------------------------------------- |
+| Kobunka          |            0 |          11 |               11 | `fd2f0319-ba31-44aa-8206-ebeae0616201` |
+| Shunju           |            4 |           4 |                4 | `7cb1a81d-32c9-4a07-b7b8-bfd78712f16b` |
+| Kyoto Tourism    |            2 |          44 |               27 | `647322c6-124b-4d0a-b5ee-9f798c4f8424` |
+| Kyoto Prefecture |            1 |           4 |                4 | `303449d6-245a-48fb-a0aa-5b9b2837823d` |
+
+Saved records grew from 7 to 63. Seventeen ended events remain stored but hidden by existing date filters; 46 current/upcoming cards are available for QA, versus seven before. All saved rows have actual venue/address, images, valid dates and complete EN/JA translations. No new venue/source objects or database migration.
+
+- Needs tuning: Kobunka still skips 21 entries for missing usable photos or unresolved exact venue identity. Tourism now skips 33 missing verified locations (previously 71), 20 unverifiable dates/restrictions and four missing images. Prefecture skips 76 entries without verifiable event year/date; its three prior missing-image skips recovered. Shunju retains one missing-title and one unverifiable-date skip. These remain excluded; no guessed years, addresses or fuzzy matches.
+- Looks close: 11 Kobunka openings include Kyoto City, Kameoka, Miyazu, Ine, Maizuru and Ayabe. Tourism's recovered rows now use official venue addresses and preserve explicit closure segments. Prefecture's four dated openings now have usable photos. Review photo choice, EN labels, maps and calendar links before promotion.
+- Duplicate QA: four pending same-venue/season review pairs remain separate: Myōken-ji day/night, Hōgon-in day/night, Eikan-dō temple treasures/night viewing, and two distinct Jingo-ji programmes. These titles/date ranges describe different programmes; no uncertain automatic merge. Read-only report: `node scripts/temples-qa.mjs`.
+- Media QA: directory photos describe the verified venue, not necessarily the specific displayed object. City Tourism image classifier requests can fail through CDN; original publisher images and measured dimensions remain available. Visual approval still required.
+- Verification: 316 crawler JavaScript tests, six Python tests, 84 web tests, source validation, formatting and production build pass. Final integration review limits enrichment to four approved Kyoto sources and preserves coordinate provenance.
+
+Latest preview: https://deploy-preview-63--kyonokyoto.netlify.app/kyoto/en/ (Japanese: `/kyoto/ja/`). Keep all beta pending explicit approval.
