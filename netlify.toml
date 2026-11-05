@@ -20,7 +20,7 @@
 
 [images]
   remote_images = [
-    "https?://kyotoshunju\\.com/wp-content/uploads/.*",
+    "https?://kyotoshunju\\.com/(sL7hryut/)?wp-content/uploads/.*",
     "https?://ja\\.kyoto\\.travel/resource/event/.*",
     "https?://www\\.kobunka\\.com/wp-content/uploads/.*",
     "https?://www\\.kyoto-kankou\\.or\\.jp/.*",
