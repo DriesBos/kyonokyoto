@@ -8759,7 +8759,8 @@ const isRobotsBlockError = (error) =>
   error instanceof Error && error.message.startsWith(ROBOTS_BLOCK_MESSAGE);
 
 async function assertRobotsAllowed(url, userAgent, env, diagnostics = null) {
-  if (!envFlag(env, 'CRAWLER_RESPECT_ROBOTS_TXT', true)) return;
+  // Off by default since 2026-11-05 (Dries): set CRAWLER_RESPECT_ROBOTS_TXT=true to check it again.
+  if (!envFlag(env, 'CRAWLER_RESPECT_ROBOTS_TXT', false)) return;
 
   const target = new URL(url);
   const cacheKey = `${target.origin}\n${String(userAgent).toLowerCase()}`;
@@ -8880,7 +8881,7 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
         wait_for_images: context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true),
         scan_full_page: context?.scanFullPage ?? envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', false),
         allowed_domains: context?.allowedDomains ?? [],
-        check_robots_txt: envFlag(env, 'CRAWLER_RESPECT_ROBOTS_TXT', true),
+        check_robots_txt: envFlag(env, 'CRAWLER_RESPECT_ROBOTS_TXT', false),
       },
       {
         timeoutMs: getEnvNumber(
