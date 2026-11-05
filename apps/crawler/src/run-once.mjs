@@ -30,6 +30,7 @@ import {
   isOriginalImageVariant,
   isSiteThemeAssetUrl,
   MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX,
+  isTemplatePlaceholderUrl,
 } from '../../../packages/shared/event-media.mjs';
 import {
   buildScheduleFields,
@@ -2496,7 +2497,12 @@ function looksLikeLowQualityImage(url) {
 }
 
 function isUnsafeImageUrl(url) {
-  return /^data:/i.test(url) || looksLikeSocialOrUiImage(url) || looksLikeLowQualityImage(url);
+  return (
+    /^data:/i.test(url) ||
+    isTemplatePlaceholderUrl(url) ||
+    looksLikeSocialOrUiImage(url) ||
+    looksLikeLowQualityImage(url)
+  );
 }
 
 function scoreImageCandidate(candidate) {

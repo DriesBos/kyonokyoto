@@ -83,7 +83,7 @@ async function currentEvents(env, city) {
   const rows = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const params = new URLSearchParams({
-      select: 'id,city,title,image_urls,image_metadata',
+      select: 'id,city,title,primary_image_url,image_urls,image_metadata',
       status: 'eq.published',
       or: `(end_date.is.null,end_date.gte.${today})`,
       order: 'id',
@@ -125,7 +125,11 @@ async function main() {
     });
     await supabaseRequest(env, `events?id=eq.${row.id}`, {
       method: 'PATCH',
-      body: { image_metadata: keepOldTagsOnFailure(row.image_metadata, next.image_metadata) },
+      body: {
+        image_urls: next.image_urls,
+        primary_image_url: next.primary_image_url,
+        image_metadata: keepOldTagsOnFailure(row.image_metadata, next.image_metadata),
+      },
     });
     done += 1;
     if (done % 20 === 0) console.log(`${done}/${events.length} events`);

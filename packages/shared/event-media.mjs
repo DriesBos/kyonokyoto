@@ -5,6 +5,10 @@ export const MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX = 540;
 export const isSiteThemeAssetUrl = (url) =>
   /\/themes\/(?:custom|contrib)\/[^/]+\/images\//i.test(String(url ?? ''));
 
+// Unrendered template placeholders scraped as image src, e.g. MOT's `{{= imagePc }}`.
+export const isTemplatePlaceholderUrl = (url) =>
+  /\{\{|\}\}|\$\{|%7B%7B|%7D%7D|%24%7B/i.test(String(url ?? ''));
+
 const SHOPIFY_SIZE_PARAMS = ['width', 'height', 'crop', 'pad_color', 'format'];
 // Cloudinary-style transform segments, e.g. /w_920,h_920,c_limit,f_auto/ (artlogic).
 const TRANSFORM_SEGMENT = /^(?:[a-z]{1,3}_[^,/]+,)+[a-z]{1,3}_[^,/]+$|^[wh]_\d+$/i;
@@ -84,7 +88,7 @@ export const filterEventMediaByMinimumHeight = (event) => {
       .map((image) => [image.url, image.height]),
   );
   const isEligible = (url) => {
-    if (isSiteThemeAssetUrl(url)) return false;
+    if (isSiteThemeAssetUrl(url) || isTemplatePlaceholderUrl(url)) return false;
     const height = measuredHeightByUrl.get(url);
     return height === undefined || height >= MIN_EVENT_MEDIA_SOURCE_HEIGHT_PX;
   };

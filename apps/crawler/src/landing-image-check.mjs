@@ -180,10 +180,32 @@ export async function classifyLandingImage(
   }
 }
 
+// Dead images (the origin 404s, or the URL isn't an image) fail on the site's image CDN with a
+// 4xx. Checked before tagging a new image; transient failures (429, 5xx, network) keep it.
+export async function isDeadImage(env, imageUrl, fetchFn = fetch) {
+  try {
+    const origin = (env.SITE_URL || 'https://kyonokyoto.xyz').replace(/\/+$/, '');
+    const response = await fetchFn(
+      `${origin}/.netlify/images?${new URLSearchParams({ url: imageUrl, w: '64', q: '30' })}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    await response.body?.cancel?.();
+    return response.status >= 400 && response.status < 500 && response.status !== 429;
+  } catch {
+    return false;
+  }
+}
+
 export async function checkLandingImages(
   eventData,
   _source,
-  { env = {}, lookupVerdictFn, classifyFn = classifyLandingImage, log = () => {} } = {},
+  {
+    env = {},
+    lookupVerdictFn,
+    classifyFn = classifyLandingImage,
+    deadImageFn = isDeadImage,
+    log = () => {},
+  } = {},
 ) {
   if (!env.ANTHROPIC_API_KEY || env.IMAGE_CHECK === '0') return eventData;
   const metadata = eventData.image_metadata ?? [];
@@ -191,6 +213,7 @@ export async function checkLandingImages(
 
   const checkedUrls = new Set((eventData.image_urls ?? []).slice(0, MAX_CHECKED_IMAGES_PER_EVENT));
   const nextMetadata = [];
+  const deadUrls = new Set();
   for (const image of metadata) {
     if (!checkedUrls.has(image.url) || hasImageTags(image)) {
       nextMetadata.push(image);
@@ -200,6 +223,11 @@ export async function checkLandingImages(
       const known = lookupVerdictFn ? await lookupVerdictFn(image.url) : null;
       if (hasImageTags(known)) {
         nextMetadata.push({ ...image, ...pickTags(known) });
+        continue;
+      }
+      if (await deadImageFn(env, image.url)) {
+        log(`image check dropped dead image: ${image.url}`);
+        deadUrls.add(image.url);
         continue;
       }
       const verdict = await classifyFn(image.url, env);
@@ -216,7 +244,16 @@ export async function checkLandingImages(
       nextMetadata.push(image);
     }
   }
-  return { ...eventData, image_metadata: nextMetadata };
+  if (!deadUrls.size) return { ...eventData, image_metadata: nextMetadata };
+  const imageUrls = (eventData.image_urls ?? []).filter((url) => !deadUrls.has(url));
+  return {
+    ...eventData,
+    image_urls: imageUrls,
+    primary_image_url: deadUrls.has(eventData.primary_image_url)
+      ? (imageUrls[0] ?? null)
+      : eventData.primary_image_url,
+    image_metadata: nextMetadata,
+  };
 }
 
 const pickTags = (image) => ({

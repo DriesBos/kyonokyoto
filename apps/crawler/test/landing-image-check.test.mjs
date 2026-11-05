@@ -5,6 +5,7 @@ import { checkLandingImages, landingCheckImageUrl } from '../src/landing-image-c
 
 const env = { ANTHROPIC_API_KEY: 'key', SITE_URL: 'https://example.test' };
 const source = { slug: 'museum', landing_slider: true };
+const alive = async () => false;
 const event = {
   image_urls: [
     'https://img.test/a.jpg',
@@ -33,6 +34,7 @@ test('image check reuses stored tags and only classifies new first-three images'
     { slug: 'any-source' },
     {
       env,
+      deadImageFn: alive,
       lookupVerdictFn: async (url) =>
         url.endsWith('a.jpg')
           ? { url, ...tags(false, 'graphic', 'busy', 2) }
@@ -67,6 +69,7 @@ test('image check keeps already tagged images and ignores unknown tag values', a
   const classified = [];
   const result = await checkLandingImages(tagged, source, {
     env,
+    deadImageFn: alive,
     classifyFn: async (url) => {
       classified.push(url);
       return { clean: true, subject: 'cat', busyness: 'loud', score: 5, reason: '?' };
@@ -89,6 +92,7 @@ test('image check skips missing keys, IMAGE_CHECK=0 and failed calls', async () 
   );
   const failed = await checkLandingImages(event, source, {
     env,
+    deadImageFn: alive,
     classifyFn: async () => {
       throw new Error('overloaded');
     },
@@ -148,5 +152,47 @@ test('verdict tags include confidence', async () => {
       image_score: 1,
       image_confidence: 'low',
     },
+  );
+});
+
+test('dead images are dropped from the event before tagging', async () => {
+  const result = await checkLandingImages(
+    { ...event, primary_image_url: 'https://img.test/a.jpg' },
+    source,
+    {
+      env,
+      deadImageFn: async (_env, url) => url.endsWith('a.jpg'),
+      classifyFn: async () => ({
+        clean: true,
+        subject: 'artwork',
+        busyness: 'calm',
+        score: 7,
+        confidence: 'high',
+        reason: 'ok',
+      }),
+    },
+  );
+  assert.deepEqual(result.image_urls, [
+    'https://img.test/b.jpg',
+    'https://img.test/c.jpg',
+    'https://img.test/d.jpg',
+  ]);
+  assert.equal(result.primary_image_url, 'https://img.test/b.jpg');
+  assert.equal(result.image_metadata.length, 3);
+});
+
+test('dead image check: 4xx is dead, 429/5xx/network are not', async () => {
+  const { isDeadImage } = await import('../src/landing-image-check.mjs');
+  const status = (code) => async () => ({ status: code });
+  assert.equal(await isDeadImage(env, 'x', status(404)), true);
+  assert.equal(await isDeadImage(env, 'x', status(400)), true);
+  assert.equal(await isDeadImage(env, 'x', status(429)), false);
+  assert.equal(await isDeadImage(env, 'x', status(502)), false);
+  assert.equal(await isDeadImage(env, 'x', status(200)), false);
+  assert.equal(
+    await isDeadImage(env, 'x', async () => {
+      throw new Error('offline');
+    }),
+    false,
   );
 });
