@@ -21,6 +21,7 @@ import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { checkLandingImages } from './landing-image-check.mjs';
 import { createTempleSourceAdapters } from './temple-sources.mjs';
+import { createTemplePlaceEnricher } from './temple-place-loader.mjs';
 import {
   persistTempleEvent,
   finishTempleSourceScan,
@@ -10618,6 +10619,27 @@ async function crawlSource({
         : [],
     );
 
+    const enrichTemplePlace =
+      crawlSourceConfig.source_kind === 'aggregator'
+        ? createTemplePlaceEnricher({
+            fetchPage: async (url) => {
+              const page = await fetchHtml(url, userAgent, env, {
+                renderMode: 'never',
+                context: {
+                  ...crawlContext,
+                  allowedDomains: ['ja.kyoto.travel', 'www.kyoto-kankou.or.jp'],
+                },
+              });
+              pagesFetched += 1;
+              recordFetchedPage(diagnostics, page);
+              await upsertRawPage(env, source.id, crawlRun.id, 'detail', page);
+              return page;
+            },
+            onMiss: (url, error) =>
+              console.warn(`Temple place enrichment unavailable (${url}): ${error.message}`),
+          })
+        : async (event) => event;
+
     for (const detailUrl of detailUrls) {
       const cacheKey = detailPageCacheKey(detailUrl);
       const cachedDetailPage = detailPageCache.get(cacheKey);
@@ -10656,6 +10678,7 @@ async function crawlSource({
       );
       extractedEvent = resolveEventDescription(extractedEvent, crawlSourceConfig, detailPage);
       extractedEvent = normalizeEventDatePrecision(extractedEvent);
+      extractedEvent = await enrichTemplePlace(extractedEvent);
 
       if (
         shouldRetryDetailWithCrawl4Ai(
@@ -10702,6 +10725,8 @@ async function crawlSource({
           );
         }
       }
+
+      extractedEvent = await enrichTemplePlace(extractedEvent);
 
       const inlineListing =
         crawlSourceConfig.source_kind === 'aggregator'
@@ -10825,6 +10850,15 @@ async function crawlSource({
         userAgent,
         diagnostics,
       });
+
+      if (crawlSourceConfig.source_kind === 'aggregator' && !hasExtractedImage(extractedEvent)) {
+        extractedEvent = await enrichTemplePlace(extractedEvent);
+        extractedEvent = await normalizeEventImagesForSource(extractedEvent, crawlSourceConfig, {
+          env,
+          userAgent,
+          diagnostics,
+        });
+      }
 
       if (!hasExtractedImage(extractedEvent) && !isFestivalProgram) {
         pushSkippedEvent(skippedEvents, diagnostics, {

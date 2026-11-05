@@ -96,6 +96,44 @@ test('Navi real structured event resolves actual temple, address and trustworthy
   assert.ok(urls.length < 20);
 });
 
+test('Tourism venue labels and malformed JSON-LD recover event facts without publisher address', () => {
+  const event = extract(
+    'kyoto-tourism-openings',
+    'travel-3765',
+    'https://ja.kyoto.travel/event/single.php?event_id=3765',
+  );
+  assert.equal(event.venue_name, '大将軍八神社');
+  assert.equal(event.address_text, null);
+  assert.equal(event.lat, 35.026485);
+  assert.equal(event.lng, 135.733957);
+  assert.match(event.description, /方徳殿/);
+  assert.equal(event.start_date, '2026-11-01');
+});
+
+test('Tourism closure notes and parenthetical closures split calendar segments', () => {
+  const event = extract(
+    'kyoto-tourism-openings',
+    'travel-8446',
+    'https://ja.kyoto.travel/event/single.php?event_id=8446',
+  );
+  assert.equal(event.venue_name, '大徳寺 総見院');
+  assert.equal(activeOn(event, '2026-11-04'), false);
+  assert.equal(activeOn(event, '2026-11-05'), false);
+  assert.equal(activeOn(event, '2026-11-21'), false);
+  assert.equal(activeOn(event, '2026-11-22'), false);
+  assert.equal(activeOn(event, '2026-11-06'), true);
+  assert.match(event.date_text, /11月1日.*11：30/);
+  const other = extract(
+    'kyoto-tourism-openings',
+    'travel-4815',
+    'https://ja.kyoto.travel/event/single.php?event_id=4815',
+  );
+  assert.equal(activeOn(other, '2026-10-04'), false);
+  assert.equal(activeOn(other, '2026-10-11'), false);
+  assert.equal(activeOn(other, '2026-10-12'), false);
+  assert.equal(activeOn(other, '2026-10-13'), true);
+});
+
 test('pagination handles Navi JavaScript data values and prefecture normal links, bounded and filter-preserving', () => {
   const travel = adapters.listingPaginationUrls(fixture('travel'), travelUrl, {
     slug: 'kyoto-tourism-openings',

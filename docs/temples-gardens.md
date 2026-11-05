@@ -37,7 +37,7 @@ pages remain disabled in preview production builds. Source sync can target only 
 `node scripts/sync-sources.mjs --city=kyoto --source=kyoto-kobunka,kyoto-shunju,kyoto-tourism-openings,kyoto-prefecture-openings`.
 Scoped sync rejects pruning and unknown slugs.
 
-Kobunka currently lacks per-entry addresses/images; sampled Prefecture entries can lack years/images. Those fail existing required-field gates. They need verified enrichment/source tuning before full coverage. No borrowed publisher logos or invented current-year dates. Weekday/holiday restrictions that cannot be resolved stay in review. Shortened opening hours remain in date text; calendar records remain all-day.
+Kobunka listing lacks per-entry addresses/images. Crawler now enriches missing facts from official city and Prefecture venue directories, requiring a unique exact name or published alias and a matching detail heading. Directory photos show the verified venue; they never supply event dates. Unresolved names and sampled Prefecture events without explicit years still fail required-field gates. No borrowed publisher logos or invented current-year dates. Weekday/holiday restrictions that cannot be resolved stay in review. Shortened opening hours remain in date text; calendar records remain all-day.
 
 Tests use public HTML excerpts and an isolated PostgreSQL database. `supabase/tests/temple_event_sources.sql` runs transactionally and rolls back fixtures; run only against a disposable database. No production crawl is implied by passing fixtures.
 
@@ -60,3 +60,11 @@ Seven saved events have verified event-level venue/address, valid date ranges an
 - QA preview: https://deploy-preview-62--kyonokyoto.netlify.app/kyoto/en/ (Japanese: `/kyoto/ja/`). All beta; explicit promotion still required after QA.
 
 Validation after rollout fixes: 306 crawler JavaScript tests, six Python tests, 84 web tests, source validation, formatting and production build pass in CI. Database security advisors report only informational RLS-with-no-policy findings for intentionally private crawler tables.
+
+## Coverage enrichment
+
+City directory indexes use `https://ja.kyoto.travel/tourism/search.php?category_id=7` (temples/shrines), categories 8 (historic sites), 11 (museums) and 14 (other venues). Missing exact city matches use the observed Prefecture form `https://www.kyoto-kankou.or.jp/info_search?q%5Bname_or_description_cont%5D=VENUE`; only a unique exact-name result is followed. Each matched `/tourism/single01.php?...tourism_id=...` or `/info_search/ID` detail must reconfirm the venue. Ambiguous results, subvenues without their own match, nearby cards, logos and maps are excluded.
+
+Indexes and place details are cached per source crawl, with bounded detail/search counts and existing robots/domain checks. Evidence pages are saved in `raw_pages`; private observation facts retain `location_source_url` and `image_source_url` when they supply missing fields. No venue objects or new crawler sources are created. Existing event addresses/photos take precedence, and directory data never changes event dates.
+
+Tourism mixed `場所` labels are classified as venue or address. A narrow parser repairs literal control characters inside publisher JSON strings, preserving structured event location and dates. Explicit parenthetical/header closure dates split calendar segments; unresolved recurring/holiday rules remain review-only. All four sources remain beta during the coverage rerun.
