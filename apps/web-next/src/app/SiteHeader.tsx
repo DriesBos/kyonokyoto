@@ -440,9 +440,18 @@ export default function SiteHeader({
           >
             <div className={styles.toolbar}>
               {showVenueControls && (
+                // testing aid like venues (local builds only): rate event images at /dev/images/
+                <GeneralButton
+                  className={styles.imagesLink}
+                  edge="first"
+                  verticalPadding="full"
+                  label="images"
+                  href={`/dev/images/?city=${city}`}
+                />
+              )}
+              {showVenueControls && (
                 <GeneralButton
                   className={styles.venuesToggle}
-                  edge="first"
                   verticalPadding="full"
                   label="venues"
                   showDot

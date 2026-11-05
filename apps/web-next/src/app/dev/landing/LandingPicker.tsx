@@ -8,11 +8,24 @@ export type LandingPickerEvent = {
   id: string;
   title: string;
   institution: string;
-  images: { url: string; landingOk: boolean | null }[];
+  images: {
+    url: string;
+    src: string;
+    landingOk: boolean | null;
+    subject: string | null;
+    busyness: string | null;
+    score: number | null;
+    rank: number;
+  }[];
 };
 
-const verdictLabel = (landingOk: boolean | null) =>
-  landingOk === true ? 'AI: ok' : landingOk === false ? 'AI: rejected' : 'AI: unchecked';
+const verdictLabel = ({ landingOk, subject, busyness, score, rank }: LandingPickerImage) => {
+  if (landingOk === null) return 'AI: unchecked';
+  const tags = [landingOk ? 'clean' : 'rejected', subject, busyness, score && `${score}/10`];
+  return `AI: ${tags.filter(Boolean).join(' · ')} → rank ${rank.toFixed(1)}`;
+};
+
+type LandingPickerImage = LandingPickerEvent['images'][number];
 
 export default function LandingPicker({
   events,
@@ -57,10 +70,10 @@ export default function LandingPicker({
                 return (
                   <figure key={image.url} className={styles.image} data-shown={shown || undefined}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image.url} alt="" loading="lazy" />
+                    <img src={image.src} alt="" loading="lazy" referrerPolicy="no-referrer" />
                     <figcaption>
                       <span>
-                        {verdictLabel(image.landingOk)}
+                        {verdictLabel(image)}
                         {blocked ? ' · blocked' : ''}
                       </span>
                       <button type="button" onClick={() => toggle('images', image.url, !blocked)}>

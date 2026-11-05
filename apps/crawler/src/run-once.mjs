@@ -10007,7 +10007,7 @@ async function normalizeEventImagesForSource(
   });
 }
 
-// Earlier crawls' landing check verdict for this image URL, so each image is only sent once.
+// Earlier crawls' image check tags for this image URL, so each image is only sent once.
 async function storedLandingVerdict(env, imageUrl) {
   const rows = await supabaseRequest({
     env,
@@ -10017,7 +10017,9 @@ async function storedLandingVerdict(env, imageUrl) {
   });
   for (const row of rows ?? []) {
     const image = (row.image_metadata ?? []).find((item) => item?.url === imageUrl);
-    if (typeof image?.landing_ok === 'boolean') return image.landing_ok;
+    if (typeof image?.landing_ok === 'boolean' && typeof image?.image_score === 'number') {
+      return image;
+    }
   }
   return null;
 }

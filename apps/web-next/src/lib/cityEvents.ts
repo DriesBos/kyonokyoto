@@ -45,6 +45,15 @@ import { cityCacheTag } from './cdnCache';
 import { supabaseEnv } from './env';
 import { formatEventDateRange, formatOngoingEventEnd } from './eventDates';
 import type { AppLocale } from './i18n';
+import {
+  type ImageBusyness,
+  type ImageConfidence,
+  type ImageRating,
+  type ImageSubject,
+  imageRatingFor,
+  isLeftOut,
+  rankImages,
+} from './imageRanking';
 import { sourceSlugForEvent } from './sourceMatching';
 import { normalizeYouTubeEmbeds, type YouTubeEmbed } from './youtubeEmbed';
 
@@ -95,7 +104,17 @@ type EventRow = {
   primary_image_url: string | null;
   image_urls: string[] | null;
   image_metadata:
-    { url: string; width: number | null; height: number | null; landing_ok?: boolean }[] | null;
+    | {
+        url: string;
+        width: number | null;
+        height: number | null;
+        landing_ok?: boolean;
+        image_subject?: ImageSubject | null;
+        image_busyness?: ImageBusyness | null;
+        image_score?: number | null;
+        image_confidence?: ImageConfidence | null;
+      }[]
+    | null;
   source_url: string;
   sources: SourceRelation;
   updated_at: string | null;
@@ -160,12 +179,18 @@ export type CityEvent = {
   imageUrls: string[];
   imageWidth: number | null;
   imageHeight: number | null;
-  // landingOk: the crawler's landing check verdict (no flyers or overlaid text); null = unchecked
+  // Ranked best first (lib/imageRanking.ts). landingOk: the crawler's image check verdict (no
+  // flyers or overlaid text), subject/busyness/score its tags; null = unchecked.
   images: {
     url: string;
     width: number | null;
     height: number | null;
     landingOk?: boolean | null;
+    subject?: ImageSubject | null;
+    busyness?: ImageBusyness | null;
+    score?: number | null;
+    confidence?: ImageConfidence | null;
+    rating?: ImageRating;
   }[];
   sourceUrl: string | null;
   mapsUrl: string;
@@ -386,21 +411,35 @@ const sourceTruth = (
   };
 };
 
+// keepLeftOut: /dev/images/ also lists images rated -2 so they can be re-rated.
 const imageRecords = (
   event: Pick<EventRow, 'image_urls' | 'primary_image_url' | 'image_metadata'>,
   limit = 3,
+  { keepLeftOut = false } = {},
 ) => {
   const urls = [...new Set((event.image_urls ?? []).filter(Boolean))].slice(0, limit);
   const display = urls.length ? urls : event.primary_image_url ? [event.primary_image_url] : [];
-  return display.map((url) => {
-    const metadata = event.image_metadata?.find((image) => image.url === url) ?? null;
-    return {
-      url,
-      width: metadata?.width ?? null,
-      height: metadata?.height ?? null,
-      landingOk: typeof metadata?.landing_ok === 'boolean' ? metadata.landing_ok : null,
-    };
-  });
+  const records = rankImages(
+    display.map((url) => {
+      const metadata = event.image_metadata?.find((image) => image.url === url) ?? null;
+      return {
+        url,
+        width: metadata?.width ?? null,
+        height: metadata?.height ?? null,
+        landingOk: typeof metadata?.landing_ok === 'boolean' ? metadata.landing_ok : null,
+        subject: metadata?.image_subject ?? null,
+        busyness: metadata?.image_busyness ?? null,
+        score: typeof metadata?.image_score === 'number' ? metadata.image_score : null,
+        confidence: metadata?.image_confidence ?? null,
+        rating: imageRatingFor(url),
+      };
+    }),
+  );
+  if (keepLeftOut) return records;
+  // -2 images never show, except that an event whose images are all -2 keeps its best one so the
+  // card still has an image (the landing skips it: blocksLanding drops rating -2).
+  const kept = records.filter((image) => !isLeftOut(image));
+  return kept.length ? kept : records.slice(0, 1);
 };
 
 const withConfiguredMedia = (event: EventRow, sources: SourceConfig[]): EventRow => {
@@ -465,9 +504,11 @@ const translationFor = (event: EventRow, locale: AppLocale) =>
 export async function fetchCityEvents({
   city,
   locale,
+  keepLeftOutImages = false,
 }: {
   city: AppCity;
   locale: AppLocale;
+  keepLeftOutImages?: boolean;
 }): Promise<CityEvent[]> {
   const { url, key } = supabaseEnv();
   if (!url || !key) throw new Error('Missing Supabase public environment variables');
@@ -513,7 +554,7 @@ export async function fetchCityEvents({
       const title = translation?.title || event.title;
       const description = translation?.description ?? event.description;
       const truth = sourceTruth({ ...event, title }, sources, locale);
-      const images = imageRecords(event);
+      const images = imageRecords(event, 3, { keepLeftOut: keepLeftOutImages });
       const segments = eventScheduleSegments(event);
       const selected = activeOrNextScheduleSegment(event, today);
       const hasCanonical = Array.isArray(event.schedule_segments) && segments.length > 0;

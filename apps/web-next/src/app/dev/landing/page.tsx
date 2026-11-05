@@ -4,12 +4,15 @@ import { notFound } from 'next/navigation';
 import { cityConfigFor, cityConfigs } from '@/lib/cities';
 import { fetchCityEvents } from '@/lib/cityEvents';
 import { DEV_PAGE_ENABLED } from '@/lib/devPage';
+import { imageRank } from '@/lib/imageRanking';
 import { readLandingBlocklist } from '@/lib/landingBlocklistFile';
+import { eventMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import LandingPicker from './LandingPicker';
 import styles from './page.module.sass';
 
-// Local-only review of the landing images: the crawler's AI verdict per image, plus a manual
+// Local-only review of the landing images: the crawler's AI tags per image, plus a manual
 // block list (data/landing-blocklist.json) for anything it gets wrong. Green outline = can show.
+// /dev/images/ rates every event image (all sources).
 export const metadata: Metadata = {
   title: 'landing images | dev',
   robots: { index: false, follow: false },
@@ -33,7 +36,15 @@ export default async function LandingImagesPage({
       id: event.id,
       title: event.title,
       institution: event.institution,
-      images: event.images.map((image) => ({ url: image.url, landingOk: image.landingOk ?? null })),
+      images: event.images.map((image) => ({
+        url: image.url,
+        src: eventMediaDeliveryUrl(image.url) ?? image.url,
+        landingOk: image.landingOk ?? null,
+        subject: image.subject ?? null,
+        busyness: image.busyness ?? null,
+        score: image.score ?? null,
+        rank: imageRank(image),
+      })),
     }))
     .filter((event) => event.images.length > 0);
 

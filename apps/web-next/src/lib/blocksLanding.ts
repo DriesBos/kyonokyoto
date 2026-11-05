@@ -29,6 +29,7 @@ type BlocksLandingEvent = {
     width: number | null;
     height: number | null;
     landingOk?: boolean | null;
+    rating?: number | null;
   }[];
 };
 
@@ -68,9 +69,12 @@ export const blocksLandingCandidatesForEvents = (
     if (!event.sourceSlug) return [];
 
     if (blockedLandingEvents.has(event.id)) return [];
-    // images the landing check rejected never show; approved ones go before unchecked ones
+    // images the AI check rejected or Dries rated -2 never show; approved ones go before unchecked
     const usableImages = event.images
-      .filter((image) => image.landingOk !== false && !blockedLandingImages.has(image.url))
+      .filter(
+        (image) =>
+          image.landingOk !== false && image.rating !== -2 && !blockedLandingImages.has(image.url),
+      )
       .toSorted(
         (left, right) => Number(right.landingOk === true) - Number(left.landingOk === true),
       );
