@@ -61,6 +61,12 @@ export const safeEventImageSource = (value: string | null): string | null => {
 // (img-src https:) blocks, so try https instead.
 const directImageSource = (source: string) => source.replace(/^http:\/\//, 'https://');
 
+// Kyoto Tourism images load from the publisher, but its CDN fetches return 403.
+const requiresDirectImageDelivery = (source: string) =>
+  /^https:\/\/ja\.kyoto\.travel\/resource\/event\/[^?#]+\.(?:avif|gif|jpe?g|png|webp)$/i.test(
+    source,
+  );
+
 const netlifyImageUrl = (source: string, width: number) =>
   `/.netlify/images?${new URLSearchParams({
     url: source,
@@ -74,7 +80,9 @@ export const eventMediaDeliveryUrl = (
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  return useImageCdn ? netlifyImageUrl(source, 640) : directImageSource(source);
+  return useImageCdn && !requiresDirectImageDelivery(source)
+    ? netlifyImageUrl(source, 640)
+    : directImageSource(source);
 };
 
 export const eventMediaDeliverySrcSet = (
@@ -82,7 +90,7 @@ export const eventMediaDeliverySrcSet = (
   useImageCdn = imageCdnEnabled(),
 ): string | null => {
   const source = safeEventImageSource(value);
-  if (!source || !useImageCdn) return null;
+  if (!source || !useImageCdn || requiresDirectImageDelivery(source)) return null;
   return EVENT_IMAGE_WIDTHS.map((width) => `${netlifyImageUrl(source, width)} ${width}w`).join(
     ', ',
   );
@@ -96,7 +104,10 @@ export const eventShareImageUrl = (
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  const url = useImageCdn ? netlifyImageUrl(source, 1200) : directImageSource(source);
+  const url =
+    useImageCdn && !requiresDirectImageDelivery(source)
+      ? netlifyImageUrl(source, 1200)
+      : directImageSource(source);
   return new URL(url, origin).href;
 };
 
@@ -108,7 +119,7 @@ export const landingMediaDeliveryUrl = (
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  if (!useNetlifyImageCdn) return directImageSource(source);
+  if (!useNetlifyImageCdn || requiresDirectImageDelivery(source)) return directImageSource(source);
 
   return `/.netlify/images?${new URLSearchParams({
     url: source,
