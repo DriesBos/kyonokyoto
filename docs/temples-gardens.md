@@ -88,4 +88,4 @@ Saved records grew from 7 to 63. Seventeen ended events remain stored but hidden
 - Media QA: directory photos describe the verified venue, not necessarily the specific displayed object. City Tourism image classifier requests can fail through CDN; original publisher images and measured dimensions remain available. Visual approval still required.
 - Verification: 316 crawler JavaScript tests, six Python tests, 84 web tests, source validation, formatting and production build pass. Final integration review limits enrichment to four approved Kyoto sources and preserves coordinate provenance.
 
-Latest preview: https://deploy-preview-63--kyonokyoto.netlify.app/kyoto/en/ (Japanese: `/kyoto/ja/`). Keep all beta pending explicit approval.
+Latest preview: https://deploy-preview-64--kyonokyoto.netlify.app/kyoto/en/ (Japanese: `/kyoto/ja/`). Keep all beta pending explicit approval.

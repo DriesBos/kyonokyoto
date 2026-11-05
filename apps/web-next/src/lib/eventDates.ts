@@ -1,4 +1,9 @@
-import { normalizeDateOnly } from '../../../../packages/shared/event-schedule.mjs';
+import {
+  activeOrNextScheduleSegment,
+  classifyEventTiming,
+  inferCanonicalScheduleType,
+  normalizeDateOnly,
+} from '../../../../packages/shared/event-schedule.mjs';
 import type { AppLocale } from './i18n';
 
 const formatDateOnly = (
@@ -49,4 +54,43 @@ export const formatOngoingEventEnd = (
     return `開催中 — ${formatDateOnly(endDate, locale, { month: true, day: true })}`;
   const dayMonth = formatDateOnly(endDate, locale, { month: true, day: true });
   return `ONGOING — ${dayMonth.toUpperCase()} '${endDate.slice(2, 4)}`;
+};
+
+type EventDateSchedule = {
+  start_date?: string | null;
+  end_date?: string | null;
+  calendar_starts_at?: string | null;
+  calendar_ends_at?: string | null;
+  is_all_day?: boolean | null;
+  schedule_type?: string | null;
+  schedule_segments?: unknown[] | null;
+  occurrence_dates?: unknown[] | null;
+};
+
+export const formatEventScheduleDate = (
+  event: EventDateSchedule,
+  today: string,
+  fallback: string,
+  locale: AppLocale = 'en',
+): string => {
+  const selected = activeOrNextScheduleSegment(event, today);
+  const start = selected?.is_all_day
+    ? selected.start_date
+    : (event.start_date ?? selected?.starts_at ?? event.calendar_starts_at);
+  const end = selected?.is_all_day
+    ? selected.end_date
+    : (event.end_date ?? selected?.ends_at ?? event.calendar_ends_at);
+  if (classifyEventTiming(event, today) === 'ongoing') {
+    const ongoingEnd = selected?.is_all_day
+      ? selected.end_date
+      : (selected?.ends_at ?? event.calendar_ends_at ?? event.end_date);
+    return formatOngoingEventEnd(
+      ongoingEnd ?? null,
+      locale === 'ja' ? '開催中' : 'ongoing',
+      locale,
+    );
+  }
+  if (inferCanonicalScheduleType(event) === 'open_ended') return fallback;
+  // A split schedule still has verified dates. Raw publisher notes are not a card label.
+  return formatEventDateRange(start ?? null, end ?? null, fallback, locale);
 };

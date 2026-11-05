@@ -7,7 +7,6 @@ import {
   classifyEventTiming,
   eventDisplayGroup,
   eventScheduleSegments,
-  inferCanonicalScheduleType,
   isEventWithinDisplayWindow,
   nextRelevantScheduleStartDateOnly,
 } from '../../../../packages/shared/event-schedule.mjs';
@@ -43,7 +42,7 @@ import {
 } from './cities';
 import { cityCacheTag } from './cdnCache';
 import { supabaseEnv } from './env';
-import { formatEventDateRange, formatOngoingEventEnd } from './eventDates';
+import { formatEventDateRange, formatEventScheduleDate } from './eventDates';
 import { uiText, type AppLocale } from './i18n';
 import {
   type ImageBusyness,
@@ -617,26 +616,8 @@ export async function fetchCityEvents({
         is_all_day: isAllDay,
       };
       const timing = classifyEventTiming(enriched, today);
-      const preserveDateText =
-        segments.length > 1 || inferCanonicalScheduleType(enriched) === 'open_ended';
-      const displayStart = selected?.is_all_day ? selected.start_date : event.start_date;
-      const displayEnd = selected?.is_all_day ? selected.end_date : event.end_date;
       const translatedDate = translation?.date_text || event.date_text;
-      const date =
-        timing === 'ongoing'
-          ? formatOngoingEventEnd(
-              calendarEndsAt ?? event.end_date,
-              locale === 'ja' ? '開催中' : 'ongoing',
-              locale,
-            )
-          : preserveDateText
-            ? translatedDate
-            : formatEventDateRange(
-                displayStart ?? calendarStartsAt ?? null,
-                displayEnd ?? calendarEndsAt ?? null,
-                translatedDate,
-                locale,
-              );
+      const date = formatEventScheduleDate(event, today, translatedDate, locale);
       const venue = translation?.venue_name ?? truth.venue;
       const calendarInput: CalendarInput = {
         title,
