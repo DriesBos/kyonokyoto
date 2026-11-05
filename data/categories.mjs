@@ -8,6 +8,10 @@ export const CATEGORY_REGISTRY = Object.freeze({
     'institute',
     'theatre',
     'cafe',
+    'temple',
+    'shrine',
+    'garden',
+    'historic-site',
   ]),
   display_category: Object.freeze([
     'photography',
@@ -24,14 +28,27 @@ export const CATEGORY_REGISTRY = Object.freeze({
     'music',
     'contemporary',
   ]),
-  event_category: Object.freeze(['workshop', 'exhibition', 'fair', 'festival', 'event']),
+  event_category: Object.freeze([
+    'workshop',
+    'exhibition',
+    'fair',
+    'festival',
+    'event',
+    'special-opening',
+  ]),
+  collection: Object.freeze(['temples-gardens']),
 });
 
 export const CATEGORY_DIMENSIONS = Object.freeze(Object.keys(CATEGORY_REGISTRY));
+const REQUIRED_CATEGORY_DIMENSIONS = Object.freeze(
+  CATEGORY_DIMENSIONS.filter((dimension) => dimension !== 'collection'),
+);
 
 export function normalizeTaxonomy(value = {}) {
   return Object.fromEntries(
-    CATEGORY_DIMENSIONS.map((dimension) => [
+    CATEGORY_DIMENSIONS.filter(
+      (dimension) => dimension !== 'collection' || Array.isArray(value?.[dimension]),
+    ).map((dimension) => [
       dimension,
       [
         ...new Set(
@@ -57,7 +74,12 @@ export function taxonomyErrors(value = {}, owner = 'item') {
   for (const dimension of CATEGORY_DIMENSIONS) {
     const categories = value?.[dimension];
     if (!Array.isArray(categories)) {
-      errors.push(`${owner}: missing taxonomy.${dimension}`);
+      if (
+        REQUIRED_CATEGORY_DIMENSIONS.includes(dimension) ||
+        (Object.hasOwn(value ?? {}, dimension) && categories !== undefined)
+      ) {
+        errors.push(`${owner}: missing taxonomy.${dimension}`);
+      }
       continue;
     }
 
@@ -91,7 +113,7 @@ export function parseCategoryToken(token) {
 export function flattenTaxonomy(value = {}) {
   const taxonomy = assertTaxonomy(value);
   return CATEGORY_DIMENSIONS.flatMap((dimension) =>
-    taxonomy[dimension].map((category) => categoryToken(dimension, category)),
+    (taxonomy[dimension] ?? []).map((category) => categoryToken(dimension, category)),
   );
 }
 

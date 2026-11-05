@@ -44,7 +44,7 @@ import {
 import { cityCacheTag } from './cdnCache';
 import { supabaseEnv } from './env';
 import { formatEventDateRange, formatOngoingEventEnd } from './eventDates';
-import type { AppLocale } from './i18n';
+import { uiText, type AppLocale } from './i18n';
 import {
   type ImageBusyness,
   type ImageConfidence,
@@ -79,6 +79,7 @@ type SourceRelation = { slug: string | null } | { slug: string | null }[] | null
 
 type EventRow = {
   id: string;
+  dedupe_key?: string | null;
   external_id?: string | null;
   event_kind?: 'event' | 'festival' | 'festival_program' | null;
   festival_id?: string | null;
@@ -126,11 +127,13 @@ type Taxonomy = {
   venue_category?: string[];
   display_category?: string[];
   event_category?: string[];
+  collection?: string[];
 };
 
 type SourceConfig = {
   slug: string;
   name: string;
+  source_kind?: 'venue' | 'aggregator';
   names?: Partial<Record<AppLocale, string>>;
   taxonomy?: Taxonomy;
   landing_slider?: boolean;
@@ -246,6 +249,7 @@ export type MapSource = {
 
 const EVENT_SELECT = [
   'id',
+  'dedupe_key',
   'external_id',
   'source_id',
   'event_kind',
@@ -308,6 +312,15 @@ const taxonomyCategories = (taxonomy: Taxonomy | undefined, owner: string): stri
   taxonomy ? flattenTaxonomy(assertTaxonomy(taxonomy, owner)) : [];
 
 const coordinatePair = (lat: unknown, lng: unknown) => {
+  if (
+    lat === null ||
+    lat === undefined ||
+    lat === '' ||
+    lng === null ||
+    lng === undefined ||
+    lng === ''
+  )
+    return null;
   const parsedLat = Number(lat);
   const parsedLng = Number(lng);
   return Number.isFinite(parsedLat) &&
@@ -321,7 +334,8 @@ const coordinatePair = (lat: unknown, lng: unknown) => {
     : null;
 };
 
-const showBeta = () => process.env.NODE_ENV !== 'production';
+const showBeta = () =>
+  process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_BETA_QA === '1';
 
 const activeSourcesFor = (city: AppCity) =>
   sourcesByCity[city].filter((source) => source.is_active !== false);
@@ -351,6 +365,28 @@ const sourceTruth = (
       ? preferredSourceSlug
       : sourceSlugForEvent(event, sources);
   const source = slug ? sources.find((candidate) => candidate.slug === slug) : undefined;
+  if (source?.source_kind === 'aggregator') {
+    const eventCategories = [
+      ...new Set(
+        (event.categories ?? []).filter(
+          (category) => typeof category === 'string' && parseCategoryToken(category),
+        ),
+      ),
+    ];
+    return {
+      slug,
+      source,
+      institution: event.institution_name,
+      venue: event.venue_name,
+      addressText: event.address_text,
+      directionsQuery: event.directions_query ?? event.address_text,
+      categories: eventCategories.length
+        ? eventCategories
+        : taxonomyCategories(source.taxonomy, source.slug),
+      lat: coordinatePair(event.lat, event.lng)?.lat ?? null,
+      lng: coordinatePair(event.lat, event.lng)?.lng ?? null,
+    };
+  }
   const eventText = [
     event.venue_name,
     event.address_text,
@@ -535,10 +571,15 @@ export async function fetchCityEvents({
   };
 
   const rows = (await response.json()) as EventRow[];
-  const events = dedupeEvents(rows.filter((event) => event.event_kind !== 'festival_program'))
+  const events = dedupeEvents(
+    rows.filter(
+      (event) =>
+        event.event_kind !== 'festival_program' &&
+        visibleSource(sourceSlugForEvent(event, sources)),
+    ),
+  )
     .map((event) => withConfiguredMedia(event, sources))
     .map((event) => filterEventMediaByMinimumHeight(event) as EventRow)
-    .filter((event) => visibleSource(sourceSlugForEvent(event, sources)))
     .filter(
       (event) =>
         ['ongoing', 'upcoming'].includes(classifyEventTiming(event, today)) &&
@@ -862,12 +903,14 @@ const permanentEventsFor = ({
       ];
     });
 
-const categoryLabel = (value: string) =>
-  value
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((word) => word[0]?.toUpperCase() + word.slice(1))
-    .join(' ');
+const categoryLabel = (value: string, locale: AppLocale) =>
+  value === 'temples-gardens'
+    ? uiText[locale].templesGardens
+    : value
+        .split(/[-_\s]+/)
+        .filter(Boolean)
+        .map((word) => word[0]?.toUpperCase() + word.slice(1))
+        .join(' ');
 
 const registryIndex = (dimension: keyof Taxonomy, category: string) =>
   (CATEGORY_REGISTRY[dimension] as readonly string[]).indexOf(category);
@@ -910,7 +953,10 @@ export async function fetchFestivalSlugs(): Promise<{ city: AppCity; slug: strin
   });
 }
 
-export function categoriesForEvents(events: CityEvent[]): CategoryOption[] {
+export function categoriesForEvents(
+  events: CityEvent[],
+  locale: AppLocale = 'en',
+): CategoryOption[] {
   const options = new Map<string, CategoryOption & { category: string }>();
   events
     .flatMap((event) => event.categories)
@@ -919,7 +965,7 @@ export function categoriesForEvents(events: CityEvent[]): CategoryOption[] {
       if (!parsed || options.has(token)) return;
       options.set(token, {
         slug: token,
-        label: categoryLabel(parsed.category),
+        label: categoryLabel(parsed.category, locale),
         dimension: parsed.dimension as keyof Taxonomy,
         category: parsed.category,
       });

@@ -591,7 +591,11 @@ export default function SiteHeader({
                 <div
                   className={styles.group}
                   role="group"
-                  aria-label={group.dimension.replace('_category', '')}
+                  aria-label={
+                    group.dimension === 'collection'
+                      ? uiText[locale].collections
+                      : group.dimension.replace('_category', '')
+                  }
                   key={group.dimension}
                 >
                   {group.categories.map((category) => (

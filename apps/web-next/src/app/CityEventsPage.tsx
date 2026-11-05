@@ -25,7 +25,7 @@ export default async function CityEventsPage({
   const landingCandidates = blocksLandingCandidatesForEvents(events);
   const landingHeroes = blocksLandingHeroOptions(landingCandidates);
   const heroScript = landingHeroScript(landingHeroes, imageCdnEnabled());
-  const categories = categoriesForEvents(events);
+  const categories = categoriesForEvents(events, locale);
   const mapSources = mapSourcesForEvents(events);
   // Testing aid (local builds only): the header's venue filter lists every source with events.
   const venues = DEV_PAGE_ENABLED

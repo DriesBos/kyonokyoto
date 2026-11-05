@@ -9,7 +9,7 @@ test('city listing keeps festival editions and excludes programme child rows', a
   assert.match(source, /'event_kind'/);
   assert.match(
     source,
-    /dedupeEvents\(rows\.filter\(\(event\) => event\.event_kind !== 'festival_program'\)\)/,
+    /dedupeEvents\([\s\S]*?rows\.filter\([\s\S]*?event\.event_kind !== 'festival_program'[\s\S]*?visibleSource\(sourceSlugForEvent\(event, sources\)\)[\s\S]*?\),\s*\)/,
   );
   assert.match(source, /eventKind: event\.event_kind === 'festival' \? 'festival' : 'event'/);
   assert.match(source, /event\.event_kind === 'festival' && event\.festival_slug/);

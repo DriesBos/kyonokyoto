@@ -276,6 +276,9 @@ function normalizeCrawlHints(value = {}) {
   const maxDetailPages = Number(hints.max_detail_pages);
   if (Number.isInteger(maxDetailPages) && maxDetailPages > 0)
     output.max_detail_pages = maxDetailPages;
+  const maxListingPages = Number(hints.max_listing_pages);
+  if (Number.isInteger(maxListingPages) && maxListingPages > 0)
+    output.max_listing_pages = maxListingPages;
 
   const maxInlinePrograms = Number(hints.max_inline_programs);
   if (Number.isInteger(maxInlinePrograms) && maxInlinePrograms > 0)
@@ -401,11 +404,26 @@ export function validateSourceConfig(source) {
   const isFestivalSource = ['festival-program', 'festival-edition'].includes(
     source?.crawl_strategy,
   );
+  const isAggregator = source?.source_kind === 'aggregator';
+
+  if (source?.source_kind !== undefined && !['venue', 'aggregator'].includes(source.source_kind)) {
+    warnings.push(`${slug}: unsupported source_kind`);
+  }
+  if (isAggregator && source.city !== 'kyoto') {
+    warnings.push(`${slug}: aggregator sources currently require Kyoto coverage`);
+  }
+  if (
+    source?.source_priority !== undefined &&
+    (!Number.isInteger(source.source_priority) || source.source_priority < 0)
+  ) {
+    warnings.push(`${slug}: source_priority must be a nonnegative integer`);
+  }
 
   if (!source?.name) warnings.push(`${slug}: missing name`);
   warnings.push(...taxonomyErrors(source?.taxonomy, slug));
   if (
     !isFestivalSource &&
+    !isAggregator &&
     (!Number.isFinite(Number(source?.lat)) || !Number.isFinite(Number(source?.lng)))
   ) {
     warnings.push(`${slug}: missing lat/lng`);

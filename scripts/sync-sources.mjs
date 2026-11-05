@@ -3,7 +3,11 @@ import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 import { loadSourcesConfig, normalizeCity } from '../data/sources/source-config.mjs';
 import { primaryVenueCategory } from '../data/categories.mjs';
-import { assertPruneAllowed, isLargePruneDiff } from './source-sync-safety.mjs';
+import {
+  assertPruneAllowed,
+  isLargePruneDiff,
+  selectSourcesForSync,
+} from './source-sync-safety.mjs';
 
 const projectRoot = process.cwd();
 const crawlerEnvPath = resolve(projectRoot, 'apps/crawler/.env');
@@ -68,10 +72,14 @@ const configuredSlugs = new Set(sourceConfig.map((source) => source.slug));
 const pruneRequested = hasFlag('--prune');
 const allowLargePrune = hasFlag('--allow-large-prune');
 
-const sources = sourceConfig.map((source) => ({
+const selectedSources = selectSourcesForSync(sourceConfig, getArg('source'), pruneRequested);
+const sources = selectedSources.map((source) => ({
   slug: source.slug,
   city,
   name: source.name,
+  source_kind: source.source_kind ?? 'venue',
+  beta: source.beta ?? false,
+  source_priority: source.source_priority ?? 100,
   source_type: primaryVenueCategory(source.taxonomy),
   language: source.language ?? 'ja',
   base_url: source.base_url,

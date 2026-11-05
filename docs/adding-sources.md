@@ -9,6 +9,9 @@ Use the matching city source file as source of truth:
 
 Crawler should not guess stable venue facts when you can write them once.
 
+For publishers listing multiple places, use `source_kind: "aggregator"` and event-level venue
+facts instead. See [Temples & Gardens](temples-gardens.md) for the beta aggregator workflow.
+
 ## Required Source Truth
 
 Add these first:

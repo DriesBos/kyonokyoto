@@ -65,12 +65,44 @@ test('beta sources stay out of production and render dimmed in dev', async () =>
     readFile(new URL('blocks/page.module.sass', app), 'utf8'),
   ]);
 
-  assert.match(events, /const showBeta = \(\) => process\.env\.NODE_ENV !== 'production'/);
+  assert.match(
+    events,
+    /process\.env\.NODE_ENV !== 'production' \|\| process\.env\.NEXT_PUBLIC_BETA_QA === '1'/,
+  );
   assert.match(events, /showBeta\(\) \|\| !source\.beta/);
   assert.match(events, /showBeta\(\) \|\| !item\.beta/);
   assert.match(events, /beta: Boolean\(truth\.source\?\.beta\)/);
   assert.match(grid, /data-beta=\{event\.beta \|\| undefined\}/);
   assert.match(styles, /\.block\[data-beta\]\n\s+opacity: 0\.5/);
+});
+
+test('deploy previews alone enable beta QA, while source beta flags stay enabled', async () => {
+  const { betaQaBuildFlag } = await import(new URL('next.config.mjs', root));
+  const [toml, sourcePayload] = await Promise.all([
+    readFile(new URL('../../netlify.toml', root), 'utf8'),
+    readFile(new URL('../../data/sources/kyoto-sources.json', root), 'utf8'),
+  ]);
+
+  assert.equal(betaQaBuildFlag('deploy-preview', '1'), '1');
+  assert.equal(betaQaBuildFlag('production', '1'), '0');
+  assert.equal(betaQaBuildFlag('deploy-preview', '0'), '0');
+  assert.equal(betaQaBuildFlag('deploy-preview', undefined), '0');
+  assert.equal(betaQaBuildFlag(undefined, '1'), '0');
+  assert.match(toml, /\[context\.deploy-preview\.environment\]\n\s+BETA_EVENTS_QA = "1"/);
+
+  const sources = JSON.parse(sourcePayload).sources;
+  for (const slug of [
+    'kyoto-kobunka',
+    'kyoto-shunju',
+    'kyoto-tourism-openings',
+    'kyoto-prefecture-openings',
+  ]) {
+    assert.equal(
+      sources.find((source) => source.slug === slug)?.beta,
+      true,
+      `${slug} remains beta`,
+    );
+  }
 });
 
 test('category filters use dimension-scoped tokens from data/categories.mjs', async () => {

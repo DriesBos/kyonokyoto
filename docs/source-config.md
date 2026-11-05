@@ -26,9 +26,24 @@ City-specific overrides live in `data/sources/overrides/<city>-overrides.json`.
 
 Crawler uses `names[locale]` for event card institution/venue text when extracting that locale. Map/source labels still use `name`.
 
+## Publisher and Venue Sources
+
+`source_kind` defaults to `venue`. An `aggregator` publishes events at different places.
+Aggregator events own venue/institution name, address, directions, coordinates and category
+tokens; publisher location is never used as a fallback. Aggregators currently require Kyoto
+coverage. `source_priority` is a nonnegative integer (lower wins when multiple sources identify
+the same event). All Temples & Gardens sources remain `beta: true` for QA.
+
+Optional taxonomy dimension `collection: ["temples-gardens"]` groups temple/shrine/garden
+openings and exhibitions. Venue categories also support `temple`, `shrine`, `garden`,
+`historic-site`; event categories support `special-opening`. Existing taxonomy dimensions
+remain required. See [Temples & Gardens](temples-gardens.md) for provenance and rollout.
+
 ## Source-Owned Venue Fields
 
 Source JSON is authoritative for venue identity:
+
+This applies to `source_kind: "venue"`; aggregator event fields follow the rule above.
 
 - `name`
 - `taxonomy`
@@ -197,6 +212,9 @@ Optional. Use for fetch/crawl behavior exceptions.
 - `scan_full_page` scrolls whole rendered page. Enable only for proven lazy-loaded media.
 - `listing_is_detail` treats each start URL as the event page itself, for venues that show the current exhibition inline instead of linking to it.
 - `max_detail_pages` caps detail URLs for this source.
+- `max_listing_pages` bounds aggregator pagination (maximum 40 listing pages). Detail pages
+  default to a bounded maximum of 200 for aggregators; the global crawler environment limit
+  still takes precedence. Hitting either bound prevents source-evidence deactivation.
 - `skip_patterns` drops matching URLs before detail fetch.
 - `disabled: true` takes a blocked source out of scheduled crawls (`run-once --source=all`, cycle runs, selector inspection without `--source`) while web visibility stays governed by `beta`. An explicit `--source=<slug>` run still crawls it, so unblocking can be tested. Note the date and reason in `notes`.
 

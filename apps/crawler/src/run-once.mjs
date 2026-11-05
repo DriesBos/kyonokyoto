@@ -20,6 +20,12 @@ import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { checkLandingImages } from './landing-image-check.mjs';
+import { createTempleSourceAdapters } from './temple-sources.mjs';
+import {
+  persistTempleEvent,
+  finishTempleSourceScan,
+  finalizeTempleEvent,
+} from './temple-persistence.mjs';
 import {
   buildEventDedupeKey,
   canonicalizeEventUrl,
@@ -552,12 +558,34 @@ function hasExplicitVenueCityMismatch(eventData, source) {
 }
 
 function getSourceTruthSkipReason(eventData) {
+  if (eventData?._temple_relevant === false) return 'outside temples and gardens scope';
+  if (eventData?._temple_warnings) {
+    if (!eventData.venue_name || !eventData.address_text) return 'missing verified event location';
+    if (eventData._location_prefecture !== 'Kyoto') return 'unverified Kyoto Prefecture location';
+  }
   return eventData?._source_truth_warnings?.includes('venue_city_mismatch')
     ? 'venue_city_mismatch'
     : null;
 }
 
 function normalizeEventSourceTruth(eventData, source) {
+  if (source?.source_kind === 'aggregator') {
+    const hasCoordinates =
+      eventData.lat != null &&
+      eventData.lng != null &&
+      Number.isFinite(Number(eventData.lat)) &&
+      Number.isFinite(Number(eventData.lng));
+    return {
+      ...eventData,
+      institution_name: eventData.venue_name?.trim?.() || null,
+      venue_name: eventData.venue_name?.trim?.() || null,
+      address_text: eventData.address_text?.trim?.() || null,
+      directions_query: eventData.directions_query?.trim?.() || null,
+      categories: [...new Set([...(eventData.categories ?? []), 'collection:temples-gardens'])],
+      lat: hasCoordinates ? Number(eventData.lat) : null,
+      lng: hasCoordinates ? Number(eventData.lng) : null,
+    };
+  }
   const sourceTruthWarnings = new Set(eventData?._source_truth_warnings ?? []);
   if (hasExplicitVenueCityMismatch(eventData, source)) {
     sourceTruthWarnings.add('venue_city_mismatch');
@@ -7837,7 +7865,13 @@ function extractKuramonzenEvent(detailHtml, source, detailUrl) {
   };
 }
 
+const templeSourceAdapters = createTempleSourceAdapters({
+  extractGenericEvent,
+  buildScheduleFields,
+});
+
 const detailUrlExtractors = {
+  ...templeSourceAdapters.detailUrlExtractors,
   '10-chancery-lane-gallery': extractTenChanceryCurrentDetailUrls,
   '21-21-design-sight': extractTwentyOneDetailUrls,
   'art-gallery-kitano': extractKitanoDetailUrls,
@@ -7887,6 +7921,7 @@ const detailUrlExtractors = {
 };
 
 const eventExtractors = {
+  ...templeSourceAdapters.eventExtractors,
   '21-21-design-sight': extractTwentyOneEvent,
   'asia-art-archive': extractFirstImageEvent,
   'art-gallery-kitano': extractKitanoEvent,
@@ -7956,11 +7991,11 @@ const eventExtractors = {
 function extractSourceSpecificDetailUrls(detailUrlExtractor, listingPages, source) {
   if (!detailUrlExtractor || !listingPages.length) return [];
 
-  const pages = ['21-21-design-sight', 'kiang-malingue', 'kyoto-youme-triennale'].includes(
-    source?.slug,
-  )
-    ? listingPages
-    : listingPages.slice(0, 1);
+  const pages =
+    source?.source_kind === 'aggregator' ||
+    ['21-21-design-sight', 'kiang-malingue', 'kyoto-youme-triennale'].includes(source?.slug)
+      ? listingPages
+      : listingPages.slice(0, 1);
 
   return [
     ...new Set(
@@ -9589,6 +9624,44 @@ async function fetchNativeLocaleEvent({
   }
 }
 
+async function prepareTempleTranslations(
+  env,
+  source,
+  savedEvent,
+  eventData,
+  nativeTranslations = {},
+) {
+  const sourceLocale = getSourceLocale(source);
+  const hash = buildTranslationSourceContentHash(eventData);
+  const translations = [buildEventTranslationPayload(savedEvent.id, sourceLocale, eventData, hash)];
+  const existing = await supabaseRequest({
+    env,
+    path: `event_translations?event_id=eq.${encodeURIComponent(savedEvent.id)}&source_content_hash=eq.${hash}&select=locale,title,description,source_content_hash`,
+  });
+  for (const locale of localesForCity(source.city)) {
+    if (locale === sourceLocale) continue;
+    const previous = (existing ?? []).find((row) => row.locale === locale);
+    if (nativeTranslations[locale]) {
+      translations.push(
+        buildEventTranslationPayload(savedEvent.id, locale, nativeTranslations[locale], hash),
+      );
+    } else if (previous) {
+      translations.push(previous);
+    } else if (shouldMachineTranslateMissingLocales(source)) {
+      try {
+        const translated = await buildMachineTranslatedEvent(env, eventData, sourceLocale, locale);
+        if (translated)
+          translations.push(buildEventTranslationPayload(savedEvent.id, locale, translated, hash));
+      } catch (error) {
+        console.warn(
+          `Temple ${locale} translation unavailable for ${savedEvent.id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
+  return translations;
+}
+
 async function upsertEventTranslations(
   env,
   source,
@@ -9764,6 +9837,17 @@ function hasUsableImageCandidate(eventData) {
 }
 
 function shouldRetryDetailWithCrawl4Ai(eventData, renderMode, fetchedVia) {
+  // Rendering cannot resolve an explicitly ambiguous schedule or a publisher's omitted year.
+  if (
+    eventData?._temple_warnings?.some((warning) =>
+      [
+        'restricted-opening-days-require-review',
+        'schedule-exceptions-require-review',
+        'missing-explicit-event-year',
+      ].includes(warning),
+    )
+  )
+    return false;
   return (
     renderMode === 'auto' &&
     fetchedVia !== 'crawl4ai' &&
@@ -10272,7 +10356,11 @@ async function crawlSource({
     const crawlSourceConfig = withSourceLocaleConfig(source, sourceLocale);
     const sourceRenderMode = getSourceRenderMode(crawlSourceConfig, renderMode);
     const detailUrlExtractor = detailUrlExtractors[source.slug];
-    const hardDetailLimit = getEnvNumber(env, 'CRAWLER_MAX_DETAIL_PAGES_PER_SOURCE', 50);
+    const hardDetailLimit = getEnvNumber(
+      env,
+      'CRAWLER_MAX_DETAIL_PAGES_PER_SOURCE',
+      crawlSourceConfig.source_kind === 'aggregator' ? 200 : 50,
+    );
     const fallbackDetailLimit =
       !detailUrlExtractor || source.slug === 'sibasi' ? genericDetailLimit : hardDetailLimit;
     const sourceDetailLimit = getSourceDetailLimit(
@@ -10310,8 +10398,21 @@ async function crawlSource({
 
     let pagesFetched = 0;
     const listingPages = [];
+    let listingDiscoveryComplete = true;
+    const listingQueue = [...listingUrls];
+    const queuedListings = new Set(listingQueue.map(canonicalizeEventUrl));
+    const maxListingPages =
+      crawlSourceConfig.source_kind === 'aggregator'
+        ? Math.min(40, crawlSourceConfig.crawl_hints?.max_listing_pages ?? 12)
+        : listingQueue.length;
 
-    for (const listingUrl of listingUrls) {
+    for (let listingIndex = 0; listingIndex < listingQueue.length; listingIndex += 1) {
+      if (listingIndex >= maxListingPages) {
+        listingDiscoveryComplete = false;
+        diagnostics.listing_limit_hit_count = (diagnostics.listing_limit_hit_count ?? 0) + 1;
+        break;
+      }
+      const listingUrl = listingQueue[listingIndex];
       const listingPage = await fetchHtml(listingUrl, userAgent, env, {
         renderMode: sourceRenderMode,
         context: crawlContext,
@@ -10326,6 +10427,18 @@ async function crawlSource({
         listingPage,
       );
       listingPages.push({ ...listingPage, rawPageId: listingRawPage.id });
+      if (crawlSourceConfig.source_kind === 'aggregator') {
+        for (const nextUrl of templeSourceAdapters.listingPaginationUrls(
+          listingPage.html,
+          listingPage.url,
+          crawlSourceConfig,
+        )) {
+          const key = canonicalizeEventUrl(nextUrl);
+          if (!sourceAllowsUrl(crawlSourceConfig, nextUrl) || queuedListings.has(key)) continue;
+          queuedListings.add(key);
+          listingQueue.push(nextUrl);
+        }
+      }
     }
 
     const discoveryLimit = sourceDetailLimit + 1;
@@ -10362,7 +10475,7 @@ async function crawlSource({
     const detailLimit = detailUrls.every((detailUrl) => festivalProgramIndex(detailUrl) !== null)
       ? inlineProgramLimit
       : sourceDetailLimit;
-    const detailDiscoveryComplete = detailUrls.length <= detailLimit;
+    const detailDiscoveryComplete = listingDiscoveryComplete && detailUrls.length <= detailLimit;
 
     if (!detailDiscoveryComplete) {
       diagnostics.detail_limit_hit_count += 1;
@@ -10372,6 +10485,7 @@ async function crawlSource({
     const savedEvents = [];
     const skippedEvents = [];
     const activeDedupeKeys = new Set();
+    const activeSourceEventKeys = new Set();
     const existingDedupeKeys = await existingEventDedupeKeys(env, source.id);
     const persistedEdition = await persistFestivalEditionForCrawl({
       env,
@@ -10405,13 +10519,15 @@ async function crawlSource({
               sourceSlug: source.slug,
             });
       const runStatus = crawlRunStatusForOutcome(sourceOutcome);
-      const archivedEvents = shouldArchiveStaleEvents({
-        sourceOutcome,
-        diagnostics,
-        discoveryComplete: detailDiscoveryComplete,
-      })
-        ? await archiveStaleEvents(env, source.id, activeDedupeKeys)
-        : 0;
+      const archivedEvents =
+        source.source_kind !== 'aggregator' &&
+        shouldArchiveStaleEvents({
+          sourceOutcome,
+          diagnostics,
+          discoveryComplete: detailDiscoveryComplete,
+        })
+          ? await archiveStaleEvents(env, source.id, activeDedupeKeys)
+          : 0;
       const mutationCounts = crawlEventMutationCounts(
         savedEvents,
         existingDedupeKeys,
@@ -10496,7 +10612,11 @@ async function crawlSource({
       ...crawlContext,
       targetElements: selectorsFor(crawlSourceConfig, 'description'),
     };
-    const detailPageCache = new Map();
+    const detailPageCache = new Map(
+      crawlSourceConfig.source_kind === 'aggregator'
+        ? listingPages.map((page) => [detailPageCacheKey(page.url), page])
+        : [],
+    );
 
     for (const detailUrl of detailUrls) {
       const cacheKey = detailPageCacheKey(detailUrl);
@@ -10583,7 +10703,13 @@ async function crawlSource({
         }
       }
 
-      const detailRawPage = await upsertRawPage(env, source.id, crawlRun.id, 'detail', detailPage);
+      const inlineListing =
+        crawlSourceConfig.source_kind === 'aggregator'
+          ? listingPages.find((page) => detailPageCacheKey(page.url) === cacheKey)
+          : null;
+      const detailRawPage = inlineListing
+        ? { id: inlineListing.rawPageId }
+        : await upsertRawPage(env, source.id, crawlRun.id, 'detail', detailPage);
 
       const usedGenericExtractor = !eventExtractors[source.slug];
       recordDateExtraction(
@@ -10747,33 +10873,72 @@ async function crawlSource({
         nativeTranslations[targetLocale] = nativeTranslation.event;
       }
 
-      const dedupeKey = savedFestival
+      let dedupeKey = savedFestival
         ? buildFestivalProgramDedupeKey(savedFestival, extractedEvent)
         : buildEventDedupeKey(extractedEvent);
+      const templeResult =
+        crawlSourceConfig.source_kind === 'aggregator'
+          ? await persistTempleEvent({
+              env,
+              source: crawlSourceConfig,
+              rawPageId: detailRawPage.id,
+              event: extractedEvent,
+              request: supabaseRequest,
+            })
+          : null;
+      const savedEvent = templeResult
+        ? templeResult.event
+        : savedFestival
+          ? await upsertFestivalProgram(
+              env,
+              source.id,
+              detailRawPage.id,
+              savedFestival,
+              extractedEvent,
+            )
+          : await upsertEvent(env, source.id, detailRawPage.id, extractedEvent, dedupeKey);
+      if (templeResult) {
+        dedupeKey = savedEvent.dedupe_key;
+        activeSourceEventKeys.add(templeResult.identity.sourceEventKey);
+      }
       activeDedupeKeys.add(dedupeKey);
-      const savedEvent = savedFestival
-        ? await upsertFestivalProgram(
+      if (!templeResult)
+        await upsertEventScheduleSegments({
+          env,
+          eventId: savedEvent.id,
+          event: extractedEvent,
+          request: supabaseRequest,
+        });
+      const updateCanonical = !templeResult || templeResult.canonical_updated;
+      let savedTranslations = [];
+      if (templeResult) {
+        if (updateCanonical && !['hidden', 'archived'].includes(savedEvent.status)) {
+          const translations = await prepareTempleTranslations(
             env,
-            source.id,
-            detailRawPage.id,
-            savedFestival,
+            crawlSourceConfig,
+            savedEvent,
             extractedEvent,
-          )
-        : await upsertEvent(env, source.id, detailRawPage.id, extractedEvent, dedupeKey);
-      await upsertEventScheduleSegments({
-        env,
-        eventId: savedEvent.id,
-        event: extractedEvent,
-        request: supabaseRequest,
-      });
-      const savedTranslations = await upsertEventTranslations(
-        env,
-        crawlSourceConfig,
-        savedEvent,
-        extractedEvent,
-        nativeTranslations,
-      );
-      await publishEvent(env, savedEvent.id);
+            nativeTranslations,
+          );
+          const published = await finalizeTempleEvent({
+            env,
+            sourceId: source.id,
+            event: savedEvent,
+            translations,
+            request: supabaseRequest,
+          });
+          if (published) savedTranslations = translations.map((row) => row.locale);
+        }
+      } else {
+        savedTranslations = await upsertEventTranslations(
+          env,
+          crawlSourceConfig,
+          savedEvent,
+          extractedEvent,
+          nativeTranslations,
+        );
+        await publishEvent(env, savedEvent.id);
+      }
 
       savedEvents.push({
         detailUrl,
@@ -10783,6 +10948,13 @@ async function crawlSource({
         titleOrigin: extractedEvent._title_origin,
         titleWarnings: extractedEvent._title_warnings,
         translations: savedTranslations,
+        ...(templeResult
+          ? {
+              sourceEventKey: templeResult.identity.sourceEventKey,
+              duplicateCandidates: templeResult.duplicate_candidates,
+              canonicalUpdated: templeResult.canonical_updated,
+            }
+          : {}),
       });
     }
 
@@ -10796,14 +10968,29 @@ async function crawlSource({
       sourceSlug: source.slug,
     });
     const runStatus = crawlRunStatusForOutcome(sourceOutcome);
-    const archivedEvents = shouldArchiveStaleEvents({
-      sourceOutcome,
-      diagnostics,
-      skippedEvents,
-      discoveryComplete: detailDiscoveryComplete,
-    })
-      ? await archiveStaleEvents(env, source.id, activeDedupeKeys)
-      : 0;
+    const archivedEvents =
+      source.source_kind !== 'aggregator' &&
+      shouldArchiveStaleEvents({
+        sourceOutcome,
+        diagnostics,
+        skippedEvents,
+        discoveryComplete: detailDiscoveryComplete,
+      })
+        ? await archiveStaleEvents(env, source.id, activeDedupeKeys)
+        : 0;
+    if (
+      source.source_kind === 'aggregator' &&
+      sourceOutcome === 'source_ok' &&
+      detailDiscoveryComplete &&
+      skippedEvents.length === 0
+    ) {
+      await finishTempleSourceScan({
+        env,
+        sourceId: source.id,
+        seenKeys: activeSourceEventKeys,
+        request: supabaseRequest,
+      });
+    }
     const qaReport = buildCrawlQaReport({
       source,
       sourceOutcome,

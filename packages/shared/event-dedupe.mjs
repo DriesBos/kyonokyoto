@@ -135,6 +135,24 @@ export function dedupeEvents(events) {
   const groups = [];
 
   for (const event of Array.isArray(events) ? events : []) {
+    if (typeof event?.dedupe_key === 'string' && event.dedupe_key.startsWith('temple:')) {
+      // Reviewed canonical temple events may intentionally share title, date, and source URL.
+      // Their stable database id is their only safe identity; never bridge them into legacy keys.
+      const identityKey = `temple-id:${event.id}`;
+      const matchedGroup = identityToGroup.get(identityKey);
+      if (matchedGroup) {
+        if (compareEventRecords(event, matchedGroup.preferredEvent) > 0) {
+          matchedGroup.preferredEvent = event;
+        }
+        continue;
+      }
+
+      const group = { preferredEvent: event };
+      groups.push(group);
+      identityToGroup.set(identityKey, group);
+      continue;
+    }
+
     const identityKeys = [
       buildEventUrlIdentityKey(event),
       buildEventSemanticIdentityKey(event),
