@@ -51,6 +51,7 @@ import {
   hasVerifiedEventDate,
   detailPageCacheKey,
   isPublicIpAddress,
+  isRobotsBlockError,
   isUrlAllowedByRobotsText,
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,
@@ -450,6 +451,27 @@ test('all-day events store date precision without invented timestamps', () => {
     calendar_ends_at: '2026-07-11T18:00:00+09:00',
   };
   assert.equal(normalizeEventDatePrecision(timed), timed);
+});
+
+test('a robots.txt block is a blocked source, not a failed crawl', () => {
+  assert.equal(
+    isRobotsBlockError(new Error('robots.txt disallows crawler URL: https://example.test/')),
+    true,
+  );
+  assert.equal(isRobotsBlockError(new Error('fetch failed')), false);
+  assert.equal(isRobotsBlockError('robots.txt disallows crawler URL: x'), false);
+});
+
+test('venues that gave permission carry a robots_permission note', async () => {
+  const kyoto = await loadSourcesConfig({ city: 'kyoto' });
+  const osaka = await loadSourcesConfig({ city: 'osaka' });
+  for (const [sources, slug] of [
+    [kyoto, 'museum-of-kyoto'],
+    [osaka, 'hyogo-prefectural-museum-of-art'],
+  ]) {
+    const source = sources.find((item) => item.slug === slug);
+    assert.match(source?.crawl_hints?.robots_permission ?? '', /\S/, slug);
+  }
 });
 
 test('robots rules use the most specific agent and longest matching path', () => {

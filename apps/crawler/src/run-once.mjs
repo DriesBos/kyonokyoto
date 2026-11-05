@@ -8753,6 +8753,11 @@ async function waitForDomainDelay(url, env) {
   }
 }
 
+const ROBOTS_BLOCK_MESSAGE = 'robots.txt disallows crawler URL:';
+
+const isRobotsBlockError = (error) =>
+  error instanceof Error && error.message.startsWith(ROBOTS_BLOCK_MESSAGE);
+
 async function assertRobotsAllowed(url, userAgent, env, diagnostics = null) {
   if (!envFlag(env, 'CRAWLER_RESPECT_ROBOTS_TXT', true)) return;
 
@@ -8791,7 +8796,7 @@ async function assertRobotsAllowed(url, userAgent, env, diagnostics = null) {
 
   if (!isUrlAllowedByRobotsText(robotsText, userAgent, url)) {
     if (diagnostics) diagnostics.robots_blocked_count += 1;
-    throw new Error(`robots.txt disallows crawler URL: ${url}`);
+    throw new Error(`${ROBOTS_BLOCK_MESSAGE} ${url}`);
   }
 }
 
@@ -8875,6 +8880,7 @@ async function fetchHtmlWithCrawl4Ai(url, userAgent, env, context = null) {
         wait_for_images: context?.waitForImages ?? envFlag(env, 'CRAWL4AI_WAIT_FOR_IMAGES', true),
         scan_full_page: context?.scanFullPage ?? envFlag(env, 'CRAWL4AI_SCAN_FULL_PAGE', false),
         allowed_domains: context?.allowedDomains ?? [],
+        check_robots_txt: envFlag(env, 'CRAWLER_RESPECT_ROBOTS_TXT', true),
       },
       {
         timeoutMs: getEnvNumber(
@@ -10248,6 +10254,11 @@ async function crawlSource({
       await getSourceBySlug(env, sourceSlug),
       sourceOverrides[sourceSlug],
     );
+    // crawl_hints.robots_permission: the venue agreed to be listed, so its robots.txt is not
+    // checked (this source only; every other source still respects robots.txt)
+    if (source?.crawl_hints?.robots_permission) {
+      env = { ...env, CRAWLER_RESPECT_ROBOTS_TXT: 'false' };
+    }
     const sourceLocale = getSourceLocale(source);
     const crawlSourceConfig = withSourceLocaleConfig(source, sourceLocale);
     const sourceRenderMode = getSourceRenderMode(crawlSourceConfig, renderMode);
@@ -10867,16 +10878,21 @@ async function crawlSource({
       archivedEvents,
     };
   } catch (error) {
+    // A robots.txt block is the site's choice, not a crawler fault: the source counts as blocked
+    // (degraded), so one such site doesn't mark the whole city's crawl cycle as failed.
+    const blockedByRobots = isRobotsBlockError(error);
+    const failedStatus = blockedByRobots ? 'partial_success' : 'failed';
+    const failedOutcome = blockedByRobots ? 'source_blocked' : 'source_failed';
     if (crawlRun?.id) {
       try {
         await updateCrawlRun(env, crawlRun.id, {
-          status: 'failed',
+          status: failedStatus,
           finished_at: new Date().toISOString(),
           error_message: error instanceof Error ? error.message : String(error),
           logs: [
             {
-              level: 'error',
-              message: `Source outcome: source_failed`,
+              level: blockedByRobots ? 'warn' : 'error',
+              message: `Source outcome: ${failedOutcome}`,
             },
             {
               level: 'info',
@@ -10897,8 +10913,8 @@ async function crawlSource({
     return {
       crawlRunId: crawlRun?.id ?? null,
       source: source?.slug ?? sourceSlug,
-      status: 'failed',
-      sourceOutcome: 'source_failed',
+      status: failedStatus,
+      sourceOutcome: failedOutcome,
       diagnostics,
       error: error instanceof Error ? error.message : String(error),
     };
@@ -11045,6 +11061,7 @@ export {
   hasValidEventTitle,
   hasVerifiedEventDate,
   isPublicIpAddress,
+  isRobotsBlockError,
   isUrlAllowedByRobotsText,
   isUsableNativeLocaleUrl,
   nativeLocaleEventMatchesCanonical,

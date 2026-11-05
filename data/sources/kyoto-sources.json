@@ -96,6 +96,7 @@
         "images": "#single_main .right.poster_img img"
       },
       "crawl_hints": {
+        "robots_permission": "Dries has permission from the venue to list its events (2026-11-05); its robots.txt disallows crawlers.",
         "max_detail_pages": 6
       },
       "locales": {

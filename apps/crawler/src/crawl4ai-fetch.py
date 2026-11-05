@@ -296,7 +296,8 @@ class Renderer:
 
         crawler_config = CrawlerRunConfig(
             cache_mode=CacheMode.DISABLED,
-            check_robots_txt=True,
+            # Node passes false only for sources whose venue gave permission
+            check_robots_txt=request.get("check_robots_txt", True) is not False,
             excluded_tags=["nav", "footer", "aside", "form"],
             target_elements=request.get("target_elements") or None,
             markdown_generator=DefaultMarkdownGenerator(

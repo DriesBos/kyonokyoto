@@ -267,6 +267,11 @@ function normalizeCrawlHints(value = {}) {
   }
   if (hints.listing_is_detail === true) output.listing_is_detail = true;
   if (hints.disabled === true) output.disabled = true;
+  // The venue allowed us to list its events although its robots.txt disallows crawlers: a note
+  // of who agreed and when. The crawler then skips the robots.txt check for this source only.
+  if (typeof hints.robots_permission === 'string' && hints.robots_permission.trim()) {
+    output.robots_permission = hints.robots_permission.trim();
+  }
 
   const maxDetailPages = Number(hints.max_detail_pages);
   if (Number.isInteger(maxDetailPages) && maxDetailPages > 0)
