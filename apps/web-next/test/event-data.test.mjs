@@ -9,6 +9,12 @@ const { googleCalendarUrl, safeHttpUrl } = await import(new URL('calendar.ts', l
 const { buildYouTubeEmbedSrc, normalizeYouTubeEmbeds } = await import(
   new URL('youtubeEmbed.ts', lib)
 );
+const { assertTaxonomy, CATEGORY_DIMENSIONS, taxonomyErrors } = await import(
+  new URL('../../../data/categories.mjs', import.meta.url)
+);
+const { dedupeEvents } = await import(
+  new URL('../../../packages/shared/event-dedupe.mjs', import.meta.url)
+);
 
 const calendarEvent = {
   title: 'Kyoto event',
@@ -23,6 +29,7 @@ const calendarEvent = {
 test('V2 event mapper preserves source, calendar, image and media contracts', async () => {
   const source = await readFile(new URL('cityEvents.ts', lib), 'utf8');
   assert.match(source, /'sources\(slug\)'/);
+  assert.match(source, /'dedupe_key'/);
   assert.match(source, /'address_text'/);
   assert.match(source, /'directions_query'/);
   assert.match(source, /'calendar_starts_at'/);
@@ -48,6 +55,77 @@ test('V2 event mapper preserves source, calendar, image and media contracts', as
     source,
     /\.\.\.events\.filter\(\(event\) => event\.group === 'permanent'\),\s+\.\.\.permanent/,
   );
+});
+
+test('Temples & Gardens taxonomy stays optional for existing configs and localizes collection', async () => {
+  const existingTaxonomy = {
+    venue_category: ['museum'],
+    display_category: ['painting'],
+    event_category: ['exhibition'],
+  };
+  assert.deepEqual(taxonomyErrors(existingTaxonomy), []);
+  assert.equal(assertTaxonomy(existingTaxonomy).collection, undefined);
+  assert.ok(CATEGORY_DIMENSIONS.includes('collection'));
+  assert.ok(taxonomyErrors({ ...existingTaxonomy, collection: null }).length);
+  assert.ok(taxonomyErrors({ ...existingTaxonomy, collection: ['unknown'] }).length);
+
+  const categories = await readFile(
+    new URL('../../../data/categories.mjs', import.meta.url),
+    'utf8',
+  );
+  const cityEvents = await readFile(new URL('cityEvents.ts', lib), 'utf8');
+  const translations = await readFile(new URL('i18n.ts', lib), 'utf8');
+  assert.match(categories, /'temple',[\s\S]*'shrine',[\s\S]*'garden',[\s\S]*'historic-site'/);
+  assert.match(categories, /'special-opening'/);
+  assert.match(translations, /templesGardens: 'Temples & Gardens'/);
+  assert.match(translations, /templesGardens: '寺社・庭園'/);
+  assert.match(cityEvents, /categoriesForEvents\([\s\S]*locale: AppLocale = 'en'/);
+  assert.match(
+    cityEvents,
+    /lat === null[\s\S]*lat === undefined[\s\S]*lat === ''[\s\S]*lng === null[\s\S]*lng === undefined[\s\S]*lng === ''/,
+  );
+});
+
+test('canonical temple events dedupe only by stable database id', () => {
+  const canonical = {
+    dedupe_key: 'temple:kyoto:shared-url-title-date',
+    source_url: 'https://example.test/seasonal/',
+    title: 'Special Opening',
+    start_date: '2026-11-01',
+    end_date: '2026-11-03',
+  };
+  const first = { ...canonical, id: 'canonical-one' };
+  const second = { ...canonical, id: 'canonical-two' };
+
+  assert.deepEqual(dedupeEvents([first, second]), [first, second]);
+  assert.deepEqual(dedupeEvents([first, { ...first, description: 'Updated row' }]), [
+    { ...first, description: 'Updated row' },
+  ]);
+});
+
+test('aggregator events use event-owned location and taxonomy, with beta filtered before dedupe', async () => {
+  const source = await readFile(new URL('cityEvents.ts', lib), 'utf8');
+  const aggregatorTruth = source.slice(
+    source.indexOf("if (source?.source_kind === 'aggregator')"),
+    source.indexOf(
+      'const eventText =',
+      source.indexOf("if (source?.source_kind === 'aggregator')"),
+    ),
+  );
+  assert.match(aggregatorTruth, /institution: event\.institution_name/);
+  assert.match(aggregatorTruth, /venue: event\.venue_name/);
+  assert.match(aggregatorTruth, /addressText: event\.address_text/);
+  assert.match(aggregatorTruth, /event\.categories/);
+  assert.doesNotMatch(aggregatorTruth, /source\?\.(?:lat|lng|address_text|directions_query)/);
+
+  const fetchRows = source.slice(
+    source.indexOf('const rows = (await response.json())'),
+    source.indexOf('.map((event) => withConfiguredMedia'),
+  );
+  assert.ok(
+    fetchRows.indexOf('rows.filter(') < fetchRows.indexOf('visibleSource(sourceSlugForEvent'),
+  );
+  assert.ok(fetchRows.indexOf('visibleSource(sourceSlugForEvent') < fetchRows.indexOf('),\n  )'));
 });
 
 test('calendar helper builds all-day, timed and open-ended actions', () => {

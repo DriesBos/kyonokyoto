@@ -4,3 +4,5 @@ dist
 pnpm-lock.yaml
 package-lock.json
 .playwright-mcp
+# Public HTML excerpts retain publisher markup, including malformed HTML.
+apps/crawler/test/fixtures/temple-sources/

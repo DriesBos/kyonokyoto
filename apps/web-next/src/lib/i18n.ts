@@ -54,6 +54,8 @@ export const uiText = {
     media: 'media',
     siteBy: 'Site by',
     enjoyCulture: (city: string) => `Enjoy ${city} Culture`,
+    templesGardens: 'Temples & Gardens',
+    collections: 'Collections',
   },
   ja: {
     lang: 'ja',
@@ -106,6 +108,8 @@ export const uiText = {
     media: '画像',
     siteBy: 'サイト制作',
     enjoyCulture: (city: string) => `${city}の文化を楽しもう`,
+    templesGardens: '寺社・庭園',
+    collections: 'コレクション',
   },
 } as const;
 

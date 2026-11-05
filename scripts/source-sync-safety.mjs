@@ -1,6 +1,23 @@
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 
+export function selectSourcesForSync(sources, requestedSlugs, pruneRequested = false) {
+  if (!requestedSlugs) return sources;
+  if (pruneRequested) throw new Error('Scoped source sync cannot prune');
+  const slugs = [
+    ...new Set(
+      requestedSlugs
+        .split(',')
+        .map((slug) => slug.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (!slugs.length) throw new Error('Scoped source sync requires at least one source slug');
+  const missing = slugs.filter((slug) => !sources.some((source) => source.slug === slug));
+  if (missing.length) throw new Error(`Unknown source slugs: ${missing.join(', ')}`);
+  return sources.filter((source) => slugs.includes(source.slug));
+}
+
 export function isLargePruneDiff(removedCount, existingCount) {
   return removedCount >= 5 || (removedCount > 0 && removedCount / existingCount >= 0.25);
 }
@@ -30,6 +47,11 @@ export function assertPruneAllowed({
 }
 
 function demo() {
+  const fixtures = [{ slug: 'one' }, { slug: 'two' }, { slug: 'three' }];
+  assert.deepEqual(selectSourcesForSync(fixtures, 'one,three'), [fixtures[0], fixtures[2]]);
+  assert.throws(() => selectSourcesForSync(fixtures, 'missing'), /Unknown source/);
+  assert.throws(() => selectSourcesForSync(fixtures, 'one', true), /cannot prune/);
+  assert.equal(selectSourcesForSync(fixtures, null), fixtures);
   assert.doesNotThrow(() =>
     assertPruneAllowed({
       configuredCount: 49,

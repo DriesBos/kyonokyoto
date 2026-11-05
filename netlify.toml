@@ -11,12 +11,19 @@
   # Inlined at build: ISR re-renders at runtime, where NETLIFY is unset (see src/lib/env.ts).
   NEXT_PUBLIC_IMAGE_CDN = "1"
 
+[context.deploy-preview.environment]
+  BETA_EVENTS_QA = "1"
+
 # The repo root has no `next` dependency, so Netlify cannot auto-detect the framework.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
 [images]
   remote_images = [
+    "https?://kyotoshunju\\.com/wp-content/uploads/.*",
+    "https?://ja\\.kyoto\\.travel/resource/event/.*",
+    "https?://www\\.kobunka\\.com/wp-content/uploads/.*",
+    "https?://www\\.kyoto-kankou\\.or\\.jp/.*",
     "https://xbnmaaeqzmgsvjmovtrr\\.supabase\\.co/storage/v1/object/public/event-media/.*",
     "https?://10chancerylanegallery\\.com/.*",
     "https?://13anewstreet\\.com/.*",

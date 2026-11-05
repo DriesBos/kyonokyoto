@@ -2387,6 +2387,190 @@
         ],
         "max_detail_pages": 8
       }
+    },
+    {
+      "slug": "kyoto-kobunka",
+      "name": "京都古文化保存協会",
+      "beta": true,
+      "source_kind": "aggregator",
+      "taxonomy": {
+        "venue_category": ["historic-site"],
+        "display_category": [],
+        "event_category": ["special-opening"],
+        "collection": ["temples-gardens"]
+      },
+      "language": "ja",
+      "base_url": "https://www.kobunka.com",
+      "start_urls": ["https://www.kobunka.com/map/"],
+      "allowed_domains": ["www.kobunka.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/map/"],
+      "skip_og_image": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "render_mode": "never",
+        "max_listing_pages": 40,
+        "max_detail_pages": 200
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.kobunka.com/map/"]
+        },
+        "language_url_pattern": "Japanese source only; no unverified locale URLs.",
+        "field_sources": {
+          "listing_links": "Inline flier-list venue sections. Synthetic entry hash stays stable when listing order changes.",
+          "title": "Event heading or inline venue h4; never publisher heading.",
+          "date": "Per-entry h4/date/content/note; year from dated flyer filename. No per-entry postal address or event photos; leave missing and review.",
+          "description": "Event body and explicit admission/closure notices.",
+          "images": "Event-scoped photo img elements; never nearby venues or publisher logos."
+        },
+        "date_format": "Explicit Japanese year/month/day; inherited month/day within event periods. Missing year stays missing.",
+        "image_rules": "Event section photos only. Skip logos, flyers, maps, placeholders and nearby venue photos."
+      },
+      "source_priority": 10,
+      "measure_image_dimensions": true
+    },
+    {
+      "slug": "kyoto-shunju",
+      "name": "京都春秋",
+      "beta": true,
+      "source_kind": "aggregator",
+      "taxonomy": {
+        "venue_category": ["historic-site"],
+        "display_category": [],
+        "event_category": ["special-opening"],
+        "collection": ["temples-gardens"]
+      },
+      "language": "ja",
+      "base_url": "https://kyotoshunju.com",
+      "start_urls": ["https://kyotoshunju.com/?post_type=temple"],
+      "allowed_domains": ["kyotoshunju.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/temple/"],
+      "skip_og_image": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "render_mode": "never",
+        "max_listing_pages": 40,
+        "max_detail_pages": 200
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://kyotoshunju.com/?post_type=temple"]
+        },
+        "language_url_pattern": "Japanese source only; no unverified locale URLs.",
+        "field_sources": {
+          "listing_links": "Temple archive contains current venue cards.",
+          "title": "Event heading or inline venue h4; never publisher heading.",
+          "date": "main_title, temple_discription, temple_data admission fields, access_address, uploads photos; split periods and closure dates retained.",
+          "description": "Event body and explicit admission/closure notices.",
+          "images": "Event-scoped photo img elements; never nearby venues or publisher logos."
+        },
+        "date_format": "Explicit Japanese year/month/day; inherited month/day within event periods. Missing year stays missing.",
+        "image_rules": "Event section photos only. Skip logos, flyers, maps, placeholders and nearby venue photos."
+      },
+      "source_priority": 20,
+      "measure_image_dimensions": true
+    },
+    {
+      "slug": "kyoto-tourism-openings",
+      "name": "京都観光Navi 特別公開",
+      "beta": true,
+      "source_kind": "aggregator",
+      "taxonomy": {
+        "venue_category": ["historic-site"],
+        "display_category": [],
+        "event_category": ["special-opening"],
+        "collection": ["temples-gardens"]
+      },
+      "language": "ja",
+      "base_url": "https://ja.kyoto.travel",
+      "start_urls": [
+        "https://ja.kyoto.travel/event/search.php?category_id=5&display_type=list&page=1&search_flg=1"
+      ],
+      "allowed_domains": ["ja.kyoto.travel"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event/single.php?event_id="],
+      "skip_og_image": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "render_mode": "auto",
+        "max_listing_pages": 40,
+        "max_detail_pages": 200
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": [
+            "https://ja.kyoto.travel/event/search.php?category_id=5&display_type=list&page=1&search_flg=1"
+          ]
+        },
+        "language_url_pattern": "Japanese source only; no unverified locale URLs.",
+        "field_sources": {
+          "listing_links": "Category 5 search; pageNav data-value pagination preserves search filters.",
+          "title": "Event heading or inline venue h4; never publisher heading.",
+          "date": "Event JSON-LD plus detail table; organizer can name temple while 場所 is street address. Skip generic logos and unrelated entries.",
+          "description": "Event body and explicit admission/closure notices.",
+          "images": "Event-scoped photo img elements; never nearby venues or publisher logos."
+        },
+        "date_format": "Explicit Japanese year/month/day; inherited month/day within event periods. Missing year stays missing.",
+        "image_rules": "Event section photos only. Skip logos, flyers, maps, placeholders and nearby venue photos."
+      },
+      "source_priority": 50,
+      "measure_image_dimensions": true
+    },
+    {
+      "slug": "kyoto-prefecture-openings",
+      "name": "京都府観光連盟 特別公開",
+      "beta": true,
+      "source_kind": "aggregator",
+      "taxonomy": {
+        "venue_category": ["historic-site"],
+        "display_category": [],
+        "event_category": ["special-opening"],
+        "collection": ["temples-gardens"]
+      },
+      "language": "ja",
+      "base_url": "https://www.kyoto-kankou.or.jp",
+      "start_urls": ["https://www.kyoto-kankou.or.jp/event"],
+      "allowed_domains": ["www.kyoto-kankou.or.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/event/"],
+      "skip_og_image": true,
+      "capabilities": {
+        "native_locales": ["ja"],
+        "machine_translate_missing_locales": true
+      },
+      "crawl_hints": {
+        "render_mode": "never",
+        "max_listing_pages": 40,
+        "max_detail_pages": 200
+      },
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.kyoto-kankou.or.jp/event"]
+        },
+        "language_url_pattern": "Japanese source only; no unverified locale URLs.",
+        "field_sources": {
+          "listing_links": "Broad event index; relevance filtering required. Follow page links; bounded at 40 listing pages.",
+          "title": "Event heading or inline venue h4; never publisher heading.",
+          "date": "showArticle title/description and details table; exclude nearby spots/media. Yearless dates require review; no current-year guessing.",
+          "description": "Event body and explicit admission/closure notices.",
+          "images": "Event-scoped photo img elements; never nearby venues or publisher logos."
+        },
+        "date_format": "Explicit Japanese year/month/day; inherited month/day within event periods. Missing year stays missing.",
+        "image_rules": "Event section photos only. Skip logos, flyers, maps, placeholders and nearby venue photos."
+      },
+      "source_priority": 60,
+      "measure_image_dimensions": true
     }
   ]
 }
