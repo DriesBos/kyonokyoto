@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { createTemplePlaceEnricher } from '../src/temple-place-loader.mjs';
+import { createTemplePlaceEnricher, isKyotoTempleSource } from '../src/temple-place-loader.mjs';
 import {
   prefecturePlaceSearchUrl,
   findPrefecturePlaceUrl,
@@ -17,6 +17,13 @@ const listing = (name, id, category = 7) =>
   `<h3 class="tit"><a href="/tourism/single01.php?category_id=${category}&amp;tourism_id=${id}">${name}</a></h3>`;
 
 const detailUrl = 'https://ja.kyoto.travel/tourism/single01.php?category_id=7&tourism_id=253';
+test('venue enrichment is limited to four approved Kyoto temple sources', () => {
+  const source = { slug: 'kyoto-kobunka', city: 'kyoto', source_kind: 'aggregator' };
+  assert.equal(isKyotoTempleSource(source), true);
+  assert.equal(isKyotoTempleSource({ ...source, city: 'osaka' }), false);
+  assert.equal(isKyotoTempleSource({ ...source, slug: 'unrelated-feed' }), false);
+  assert.equal(isKyotoTempleSource({ ...source, source_kind: 'venue' }), false);
+});
 const detail = `<main><article id="detail">
   <h1>賀茂別雷神社（上賀茂神社）</h1>
   <div class="detailGallery"><div class="item"><img src="/resource/tourism/253-1.jpg" alt="楼門"></div>
@@ -158,4 +165,13 @@ test('enrichment caches directory requests, retains schedule and records fact ev
   assert.deepEqual(updated.schedule_segments, event.schedule_segments);
   assert.equal((await enrich({ ...event, start_date: null })).address_text, null);
   assert.equal(requests.length, 5);
+  const photoOnly = await enrich({
+    ...event,
+    address_text: '京都市北区上賀茂本山339',
+    lat: 35,
+    lng: null,
+  });
+  assert.equal(photoOnly.lat, 35.060346);
+  assert.equal(photoOnly.lng, 135.752711);
+  assert.equal(photoOnly.location_source_url, detailUrl);
 });

@@ -21,7 +21,7 @@ import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { checkLandingImages } from './landing-image-check.mjs';
 import { createTempleSourceAdapters } from './temple-sources.mjs';
-import { createTemplePlaceEnricher } from './temple-place-loader.mjs';
+import { createTemplePlaceEnricher, isKyotoTempleSource } from './temple-place-loader.mjs';
 import {
   persistTempleEvent,
   finishTempleSourceScan,
@@ -10619,26 +10619,25 @@ async function crawlSource({
         : [],
     );
 
-    const enrichTemplePlace =
-      crawlSourceConfig.source_kind === 'aggregator'
-        ? createTemplePlaceEnricher({
-            fetchPage: async (url) => {
-              const page = await fetchHtml(url, userAgent, env, {
-                renderMode: 'never',
-                context: {
-                  ...crawlContext,
-                  allowedDomains: ['ja.kyoto.travel', 'www.kyoto-kankou.or.jp'],
-                },
-              });
-              pagesFetched += 1;
-              recordFetchedPage(diagnostics, page);
-              await upsertRawPage(env, source.id, crawlRun.id, 'detail', page);
-              return page;
-            },
-            onMiss: (url, error) =>
-              console.warn(`Temple place enrichment unavailable (${url}): ${error.message}`),
-          })
-        : async (event) => event;
+    const enrichTemplePlace = isKyotoTempleSource(crawlSourceConfig)
+      ? createTemplePlaceEnricher({
+          fetchPage: async (url) => {
+            const page = await fetchHtml(url, userAgent, env, {
+              renderMode: 'never',
+              context: {
+                ...crawlContext,
+                allowedDomains: ['ja.kyoto.travel', 'www.kyoto-kankou.or.jp'],
+              },
+            });
+            pagesFetched += 1;
+            recordFetchedPage(diagnostics, page);
+            await upsertRawPage(env, source.id, crawlRun.id, 'detail', page);
+            return page;
+          },
+          onMiss: (url, error) =>
+            console.warn(`Temple place enrichment unavailable (${url}): ${error.message}`),
+        })
+      : async (event) => event;
 
     for (const detailUrl of detailUrls) {
       const cacheKey = detailPageCacheKey(detailUrl);
@@ -10851,7 +10850,7 @@ async function crawlSource({
         diagnostics,
       });
 
-      if (crawlSourceConfig.source_kind === 'aggregator' && !hasExtractedImage(extractedEvent)) {
+      if (isKyotoTempleSource(crawlSourceConfig) && !hasExtractedImage(extractedEvent)) {
         extractedEvent = await enrichTemplePlace(extractedEvent);
         extractedEvent = await normalizeEventImagesForSource(extractedEvent, crawlSourceConfig, {
           env,

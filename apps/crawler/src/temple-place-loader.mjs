@@ -13,6 +13,12 @@ const INDEX_URLS = [7, 8, 11, 14].map(
   (id) => `https://ja.kyoto.travel/tourism/search.php?category_id=${id}`,
 );
 const kyotoAddress = (value) => /京都[府市]/.test(value ?? '');
+export const isKyotoTempleSource = (source) =>
+  source?.city === 'kyoto' &&
+  source.source_kind === 'aggregator' &&
+  ['kyoto-kobunka', 'kyoto-shunju', 'kyoto-tourism-openings', 'kyoto-prefecture-openings'].includes(
+    source.slug,
+  );
 
 // One lazy directory index and one verified place fetch per venue, per source crawl.
 export function createTemplePlaceEnricher({ fetchPage, maxDetails = 120, onMiss = () => {} }) {
@@ -85,15 +91,17 @@ export function createTemplePlaceEnricher({ fetchPage, maxDetails = 120, onMiss 
     if (!facts || !kyotoAddress(facts.address_text)) return event;
     const address = event.address_text || facts.address_text;
     const images = missingImages ? facts.image_urls : event.image_urls;
+    const importedCoordinates =
+      (event.lat == null || event.lng == null) && facts.lat != null && facts.lng != null;
     return {
       ...event,
       address_text: address,
       directions_query: [event.venue_name, address].join(', '),
-      lat: event.lat ?? facts.lat,
-      lng: event.lng ?? facts.lng,
+      lat: importedCoordinates ? facts.lat : event.lat,
+      lng: importedCoordinates ? facts.lng : event.lng,
       primary_image_url: images[0] ?? null,
       image_urls: images,
-      ...(missingAddress ? { location_source_url: facts.source_url } : {}),
+      ...(missingAddress || importedCoordinates ? { location_source_url: facts.source_url } : {}),
       ...(missingImages && images.length ? { image_source_url: facts.source_url } : {}),
       _location_prefecture: kyotoAddress(address) ? 'Kyoto' : event._location_prefecture,
       _temple_warnings: (event._temple_warnings ?? []).filter(
