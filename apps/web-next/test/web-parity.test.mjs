@@ -87,6 +87,7 @@ test('deploy previews alone enable beta QA, while source beta flags stay enabled
   assert.equal(betaQaBuildFlag('production', '1'), '0');
   assert.equal(betaQaBuildFlag('deploy-preview', '0'), '0');
   assert.equal(betaQaBuildFlag('deploy-preview', undefined), '0');
+  assert.equal(betaQaBuildFlag(undefined, '1'), '0');
   assert.match(toml, /\[context\.deploy-preview\.environment\]\n\s+BETA_EVENTS_QA = "1"/);
 
   const sources = JSON.parse(sourcePayload).sources;

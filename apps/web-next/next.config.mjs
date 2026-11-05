@@ -36,15 +36,14 @@ export const securityHeaders = ({ dev = false } = {}) => [
   { key: 'X-Frame-Options', value: 'DENY' },
 ];
 
-export const betaQaBuildFlag = (
-  context = process.env.CONTEXT,
-  enabled = process.env.BETA_EVENTS_QA,
-) => (context === 'deploy-preview' && enabled === '1' ? '1' : '0');
+/** @param {string | undefined} context @param {string | undefined} enabled */
+export const betaQaBuildFlag = (context, enabled) =>
+  context === 'deploy-preview' && enabled === '1' ? '1' : '0';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Inlined at build time; deploy-preview is the only Netlify context allowed to expose beta rows.
-  env: { NEXT_PUBLIC_BETA_QA: betaQaBuildFlag() },
+  env: { NEXT_PUBLIC_BETA_QA: betaQaBuildFlag(process.env.CONTEXT, process.env.BETA_EVENTS_QA) },
   // No x-powered-by: Next.js on responses.
   poweredByHeader: false,
   allowedDevOrigins: ['127.0.0.1'],
