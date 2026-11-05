@@ -2423,12 +2423,12 @@
         "field_sources": {
           "listing_links": "Inline flier-list venue sections. Synthetic entry hash stays stable when listing order changes.",
           "title": "Event heading or inline venue h4; never publisher heading.",
-          "date": "Per-entry h4/date/content/note; year from dated flyer filename. No per-entry postal address or event photos; leave missing and review.",
+          "date": "Per-entry date/content/note; year from dated flyer filename. Exact venue/alias directory enrichment supplies verified postal address and venue photos, with source evidence retained.",
           "description": "Event body and explicit admission/closure notices.",
-          "images": "Event-scoped photo img elements; never nearby venues or publisher logos."
+          "images": "Exact verified venue directory gallery or main hero; never maps, flyers, logos or nearby-venue photos."
         },
         "date_format": "Explicit Japanese year/month/day; inherited month/day within event periods. Missing year stays missing.",
-        "image_rules": "Event section photos only. Skip logos, flyers, maps, placeholders and nearby venue photos."
+        "image_rules": "Opening photos can show verified venue from official city/prefecture directory. Keep required image dimensions; no publisher logos or nearby places."
       },
       "source_priority": 10,
       "measure_image_dimensions": true
@@ -2503,7 +2503,7 @@
         "machine_translate_missing_locales": true
       },
       "crawl_hints": {
-        "render_mode": "auto",
+        "render_mode": "never",
         "max_listing_pages": 40,
         "max_detail_pages": 200
       },
@@ -2519,7 +2519,8 @@
           "title": "Event heading or inline venue h4; never publisher heading.",
           "date": "Event JSON-LD plus detail table; organizer can name temple while 場所 is street address. Skip generic logos and unrelated entries.",
           "description": "Event body and explicit admission/closure notices.",
-          "images": "Event-scoped photo img elements; never nearby venues or publisher logos."
+          "images": "Event-scoped resource/event photos; missing photos may use exact verified venue directory gallery. Never nearby-venue cards.",
+          "location": "Event 場所/開催場所 or JSON-LD location; distinguish venue from postal address. Missing address uses unique exact official directory name/alias match; retain location evidence URL."
         },
         "date_format": "Explicit Japanese year/month/day; inherited month/day within event periods. Missing year stays missing.",
         "image_rules": "Event section photos only. Skip logos, flyers, maps, placeholders and nearby venue photos."

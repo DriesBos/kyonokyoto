@@ -28,6 +28,9 @@ test('Kyoto Tourism photos avoid CDN 403 across card, share and landing delivery
   assert.equal(eventMediaDeliverySrcSet(image), null);
   assert.equal(eventShareImageUrl(image, 'https://kyonokyoto.xyz'), image);
   assert.equal(landingMediaDeliveryUrl(image, 720, 480, true), image);
+  const venuePhoto = 'https://ja.kyoto.travel/resource/tourism/253-1.jpg';
+  assert.equal(eventMediaDeliveryUrl(venuePhoto), venuePhoto);
+  assert.equal(eventMediaDeliverySrcSet(venuePhoto), null);
   const otherHost = image.replace('ja.kyoto.travel', 'example.test');
   assert.equal(eventMediaDeliveryUrl(otherHost), imageCdnUrl(otherHost));
 });

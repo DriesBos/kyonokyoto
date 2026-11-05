@@ -123,12 +123,48 @@ function removeClosedDays(periods, closures, year) {
   }
   return result;
 }
+function publishedClosureDates(dateText, noteBlocks) {
+  const closed = [...dateText.matchAll(/[（(]([^）)]*(?:休止|休館|休園|除く)[^）)]*)[）)]/g)].map(
+    (m) => m[1],
+  );
+  for (const block of noteBlocks) {
+    const lines = block
+      .replace(/<br\b[^>]*>|<\/p>/gi, '\n')
+      .split('\n')
+      .map(text)
+      .filter(Boolean);
+    let collecting = false;
+    for (const line of lines) {
+      if (/^(?:拝観)?(?:休止|休館|休園)(?:日)?[：: ]*$/.test(line)) {
+        collecting = true;
+        continue;
+      }
+      const dated = /^(?:※\s*)?(?:20\d{2}年)?\d{1,2}月\d{1,2}日/.test(line);
+      if (dated && (collecting || /休止|休館|休園|除く/.test(line))) closed.push(line);
+      else collecting = false;
+    }
+  }
+  return closed.join(' ');
+}
+export function parsePublisherJson(value) {
+  // Some publisher descriptions contain literal newlines inside JSON strings.
+  let quoted = false,
+    escaped = false,
+    normalized = '';
+  for (const char of value) {
+    if (quoted && char.charCodeAt(0) < 32) normalized += JSON.stringify(char).slice(1, -1);
+    else normalized += char;
+    if (!escaped && char === '"') quoted = !quoted;
+    escaped = !escaped && char === '\\';
+  }
+  return JSON.parse(normalized);
+}
 function jsonEvent(html) {
   for (const m of html.matchAll(
     /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
   )) {
     try {
-      const data = JSON.parse(m[1]);
+      const data = parsePublisherJson(m[1]);
       const items = Array.isArray(data) ? data : [data, ...(data['@graph'] ?? [])];
       const event = items.find((v) => v['@type'] === 'Event');
       if (event) return event;
@@ -316,16 +352,45 @@ export function createTempleSourceAdapters({
             ).replace(/<span class="ruby">[\s\S]*?<\/span\s*>/, ''),
           );
           dateText = text(field(html, '開催日程|開催日|開催期間'));
+          const place = text(field(html, '場所')) || text(ld.location?.name ?? '');
+          const placeIsAddress =
+            /京都[府市]|(?:上京|中京|下京|左京|右京|東山|山科|伏見|西京|南|北)区/.test(place);
+          const organizer = text(field(html, '主催者')) || text(ld.organizer?.name ?? '');
           venue =
             text(field(html, '開催場所|会場')) ||
-            (slug === 'kyoto-tourism-openings' ? (ld.organizer?.name ?? '') : '');
-          address = text(field(html, '住所|所在地|場所'));
+            (slug === 'kyoto-tourism-openings' && !placeIsAddress ? place : '') ||
+            (slug === 'kyoto-tourism-openings' && organizer && title.includes(organizer)
+              ? organizer
+              : '');
+          address =
+            text(field(html, '住所|所在地')) ||
+            (placeIsAddress ? place : '') ||
+            text(
+              typeof ld.location?.address === 'string'
+                ? ld.location.address
+                : [
+                    ld.location?.address?.addressRegion,
+                    ld.location?.address?.addressLocality,
+                    ld.location?.address?.streetAddress,
+                  ]
+                    .filter(Boolean)
+                    .join(''),
+            );
           description =
             ld.description ||
             text(classHtml(html, 'showArticle__description')) ||
             text(classHtml(html, 'detailTxt'));
           hours = text(field(html, '時間|営業時間'));
           scheduleNotes = text(field(html, '備考|休日|休館日|休園日'));
+          if (slug === 'kyoto-tourism-openings') {
+            const noteBlocks = [
+              ...html.matchAll(
+                /<div\b[^>]*class=["'][^"']*\bmod_txt02\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+              ),
+            ].map((m) => m[1]);
+            closures = publishedClosureDates(dateText, noteBlocks);
+            scheduleNotes = [scheduleNotes, ...noteBlocks.map(text)].filter(Boolean).join('\n');
+          }
           if (!dateText && ld.startDate && ld.endDate)
             dateText = `${ld.startDate.slice(0, 10).replace(/-(\d\d)-(\d\d)/, '年$1月$2日')}～${ld.endDate.slice(0, 10).replace(/-(\d\d)-(\d\d)/, '年$1月$2日')}`;
           if (!hasOpeningScope(title, description, venue)) warnings.push('unrelated-listing');

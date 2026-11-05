@@ -63,7 +63,7 @@ const directImageSource = (source: string) => source.replace(/^http:\/\//, 'http
 
 // Kyoto Tourism images load from the publisher, but its CDN fetches return 403.
 const requiresDirectImageDelivery = (source: string) =>
-  /^https:\/\/ja\.kyoto\.travel\/resource\/event\/[^?#]+\.(?:avif|gif|jpe?g|png|webp)$/i.test(
+  /^https:\/\/ja\.kyoto\.travel\/resource\/(?:event|tourism)\/[^?#]+\.(?:avif|gif|jpe?g|png|webp)$/i.test(
     source,
   );
 
