@@ -9837,6 +9837,17 @@ function hasUsableImageCandidate(eventData) {
 }
 
 function shouldRetryDetailWithCrawl4Ai(eventData, renderMode, fetchedVia) {
+  // Rendering cannot resolve an explicitly ambiguous schedule or a publisher's omitted year.
+  if (
+    eventData?._temple_warnings?.some((warning) =>
+      [
+        'restricted-opening-days-require-review',
+        'schedule-exceptions-require-review',
+        'missing-explicit-event-year',
+      ].includes(warning),
+    )
+  )
+    return false;
   return (
     renderMode === 'auto' &&
     fetchedVia !== 'crawl4ai' &&

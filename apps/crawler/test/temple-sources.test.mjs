@@ -151,6 +151,20 @@ test('structured date bounds cannot erase weekday restrictions or closure except
   }
 });
 
+test('known ambiguous temple schedules do not trigger futile browser render retries', async () => {
+  const { shouldRetryDetailWithCrawl4Ai } = await import('../src/run-once.mjs');
+  for (const warning of [
+    'restricted-opening-days-require-review',
+    'schedule-exceptions-require-review',
+    'missing-explicit-event-year',
+  ]) {
+    assert.equal(
+      shouldRetryDetailWithCrawl4Ai({ _temple_warnings: [warning] }, 'auto', 'static'),
+      false,
+    );
+  }
+});
+
 test('source facts replace generic empty-page validity and publisher location defaults', () => {
   const injected = createTempleSourceAdapters({
     extractGenericEvent: () => ({
