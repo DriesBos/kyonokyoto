@@ -2390,7 +2390,7 @@
     {
       "slug": "kyoto-kobunka",
       "name": "京都古文化保存協会",
-      "beta": true,
+      "beta": false,
       "source_kind": "aggregator",
       "taxonomy": {
         "venue_category": ["historic-site"],
@@ -2435,7 +2435,7 @@
     {
       "slug": "kyoto-shunju",
       "name": "京都春秋",
-      "beta": true,
+      "beta": false,
       "source_kind": "aggregator",
       "taxonomy": {
         "venue_category": ["historic-site"],
@@ -2480,7 +2480,7 @@
     {
       "slug": "kyoto-tourism-openings",
       "name": "京都観光Navi 特別公開",
-      "beta": true,
+      "beta": false,
       "source_kind": "aggregator",
       "taxonomy": {
         "venue_category": ["historic-site"],
@@ -2530,7 +2530,7 @@
     {
       "slug": "kyoto-prefecture-openings",
       "name": "京都府観光連盟 特別公開",
-      "beta": true,
+      "beta": false,
       "source_kind": "aggregator",
       "taxonomy": {
         "venue_category": ["historic-site"],
