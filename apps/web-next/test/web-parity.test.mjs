@@ -76,7 +76,7 @@ test('beta sources stay out of production and render dimmed in dev', async () =>
   assert.match(styles, /\.block\[data-beta\]\n\s+opacity: 0\.5/);
 });
 
-test('deploy previews alone enable beta QA, while source beta flags stay enabled', async () => {
+test('deploy previews and branch deploys enable beta QA, while source beta flags stay enabled', async () => {
   const { betaQaBuildFlag } = await import(new URL('next.config.mjs', root));
   const [toml, sourcePayload] = await Promise.all([
     readFile(new URL('../../netlify.toml', root), 'utf8'),
@@ -88,7 +88,10 @@ test('deploy previews alone enable beta QA, while source beta flags stay enabled
   assert.equal(betaQaBuildFlag('deploy-preview', '0'), '0');
   assert.equal(betaQaBuildFlag('deploy-preview', undefined), '0');
   assert.equal(betaQaBuildFlag(undefined, '1'), '0');
+  assert.equal(betaQaBuildFlag('branch-deploy', '1'), '1');
+  assert.equal(betaQaBuildFlag('branch-deploy', undefined), '0');
   assert.match(toml, /\[context\.deploy-preview\.environment\]\n\s+BETA_EVENTS_QA = "1"/);
+  assert.match(toml, /\[context\.branch-deploy\.environment\]\n\s+BETA_EVENTS_QA = "1"/);
 
   const sources = JSON.parse(sourcePayload).sources;
   for (const slug of [

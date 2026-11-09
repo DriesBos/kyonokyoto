@@ -38,11 +38,11 @@ export const securityHeaders = ({ dev = false } = {}) => [
 
 /** @param {string | undefined} context @param {string | undefined} enabled */
 export const betaQaBuildFlag = (context, enabled) =>
-  context === 'deploy-preview' && enabled === '1' ? '1' : '0';
+  (context === 'deploy-preview' || context === 'branch-deploy') && enabled === '1' ? '1' : '0';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Inlined at build time; deploy-preview is the only Netlify context allowed to expose beta rows.
+  // Inlined at build time; only deploy-preview and branch-deploy (e.g. `preview` branch) contexts expose beta rows.
   env: { NEXT_PUBLIC_BETA_QA: betaQaBuildFlag(process.env.CONTEXT, process.env.BETA_EVENTS_QA) },
   // No x-powered-by: Next.js on responses.
   poweredByHeader: false,

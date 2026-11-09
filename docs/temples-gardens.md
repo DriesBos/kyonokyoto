@@ -28,11 +28,11 @@ Database RPC writes canonical facts, provenance and schedule in one transaction,
 1. Apply tracked `temple_event_sources` migration before syncing sources or deploying changed crawler. `supabase/schema.sql` includes same definitions for fresh databases.
 2. Sync Kyoto sources without pruning.
 3. Run explicit beta crawls for four slugs, inspect skip reasons and duplicate report.
-4. Use a deploy preview or local web development view for beta cards. Production excludes all beta sources before deduplication and generates filter options only from visible cards.
+4. Use a deploy preview, the `preview` branch deploy or local web development view for beta cards. Production excludes all beta sources before deduplication and generates filter options only from visible cards.
 5. Approve content, maps, calendar and images before separately promoting any source.
 
-Netlify deploy previews set `BETA_EVENTS_QA=1`. Next.js inlines beta visibility only for
-`CONTEXT=deploy-preview`; production ignores that flag and keeps beta hidden. Developer admin
+Netlify deploy previews and branch deploys (the `preview` branch) set `BETA_EVENTS_QA=1`.
+Next.js inlines beta visibility only for `CONTEXT=deploy-preview` or `CONTEXT=branch-deploy`; production ignores that flag and keeps beta hidden. Developer admin
 pages remain disabled in preview production builds. Source sync can target only this batch:
 `node scripts/sync-sources.mjs --city=kyoto --source=kyoto-kobunka,kyoto-shunju,kyoto-tourism-openings,kyoto-prefecture-openings`.
 Scoped sync rejects pruning and unknown slugs.

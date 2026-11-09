@@ -14,6 +14,9 @@
 [context.deploy-preview.environment]
   BETA_EVENTS_QA = "1"
 
+[context.branch-deploy.environment]
+  BETA_EVENTS_QA = "1"
+
 # The repo root has no `next` dependency, so Netlify cannot auto-detect the framework.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
