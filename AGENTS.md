@@ -25,3 +25,11 @@ See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
 - When changing source JSON or running test crawls, update `QA-todo.md` with sources that need JSON tuning, sources that look close, and any approval notes.
 - Supabase is on the Free plan: plan every Supabase change within the limits in docs/supabase-free-plan.md.
 - Netlify is on the Personal plan (1,000 credits/month): plan every hosting, deploy and image change within docs/netlify-plan.md.
+- Crawls run only on the VPS systemd timers (`ops/systemd`). Never trigger crawls or add crawl/source-sync steps to CI, deploy scripts or push hooks; source changes take effect at the next scheduled crawl. To test a source, use `selectors:inspect --from=live` (fetch only), not `crawl:*` or `run-once`.
+- Deploys: push to the `preview` branch by default. Push or merge to `main` (production) only when specifically asked.
+
+## Next.js (apps/web-next)
+
+- Site is Next.js 16 (App Router) in `apps/web-next`. Its rules live in [apps/web-next/AGENTS.md](apps/web-next/AGENTS.md); read them before touching web code.
+- Next.js APIs changed since most training data. Before writing Next.js code, read the version-matched docs in `apps/web-next/node_modules/next/dist/docs/` (not visible from repo root `node_modules`). Heed deprecation notices.
+- `apps/web-next/AGENTS.md` holds a `nextjs-agent-rules` block managed by `next dev`. Do not edit or remove it; commit it if `next dev` updates it.

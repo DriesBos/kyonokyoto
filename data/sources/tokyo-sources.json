@@ -1619,6 +1619,1065 @@
         "requires_render": true,
         "max_detail_pages": 1
       }
+    },
+    {
+      "slug": "18-murata",
+      "name": "18, Murata",
+      "names": {
+        "en": "18, Murata"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "1-8-6 Futaba, Shinagawa-ku, Tokyo 142-0043 Japan",
+      "directions_query": "18, Murata, 1-8-6 Futaba, Shinagawa-ku, Tokyo",
+      "lat": 35.60841,
+      "lng": 139.72898,
+      "base_url": "https://18murata.com/",
+      "start_urls": ["https://18murata.com/top", "https://18murata.com/exhibitions"],
+      "allowed_domains": ["18murata.com", "www.18murata.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["18murata.com/0", "18murata.com/1", "18murata.com/2"],
+      "notes": "Official 18, Murata site (Cargo, bilingual EN/JA text in one page). /top shows the current show; /exhibitions lists numbered shows (e.g. /26_...) plus event_/fair_ off-site entries, which are skipped.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://18murata.com/exhibitions"],
+          "en": ["https://18murata.com/exhibitions"]
+        },
+        "language_url_pattern": "Single URL set; Japanese and English text appear together on each page.",
+        "field_sources": {
+          "listing_links": "projectcontent a",
+          "title": "projectcontent i, projectcontent h1",
+          "date": "projectcontent",
+          "description": "projectcontent h1",
+          "images": "projectcontent img"
+        },
+        "date_format": "2026年10月31日(土)〜12月5日(土) / October 31 - December 12, 2026",
+        "image_rules": "Lazy-loaded images carry the file in data-src."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": "projectcontent a",
+        "title": "projectcontent i, projectcontent h1",
+        "date": "projectcontent",
+        "description": "projectcontent h1",
+        "images": "projectcontent img"
+      },
+      "locales": {
+        "en": {
+          "start_urls": ["https://18murata.com/top", "https://18murata.com/exhibitions"],
+          "event_page_patterns": ["18murata.com/0", "18murata.com/1", "18murata.com/2"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": [
+          "/event",
+          "/fair",
+          "/about",
+          "/contact",
+          "/artist",
+          "/header",
+          "18murata-event"
+        ]
+      }
+    },
+    {
+      "slug": "4649",
+      "name": "4649",
+      "names": {
+        "en": "4649",
+        "ja": "4649"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "5-4-1 #201 Shinjuku, Shinjuku-ku, Tokyo 160-0022 Japan",
+      "directions_query": "4649 gallery, 5-4-1 Shinjuku, Shinjuku-ku, Tokyo",
+      "lat": 35.69184,
+      "lng": 139.71063,
+      "base_url": "https://4-6-4-9.jp/",
+      "start_urls": ["https://4-6-4-9.jp/"],
+      "allowed_domains": ["4-6-4-9.jp", "www.4-6-4-9.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["4-6-4-9.jp/"],
+      "notes": "Official 4649 artist-run gallery site (WordPress). Home page is a reverse-chronological project list mixing in-space shows with fair/off-site projects; only slugs ending in -4649-tokyo are in-space shows. Detail pages are one-line (artist / title / dates / venue) with PDFs, often no image.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://4-6-4-9.jp/"],
+          "en": ["https://4-6-4-9.jp/"]
+        },
+        "language_url_pattern": "Single bilingual site; no separate locale URLs.",
+        "field_sources": {
+          "listing_links": ".entry-content a",
+          "title": ".entry-content p",
+          "date": ".entry-content p",
+          "description": ".entry-content",
+          "images": ".entry-content img"
+        },
+        "date_format": "September 26 - October 25, 2026",
+        "image_rules": "Content images only when present."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".entry-content a",
+        "title": ".entry-content p",
+        "date": ".entry-content p",
+        "description": ".entry-content",
+        "images": ".entry-content img"
+      },
+      "locales": {
+        "en": {
+          "start_urls": ["https://4-6-4-9.jp/"],
+          "event_page_patterns": ["4-6-4-9.jp/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": [
+          "/02-contact/",
+          "art-collaboration-kyoto",
+          "basel-social-club",
+          "soshenzhen",
+          "hong-kong",
+          "brussels",
+          "art-fair",
+          "tokyo-jazz-club",
+          "xyzcollective"
+        ]
+      }
+    },
+    {
+      "slug": "anomaly-tokyo",
+      "name": "ANOMALY",
+      "names": {
+        "en": "ANOMALY",
+        "ja": "ANOMALY"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "TERRADA Art Complex I 4F, 1-33-10 Higashi-Shinagawa, Shinagawa-ku, Tokyo 140-0002 Japan",
+      "directions_query": "ANOMALY, TERRADA ART COMPLEX, Tokyo",
+      "lat": 35.62166,
+      "lng": 139.74969,
+      "base_url": "https://anomalytokyo.com/exhibition/",
+      "start_urls": ["https://anomalytokyo.com/exhibition/"],
+      "allowed_domains": ["anomalytokyo.com", "www.anomalytokyo.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official ANOMALY site (WordPress). /exhibition/ lists current and recent shows, latest first; detail pages at /exhibition/<slug>/. Same building as STANDING PINE (TERRADA Art Complex I).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://anomalytokyo.com/exhibition/"],
+          "en": ["https://anomalytokyo.com/en/exhibition/"]
+        },
+        "language_url_pattern": "Japanese uses /exhibition/; English uses /en/exhibition/.",
+        "field_sources": {
+          "listing_links": ".list-blocks a.list-link",
+          "title": ".ex-title",
+          "date": ".exhibition-date",
+          "description": ".content-post p",
+          "images": "meta og:image / .content-post img"
+        },
+        "date_format": "YYYY.M.D（曜） - M.D（曜）",
+        "image_rules": "WordPress uploads under /log/wp-content/uploads/."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".list-blocks a.list-link",
+        "title": ".ex-title",
+        "date": ".exhibition-date",
+        "description": ".content-post p"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://anomalytokyo.com/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://anomalytokyo.com/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/projects/", "/publications/", "/exhibition/feed"]
+      }
+    },
+    {
+      "slug": "con-tokyo",
+      "name": "CON_",
+      "names": {
+        "en": "CON_",
+        "ja": "CON_"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "Maruka Building 4F, 2-2-14 Nihonbashi-Bakurocho, Chuo-ku, Tokyo 103-0002 Japan",
+      "directions_query": "CON_ gallery, 2-2-14 Nihonbashi Bakurocho, Chuo-ku, Tokyo",
+      "lat": 35.69418,
+      "lng": 139.78319,
+      "base_url": "https://www.contokyo.com/exhibition/",
+      "start_urls": ["https://www.contokyo.com/exhibition/"],
+      "allowed_domains": ["www.contokyo.com", "contokyo.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["contokyo.com/"],
+      "notes": "Official CON_ site (Ghost). /exhibition/ lists shows latest first; detail pages are root-level slugs such as /twilight/. Offsite projects are under /offsite/ and are excluded. Coordinates are the Nihonbashi-Bakurocho neighbourhood centroid (approximate). Detail text is mostly Japanese.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.contokyo.com/exhibition/"],
+          "en": []
+        },
+        "language_url_pattern": "Single English-language site.",
+        "field_sources": {
+          "listing_links": ".post-card-content-link",
+          "title": ".p21-meta-title",
+          "date": ".p21-meta-text",
+          "description": ".p21-source",
+          "images": "meta og:image / .p21-source img"
+        },
+        "date_format": "YYYY.M.D (DAY) – YYYY.M.D (DAY)",
+        "image_rules": "Ghost storage.ghost.io images; prefer og:image."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".post-card-content-link",
+        "title": ".p21-meta-title",
+        "date": ".p21-meta-text",
+        "description": ".p21-source"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.contokyo.com/exhibition/"],
+          "event_page_patterns": ["contokyo.com/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": [
+          "/about/",
+          "/artist/",
+          "/offsite/",
+          "/stories/",
+          "/page/",
+          "/rss/",
+          "/exhibition/",
+          "/tag/"
+        ]
+      }
+    },
+    {
+      "slug": "hagiwara-projects",
+      "name": "HAGIWARA PROJECTS",
+      "names": {
+        "en": "HAGIWARA PROJECTS",
+        "ja": "ハギワラプロジェクツ"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "Piramide 2F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
+      "directions_query": "HAGIWARA PROJECTS, 6-6-9 Roppongi, Minato-ku, Tokyo",
+      "lat": 35.66018,
+      "lng": 139.73139,
+      "base_url": "https://www.hagiwaraprojects.com/",
+      "start_urls": ["https://www.hagiwaraprojects.com/"],
+      "allowed_domains": ["www.hagiwaraprojects.com", "hagiwaraprojects.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/20"],
+      "notes": "Official HAGIWARA PROJECTS site (Wix, bilingual EN/JA text on a single page set). Home page links the current show (detail slugs like /202611mihodohi); /exhibitions is a full archive with slugs like /2019-xxx. Title comes from og:title and date/description from page body; no stable class selectors on Wix.",
+      "qa": {
+        "listing_urls": {
+          "ja": [],
+          "en": ["https://www.hagiwaraprojects.com/"]
+        },
+        "language_url_pattern": "Single bilingual site; no separate language paths.",
+        "field_sources": {
+          "listing_links": "a",
+          "title": "og:title (generic fallback)",
+          "date": "page body text (generic fallback)",
+          "description": "page body text (generic fallback)",
+          "images": "og:image / first media"
+        },
+        "date_format": "Month D (Day) - Month D (Day), YYYY",
+        "image_rules": "Wix static media (static.wixstatic.com)."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": "a"
+      },
+      "locales": {
+        "en": {
+          "start_urls": ["https://www.hagiwaraprojects.com/"],
+          "event_page_patterns": ["/20"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists", "/news", "/artfair", "/contact", "/exhibitions", "/_files/"]
+      }
+    },
+    {
+      "slug": "kayokoyuki",
+      "name": "KAYOKOYUKI",
+      "names": {
+        "en": "KAYOKOYUKI",
+        "ja": "KAYOKOYUKI"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "Piramide Bldg 2F, 6-6-9 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
+      "directions_query": "KAYOKOYUKI, 6-6-9 Roppongi, Minato-ku, Tokyo",
+      "lat": 35.66018,
+      "lng": 139.73139,
+      "base_url": "https://www.kayokoyuki.com/jp/exhibition.php",
+      "start_urls": ["https://www.kayokoyuki.com/jp/exhibition.php"],
+      "allowed_domains": ["www.kayokoyuki.com", "kayokoyuki.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/jp/2"],
+      "notes": "Official KAYOKOYUKI exhibitions page (latest first). Detail pages are /jp/YYMMDD.php (opening date); listing also links art-fair entries on external sites, which are ignored. Same building as Taro Nasu (Piramide, Roppongi).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.kayokoyuki.com/jp/exhibition.php"],
+          "en": ["https://www.kayokoyuki.com/en/exhibition.php"]
+        },
+        "language_url_pattern": "Japanese uses /jp/; English uses /en/ with the same file names.",
+        "field_sources": {
+          "listing_links": ".exhibition_list a",
+          "title": "#artist_detail h1",
+          "date": "#artist_detail .artist_text",
+          "description": "#artist_detail .add_space",
+          "images": "#top_image_wrapper img"
+        },
+        "date_format": "YYYY.MM.DD（曜）- MM.DD（曜） (ja); Month D - Month D, YYYY (en)",
+        "image_rules": "Use the top image in #top_image_wrapper; relative ../img/exhibition/... paths."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".exhibition_list a",
+        "title": "#artist_detail h1",
+        "date": "#artist_detail .artist_text",
+        "description": "#artist_detail .add_space",
+        "images": "#top_image_wrapper img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.kayokoyuki.com/jp/exhibition.php"],
+          "event_page_patterns": ["/jp/2"]
+        },
+        "en": {
+          "start_urls": ["https://www.kayokoyuki.com/en/exhibition.php"],
+          "event_page_patterns": ["/en/2"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artist", "/news", "/contact"]
+      }
+    },
+    {
+      "slug": "koki-arts",
+      "name": "KOKI ARTS",
+      "names": {
+        "en": "KOKI ARTS"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "Rose Bldg 1F, 1-15-2 Higashi-Kanda, Chiyoda-ku, Tokyo 101-0031 Japan",
+      "directions_query": "KOKI ARTS, 1-15-2 Higashi-Kanda, Chiyoda-ku, Tokyo",
+      "lat": 35.69536,
+      "lng": 139.78004,
+      "base_url": "https://www.kokiarts.com/",
+      "start_urls": ["https://www.kokiarts.com/new-page", "https://www.kokiarts.com/"],
+      "allowed_domains": ["www.kokiarts.com", "kokiarts.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["-exhibition-", "-20"],
+      "notes": "Official KOKI ARTS site (Squarespace). Home page shows the current exhibition; /new-page is the Past Exhibitions list linking detail pages like /koutaro-inoue-exhibition-2026. Bilingual JA/EN text on one page set. Coordinates are the Higashi-Kanda neighbourhood centroid (approximate).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.kokiarts.com/new-page", "https://www.kokiarts.com/"],
+          "en": []
+        },
+        "language_url_pattern": "Single bilingual site; no separate language paths.",
+        "field_sources": {
+          "listing_links": ".user-items-list-item-container a",
+          "title": "h4",
+          "date": "page body",
+          "description": ".sqs-html-content",
+          "images": ".content img"
+        },
+        "date_format": "M/D – M/D/YYYY",
+        "image_rules": "Squarespace CDN images."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".user-items-list-item-container a",
+        "title": "h4"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.kokiarts.com/new-page", "https://www.kokiarts.com/"],
+          "event_page_patterns": ["-exhibition-", "-20"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": [
+          "/artists",
+          "/press",
+          "/art-fairs",
+          "/contact",
+          "/cart",
+          "/search",
+          "/home"
+        ]
+      }
+    },
+    {
+      "slug": "kotaro-nukaga",
+      "name": "KOTARO NUKAGA",
+      "names": {
+        "en": "KOTARO NUKAGA",
+        "ja": "KOTARO NUKAGA（天王洲）"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "TERRADA Art Complex II 1F, 1-32-8 Higashi-Shinagawa, Shinagawa-ku, Tokyo 140-0002 Japan",
+      "directions_query": "KOTARO NUKAGA, TERRADA Art Complex II, Tennoz, Tokyo",
+      "lat": 35.62164,
+      "lng": 139.74954,
+      "base_url": "https://kotaronukaga.com/exhibition/",
+      "start_urls": ["https://kotaronukaga.com/exhibition/"],
+      "allowed_domains": ["kotaronukaga.com", "www.kotaronukaga.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official KOTARO NUKAGA exhibitions page with CURRENT, FORTHCOMING and PAST sections (WordPress). Main Tokyo space is Tennoz (TERRADA Art Complex II); listing may also include shows at the gallery's other spaces (each detail page names its venue).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://kotaronukaga.com/exhibition/"],
+          "en": ["https://kotaronukaga.com/en/exhibition/"]
+        },
+        "language_url_pattern": "Japanese uses /exhibition/; English uses /en/exhibition/.",
+        "field_sources": {
+          "listing_links": ".card-info-wrap .post-title a",
+          "title": "main h1",
+          "date": ".subtitle.period",
+          "description": ".section-content-layout .site-main p",
+          "images": ".feature-image-wrap img"
+        },
+        "date_format": "YYYY年M月D日（曜）– M月D日（曜） (ja); Month D – Month D, YYYY (en)",
+        "image_rules": "First feature image; Jetpack i0.wp.com CDN URLs. Placeholder white.png in second section must be skipped."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".card-info-wrap .post-title a",
+        "title": "main h1",
+        "date": ".subtitle.period",
+        "description": ".section-content-layout .site-main p",
+        "images": ".feature-image-wrap img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://kotaronukaga.com/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://kotaronukaga.com/en/exhibition/"],
+          "event_page_patterns": ["/en/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 8,
+        "skip_patterns": ["/artists/", "/news/", "/exhibition/page/", "/exhibition/feed"]
+      }
+    },
+    {
+      "slug": "misako-and-rosen",
+      "name": "MISAKO & ROSEN",
+      "names": {
+        "en": "MISAKO & ROSEN",
+        "ja": "ミサコ＆ローゼン"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "1F, 3-27-6 Kita-Otsuka, Toshima-ku, Tokyo 170-0004 Japan",
+      "directions_query": "MISAKO & ROSEN, 3-27-6 Kita-Otsuka, Toshima-ku, Tokyo",
+      "lat": 35.734,
+      "lng": 139.72451,
+      "base_url": "https://misakoandrosen.jp/",
+      "start_urls": ["https://misakoandrosen.jp/"],
+      "allowed_domains": ["misakoandrosen.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official MISAKO & ROSEN site. Home page sidebar lists exhibitions newest first (current year first, then archive); detail pages are /exhibitions/<yy>/<nn> (JA) and /exhibitions-en/<yy>/<nn> (EN).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://misakoandrosen.jp/"],
+          "en": ["https://misakoandrosen.jp/en/"]
+        },
+        "language_url_pattern": "Japanese uses /exhibitions/<yy>/<nn>; English uses /en/ home and /exhibitions-en/<yy>/<nn>.",
+        "field_sources": {
+          "listing_links": ".l-sidebar__upcoming-content a, .l-sidebar__year-content a",
+          "title": ".c-heading2",
+          "date": ".c-header__date",
+          "description": ".exhibitions-content",
+          "images": ".exhibitions-img img, .exhibitions-content img"
+        },
+        "date_format": "YYYY.M.D Wed - M.D Sun",
+        "image_rules": "Use detail-page gallery images (.exhibitions-img) and images inside the text; some new shows have no images yet."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".l-sidebar__upcoming-content a, .l-sidebar__year-content a",
+        "title": ".c-heading2",
+        "date": ".c-header__date",
+        "description": ".exhibitions-content",
+        "images": ".exhibitions-img img, .exhibitions-content img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://misakoandrosen.jp/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://misakoandrosen.jp/en/"],
+          "event_page_patterns": ["/exhibitions-en/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/entertainment/", "/contact/"]
+      }
+    },
+    {
+      "slug": "mizuma-art-gallery",
+      "name": "Mizuma Art Gallery",
+      "names": {
+        "en": "Mizuma Art Gallery",
+        "ja": "ミヅマアートギャラリー"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "Kagura Bldg. 2F, 3-13 Ichigaya-Tamachi, Shinjuku-ku, Tokyo 162-0843 Japan",
+      "directions_query": "Mizuma Art Gallery, 3-13 Ichigaya-Tamachi, Shinjuku-ku, Tokyo",
+      "lat": 35.69522,
+      "lng": 139.73669,
+      "base_url": "https://mizuma-art.co.jp/exhibitions/",
+      "start_urls": ["https://mizuma-art.co.jp/", "https://mizuma-art.co.jp/exhibitions/"],
+      "allowed_domains": ["mizuma-art.co.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/"],
+      "notes": "Official Mizuma Art Gallery site. Home top slider (current + upcoming) and /exhibitions/ (upcoming, split by city (Tokyo column first, Singapore Gillman Barracks second); past shows are under /exhibitions-archive/<year>/. Titles of Singapore shows carry no (TOKYO) tag.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://mizuma-art.co.jp/", "https://mizuma-art.co.jp/exhibitions/"],
+          "en": ["https://mizuma-art.co.jp/en/exhibitions/"]
+        },
+        "language_url_pattern": "Japanese uses /exhibitions/<slug>/; English uses /en/exhibitions/<slug>/.",
+        "field_sources": {
+          "listing_links": ".exh-list a, .top .swiper-slide a",
+          "title": ".exh_title h1",
+          "date": ".exh_title .period",
+          "description": ".description",
+          "images": ".swiper-slide .img-container img"
+        },
+        "date_format": "YYYY年M月D日(曜) - M月D日(曜)",
+        "image_rules": "Use slider images on the detail page (lazyload data-src)."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".exh-list a, .top .swiper-slide a",
+        "title": ".exh_title h1",
+        "date": ".exh_title .period",
+        "description": ".description",
+        "images": ".swiper-slide .img-container img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://mizuma-art.co.jp/", "https://mizuma-art.co.jp/exhibitions/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://mizuma-art.co.jp/en/exhibitions/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/exhibitions-archive/", "/about/"]
+      }
+    },
+    {
+      "slug": "parcel-tokyo",
+      "name": "PARCEL",
+      "names": {
+        "en": "PARCEL",
+        "ja": "PARCEL"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "DDD HOTEL 1F, 2-2-1 Nihonbashi-Bakurocho, Chuo-ku, Tokyo 103-0002 Japan",
+      "directions_query": "PARCEL, 2-2-1 Nihonbashi-Bakurocho, Chuo-ku, Tokyo",
+      "lat": 35.69548,
+      "lng": 139.78349,
+      "base_url": "https://parceltokyo.jp/exhibition/",
+      "start_urls": ["https://parceltokyo.jp/", "https://parceltokyo.jp/exhibition/"],
+      "allowed_domains": ["parceltokyo.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official PARCEL site (English UI with Japanese detail text toggle; single locale). Home shows current show; /exhibition/ lists current + past by year, newest first. Also runs annex parcel (Maruka Bldg 2F, 2-2-14 Nihonbashi-Bakurocho) and joint shows with CON_ (4F).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://parceltokyo.jp/exhibition/"],
+          "en": ["https://parceltokyo.jp/exhibition/"]
+        },
+        "language_url_pattern": "Single site, no separate language URLs (English labels, Japanese body text under details - JP).",
+        "field_sources": {
+          "listing_links": ".acvList__Area--Con article a",
+          "title": ".Epost .title h2",
+          "date": ".Epost .date__Area",
+          "description": ".EpostBottom",
+          "images": ".Epost__Area .img img"
+        },
+        "date_format": "YYYY MM.DD Day - MM.DD Day",
+        "image_rules": "Use main poster image on the detail page."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".acvList__Area--Con article a, .newPost__Area a",
+        "title": ".Epost .title h2",
+        "date": ".Epost .date__Area",
+        "description": ".EpostBottom",
+        "images": ".Epost__Area .img img"
+      },
+      "locales": {
+        "en": {
+          "start_urls": ["https://parceltokyo.jp/", "https://parceltokyo.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artist/", "/news/", "/about/"]
+      }
+    },
+    {
+      "slug": "sho-plus-1",
+      "name": "Sho+1",
+      "names": {
+        "en": "Sho+1",
+        "ja": "Sho+1"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "Ueno Yokoyama Bldg. 1F, 1-4-8 Ueno, Taito-ku, Tokyo 110-0005 Japan",
+      "directions_query": "Sho+1, 1-4-8 Ueno, Taito-ku, Tokyo",
+      "lat": 35.70561,
+      "lng": 139.77078,
+      "base_url": "https://shoplusone.com/en/gallery-top-en/exhibitions-en/",
+      "start_urls": ["https://shoplusone.com/en/gallery-top-en/exhibitions-en/"],
+      "allowed_domains": ["shoplusone.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/gallery-top-en/exhibitions-en/"],
+      "notes": "Official Sho+1 site. Exhibitions page shows current/upcoming first, then Past Exhibitions; detail pages are free-form WordPress pages. Gallery also exhibits at fairs outside Tokyo (e.g. Art Collaboration Kyoto).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://shoplusone.com/gallery-top/exhibitions/"],
+          "en": ["https://shoplusone.com/en/gallery-top-en/exhibitions-en/"]
+        },
+        "language_url_pattern": "English uses /en/gallery-top-en/exhibitions-en/<slug>; Japanese uses /gallery-top/exhibitions/<slug>.",
+        "field_sources": {
+          "listing_links": ".entry-body a",
+          "title": ".entry-body strong",
+          "date": ".entry-body",
+          "description": ".entry-body",
+          "images": ".entry-body .wp-block-image img"
+        },
+        "date_format": "Month D - Month D, YYYY",
+        "image_rules": "Use main poster image in .wp-block-image; gallery thumbnails are cropped."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".entry-body a",
+        "title": ".entry-body strong",
+        "date": ".entry-body",
+        "description": ".entry-body",
+        "images": ".entry-body .wp-block-image img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://shoplusone.com/gallery-top/exhibitions/"],
+          "event_page_patterns": ["/gallery-top/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://shoplusone.com/en/gallery-top-en/exhibitions-en/"],
+          "event_page_patterns": ["/en/gallery-top-en/exhibitions-en/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists", "/news", "/about", "/contact", "/art-fairs", "/office"]
+      }
+    },
+    {
+      "slug": "shugoarts",
+      "name": "ShugoArts",
+      "names": {
+        "en": "ShugoArts",
+        "ja": "シュウゴアーツ"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "complex665 2F, 6-5-24 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
+      "directions_query": "ShugoArts, complex665, 6-5-24 Roppongi, Minato-ku, Tokyo",
+      "lat": 35.66155,
+      "lng": 139.73104,
+      "base_url": "https://shugoarts.com/en/exhibitions/",
+      "start_urls": ["https://shugoarts.com/en/exhibitions/"],
+      "allowed_domains": ["shugoarts.com", "www.shugoarts.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/e"],
+      "notes": "Official ShugoArts exhibitions archive, newest first, with Past/Current status labels. Also runs ShugoArts Studio (Terrada Art Complex II, appointment only) and occasional Tennozu shows; those appear in the same listing.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://shugoarts.com/exhibitions/"],
+          "en": ["https://shugoarts.com/en/exhibitions/"]
+        },
+        "language_url_pattern": "English uses /en/exhibitions/e<id>; Japanese uses /exhibitions/e<id>.",
+        "field_sources": {
+          "listing_links": ".exhibition-box__left a",
+          "title": ".single-header h1",
+          "date": "generic date discovery (.right__date has start/end spans; end lacks year in ja)",
+          "description": ".component-block.text_mid",
+          "images": ".slideshow__top img"
+        },
+        "date_format": "2026. 9. 10 Thu - 9. 13 Sun (ja); Thu, 10 September - Sun, 13 September, 2026 (en)",
+        "image_rules": "Use slideshow images on the detail page."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".exhibition-box__left a",
+        "title": ".single-header h1",
+        "description": ".component-block.text_mid",
+        "images": ".slideshow__top img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://shugoarts.com/exhibitions/"],
+          "event_page_patterns": ["/exhibitions/e"]
+        },
+        "en": {
+          "start_urls": ["https://shugoarts.com/en/exhibitions/"],
+          "event_page_patterns": ["/en/exhibitions/e"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/works/", "/library/", "/shop/"]
+      }
+    },
+    {
+      "slug": "taka-ishii-gallery-tokyo",
+      "name": "Taka Ishii Gallery Roppongi",
+      "names": {
+        "en": "Taka Ishii Gallery Roppongi",
+        "ja": "タカ・イシイギャラリー 六本木"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "complex665 3F, 6-5-24 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
+      "directions_query": "Taka Ishii Gallery, complex665, 6-5-24 Roppongi, Minato-ku, Tokyo",
+      "lat": 35.66154,
+      "lng": 139.73115,
+      "base_url": "https://www.takaishiigallery.com/en/exhibitions/tokyo/",
+      "start_urls": ["https://www.takaishiigallery.com/en/exhibitions/tokyo/"],
+      "allowed_domains": ["www.takaishiigallery.com", "takaishiigallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/archives/"],
+      "notes": "Roppongi (complex665) location listing, newest first with a Current badge. Some shows span Roppongi and Kyobashi; other Tokyo spaces (Kyobashi, Photography/Film, Tennozu) have separate location pages.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.takaishiigallery.com/jp/exhibitions/tokyo/"],
+          "en": ["https://www.takaishiigallery.com/en/exhibitions/tokyo/"]
+        },
+        "language_url_pattern": "English uses /en/exhibitions/tokyo/ and /en/archives/<id>/; Japanese uses /jp/exhibitions/tokyo/ and /jp/archives/<id>/.",
+        "field_sources": {
+          "listing_links": "section.wrap01 h2.heading03 a",
+          "title": "section.section01 h2.heading02",
+          "date": "#main02 p",
+          "description": "#main02",
+          "images": ".asideSection01 .gallery a"
+        },
+        "date_format": "Dates: Nov 4 – Dec 12, 2026",
+        "image_rules": "Use gallery lightbox images in the detail aside column."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".wrap01 .heading03 a",
+        "title": ".section01 .heading02",
+        "date": "#main02 p",
+        "description": "#main02",
+        "images": ".asideSection01 .gallery img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.takaishiigallery.com/jp/exhibitions/tokyo/"],
+          "event_page_patterns": ["/jp/archives/"]
+        },
+        "en": {
+          "start_urls": ["https://www.takaishiigallery.com/en/exhibitions/tokyo/"],
+          "event_page_patterns": ["/en/archives/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/publications/", "/page/"]
+      }
+    },
+    {
+      "slug": "takuro-someya-contemporary-art",
+      "name": "Takuro Someya Contemporary Art",
+      "names": {
+        "en": "Takuro Someya Contemporary Art",
+        "ja": "タカ・ソメヤ・コンテンポラリー・アート"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "TSCA 3F, TERRADA Art Complex I, 1-33-10 Higashi-Shinagawa, Shinagawa-ku, Tokyo 140-0002 Japan",
+      "directions_query": "Takuro Someya Contemporary Art, TERRADA Art Complex, Tokyo",
+      "lat": 35.62166,
+      "lng": 139.74969,
+      "base_url": "https://tsca.jp/exhibition/",
+      "start_urls": ["https://tsca.jp/exhibition/"],
+      "allowed_domains": ["tsca.jp", "www.tsca.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/"],
+      "notes": "Official TSCA exhibitions page: current exhibition at top, then upcoming and past lists. Single space in TERRADA Art Complex I (Tennozu).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://tsca.jp/ja/exhibition/"],
+          "en": ["https://tsca.jp/exhibition/"]
+        },
+        "language_url_pattern": "English uses /exhibition/<slug>/; Japanese uses /ja/exhibition/<slug>/.",
+        "field_sources": {
+          "listing_links": "#current .cntName a, #pastExList a",
+          "title": ".exhibitionName",
+          "date": ".exhibitionDate",
+          "description": "#worksContent #infoLeft",
+          "images": "#worksSlide .photo"
+        },
+        "date_format": "15 August - 31 October, 2026",
+        "image_rules": "Use slideshow images in #worksSlide on the detail page."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": "#current .cntName a, #pastExList a",
+        "title": ".exhibitionName",
+        "date": ".exhibitionDate",
+        "description": "#worksContent #infoLeft",
+        "images": "#worksSlide .photo"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://tsca.jp/ja/exhibition/"],
+          "event_page_patterns": ["/ja/exhibition/"]
+        },
+        "en": {
+          "start_urls": ["https://tsca.jp/exhibition/"],
+          "event_page_patterns": ["/exhibition/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artist/", "/news/", "/gallery/", "/social/"]
+      }
+    },
+    {
+      "slug": "tokyo-gallery-btap",
+      "name": "Tokyo Gallery + BTAP",
+      "names": {
+        "en": "Tokyo Gallery + BTAP",
+        "ja": "東京画廊+BTAP"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "7F, Ginza 8-10-5, Chuo-ku, Tokyo 104-0061 Japan",
+      "directions_query": "Tokyo Gallery + BTAP, Ginza 8-10-5, Chuo-ku, Tokyo",
+      "lat": 35.66778,
+      "lng": 139.76236,
+      "base_url": "https://www.tokyo-gallery.com/en/exhibitions",
+      "start_urls": ["https://www.tokyo-gallery.com/en/exhibitions?display=progress"],
+      "allowed_domains": ["www.tokyo-gallery.com", "tokyo-gallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/"],
+      "notes": "Official Tokyo Gallery + BTAP exhibitions page filtered to current and upcoming. The listing also contains Beijing (BTAP) shows; the Tokyo/Beijing filter is client-side only, so detail pages show a Tokyo or Beijing location label.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.tokyo-gallery.com/exhibitions?display=progress"],
+          "en": ["https://www.tokyo-gallery.com/en/exhibitions?display=progress"]
+        },
+        "language_url_pattern": "English uses /en/exhibitions/<id>.html; Japanese uses /exhibitions/<id>.html.",
+        "field_sources": {
+          "listing_links": ".exhibition-box .thumb-link",
+          "title": ".exhibition-name",
+          "date": ".infomation-wrapper .date",
+          "description": ".lead-container",
+          "images": ".swiper-slide img"
+        },
+        "date_format": "2026/10/10–11/14",
+        "image_rules": "Use swiper slide images on the detail page."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".exhibition-box .thumb-link",
+        "title": ".exhibition-name",
+        "date": ".infomation-wrapper .date",
+        "description": ".lead-container",
+        "images": ".swiper-slide img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.tokyo-gallery.com/exhibitions?display=progress"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.tokyo-gallery.com/en/exhibitions?display=progress"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/about/", "/contact/", "/ch/"]
+      }
+    },
+    {
+      "slug": "tomio-koyama-gallery",
+      "name": "Tomio Koyama Gallery",
+      "names": {
+        "en": "Tomio Koyama Gallery",
+        "ja": "小山登美夫ギャラリー"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "complex665 2F, 6-5-24 Roppongi, Minato-ku, Tokyo 106-0032 Japan",
+      "directions_query": "Tomio Koyama Gallery, complex665, 6-5-24 Roppongi, Minato-ku, Tokyo",
+      "lat": 35.66157,
+      "lng": 139.73108,
+      "base_url": "https://www.tomiokoyamagallery.com/en/exhibitions/gallery/",
+      "start_urls": ["https://www.tomiokoyamagallery.com/en/exhibitions/gallery/"],
+      "allowed_domains": ["www.tomiokoyamagallery.com", "tomiokoyamagallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/en/exhibitions/"],
+      "notes": "Official Tomio Koyama Gallery gallery-exhibition archive, newest first. Also runs Kyobashi and Tennozu spaces (shown in the listing location column); off-site shows are under /exhibitions/other/ and are not crawled.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.tomiokoyamagallery.com/exhibitions/gallery/"],
+          "en": ["https://www.tomiokoyamagallery.com/en/exhibitions/gallery/"]
+        },
+        "language_url_pattern": "English uses /en/exhibitions/<slug>/; Japanese uses /exhibitions/<slug>/.",
+        "field_sources": {
+          "listing_links": ".anchor-block",
+          "title": ".entry-header .artist, .entry-title",
+          "date": ".exhibition-open-date",
+          "description": ".entry-content",
+          "images": ".eyecatch img"
+        },
+        "date_format": "September 26 - November 8, 2026",
+        "image_rules": "Use the eyecatch image on the detail page."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".anchor-block",
+        "title": ".entry-header .artist, .entry-title",
+        "date": ".exhibition-open-date",
+        "description": ".entry-content",
+        "images": ".eyecatch img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://www.tomiokoyamagallery.com/exhibitions/gallery/"],
+          "event_page_patterns": ["/exhibitions/"]
+        },
+        "en": {
+          "start_urls": ["https://www.tomiokoyamagallery.com/en/exhibitions/gallery/"],
+          "event_page_patterns": ["/en/exhibitions/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": [
+          "/artists/",
+          "/news/",
+          "/publications/",
+          "/exhibitions/other/",
+          "/exhibitions/gallery/"
+        ]
+      }
     }
   ]
 }

@@ -1412,6 +1412,63 @@
         "listing_is_detail": true,
         "max_detail_pages": 2
       }
+    },
+    {
+      "slug": "yoshiaki-inoue-gallery",
+      "name": "Yoshiaki Inoue Gallery",
+      "names": {
+        "en": "Yoshiaki Inoue Gallery",
+        "ja": "ヨシアキイノウエギャラリー"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "Shinsaibashi Inoue Bldg. 2F/3F, 1-3-10 Shinsaibashi-suji, Chuo-ku, Osaka 542-0085 Japan",
+      "directions_query": "Yoshiaki Inoue Gallery, 1-3-10 Shinsaibashisuji, Chuo-ku, Osaka",
+      "lat": 34.67335,
+      "lng": 135.50137,
+      "base_url": "https://gallery-inoue.com/",
+      "start_urls": ["https://gallery-inoue.com/category/extibitions/"],
+      "allowed_domains": ["gallery-inoue.com", "www.gallery-inoue.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["gallery-inoue.com/"],
+      "notes": "Official Yoshiaki Inoue Gallery WordPress site. Exhibition posts are listed newest first under the (misspelled) category /category/extibitions/; posts are bilingual JA/EN on a single page.",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://gallery-inoue.com/category/extibitions/"]
+        },
+        "language_url_pattern": "Single bilingual site; no separate EN URLs.",
+        "field_sources": {
+          "listing_links": ".entry-title a",
+          "title": "h1.entry-title",
+          "date": ".entry-content",
+          "description": ".entry-content",
+          "images": ".entry-content img"
+        },
+        "date_format": "October 2 Fri - October 31 Sat, 2026 (first line of post body)",
+        "image_rules": "Post body images only."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".entry-title a",
+        "title": "h1.entry-title",
+        "date": ".entry-content",
+        "description": ".entry-content",
+        "images": ".entry-content img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": ["https://gallery-inoue.com/category/extibitions/"],
+          "event_page_patterns": ["gallery-inoue.com/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/info/", "/category/", "/page/", "/tag/"]
+      }
     }
   ]
 }

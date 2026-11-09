@@ -3255,6 +3255,40 @@ test('Taka Ishii event extraction uses heading02 detail title', () => {
   assert.equal(event.title, 'Martin Margiela');
 });
 
+test('Taka Ishii event extraction parses same-month, cross-year and Japanese date ranges', () => {
+  const source = {
+    name: 'Taka Ishii Gallery',
+    taxonomy: testTaxonomy(['gallery']),
+  };
+  const cases = [
+    ['Dates: Oct 3 – 31, 2026', '2026-10-03', '2026-10-31'],
+    ['Dates: Sep 27 – Oct 25, 2026', '2026-09-27', '2026-10-25'],
+    ['Dates: Dec 5, 2026 – Jan 23, 2027', '2026-12-05', '2027-01-23'],
+    ['会期: 2026年10月3日（土） – 31日（土）', '2026-10-03', '2026-10-31'],
+    ['会期: 2026年9月27日（土） – 10月25日（土）', '2026-09-27', '2026-10-25'],
+    ['会期: 2026年12月5日（土） – 2027年1月23日（土）', '2026-12-05', '2027-01-23'],
+  ];
+
+  for (const [dateLine, startDate, endDate] of cases) {
+    const detailHtml = `
+      <section class="section01">
+        <h2 class="heading02">Kohei Yamada</h2>
+        <p>${dateLine}</p>
+        <p>Taka Ishii Gallery Kyoto is pleased to present this solo exhibition.</p>
+        <img src="/jp/wp-content/uploads/KYD-SC_26_005_a-400x400.jpg" alt="">
+      </section>
+    `;
+    const event = eventExtractors['taka-ishii-gallery'](
+      detailHtml,
+      source,
+      'https://www.takaishiigallery.com/jp/archives/38692/',
+    );
+
+    assert.equal(event.start_date, startDate, dateLine);
+    assert.equal(event.end_date, endDate, dateLine);
+  }
+});
+
 test('Taka Ishii skips past Kyoto exhibitions before media QA', () => {
   assert.equal(
     getSourceSpecificSkipReason(

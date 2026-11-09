@@ -836,23 +836,23 @@
       "address_text": "123 Yada-cho, Shimogyo-ku, Kyoto 600-8442 Japan",
       "lat": 35.00254410494693,
       "lng": 135.75605503209155,
-      "base_url": "https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/",
+      "base_url": "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
       "start_urls": [
-        "https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/",
+        "https://www.takaishiigallery.com/jp/exhibitions/kyoto-yada-cho/",
         "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"
       ],
       "allowed_domains": ["www.takaishiigallery.com", "takaishiigallery.com"],
       "crawl_strategy": "listing-and-detail-pages",
-      "event_page_patterns": ["/en/exhibitions/kyoto-yada-cho/"],
+      "event_page_patterns": ["/en/archives/"],
       "notes": "Use the Kyoto (Yada-cho) location page directly and extract only the linked Kyoto exhibition archive detail pages.",
       "locales": {
         "ja": {
-          "start_urls": ["https://www.takaishiigallery.com/exhibitions/kyoto-yada-cho/"],
-          "event_page_patterns": ["/exhibitions/kyoto-yada-cho/"]
+          "start_urls": ["https://www.takaishiigallery.com/jp/exhibitions/kyoto-yada-cho/"],
+          "event_page_patterns": ["/jp/archives/"]
         },
         "en": {
           "start_urls": ["https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/"],
-          "event_page_patterns": ["/en/exhibitions/kyoto-yada-cho/"]
+          "event_page_patterns": ["/en/archives/"]
         }
       }
     },
@@ -2571,6 +2571,150 @@
       },
       "source_priority": 60,
       "measure_image_dimensions": true
+    },
+    {
+      "slug": "mori-yu-gallery",
+      "name": "MORI YU GALLERY",
+      "names": {
+        "en": "MORI YU GALLERY",
+        "ja": "モリユウギャラリー"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "en",
+      "address_text": "4-19 Shogoin-rengezo-cho, Sakyo-ku, Kyoto 606-8357 Japan",
+      "directions_query": "MORI YU GALLERY, 4-19 Shogoin Rengezo-cho, Sakyo-ku, Kyoto",
+      "lat": 35.01593,
+      "lng": 135.77564,
+      "base_url": "https://www.moriyu-gallery.com/",
+      "start_urls": [
+        "https://www.moriyu-gallery.com/",
+        "https://www.moriyu-gallery.com/exhibitions"
+      ],
+      "allowed_domains": ["www.moriyu-gallery.com", "moriyu-gallery.com"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibitions/20"],
+      "notes": "Official MORI YU GALLERY site (Astro, bilingual EN/JA in one DOM). Home page shows current/upcoming shows; /exhibitions is the full archive. Second Kyoto space: MORI YU GALLERY VIEWING ROOM (Shimoseizoguchi-cho, Kamigyo-ku, by appointment).",
+      "qa": {
+        "listing_urls": {
+          "ja": ["https://www.moriyu-gallery.com/"],
+          "en": ["https://www.moriyu-gallery.com/"]
+        },
+        "language_url_pattern": "Single URL set; language toggled client-side via data-lang, both languages present in HTML.",
+        "field_sources": {
+          "listing_links": "a[href^=\"/exhibitions/\"]",
+          "title": "h1",
+          "date": "header aside p",
+          "description": ".whitespace-pre-line",
+          "images": "figure img"
+        },
+        "date_format": "YYYY/MM/DD - YYYY/MM/DD",
+        "image_rules": "Hero figure image on the detail page."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": "a[href^=\"/exhibitions/\"]",
+        "title": "h1",
+        "date": "header aside p",
+        "description": ".whitespace-pre-line",
+        "images": "figure img"
+      },
+      "locales": {
+        "en": {
+          "start_urls": [
+            "https://www.moriyu-gallery.com/",
+            "https://www.moriyu-gallery.com/exhibitions"
+          ],
+          "event_page_patterns": ["/exhibitions/20"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": ["/artists/", "/news/", "/contact"]
+      }
+    },
+    {
+      "slug": "shibunkaku",
+      "name": "Shibunkaku",
+      "names": {
+        "en": "Shibunkaku",
+        "ja": "思文閣"
+      },
+      "taxonomy": {
+        "venue_category": ["gallery"],
+        "display_category": ["contemporary"],
+        "event_category": ["exhibition"]
+      },
+      "language": "ja",
+      "address_text": "386 Motomachi, Komonzen-dori Yamatoji Higashi-iru, Higashiyama-ku, Kyoto 605-0089 Japan",
+      "directions_query": "Shibunkaku Gallery, Komonzen-dori Yamatoji, Higashiyama-ku, Kyoto",
+      "lat": 35.00723,
+      "lng": 135.77448,
+      "base_url": "https://www.shibunkaku.co.jp/",
+      "start_urls": [
+        "https://www.shibunkaku.co.jp/exhibition/",
+        "https://www.shibunkaku.co.jp/exhibition/list/"
+      ],
+      "allowed_domains": ["www.shibunkaku.co.jp", "shibunkaku.co.jp"],
+      "crawl_strategy": "listing-and-detail-pages",
+      "event_page_patterns": ["/exhibition/list/"],
+      "notes": "Official Shibunkaku site (art dealer, rare books, publishing). Listing mixes Kyoto gallery shows with Shibunkaku Ginza shows and art fairs; the venue is only named in the detail page schedule block (h2 'Shibunkaku' = Kyoto, 'Shibunkaku Ginza' = Tokyo), so Ginza/fair entries need manual review.",
+      "qa": {
+        "listing_urls": {
+          "ja": [
+            "https://www.shibunkaku.co.jp/exhibition/",
+            "https://www.shibunkaku.co.jp/exhibition/list/"
+          ],
+          "en": ["https://www.shibunkaku.co.jp/english/exhibition/list/"]
+        },
+        "language_url_pattern": "Japanese under /exhibition/; English mirror under /english/exhibition/.",
+        "field_sources": {
+          "listing_links": ".posts a, .slide a",
+          "title": ".post .header h1",
+          "date": ".schedule .date",
+          "description": ".h_main_text .text",
+          "images": ".slide .images img"
+        },
+        "date_format": "YYYY.MM.DD (weekday) - YYYY.MM.DD (weekday)",
+        "image_rules": "Banner image in the detail page slide block."
+      },
+      "beta": true,
+      "selectors": {
+        "listing_links": ".posts a, .slide a",
+        "title": ".post .header h1",
+        "date": ".schedule .date",
+        "description": ".h_main_text .text",
+        "images": ".slide .images img"
+      },
+      "locales": {
+        "ja": {
+          "start_urls": [
+            "https://www.shibunkaku.co.jp/exhibition/",
+            "https://www.shibunkaku.co.jp/exhibition/list/"
+          ],
+          "event_page_patterns": ["/exhibition/list/"]
+        }
+      },
+      "crawl_hints": {
+        "max_detail_pages": 6,
+        "skip_patterns": [
+          "/art/",
+          "/kosho/",
+          "/publishing/",
+          "/news/",
+          "/biography/",
+          "?cat=",
+          "/feed/",
+          "art-basel",
+          "frieze",
+          "tefaf",
+          "art-fair",
+          "ginza-curators-room"
+        ]
+      }
     }
   ]
 }

@@ -13,24 +13,37 @@ if [[ ! -f "$requirements_stamp" ]] || [[ "$(<"$requirements_stamp")" != "$requi
   printf '%s\n' "$requirements_hash" >"$requirements_stamp"
 fi
 
-sudo -n install -m 0644 \
+# Timers count from activation (OnActiveSec/OnUnitActiveSec). Only rewrite unit
+# files and reload systemd when a unit actually changed, so a push to main never
+# re-arms or shifts the regular crawl cadence. `enable --now` is a no-op for
+# timers that are already active.
+units_changed=0
+install_unit() {
+  if ! cmp -s "$1" "$2"; then
+    sudo -n install -m 0644 "$1" "$2"
+    units_changed=1
+  fi
+}
+install_unit \
   ops/systemd/kyo-no-kyoto-crawl@.service.example \
   /etc/systemd/system/kyo-no-kyoto-crawl@.service
-sudo -n install -m 0644 \
+install_unit \
   ops/systemd/kyo-no-kyoto-crawl-failure@.service.example \
   /etc/systemd/system/kyo-no-kyoto-crawl-failure@.service
-sudo -n install -m 0644 \
+install_unit \
   ops/systemd/kyo-no-kyoto-storage-maintenance.service.example \
   /etc/systemd/system/kyo-no-kyoto-storage-maintenance.service
-sudo -n install -m 0644 \
+install_unit \
   ops/systemd/kyo-no-kyoto-storage-maintenance.timer.example \
   /etc/systemd/system/kyo-no-kyoto-storage-maintenance.timer
 for city in kyoto osaka tokyo hong-kong; do
-  sudo -n install -m 0644 \
+  install_unit \
     "ops/systemd/kyo-no-kyoto-crawl@${city}.timer.example" \
     "/etc/systemd/system/kyo-no-kyoto-crawl@${city}.timer"
 done
-sudo -n systemctl daemon-reload
+if ((units_changed)); then
+  sudo -n systemctl daemon-reload
+fi
 sudo -n systemctl enable --now \
   kyo-no-kyoto-crawl@kyoto.timer \
   kyo-no-kyoto-crawl@osaka.timer \

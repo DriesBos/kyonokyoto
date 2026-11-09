@@ -4313,7 +4313,8 @@ function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
   }
 
   const pageText = stripTags(detailHtml);
-  const dateText = pageText.match(/Dates:\s*([^\n]+)/i)?.[1]?.trim() ?? 'See source page';
+  const dateText =
+    pageText.match(/(?:Dates|会期)\s*[:：]\s*([^\n]+)/i)?.[1]?.trim() ?? 'See source page';
   const locationText = pageText.match(/Location:\s*([^\n]+)/i)?.[1]?.trim() ?? source.name;
   const appointmentText = pageText.match(/Appointment required\.[^\n]*/i)?.[0] ?? null;
   const description = extractGenericDescription(detailHtml);
@@ -4328,7 +4329,10 @@ function extractTakaIshiiEvent(detailHtml, source, detailUrl) {
     ],
     detailUrl,
   );
-  const parsedDates = parseEnglishMonthDateRangeWithOptionalStartYear(dateText);
+  // Same-month ("Oct 3 – 31, 2026") and Japanese ("2026年10月3日（土） – 31日（土）")
+  // ranges fall through to the shared generic parser.
+  const englishDates = parseEnglishMonthDateRangeWithOptionalStartYear(dateText);
+  const parsedDates = englishDates.startDate ? englishDates : parseGenericDateRange(dateText);
 
   return {
     title,
