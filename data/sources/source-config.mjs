@@ -450,12 +450,7 @@ export function validateSourceConfig(source) {
       }
     }
   }
-  for (const field of [
-    'skip_og_image',
-    'measure_image_dimensions',
-    'landing_slider',
-    'rehost_images',
-  ]) {
+  for (const field of ['skip_og_image', 'measure_image_dimensions', 'landing_slider']) {
     if (source?.[field] !== undefined && typeof source[field] !== 'boolean') {
       warnings.push(`${slug}: ${field} must be boolean`);
     }

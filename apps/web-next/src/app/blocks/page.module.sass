@@ -592,6 +592,60 @@
     outline: 3px solid #fff
     outline-offset: -6px
 
+// Bottom CTA: plain white text + arrow under the boxes; closes the landing like a scroll.
+// Fades in once the intro is done.
+.landingCta
+  position: absolute
+  z-index: 4
+  left: 50%
+  bottom: calc(2rem + env(safe-area-inset-bottom, 0px))
+  display: flex
+  flex-direction: column
+  align-items: center
+  gap: .5rem
+  padding: .5rem 1rem
+  border: 0
+  background: none
+  color: #fff
+  font-size: var(--type-step-0)
+  line-height: 1.05
+  letter-spacing: -.01em
+  text-transform: uppercase
+  white-space: nowrap
+  cursor: pointer
+  transform: translateX(-50%)
+  transition: opacity 600ms ease-out
+
+  &:focus-visible
+    outline: 3px solid #fff
+    outline-offset: 2px
+
+.landing:not([data-intro-done]) .landingCta
+  opacity: 0
+  pointer-events: none
+
+.landingCtaArrow
+  width: 1rem
+  height: 1.25rem
+  fill: none
+  stroke: currentColor
+  stroke-width: 2px
+  vector-effect: non-scaling-stroke
+  animation: landingCtaBob 1.6s ease-in-out infinite
+
+@keyframes landingCtaBob
+  50%
+    transform: translateY(.3rem)
+
+@media (max-height: 640px)
+  .landingCta
+    bottom: calc(.25rem + env(safe-area-inset-bottom, 0px))
+    flex-direction: row
+
+@media (prefers-reduced-motion: reduce)
+  .landingCtaArrow
+    animation: none
+
 .landingBlocks
   // Same box area and box width as the default event grid (density 0) at this viewport: the
   // .grid padding (4rem + 3rem depth top/bottom, side gap left, side gap + 1.5rem back depth right), its

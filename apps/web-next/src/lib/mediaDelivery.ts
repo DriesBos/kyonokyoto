@@ -111,24 +111,16 @@ export const eventShareImageUrl = (
   return new URL(url, origin).href;
 };
 
+// Landing files are already cropped and sized (lib/landingImages.ts). Netlify Image CDN only
+// caches them, with a fixed format so each file has exactly one cached version.
 export const landingMediaDeliveryUrl = (
   value: string | null,
-  width: number,
-  height: number,
   useNetlifyImageCdn: boolean,
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  if (!useNetlifyImageCdn || requiresDirectImageDelivery(source)) return directImageSource(source);
-
-  return `/.netlify/images?${new URLSearchParams({
-    url: source,
-    w: String(width),
-    h: String(height),
-    fit: 'cover',
-    position: 'center',
-    q: '60',
-  })}`;
+  if (!useNetlifyImageCdn) return directImageSource(source);
+  return `/.netlify/images?${new URLSearchParams({ url: source, fm: 'webp' })}`;
 };
 
 const noStoreResponse = (body: string, status: number) =>

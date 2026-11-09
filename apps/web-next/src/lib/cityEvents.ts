@@ -113,6 +113,9 @@ type EventRow = {
         image_busyness?: ImageBusyness | null;
         image_score?: number | null;
         image_confidence?: ImageConfidence | null;
+        // the two landing files of a landing_slider event's landing image (crawler landing-media)
+        landing_desktop?: string;
+        landing_mobile?: string;
       }[]
     | null;
   source_url: string;
@@ -193,6 +196,8 @@ export type CityEvent = {
     score?: number | null;
     confidence?: ImageConfidence | null;
     rating?: ImageRating;
+    landingDesktop?: string | null;
+    landingMobile?: string | null;
   }[];
   sourceUrl: string | null;
   mapsUrl: string;
@@ -467,6 +472,8 @@ const imageRecords = (
         score: typeof metadata?.image_score === 'number' ? metadata.image_score : null,
         confidence: metadata?.image_confidence ?? null,
         rating: imageRatingFor(url),
+        landingDesktop: metadata?.landing_desktop ?? null,
+        landingMobile: metadata?.landing_mobile ?? null,
       };
     }),
   );

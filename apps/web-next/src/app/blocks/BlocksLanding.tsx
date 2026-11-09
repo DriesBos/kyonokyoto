@@ -21,7 +21,7 @@ import { readLandingSeen, rememberLandingSeen } from '@/lib/landingSeen';
 import { imageCdnEnabled } from '@/lib/env';
 import { uiText, type AppLocale } from '@/lib/i18n';
 import { stickyMapOverlap } from '@/lib/mapOverlap';
-import { landingPictureSourcesFor } from '@/lib/landingImages';
+import { landingDesktopSize, landingPictureSourcesFor } from '@/lib/landingImages';
 import { landingMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import { EXPAND_EVENT_CARD_EVENT } from '../ExpandableGrid';
 import { BoxEdge, BoxSides } from './BoxFrame';
@@ -99,12 +99,15 @@ export default function BlocksLanding({
   slideLimit = 3,
   cityLabel = 'Kyoto',
   locale = 'en',
+  todayCount = 0,
 }: {
   candidates: BlocksLandingCandidate[];
   heroOptions?: BlocksLandingHeroOption[];
   slideLimit?: number;
   cityLabel?: string;
   locale?: AppLocale;
+  // events on today (the grid's ongoing group), shown in the bottom CTA
+  todayCount?: number;
 }) {
   const copy = uiText[locale];
   const rootRef = useRef<HTMLElement>(null);
@@ -146,19 +149,7 @@ export default function BlocksLanding({
   useEffect(() => {
     const picked = (window as unknown as Record<string, unknown>)[LANDING_HERO_GLOBAL];
     const hero = heroOptions.find((option) => option.id === picked) ?? null;
-    const order = landingVisitOrder(candidates, readLandingSeen(), Math.random, hero?.id).map(
-      (candidate) =>
-        // the hero's slide uses the image the script preloaded
-        candidate.id === hero?.id
-          ? {
-              ...candidate,
-              images: [
-                { src: hero.src, width: hero.width, height: hero.height },
-                ...candidate.images.filter((image) => image.src !== hero.src),
-              ],
-            }
-          : candidate,
-    );
+    const order = landingVisitOrder(candidates, readLandingSeen(), Math.random, hero?.id);
     setVisit({ order, hero });
   }, [candidates, heroOptions]);
   const hero = visit?.hero ?? null;
@@ -174,7 +165,6 @@ export default function BlocksLanding({
         candidates: usableCandidates,
         viewportWidth: viewport.width,
         viewportHeight: viewport.height,
-        devicePixelRatio: viewport.density,
         limit: usableCandidates.length,
       }),
     [usableCandidates, viewport],
@@ -182,12 +172,7 @@ export default function BlocksLanding({
   const pool = useMemo(
     () =>
       rawPool.flatMap((slide) => {
-        const src = landingMediaDeliveryUrl(
-          slide.src,
-          slide.width,
-          slide.height,
-          imageCdnEnabled(),
-        );
+        const src = landingMediaDeliveryUrl(slide.src, imageCdnEnabled());
         return src ? [{ ...slide, src }] : [];
       }),
     [rawPool],
@@ -252,11 +237,11 @@ export default function BlocksLanding({
 
   const useNetlifyImageCdn = imageCdnEnabled();
   const heroSources = useMemo(
-    () => (hero ? landingPictureSourcesFor(hero, useNetlifyImageCdn) : []),
+    () => (hero ? landingPictureSourcesFor(hero.files, useNetlifyImageCdn) : []),
     [hero, useNetlifyImageCdn],
   );
   const heroFallbackSrc = hero
-    ? landingMediaDeliveryUrl(hero.src, 1920, 1080, useNetlifyImageCdn)
+    ? landingMediaDeliveryUrl(hero.files.desktop, useNetlifyImageCdn)
     : null;
   const heroIndex = hero ? slides.findIndex((slide) => slide.id === hero.id) : -1;
   // before the client resolves slides only the hero exists; after, it shows while it's active
@@ -493,12 +478,7 @@ export default function BlocksLanding({
           // and the viewport measure; it stays mounted as the hero's slide afterwards.
           <picture key={hero.id}>
             {heroSources.map((source) => (
-              <source
-                key={source.media ?? 'default'}
-                media={source.media}
-                srcSet={source.srcSet}
-                sizes={source.sizes}
-              />
+              <source key={source.media ?? 'default'} media={source.media} srcSet={source.srcSet} />
             ))}
             <img
               ref={loadedRef(hero.id)}
@@ -506,8 +486,8 @@ export default function BlocksLanding({
               data-active={heroActive || undefined}
               data-loaded={loadedIds.has(hero.id) || undefined}
               src={heroFallbackSrc ?? undefined}
-              width={hero.width}
-              height={hero.height}
+              width={landingDesktopSize.width}
+              height={landingDesktopSize.height}
               alt=""
               decoding="async"
               loading="eager"
@@ -551,6 +531,12 @@ export default function BlocksLanding({
         aria-label={copy.viewAllEvents(cityLabel)}
         onClick={dismiss}
       />
+      <button className={styles.landingCta} type="button" onClick={dismiss}>
+        <span>{todayCount > 0 ? copy.eventsToday(todayCount) : copy.viewAllEvents(cityLabel)}</span>
+        <svg className={styles.landingCtaArrow} viewBox="0 0 16 20" aria-hidden="true">
+          <path d="M8 1v17M1.5 11.5 8 18l6.5-6.5" />
+        </svg>
+      </button>
       <div className={styles.landingBlocks}>
         {slides.map((slide, index) => {
           const active = index === shownIndex;

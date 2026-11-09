@@ -56,6 +56,10 @@ Production systemd sets `CRAWL4AI_PYTHON` and `CRAWL4_AI_BASE_DIRECTORY` to path
 
 Crawler service output goes to journald. Before deploying its unit change, check journal usage with `sudo journalctl --disk-usage` and inspect active limits with `sudo systemd-analyze cat-config systemd/journald.conf`; inspect a run with `sudo journalctl -u kyo-no-kyoto-crawl@kyoto.service --since today`.
 
+## Plan limits
+
+Supabase runs on the Free plan and Netlify on the Personal plan. Plan every change within their limits: see [docs/supabase-free-plan.md](docs/supabase-free-plan.md) and [docs/netlify-plan.md](docs/netlify-plan.md).
+
 ## Database
 
 Create schema changes with Supabase CLI migrations:

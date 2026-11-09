@@ -22,7 +22,6 @@
       "base_url": "https://www.aham.jp/exhibition/future/",
       "start_urls": ["https://www.aham.jp/exhibition/future/"],
       "allowed_domains": ["www.aham.jp", "aham.jp"],
-      "rehost_images": true,
       "crawl_strategy": "listing-and-detail-pages",
       "event_page_patterns": ["/exhibition/future/", "/exhibition/now/"],
       "notes": "Purple art marker from Google My Maps. Official exhibition index is Japanese-first and contains current/future exhibition detail links.",

@@ -1,5 +1,5 @@
 import landingBlocklist from '../../../../data/landing-blocklist.json' with { type: 'json' };
-import { aspectClassFor, transformSizeFor } from './landingImages.ts';
+import { landingFileFor, type LandingFiles } from './landingImages.ts';
 
 export type BlocksLandingCandidate = {
   id: string;
@@ -7,10 +7,11 @@ export type BlocksLandingCandidate = {
   institution: string;
   date: string;
   sourceSlug: string;
-  images: { src: string; width: number; height: number }[];
+  // the event's two landing files (lib/landingImages.ts)
+  files: LandingFiles;
 };
 
-export type ResolvedBlocksLandingSlide = Omit<BlocksLandingCandidate, 'images'> & {
+export type ResolvedBlocksLandingSlide = Omit<BlocksLandingCandidate, 'files'> & {
   src: string;
   width: number;
   height: number;
@@ -26,201 +27,112 @@ type BlocksLandingEvent = {
   landingEligible: boolean;
   images: {
     url: string;
-    width: number | null;
-    height: number | null;
     landingOk?: boolean | null;
     rating?: number | null;
+    landingDesktop?: string | null;
+    landingMobile?: string | null;
   }[];
 };
 
-const minimumCoverDensity = 1;
-const maximumCoverDensity = 2;
-const maximumRequiredWidth = 1920;
-const maximumRequiredHeight = 1080;
-const maximumTransformWidth = 2560;
-const maximumTransformHeight = 1440;
 const defaultLandingSlideLimit = 3;
-const minimumCuratedSources = 3;
+// Each city's landing uses at most this many events (one image each), so the image CDN only ever
+// holds 2 files per event and stays warm (docs/supabase-free-plan.md).
+export const maximumLandingEvents = 12;
 const excludedLandingSourceSlugs = new Set(['kyoto-city-kyocera-museum-of-art', 'momak']);
 // Manual overrides on top of the crawler's landing check: image URLs or event ids that never
 // show on the landing. Edited from /dev/landing/ in local dev.
 const blockedLandingImages = new Set<string>(landingBlocklist.images);
 const blockedLandingEvents = new Set<string>(landingBlocklist.events);
 
+// One event per source first, then the rest, in their original order.
+const spreadBySource = <T extends { sourceSlug: string }>(items: T[]): T[] => {
+  const bySource = new Map<string, T[]>();
+  for (const item of items) {
+    bySource.set(item.sourceSlug, [...(bySource.get(item.sourceSlug) ?? []), item]);
+  }
+  const groups = [...bySource.values()];
+  const result: T[] = [];
+  for (let round = 0; result.length < items.length; round += 1) {
+    for (const group of groups) if (group[round]) result.push(group[round]);
+  }
+  return result;
+};
+
+// The landing pool: landing_slider events whose landing image has its two files, spread over
+// sources, at most maximumLandingEvents.
 export const blocksLandingCandidatesForEvents = (
   events: BlocksLandingEvent[],
 ): BlocksLandingCandidate[] => {
-  const eligibleEvents = events.filter(
-    (event) =>
-      event.group !== 'permanent' &&
-      Boolean(event.sourceSlug) &&
-      !excludedLandingSourceSlugs.has(event.sourceSlug ?? ''),
-  );
-  // The landing pool is the landing_slider sources; other sources only fill in when fewer than
-  // three of them have events.
-  const curatedEvents = eligibleEvents.filter((event) => event.landingEligible);
-  const curatedSources = new Set(curatedEvents.map((event) => event.sourceSlug));
-  const orderedEvents =
-    curatedSources.size >= minimumCuratedSources
-      ? curatedEvents
-      : [...curatedEvents, ...eligibleEvents.filter((event) => !event.landingEligible)];
-
-  return orderedEvents.flatMap((event) => {
-    if (!event.sourceSlug) return [];
-
-    if (blockedLandingEvents.has(event.id)) return [];
-    // images the AI check rejected or Dries rated -2 never show; approved ones go before unchecked
-    const usableImages = event.images
-      .filter(
-        (image) =>
-          image.landingOk !== false && image.rating !== -2 && !blockedLandingImages.has(image.url),
-      )
-      .toSorted(
-        (left, right) => Number(right.landingOk === true) - Number(left.landingOk === true),
-      );
-    const images = usableImages.flatMap((image) => {
-      return typeof image.url === 'string' &&
-        image.url.length > 0 &&
-        Number.isFinite(image.width) &&
-        Number(image.width) > 0 &&
-        Number.isFinite(image.height) &&
-        Number(image.height) > 0
-        ? [{ src: image.url, width: Number(image.width), height: Number(image.height) }]
-        : [];
-    });
-
-    return images.length > 0
-      ? [
-          {
-            id: event.id,
-            title: event.title,
-            institution: event.institution,
-            date: event.date,
-            sourceSlug: event.sourceSlug,
-            images,
-          },
-        ]
-      : [];
+  const candidates = events.flatMap((event): BlocksLandingCandidate[] => {
+    if (
+      event.group === 'permanent' ||
+      !event.landingEligible ||
+      !event.sourceSlug ||
+      excludedLandingSourceSlugs.has(event.sourceSlug) ||
+      blockedLandingEvents.has(event.id)
+    ) {
+      return [];
+    }
+    // images the AI check rejected or Dries rated -2 never show
+    const image = event.images.find(
+      (item) =>
+        item.landingDesktop &&
+        item.landingMobile &&
+        item.landingOk !== false &&
+        item.rating !== -2 &&
+        !blockedLandingImages.has(item.url),
+    );
+    if (!image?.landingDesktop || !image.landingMobile) return [];
+    return [
+      {
+        id: event.id,
+        title: event.title,
+        institution: event.institution,
+        date: event.date,
+        sourceSlug: event.sourceSlug,
+        files: { desktop: image.landingDesktop, mobile: image.landingMobile },
+      },
+    ];
   });
+  return spreadBySource(candidates).slice(0, maximumLandingEvents);
 };
-
-export const coverDensityFor = (
-  image: Pick<BlocksLandingCandidate['images'][number], 'width' | 'height'>,
-  viewportWidth: number,
-  viewportHeight: number,
-) => Math.min(image.width / viewportWidth, image.height / viewportHeight);
 
 export const resolveBlocksLandingSlides = ({
   candidates,
   viewportWidth,
   viewportHeight,
-  devicePixelRatio = 1,
   limit = defaultLandingSlideLimit,
 }: {
   candidates: BlocksLandingCandidate[];
   viewportWidth: number;
   viewportHeight: number;
-  devicePixelRatio?: number;
   limit?: number;
 }): ResolvedBlocksLandingSlide[] => {
   if (viewportWidth <= 0 || viewportHeight <= 0 || limit <= 0) return [];
-
-  const requiredWidth = Math.min(viewportWidth, maximumRequiredWidth);
-  const requiredHeight = Math.min(viewportHeight, maximumRequiredHeight);
-  const preferredDensity = Math.min(
-    maximumCoverDensity,
-    Math.max(minimumCoverDensity, devicePixelRatio),
-  );
-  const seenSources = new Set<string>();
-  const seenIds = new Set<string>();
-  const slides: ResolvedBlocksLandingSlide[] = [];
-
-  const addCandidate = (candidate: BlocksLandingCandidate, allowRepeatedSource: boolean) => {
-    if (seenIds.has(candidate.id)) return;
-    if (!allowRepeatedSource && seenSources.has(candidate.sourceSlug)) return;
-    const image =
-      candidate.images.find(
-        (item) => coverDensityFor(item, requiredWidth, requiredHeight) >= minimumCoverDensity,
-      ) ??
-      candidate.images.toSorted(
-        (left, right) =>
-          coverDensityFor(right, requiredWidth, requiredHeight) -
-          coverDensityFor(left, requiredWidth, requiredHeight),
-      )[0];
-    if (!image) return;
-
-    const density = Math.min(
-      preferredDensity,
-      coverDensityFor(image, requiredWidth, requiredHeight),
-      maximumTransformWidth / requiredWidth,
-      maximumTransformHeight / requiredHeight,
-    );
-    // snap to a shared crop ratio + size bucket so visitors hit warm CDN transforms
-    const size = transformSizeFor(
-      image,
-      aspectClassFor(viewportWidth, viewportHeight),
-      Math.floor(requiredWidth * density),
-      Math.floor(requiredHeight * density),
-    );
-    if (!size) return;
-    const { width, height } = size;
-    slides.push({
-      id: candidate.id,
-      title: candidate.title,
-      institution: candidate.institution,
-      date: candidate.date,
-      sourceSlug: candidate.sourceSlug,
-      src: image.src,
-      width,
-      height,
-    });
-    seenSources.add(candidate.sourceSlug);
-    seenIds.add(candidate.id);
-  };
-
-  for (const candidate of candidates) {
-    addCandidate(candidate, false);
-    if (slides.length >= limit) break;
-  }
-  if (slides.length < limit) {
-    for (const candidate of candidates) {
-      addCandidate(candidate, true);
-      if (slides.length >= limit) break;
-    }
-  }
-
-  return slides;
+  return spreadBySource(candidates)
+    .slice(0, limit)
+    .map(({ files, ...candidate }) => ({
+      ...candidate,
+      ...landingFileFor(files, viewportWidth, viewportHeight),
+    }));
 };
 
-export type BlocksLandingHero = { id: string; src: string; width: number; height: number };
+export type BlocksLandingHeroOption = { id: string; sourceSlug: string; files: LandingFiles };
+export type BlocksLandingHero = BlocksLandingHeroOption;
 
-// Cover targets for the server-rendered first slide, largest first.
-const heroCoverTargets = [
-  { width: 1920, height: 1080 },
-  { width: 1440, height: 900 },
-];
-
-export type BlocksLandingHeroOption = BlocksLandingHero & { sourceSlug: string };
-
-// One possible first slide per source: its first event with an image that covers a large screen.
-// The page's inline script (lib/landingHero.ts) picks one of these per visit, before first paint.
+// One possible first slide per source: its first landing event. The page's inline script
+// (lib/landingHero.ts) picks one of these per visit, before first paint.
 export const blocksLandingHeroOptions = (
   candidates: BlocksLandingCandidate[],
 ): BlocksLandingHeroOption[] => {
   const options = new Map<string, BlocksLandingHeroOption>();
-  for (const target of heroCoverTargets) {
-    for (const candidate of candidates) {
-      if (options.has(candidate.sourceSlug)) continue;
-      const image = candidate.images.find(
-        (item) => coverDensityFor(item, target.width, target.height) >= 1,
-      );
-      if (image) {
-        options.set(candidate.sourceSlug, {
-          id: candidate.id,
-          sourceSlug: candidate.sourceSlug,
-          ...image,
-        });
-      }
+  for (const candidate of candidates) {
+    if (!options.has(candidate.sourceSlug)) {
+      options.set(candidate.sourceSlug, {
+        id: candidate.id,
+        sourceSlug: candidate.sourceSlug,
+        files: candidate.files,
+      });
     }
   }
   return [...options.values()];

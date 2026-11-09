@@ -15,12 +15,12 @@ export const landingHeroScript = (
   useNetlifyImageCdn: boolean,
 ): string | null => {
   const data = options.flatMap((option) => {
-    const fallback = landingMediaDeliveryUrl(option.src, 1920, 1080, useNetlifyImageCdn);
+    const fallback = landingMediaDeliveryUrl(option.files.desktop, useNetlifyImageCdn);
     if (!fallback) return [];
     return [
       {
         id: option.id,
-        preloads: landingPreloadsFor(option, useNetlifyImageCdn),
+        preloads: landingPreloadsFor(option.files, useNetlifyImageCdn),
         fallback,
       },
     ];

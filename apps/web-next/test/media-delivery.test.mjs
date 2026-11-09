@@ -6,13 +6,8 @@ process.env.NETLIFY = 'true';
 // netlify.toml sets this for the whole build, tests included; start from a clean slate.
 delete process.env.NEXT_PUBLIC_IMAGE_CDN;
 
-const {
-  eventMediaDeliveryUrl,
-  eventMediaDeliverySrcSet,
-  eventShareImageUrl,
-  landingMediaDeliveryUrl,
-  proxyYutakaImage,
-} = await import('../src/lib/mediaDelivery.ts');
+const { eventMediaDeliveryUrl, eventMediaDeliverySrcSet, eventShareImageUrl, proxyYutakaImage } =
+  await import('../src/lib/mediaDelivery.ts');
 
 const publisherImage =
   'https://www.yutakakikutakegallery.com/ykgg/wp-content/uploads/2026/05/Nh_260523_at-YKG-RPG_008-1200x800.jpg';
@@ -22,12 +17,11 @@ const galleryExitImage =
 const imageCdnUrl = (url, width = 640) =>
   `/.netlify/images?${new URLSearchParams({ url, w: String(width), q: '60' })}`;
 
-test('Kyoto Tourism photos avoid CDN 403 across card, share and landing delivery', () => {
+test('Kyoto Tourism photos avoid CDN 403 across card and share delivery', () => {
   const image = 'https://ja.kyoto.travel/resource/event/10472-1.jpg';
   assert.equal(eventMediaDeliveryUrl(image), image);
   assert.equal(eventMediaDeliverySrcSet(image), null);
   assert.equal(eventShareImageUrl(image, 'https://kyonokyoto.xyz'), image);
-  assert.equal(landingMediaDeliveryUrl(image, 720, 480, true), image);
   const venuePhoto = 'https://ja.kyoto.travel/resource/tourism/253-1.jpg';
   assert.equal(eventMediaDeliveryUrl(venuePhoto), venuePhoto);
   assert.equal(eventMediaDeliverySrcSet(venuePhoto), null);

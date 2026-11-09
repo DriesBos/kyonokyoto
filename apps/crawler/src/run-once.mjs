@@ -20,6 +20,7 @@ import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { checkLandingImages } from './landing-image-check.mjs';
+import { attachLandingMedia, LANDING_MEDIA_BUCKET } from './landing-media.mjs';
 import { createTempleSourceAdapters } from './temple-sources.mjs';
 import { createTemplePlaceEnricher, isKyotoTempleSource } from './temple-place-loader.mjs';
 import {
@@ -9894,32 +9895,10 @@ function shouldProbeFinalImage(imageUrl, source) {
   );
 }
 
-const EVENT_MEDIA_BUCKET = 'event-media';
-const MAX_REHOSTED_IMAGE_BYTES = 12 * 1024 * 1024;
-const REHOSTED_IMAGE_EXTENSIONS = {
-  'image/avif': 'avif',
-  'image/gif': 'gif',
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
+const MAX_LANDING_SOURCE_IMAGE_BYTES = 12 * 1024 * 1024;
 
-// Landing-slider sources are rehosted too: their images are fullscreen on the landing, and
-// Netlify Image CDN fetching them from Supabase is faster and steadier than from museum sites.
-function shouldRehostSourceImages(source) {
-  return source?.rehost_images === true || source?.landing_slider === true;
-}
-
-function rehostedImageObjectPath(source, imageUrl, extension) {
-  const hash = createHash('sha256').update(imageUrl).digest('hex').slice(0, 32);
-  return `${source.slug}/${hash}.${extension}`;
-}
-
-function publicEventMediaUrl(env, objectPath) {
-  return `${env.SUPABASE_URL}/storage/v1/object/public/${EVENT_MEDIA_BUCKET}/${objectPath}`;
-}
-
-async function downloadImageForRehost(imageUrl, userAgent, env, diagnostics = null) {
+// Downloads a landing image's original once, to make its small landing files (landing-media.mjs).
+async function downloadLandingSourceImage(imageUrl, userAgent, env, diagnostics = null) {
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),
@@ -9948,13 +9927,12 @@ async function downloadImageForRehost(imageUrl, userAgent, env, diagnostics = nu
     if (!response.ok) return null;
 
     const contentType = response.headers.get('content-type')?.split(';', 1)[0].trim() ?? '';
-    const extension = REHOSTED_IMAGE_EXTENSIONS[contentType.toLowerCase()];
-    if (!extension) return null;
+    if (!/^image\//i.test(contentType)) return null;
 
-    const bytes = await readResponsePrefix(response, MAX_REHOSTED_IMAGE_BYTES + 1);
-    if (!bytes.length || bytes.length > MAX_REHOSTED_IMAGE_BYTES) return null;
+    const bytes = await readResponsePrefix(response, MAX_LANDING_SOURCE_IMAGE_BYTES + 1);
+    if (!bytes.length || bytes.length > MAX_LANDING_SOURCE_IMAGE_BYTES) return null;
 
-    return { bytes, contentType, extension };
+    return { bytes, contentType };
   } finally {
     clearTimeout(timeout);
   }
@@ -9962,7 +9940,7 @@ async function downloadImageForRehost(imageUrl, userAgent, env, diagnostics = nu
 
 async function uploadEventMedia(env, objectPath, { bytes, contentType }) {
   const response = await fetch(
-    `${env.SUPABASE_URL}/storage/v1/object/${EVENT_MEDIA_BUCKET}/${objectPath}`,
+    `${env.SUPABASE_URL}/storage/v1/object/${LANDING_MEDIA_BUCKET}/${objectPath}`,
     {
       method: 'POST',
       headers: {
@@ -9982,51 +9960,6 @@ async function uploadEventMedia(env, objectPath, { bytes, contentType }) {
   }
 }
 
-// Sources whose origin blocks image fetches from outside Japan (and so from Netlify Image CDN)
-// get their images copied into public Supabase Storage. Failed copies keep the original URL.
-async function rehostEventImages(
-  eventData,
-  source,
-  {
-    env = {},
-    userAgent = 'kyo-no-kyoto-bot/0.1',
-    diagnostics = null,
-    downloadImageFn = downloadImageForRehost,
-    uploadFn = uploadEventMedia,
-  } = {},
-) {
-  if (!shouldRehostSourceImages(source) || !env.SUPABASE_URL || !source?.slug) return eventData;
-
-  const rehostedUrls = new Map();
-  for (const imageUrl of eventData.image_urls ?? []) {
-    if (imageUrl.startsWith(`${env.SUPABASE_URL}/`)) continue;
-
-    try {
-      const image = await downloadImageFn(imageUrl, userAgent, env, diagnostics);
-      if (!image) continue;
-
-      const objectPath = rehostedImageObjectPath(source, imageUrl, image.extension);
-      await uploadFn(env, objectPath, image);
-      rehostedUrls.set(imageUrl, publicEventMediaUrl(env, objectPath));
-    } catch {
-      // Keep the original URL; a later crawl retries the copy.
-    }
-  }
-
-  if (!rehostedUrls.size) return eventData;
-
-  const rehosted = (url) => rehostedUrls.get(url) ?? url;
-  return {
-    ...eventData,
-    primary_image_url: eventData.primary_image_url ? rehosted(eventData.primary_image_url) : null,
-    image_urls: eventData.image_urls.map(rehosted),
-    image_metadata: (eventData.image_metadata ?? []).map((image) => ({
-      ...image,
-      url: rehosted(image.url),
-    })),
-  };
-}
-
 async function normalizeEventImagesForSource(
   eventData,
   source,
@@ -10035,8 +9968,8 @@ async function normalizeEventImagesForSource(
     userAgent = 'kyo-no-kyoto-bot/0.1',
     diagnostics = null,
     fetchImageDimensionsFn = fetchImageDimensions,
-    rehostImagesFn = rehostEventImages,
     checkLandingImagesFn = checkLandingImages,
+    attachLandingMediaFn = attachLandingMedia,
   } = {},
 ) {
   const baseUrl = eventData?.source_url ?? source?.base_url;
@@ -10086,16 +10019,39 @@ async function normalizeEventImagesForSource(
     }
   }
 
-  const rehosted = await rehostImagesFn(
+  const checked = await checkLandingImagesFn(
     withNormalizedEventImages(eventData, acceptedImageUrls, acceptedImageMetadata),
     source,
-    { env, userAgent, diagnostics },
+    {
+      env,
+      lookupVerdictFn: (imageUrl) => storedLandingVerdict(env, imageUrl),
+      log: (message) => console.log(message),
+    },
   );
-  return checkLandingImagesFn(rehosted, source, {
+  return attachLandingMediaFn(checked, source, {
     env,
-    lookupVerdictFn: (imageUrl) => storedLandingVerdict(env, imageUrl),
+    lookupFn: (imageUrl) => storedImageMetadata(env, imageUrl),
+    downloadFn: (imageUrl) => downloadLandingSourceImage(imageUrl, userAgent, env, diagnostics),
+    uploadFn: uploadEventMedia,
     log: (message) => console.log(message),
   });
+}
+
+// The stored image_metadata entry for this image URL from an earlier crawl, if any.
+async function storedImageMetadata(env, imageUrl) {
+  const rows = await supabaseRequest({
+    env,
+    path: `events?select=image_metadata&image_metadata=cs.${encodeURIComponent(
+      JSON.stringify([{ url: imageUrl }]),
+    )}&limit=5`,
+  });
+  for (const row of rows ?? []) {
+    const image = (row.image_metadata ?? []).find(
+      (item) => item?.url === imageUrl && item.landing_desktop && item.landing_mobile,
+    );
+    if (image) return image;
+  }
+  return null;
 }
 
 // Earlier crawls' image check tags for this image URL, so each image is only sent once.
@@ -11239,7 +11195,6 @@ async function main() {
 }
 
 export {
-  rehostEventImages,
   extractFukudaListingUrlsBySchedule,
   assessEventTitle,
   archiveStaleEvents,

@@ -13,3 +13,8 @@ Default level: **full**. Switch: `/caveman lite|full|ultra`. Stop: "normal mode"
 Auto-clarity for: security warnings, irreversible action confirmations, ambiguous multi-step sequences, user confusion. Resume caveman after.
 
 See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
+
+## Limits
+
+- Supabase Free plan: plan every Supabase change within the limits in docs/supabase-free-plan.md.
+- Netlify Personal plan: plan every hosting, deploy and image change within docs/netlify-plan.md.

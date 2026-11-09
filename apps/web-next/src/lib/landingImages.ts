@@ -1,138 +1,42 @@
-import { safeEventImageSource } from './mediaDelivery.ts';
+import { landingMediaDeliveryUrl } from './mediaDelivery.ts';
 
-// Ported from apps/web src/lib/landingImages.ts.
+// Each landing event has exactly two image files, made by the crawler (apps/crawler/src/
+// landing-media.mjs): a 1920x1080 desktop crop and a 900x1600 mobile crop. Two fixed files per
+// image keep Supabase egress small (docs/supabase-free-plan.md); CSS object-fit covers any screen.
+export type LandingFiles = { desktop: string; mobile: string };
 export type LandingImageSize = { width: number; height: number };
 
-export type LandingAspectClass = {
-  ratio: [number, number];
-  // Viewports up to this aspect ratio use the class; the last class has no upper bound.
-  maxViewportRatio?: [number, number];
+export const landingDesktopSize: LandingImageSize = { width: 1920, height: 1080 };
+export const landingMobileSize: LandingImageSize = { width: 900, height: 1600 };
+
+// Portrait and square screens get the mobile file.
+export const landingMobileMedia = '(max-aspect-ratio: 1/1)';
+const landingDesktopMedia = '(min-aspect-ratio: 1001/1000)';
+
+export const landingUsesMobile = (viewportWidth: number, viewportHeight: number) =>
+  viewportWidth > 0 && viewportHeight > 0 && viewportWidth <= viewportHeight;
+
+export const landingFileFor = (
+  files: LandingFiles,
+  viewportWidth: number,
+  viewportHeight: number,
+): { src: string } & LandingImageSize =>
+  landingUsesMobile(viewportWidth, viewportHeight)
+    ? { src: files.mobile, ...landingMobileSize }
+    : { src: files.desktop, ...landingDesktopSize };
+
+// Server-rendered first slide: the <img> is the desktop file, this <source> swaps in the mobile one.
+export const landingPictureSourcesFor = (files: LandingFiles, useNetlifyImageCdn: boolean) => {
+  const mobile = landingMediaDeliveryUrl(files.mobile, useNetlifyImageCdn);
+  return mobile ? [{ media: landingMobileMedia, srcSet: mobile }] : [];
 };
 
-// Transforms snap to a few crop ratios and long-side buckets so visitors share
-// Netlify Image CDN cache entries instead of each viewport creating a cold transform.
-export const landingAspectClasses: LandingAspectClass[] = [
-  { ratio: [1, 2], maxViewportRatio: [11, 18] },
-  { ratio: [3, 4], maxViewportRatio: [1, 1] },
-  { ratio: [4, 3], maxViewportRatio: [20, 13] },
-  { ratio: [16, 9] },
-];
-export const landingLongSideBuckets = [960, 1280, 1440, 1600, 1920, 2560];
-
-const maximumTransformWidth = 2560;
-const maximumTransformHeight = 1440;
-// 60 keeps the landing light to load; it sits behind a dim layer and frosted boxes
-const imageQuality = 60;
-
-const ratioValue = ([width, height]: [number, number]) => width / height;
-
-export const aspectClassFor = (viewportWidth: number, viewportHeight: number) => {
-  const viewportRatio = viewportWidth / viewportHeight;
-  return (
-    landingAspectClasses.find(
-      (aspectClass) =>
-        aspectClass.maxViewportRatio && viewportRatio <= ratioValue(aspectClass.maxViewportRatio),
-    ) ?? landingAspectClasses[landingAspectClasses.length - 1]
-  );
-};
-
-const sizeForLongSide = (aspectClass: LandingAspectClass, longSide: number): LandingImageSize => {
-  const ratio = ratioValue(aspectClass.ratio);
-  return ratio >= 1
-    ? { width: longSide, height: Math.floor(longSide / ratio) }
-    : { width: Math.floor(longSide * ratio), height: longSide };
-};
-
-export const transformCandidatesFor = (
-  image: LandingImageSize,
-  aspectClass: LandingAspectClass,
-): LandingImageSize[] => {
-  const ratio = ratioValue(aspectClass.ratio);
-  const cropWidth = Math.min(image.width, image.height * ratio);
-  const cropLongSide = Math.floor(ratio >= 1 ? cropWidth : cropWidth / ratio);
-  const longSides = [
-    ...new Set(landingLongSideBuckets.map((bucket) => Math.min(bucket, cropLongSide))),
-  ];
-
-  return longSides
-    .map((longSide) => sizeForLongSide(aspectClass, longSide))
-    .filter(
-      (size) =>
-        size.width > 0 &&
-        size.height > 0 &&
-        size.width <= maximumTransformWidth &&
-        size.height <= maximumTransformHeight,
-    );
-};
-
-export const transformSizeFor = (
-  image: LandingImageSize,
-  aspectClass: LandingAspectClass,
-  minimumWidth: number,
-  minimumHeight: number,
-) => {
-  const candidates = transformCandidatesFor(image, aspectClass);
-  return (
-    candidates.find((size) => size.width >= minimumWidth && size.height >= minimumHeight) ??
-    candidates[candidates.length - 1] ??
-    null
-  );
-};
-
-const netlifyLandingUrl = (source: string, { width, height }: LandingImageSize) =>
-  `/.netlify/images?${new URLSearchParams({
-    url: source,
-    w: String(width),
-    h: String(height),
-    fit: 'cover',
-    position: 'center',
-    q: String(imageQuality),
-  })}`;
-
-const ratioQuery = ([width, height]: [number, number]) => `${width}/${height}`;
-
-// Server-rendered first slide: one <source> per crop class, with sizes matching
-// object-fit: cover so the browser picks the same buckets the client resolver uses.
-// Without the image CDN (dev) there is nothing to choose between, so no sources.
-export const landingPictureSourcesFor = (
-  image: { src: string } & LandingImageSize,
-  useNetlifyImageCdn: boolean,
-) => {
-  const source = safeEventImageSource(image.src);
-  if (!source || !useNetlifyImageCdn) return [];
-
-  return landingAspectClasses.flatMap((aspectClass) => {
-    const candidates = transformCandidatesFor(image, aspectClass);
-    if (candidates.length === 0) return [];
-    const [ratioWidth, ratioHeight] = aspectClass.ratio;
-    return [
-      {
-        media: aspectClass.maxViewportRatio
-          ? `(max-aspect-ratio: ${ratioQuery(aspectClass.maxViewportRatio)})`
-          : undefined,
-        srcSet: candidates
-          .map((size) => `${netlifyLandingUrl(source, size)} ${size.width}w`)
-          .join(', '),
-        sizes: `(min-aspect-ratio: ${ratioQuery(aspectClass.ratio)}) 100vw, calc(100vh * ${ratioWidth} / ${ratioHeight})`,
-      },
-    ];
-  });
-};
-
-// <link rel="preload"> equivalents of landingPictureSourcesFor. A <picture> takes the first
-// matching source, but every matching preload downloads, so each preload's media also excludes
-// the ranges of the sources before it.
-export const landingPreloadsFor = (
-  image: { src: string } & LandingImageSize,
-  useNetlifyImageCdn: boolean,
-) => {
-  const sources = landingPictureSourcesFor(image, useNetlifyImageCdn);
-  return sources.map((source, index) => {
-    const previous = sources[index - 1]?.media?.replace('max-aspect-ratio', 'min-aspect-ratio');
-    return {
-      media: [previous, source.media].filter(Boolean).join(' and ') || undefined,
-      srcSet: source.srcSet,
-      sizes: source.sizes,
-    };
-  });
-};
+// <link rel="preload"> for the first slide: exactly one of the two files matches any screen.
+export const landingPreloadsFor = (files: LandingFiles, useNetlifyImageCdn: boolean) =>
+  [
+    { media: landingMobileMedia, href: landingMediaDeliveryUrl(files.mobile, useNetlifyImageCdn) },
+    {
+      media: landingDesktopMedia,
+      href: landingMediaDeliveryUrl(files.desktop, useNetlifyImageCdn),
+    },
+  ].flatMap((preload) => (preload.href ? [{ media: preload.media, href: preload.href }] : []));

@@ -77,6 +77,7 @@ export default async function CityEventsPage({
           heroOptions={landingHeroes}
           cityLabel={city.label}
           locale={locale}
+          todayCount={events.filter((event) => event.group === 'ongoing').length}
         />
       )}
       <MapExperience

@@ -172,19 +172,9 @@ When enabled, generic extraction ignores `<meta property="og:image">` and uses r
 
 This control is per source. It does not disable configured or source-specific images. All image origins cross the same final media boundary before persistence: URL normalization, unsafe/small-candidate rejection, deduplication, optional dimension probing, and the five-image cap.
 
-## `rehost_images`
+## `landing_slider`
 
-Optional. Set `true` when a source's origin blocks image requests from outside Japan, so Netlify Image CDN cannot fetch its images.
-
-```json
-{
-  "rehost_images": true
-}
-```
-
-After the final media boundary, the crawler (which runs in Japan) downloads each accepted image and uploads it to the public `event-media` Supabase Storage bucket at `<slug>/<sha256(url)>.<ext>`, then stores that public URL instead. Images that fail to download or upload keep their original URL. Requires the `event-media` bucket migration.
-
-Sources with `landing_slider: true` are always rehosted this way, so landing images load from Supabase instead of the museum's own server.
+Optional. `true` puts the source's events in the landing pool. For each event the crawler picks one landing image (the first the image check approved, else the first not rejected), downloads it once, and uploads two centre-cropped WebP files to the `event-media` bucket: `landing/<slug>/<sha256(url)>-desktop.webp` (1920x1080) and `-mobile.webp` (900x1600). Their URLs are stored on that image's `image_metadata` entry as `landing_desktop` and `landing_mobile`. Files from earlier crawls are reused. Card images are never stored in Supabase; they always load from the venue's site. See [supabase-free-plan.md](supabase-free-plan.md).
 
 ## `crawl_hints`
 
@@ -290,7 +280,7 @@ Set `url_year` to `"current"` for annual source URLs. Loader replaces any four-d
 
 Keep these. They are runtime fields:
 
-- crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `landing_slider`, `rehost_images`, `capabilities`
+- crawler scope: `start_urls`, `url_year`, `allowed_domains`, `event_page_patterns`, `locales`, `selectors`, `crawl_hints`, `skip_og_image`, `measure_image_dimensions`, `landing_slider`, `capabilities`
 - web/map truth: `name`, `names`, `taxonomy`, `address_text`, `directions_query`, `lat`, `lng`, `venue_locations`, `beta`, `landing_slider`
 
 Metadata-only today:

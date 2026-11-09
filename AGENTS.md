@@ -23,3 +23,5 @@ See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
 - Keep repo documentation human-readable and lightweight.
 - Do not add `prefers-reduced-motion: reduce` overrides; animations are tuned directly in the design.
 - When changing source JSON or running test crawls, update `QA-todo.md` with sources that need JSON tuning, sources that look close, and any approval notes.
+- Supabase is on the Free plan: plan every Supabase change within the limits in docs/supabase-free-plan.md.
+- Netlify is on the Personal plan (1,000 credits/month): plan every hosting, deploy and image change within docs/netlify-plan.md.
