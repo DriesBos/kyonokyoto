@@ -445,13 +445,16 @@ export function createTempleSourceAdapters({
         // Names from publisher or unrelated footer never become venue coordinates/address.
         const imageUrls = images(html, url, slug);
         if (!imageUrls.length) warnings.push('missing-event-images');
-        const category = /神社|神宮|大社/.test(venue)
-          ? 'shrine'
-          : /寺|院|庵/.test(venue)
-            ? 'temple'
-            : /庭園|庭|ガーデン/.test(venue)
-              ? 'garden'
-              : 'historic-site';
+        // Historic site covers temples, shrines, castles and palaces; garden is added when the
+        // venue or the opening itself is about a garden, so one event can carry both tags.
+        const religiousOrHistoric = /寺|院|庵|神社|神宮|大社|八幡|御所|城|離宮|堂/.test(venue);
+        const gardenVenue = /庭園|ガーデン|植物園/.test(venue);
+        const gardenOpening =
+          gardenVenue || /庭/.test(venue) || /庭園|庭/.test(title) || /庭園/.test(description);
+        const venueCategories = [
+          ...(religiousOrHistoric || !gardenVenue ? ['historic-site'] : []),
+          ...(gardenOpening ? ['garden'] : []),
+        ];
         const start = periods[0]?.start_date ?? null;
         const end = periods.at(-1)?.end_date ?? null;
         const generic = extractGenericEvent('', source, url);
@@ -466,7 +469,7 @@ export function createTempleSourceAdapters({
           lat,
           lng,
           categories: [
-            `venue_category:${category}`,
+            ...venueCategories.map((category) => `venue_category:${category}`),
             'event_category:special-opening',
             ...(/展覧会|企画展|特別展|寺宝展|人形展|展示/.test(`${title} ${description}`)
               ? ['event_category:exhibition']

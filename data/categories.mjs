@@ -8,10 +8,8 @@ export const CATEGORY_REGISTRY = Object.freeze({
     'institute',
     'theatre',
     'cafe',
-    'temple',
-    'shrine',
-    'garden',
     'historic-site',
+    'garden',
   ]),
   display_category: Object.freeze([
     'photography',

@@ -25,6 +25,7 @@ import hongKongSourcesPayload from '../../../../data/sources/hong-kong-sources.j
 import kyotoSourcesPayload from '../../../../data/sources/kyoto-sources.json';
 import osakaSourcesPayload from '../../../../data/sources/osaka-sources.json';
 import tokyoSourcesPayload from '../../../../data/sources/tokyo-sources.json';
+import templeVenueNamesPayload from '../../../../data/temple-venue-names.json';
 import { type AppleCalendarEvent } from './appleCalendar';
 import {
   calendarDetailsFor,
@@ -310,6 +311,18 @@ const localized = (
   locale: AppLocale,
   fallback: string,
 ) => values?.[locale] || values?.en || values?.ja || fallback;
+// Curated English names for Japanese aggregator venues (temples, shrines, palaces).
+const templeVenueNames = templeVenueNamesPayload as Record<string, string>;
+function localizedVenueName(name: string, locale: AppLocale): string;
+function localizedVenueName(name: string | null | undefined, locale: AppLocale): string | null;
+function localizedVenueName(name: string | null | undefined, locale: AppLocale) {
+  return name && locale === 'en' ? (templeVenueNames[name.trim()] ?? name) : (name ?? null);
+}
+// Older crawls stored temple/shrine venue tags; both now display as historic site.
+const legacyCategoryAliases: Record<string, string> = {
+  'venue_category:temple': 'venue_category:historic-site',
+  'venue_category:shrine': 'venue_category:historic-site',
+};
 // Category tokens carry their dimension (venue_category:fair vs event_category:fair), matching
 // data/categories.mjs and apps/web, so filters never mix up dimensions that share a word.
 const taxonomyCategories = (taxonomy: Taxonomy | undefined, owner: string): string[] =>
@@ -372,16 +385,16 @@ const sourceTruth = (
   if (source?.source_kind === 'aggregator') {
     const eventCategories = [
       ...new Set(
-        (event.categories ?? []).filter(
-          (category) => typeof category === 'string' && parseCategoryToken(category),
-        ),
+        (event.categories ?? [])
+          .map((category) => legacyCategoryAliases[category] ?? category)
+          .filter((category) => typeof category === 'string' && parseCategoryToken(category)),
       ),
     ];
     return {
       slug,
       source,
-      institution: event.institution_name,
-      venue: event.venue_name,
+      institution: localizedVenueName(event.institution_name, locale),
+      venue: localizedVenueName(event.venue_name, locale),
       addressText: event.address_text,
       directionsQuery: event.directions_query ?? event.address_text,
       categories: eventCategories.length
@@ -891,9 +904,15 @@ const permanentEventsFor = ({
       ];
     });
 
+const localizedCategoryLabels: Record<string, (locale: AppLocale) => string> = {
+  'temples-gardens': (locale) => uiText[locale].templesGardens,
+  'historic-site': (locale) => uiText[locale].historicSite,
+  garden: (locale) => uiText[locale].garden,
+};
+
 const categoryLabel = (value: string, locale: AppLocale) =>
-  value === 'temples-gardens'
-    ? uiText[locale].templesGardens
+  localizedCategoryLabels[value]
+    ? localizedCategoryLabels[value](locale)
     : value
         .split(/[-_\s]+/)
         .filter(Boolean)
@@ -950,7 +969,8 @@ export function categoriesForEvents(
     .flatMap((event) => event.categories)
     .forEach((token) => {
       const parsed = parseCategoryToken(token);
-      if (!parsed || options.has(token)) return;
+      // The temples-gardens collection stays an internal marker; venue tags cover it in filters.
+      if (!parsed || parsed.dimension === 'collection' || options.has(token)) return;
       options.set(token, {
         slug: token,
         label: categoryLabel(parsed.category, locale),

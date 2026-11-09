@@ -75,7 +75,11 @@ test('Temples & Gardens taxonomy stays optional for existing configs and localiz
   );
   const cityEvents = await readFile(new URL('cityEvents.ts', lib), 'utf8');
   const translations = await readFile(new URL('i18n.ts', lib), 'utf8');
-  assert.match(categories, /'temple',[\s\S]*'shrine',[\s\S]*'garden',[\s\S]*'historic-site'/);
+  assert.match(categories, /'historic-site',[\s\S]*'garden'/);
+  assert.doesNotMatch(categories, /'temple'|'shrine'/);
+  assert.match(translations, /historicSite: 'Historic Site'/);
+  assert.match(translations, /garden: '庭園'/);
+  assert.match(cityEvents, /'venue_category:temple': 'venue_category:historic-site'/);
   assert.match(categories, /'special-opening'/);
   assert.match(translations, /templesGardens: 'Temples & Gardens'/);
   assert.match(translations, /templesGardens: '寺社・庭園'/);
@@ -112,8 +116,8 @@ test('aggregator events use event-owned location and taxonomy, with beta filtere
       source.indexOf("if (source?.source_kind === 'aggregator')"),
     ),
   );
-  assert.match(aggregatorTruth, /institution: event\.institution_name/);
-  assert.match(aggregatorTruth, /venue: event\.venue_name/);
+  assert.match(aggregatorTruth, /institution: localizedVenueName\(event\.institution_name, locale\)/);
+  assert.match(aggregatorTruth, /venue: localizedVenueName\(event\.venue_name, locale\)/);
   assert.match(aggregatorTruth, /addressText: event\.address_text/);
   assert.match(aggregatorTruth, /event\.categories/);
   assert.doesNotMatch(aggregatorTruth, /source\?\.(?:lat|lng|address_text|directions_query)/);

@@ -532,7 +532,7 @@ export default function BlocksLanding({
         onClick={dismiss}
       />
       <button className={styles.landingCta} type="button" onClick={dismiss}>
-        <span>{todayCount > 0 ? copy.eventsToday(todayCount) : copy.viewAllEvents(cityLabel)}</span>
+        <span>{todayCount > 0 ? copy.eventsToday(todayCount, cityLabel) : copy.viewAllEvents(cityLabel)}</span>
         <svg className={styles.landingCtaArrow} viewBox="0 0 16 20" aria-hidden="true">
           <path d="M8 1v17M1.5 11.5 8 18l6.5-6.5" />
         </svg>

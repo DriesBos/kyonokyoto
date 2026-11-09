@@ -42,7 +42,8 @@ export const uiText = {
     pageHeading: (city: string) => `${city} art & culture calendar`,
     eventHighlights: (city: string) => `${city} event highlights`,
     viewAllEvents: (city: string) => `View all ${city} events`,
-    eventsToday: (count: number) => `${count} ${count === 1 ? 'event' : 'events'} today`,
+    eventsToday: (count: number, city: string) =>
+      `${count} ${city} ${count === 1 ? 'event' : 'events'} today`,
     currentCity: 'current city',
     citiesAria: 'Cities',
     itemsPerRow: 'Items per row',
@@ -56,6 +57,8 @@ export const uiText = {
     siteBy: 'Site by',
     enjoyCulture: (city: string) => `Enjoy ${city} Culture`,
     templesGardens: 'Temples & Gardens',
+    historicSite: 'Historic Site',
+    garden: 'Garden',
     collections: 'Collections',
   },
   ja: {
@@ -97,7 +100,7 @@ export const uiText = {
     pageHeading: (city: string) => `${city}の展覧会・文化イベントカレンダー`,
     eventHighlights: (city: string) => `${city}の注目イベント`,
     viewAllEvents: (city: string) => `${city}のイベントをすべて見る`,
-    eventsToday: (count: number) => `本日のイベント ${count}件`,
+    eventsToday: (count: number, city: string) => `本日の${city}のイベント ${count}件`,
     currentCity: '現在の都市',
     citiesAria: '都市',
     itemsPerRow: '1行の表示数',
@@ -111,6 +114,8 @@ export const uiText = {
     siteBy: 'サイト制作',
     enjoyCulture: (city: string) => `${city}の文化を楽しもう`,
     templesGardens: '寺社・庭園',
+    historicSite: '史跡・寺社',
+    garden: '庭園',
     collections: 'コレクション',
   },
 } as const;

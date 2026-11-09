@@ -33,7 +33,8 @@ test('Kobunka real inline listing produces 32 distinct stable identities and iso
   assert.equal(activeOn(event, '2026-11-27'), false);
   assert.equal(activeOn(event, '2026-11-18'), true);
   assert.match(event.date_text, /11\/12.*午前9時～正午/);
-  assert.ok(event.categories.includes('venue_category:shrine'));
+  assert.ok(event.categories.includes('venue_category:historic-site'));
+  assert.ok(!event.categories.includes('venue_category:shrine'));
   assert.ok(event._temple_warnings.includes('unresolved-prefecture'));
   const renumbered = html.replace('<span class="no">1</span>', '<span class="no">999</span>');
   assert.equal(adapters.detailUrlExtractors['kyoto-kobunka'](renumbered, kobunkaUrl)[0], urls[0]);
