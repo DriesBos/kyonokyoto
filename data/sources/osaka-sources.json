@@ -46,6 +46,7 @@
     },
     {
       "slug": "koji-kinutani-tenku-art-museum",
+      "instagram": "kojikinutani_tenkuartmuseum",
       "name": "Koji Kinutani Tenku",
       "names": {
         "en": "Koji Kinutani Tenku",
@@ -94,6 +95,7 @@
     },
     {
       "slug": "yod-gallery",
+      "instagram": "yodgallery",
       "name": "YOD Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -137,6 +139,7 @@
     },
     {
       "slug": "nakanoshima-museum-of-art-osaka",
+      "instagram": "nakkaart2022",
       "name": "Nakanoshima Museum of Art",
       "names": {
         "en": "NAKKA",
@@ -280,6 +283,7 @@
     },
     {
       "slug": "wa-gallery-osaka",
+      "instagram": "wa_gallery_osaka",
       "name": "Wa.gallery",
       "names": {
         "en": "Wa.gallery",
@@ -316,6 +320,7 @@
     },
     {
       "slug": "congres-square-grand-green-osaka",
+      "instagram": "congre_csg",
       "name": "Congres Square Grand Green Osaka",
       "names": {
         "en": "Congres Square",
@@ -449,6 +454,7 @@
     },
     {
       "slug": "art-and-space-gallery",
+      "instagram": "artandspace_gallery",
       "name": "ART AND SPACE GALLERY",
       "names": {
         "en": "ART AND SPACE GALLERY",
@@ -506,6 +512,7 @@
     },
     {
       "slug": "i-gallery-osaka",
+      "instagram": "igallery_osaka",
       "name": "i GALLERY OSAKA",
       "names": {
         "en": "i GALLERY OSAKA",
@@ -682,6 +689,7 @@
     },
     {
       "slug": "new-pure-plus",
+      "instagram": "new_pure_plus",
       "name": "NEW PURE +",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -760,6 +768,7 @@
     },
     {
       "slug": "gallery-nomart",
+      "instagram": "nomart_inc",
       "name": "Gallery Nomart",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -793,6 +802,7 @@
     },
     {
       "slug": "hitoto",
+      "instagram": "hitoto_ten5",
       "name": "hitoto",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -846,6 +856,7 @@
     },
     {
       "slug": "jitsuzaisei",
+      "instagram": "jitsuzaisei",
       "name": "JITSUZAISEI",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -892,6 +903,7 @@
     },
     {
       "slug": "kouichi-fine-arts",
+      "instagram": "kouichi_fine_arts",
       "name": "KOUICHI FINE ARTS",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -925,6 +937,7 @@
     },
     {
       "slug": "plus-y-gallery",
+      "instagram": "plus_y_gallery",
       "name": "+Y Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -973,6 +986,7 @@
     },
     {
       "slug": "tezukayama-gallery",
+      "instagram": "tezukayama_g",
       "name": "Tezukayama Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1046,6 +1060,7 @@
     },
     {
       "slug": "hill-top-gallery",
+      "instagram": "hill.top.gallery",
       "name": "HILL TOP GALLERY",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1079,6 +1094,7 @@
     },
     {
       "slug": "artcourt-gallery",
+      "instagram": "artcourtgallery",
       "name": "ARTCOURT Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1167,6 +1183,7 @@
     },
     {
       "slug": "masaki-art-museum",
+      "instagram": "masaki_art_museum",
       "name": "Masaki Art Museum",
       "names": {
         "en": "Masaki Art Museum",
@@ -1245,6 +1262,7 @@
     },
     {
       "slug": "parco-hall-shinsaibashi",
+      "instagram": "parco_art",
       "name": "PARCO HALL SHINSAIBASHI",
       "taxonomy": {
         "venue_category": ["theatre"],
@@ -1297,6 +1315,7 @@
     },
     {
       "slug": "suchsize",
+      "instagram": "suchsize",
       "name": "SUCHSIZE",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1373,6 +1392,7 @@
     },
     {
       "slug": "osaka-ukiyoe-museum",
+      "instagram": "osakaukiyoemuseum",
       "name": "Osaka Ukiyo-e Museum",
       "names": {
         "en": "Osaka Ukiyo-e Museum",

@@ -1,0 +1,97 @@
+// Socials tab (local + preview builds): Instagram candidates and the posting queue.
+.main
+  display: grid
+  gap: 1.5rem
+  min-height: 100vh
+  padding: 2rem var(--page-padding-x) 4rem
+  // a shade darker than the posts' own #efefef background, so each post's edge shows
+  background: color-mix(in srgb, var(--color-background), #000 9%)
+
+.cities
+  display: flex
+  flex-wrap: wrap
+  gap: 1rem
+
+  [aria-current]
+    text-decoration: underline
+
+.note,
+.error,
+.meta
+  margin: 0
+  max-width: 40rem
+  font-size: var(--type-meta-size)
+
+.layouts
+  display: flex
+  gap: 1rem
+
+  button
+    font: inherit
+    color: inherit
+    background: none
+    border: 0
+    border-top: 2px solid currentColor
+    padding: 0.25rem 0 0
+    cursor: pointer
+
+  [aria-pressed='true']
+    text-decoration: underline
+
+.queue
+  display: grid
+  gap: 0.5rem
+  font-size: var(--type-meta-size)
+
+  h2
+    font-size: var(--type-body-size)
+
+  ol,
+  ul
+    margin: 0
+    padding-left: 1.25rem
+
+.grid
+  display: grid
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr))
+  gap: 2rem
+
+.item
+  display: grid
+  align-content: start
+  gap: 0.5rem
+
+  &[data-approved='true'] .preview
+    outline: 2px solid currentColor
+    outline-offset: 2px
+
+.preview
+  margin: 0
+  aspect-ratio: 4 / 5
+  background: color-mix(in srgb, currentColor 8%, transparent)
+
+  &[data-empty]
+    display: grid
+    place-items: center
+
+.svg svg
+  display: block
+  width: 100%
+  height: auto
+
+  figcaption
+    font-size: var(--type-meta-size)
+
+.approve
+  display: flex
+  gap: 0.5rem
+  align-items: center
+
+.caption
+  width: 100%
+  font-size: var(--type-meta-size)
+  color: inherit
+  background: transparent
+  border: 1px solid currentColor
+  padding: 0.5rem
+  resize: vertical

@@ -58,6 +58,7 @@ temp/
 test-results/
 /divider*.png
 .claude-tmp/
+.claude-shots/
 *.tsbuildinfo
 
 # Deployment tooling
@@ -70,3 +71,8 @@ test-results/
 # Local databases
 *.sqlite
 *.sqlite3
+
+# Instagram auto poster (apps/crawler/src/social-publish.mjs)
+apps/crawler/.instagram-token.json
+apps/crawler/.social-preview/
+.claude-*.tgz

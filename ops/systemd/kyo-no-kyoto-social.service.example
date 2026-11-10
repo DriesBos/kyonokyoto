@@ -1,0 +1,12 @@
+[Unit]
+Description=Post the next approved Kyo no Kyoto Instagram post
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/kyo-no-kyoto
+Environment=PATH=/home/ubuntu/.nvm/versions/node/v22.22.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/env node apps/crawler/src/social-publish.mjs

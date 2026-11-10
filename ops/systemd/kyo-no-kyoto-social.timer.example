@@ -1,0 +1,11 @@
+[Unit]
+Description=Post one approved Kyo no Kyoto Instagram post a day (18:00 JST)
+
+[Timer]
+OnCalendar=*-*-* 18:00:00 Asia/Tokyo
+RandomizedDelaySec=10m
+Persistent=true
+Unit=kyo-no-kyoto-social.service
+
+[Install]
+WantedBy=timers.target

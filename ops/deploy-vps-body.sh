@@ -36,6 +36,12 @@ install_unit \
 install_unit \
   ops/systemd/kyo-no-kyoto-storage-maintenance.timer.example \
   /etc/systemd/system/kyo-no-kyoto-storage-maintenance.timer
+install_unit \
+  ops/systemd/kyo-no-kyoto-social.service.example \
+  /etc/systemd/system/kyo-no-kyoto-social.service
+install_unit \
+  ops/systemd/kyo-no-kyoto-social.timer.example \
+  /etc/systemd/system/kyo-no-kyoto-social.timer
 for city in kyoto osaka tokyo hong-kong; do
   install_unit \
     "ops/systemd/kyo-no-kyoto-crawl@${city}.timer.example" \
@@ -49,10 +55,12 @@ sudo -n systemctl enable --now \
   kyo-no-kyoto-crawl@osaka.timer \
   kyo-no-kyoto-crawl@tokyo.timer \
   kyo-no-kyoto-crawl@hong-kong.timer \
-  kyo-no-kyoto-storage-maintenance.timer
+  kyo-no-kyoto-storage-maintenance.timer \
+  kyo-no-kyoto-social.timer
 
 sudo -n install -m 0755 "$repo/ops/deploy-vps.sh" /usr/local/bin/kyo-vps-deploy
 
 echo "VPS deployed $(git rev-parse HEAD)"
 sudo -n systemctl list-timers --all 'kyo-no-kyoto-crawl@*.timer' --no-pager
 sudo -n systemctl list-timers --all kyo-no-kyoto-storage-maintenance.timer --no-pager
+sudo -n systemctl list-timers --all kyo-no-kyoto-social.timer --no-pager

@@ -1,0 +1,1484 @@
+{
+  "generated_at": "2026-11-10T04:16:12.637Z",
+  "found": [
+    {
+      "city": "kyoto",
+      "slug": "kyoto-art-center",
+      "name": "Kyoto Art Center",
+      "url": "https://www.kac.or.jp",
+      "current": null,
+      "handle": "kyotoartcenter"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyoto-national-museum",
+      "name": "Kyoto National Museum",
+      "url": "https://www.kyohaku.go.jp/eng/exhibitions/",
+      "current": null,
+      "handle": "kyotonatmuseum"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyotographie",
+      "name": "KYOTOGRAPHIE",
+      "url": "https://www.kyotographie.jp/en/programs/",
+      "current": null,
+      "handle": "kyotographie"
+    },
+    {
+      "city": "kyoto",
+      "slug": "art-rhizome-kyoto",
+      "name": "Art Rhizome",
+      "url": "https://www.city.kyoto.lg.jp/bunshi/page/0000357275.html",
+      "current": null,
+      "handle": "artrhizomekyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyoto-experiment",
+      "name": "EXPERIMENT",
+      "url": "https://kyoto-ex.jp/en/program/",
+      "current": null,
+      "handle": "kyotoexperiment"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyoto-youme-triennale",
+      "name": "YouMe Triennale",
+      "url": "https://you-me-kyoto.org/programme",
+      "current": null,
+      "handle": "youme_kyototriennale"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyoto-modern-architecture-festival",
+      "name": "Modern Architecture Festival",
+      "url": "https://kyoto.kenchikusai.jp/program/",
+      "current": null,
+      "handle": "kenchikusai"
+    },
+    {
+      "city": "kyoto",
+      "slug": "hosoo-gallery",
+      "name": "HOSOO GALLERY",
+      "url": "https://www.hosoogallery.jp/en/exhibitions/",
+      "current": null,
+      "handle": "hosoogallery"
+    },
+    {
+      "city": "kyoto",
+      "slug": "huko",
+      "name": "HUKO",
+      "url": "https://huko.jp/blogs/exhibition/",
+      "current": null,
+      "handle": "huko_kyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "hakari-contemporary",
+      "name": "hakari contemporary",
+      "url": "https://hakari.art/exhibitions/",
+      "current": null,
+      "handle": "hakari_contemporary"
+    },
+    {
+      "city": "kyoto",
+      "slug": "gallery-baiken",
+      "name": "Gallery Baiken",
+      "url": "https://baiken.jp/exhibition/",
+      "current": null,
+      "handle": "gallery_baiken_kyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyotophonie",
+      "name": "KYOTOPHONIE",
+      "url": "https://kyotophonie.jp/",
+      "current": null,
+      "handle": "kyotophonie_"
+    },
+    {
+      "city": "kyoto",
+      "slug": "taka-ishii-gallery",
+      "name": "Taka Ishii Gallery",
+      "url": "https://www.takaishiigallery.com/en/exhibitions/kyoto-yada-cho/",
+      "current": null,
+      "handle": "takaishiigallery"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kojin",
+      "name": "Kojin",
+      "url": "https://kojin-kyoto.com/event/",
+      "current": null,
+      "handle": "kojin_kyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyoto-art-month",
+      "name": "Kyoto Art Month",
+      "url": "https://kyoto-art-month.jp/",
+      "current": null,
+      "handle": "lightseeing_kyoto_south"
+    },
+    {
+      "city": "kyoto",
+      "slug": "zenbi",
+      "name": "ZENBI",
+      "url": "https://zenbi.kagizen.com/exhibition/",
+      "current": null,
+      "handle": "zenbinokancho"
+    },
+    {
+      "city": "kyoto",
+      "slug": "mtk",
+      "name": "MTK",
+      "url": "https://mtkcontemporaryart.com/en/exhibition/",
+      "current": null,
+      "handle": "mtkcontemporaryart"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyoto-city-kyocera-museum-of-art",
+      "name": "KYOCERA Museum",
+      "url": "https://kyotocity-kyocera.museum/",
+      "current": null,
+      "handle": "kyotocitykyoceramuseum"
+    },
+    {
+      "city": "kyoto",
+      "slug": "momak",
+      "name": "MoMAK",
+      "url": "https://www.momak.go.jp/English/exhibitionArchive/",
+      "current": null,
+      "handle": "momakyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "sen-oku-hakukokan",
+      "name": "Sen-Oku Hakukokan",
+      "url": "https://sen-oku.or.jp/kyoto/",
+      "current": null,
+      "handle": "senokuhakukokanmuseum"
+    },
+    {
+      "city": "kyoto",
+      "slug": "gallery-morning-kyoto",
+      "name": "Gallery Morning Kyoto",
+      "url": "https://gallerymorningkyoto.com/",
+      "current": null,
+      "handle": "gallerymorningkyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "nonaka-hill",
+      "name": "Nonaka-Hill",
+      "url": "https://www.nonaka-hill.com/exhibitions/",
+      "current": null,
+      "handle": "nonakahillgallery"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kcua",
+      "name": "KCUA",
+      "url": "https://gallery.kcua.ac.jp/exhibitions/",
+      "current": null,
+      "handle": "gallery_akcua"
+    },
+    {
+      "city": "kyoto",
+      "slug": "leica-gallery-kyoto",
+      "name": "Leica Gallery Kyoto",
+      "url": "https://leica-camera.com/en-US/leica-events?field_event_category=242&field_event_country=247",
+      "current": null,
+      "handle": "leica_camera"
+    },
+    {
+      "city": "kyoto",
+      "slug": "the-terminal-kyoto",
+      "name": "The Terminal Kyoto",
+      "url": "https://kyoto.theterminal.jp/events/",
+      "current": null,
+      "handle": "theterminalkyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "imura-art",
+      "name": "Imura Art",
+      "url": "https://www.imuraart.com/exhibition/current.html",
+      "current": null,
+      "handle": "imuraartgallery"
+    },
+    {
+      "city": "kyoto",
+      "slug": "purple-purple",
+      "name": "Purple Purple",
+      "url": "https://purple-purple.com/exhibition/",
+      "current": null,
+      "handle": "purple_kyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kyotoba",
+      "name": "KyotoBa",
+      "url": "https://kyoto-ba.jp/gallery/",
+      "current": null,
+      "handle": "kyoto_ba"
+    },
+    {
+      "city": "kyoto",
+      "slug": "sokyo-kyoto",
+      "name": "Sokyo Kyoto",
+      "url": "https://sokyogallery.com/exhibitions/",
+      "current": null,
+      "handle": "sokyo_gallery"
+    },
+    {
+      "city": "kyoto",
+      "slug": "raku-museum",
+      "name": "Raku Museum",
+      "url": "https://www.raku-yaki.or.jp/e/museum/exhibition/index.html",
+      "current": null,
+      "handle": "rakumuseum_kyoto"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kusakabe-gallery",
+      "name": "Kusakabe Gallery",
+      "url": "https://www.kusakabeg.com/",
+      "current": null,
+      "handle": "kusakabegallery"
+    },
+    {
+      "city": "kyoto",
+      "slug": "kuramonzen",
+      "name": "Kuramonzen",
+      "url": "https://kuramonzen.com/blogs/exhibitions",
+      "current": null,
+      "handle": "kura.monzen"
+    },
+    {
+      "city": "kyoto",
+      "slug": "oscaar-mouligne",
+      "name": "Oscaar Mouligne",
+      "url": "https://oscaarmouligne.com/exhibitions/",
+      "current": null,
+      "handle": "oscaar.mouligne"
+    },
+    {
+      "city": "kyoto",
+      "slug": "samac",
+      "name": "SAMAC",
+      "url": "https://www.samac.jp/en/exhibition/index.php",
+      "current": null,
+      "handle": "sabunkakan"
+    },
+    {
+      "city": "kyoto",
+      "slug": "fukuda-art-museum",
+      "name": "Fukuda Art Museum",
+      "url": "https://fukuda-art-museum.jp/exhibition",
+      "current": null,
+      "handle": "fukuda_art_museum"
+    },
+    {
+      "city": "kyoto",
+      "slug": "oyamazaki-villa-museum",
+      "name": "Oyamazaki Villa Museum",
+      "url": "https://www.30th.asahigroup-oyamazaki.com/exhibitions/",
+      "current": null,
+      "handle": "asahibeer.oyamazaki"
+    },
+    {
+      "city": "kyoto",
+      "slug": "gallery-take-two",
+      "name": "Gallery Take Two",
+      "url": "https://www.gallery-taketwo.com/schedule",
+      "current": null,
+      "handle": "gallery_taketwo"
+    },
+    {
+      "city": "kyoto",
+      "slug": "arts-science-kyoto",
+      "name": "ARTS&SCIENCE Kyoto",
+      "url": "https://arts-science.com/events/",
+      "current": null,
+      "handle": "arts_and_science"
+    },
+    {
+      "city": "kyoto",
+      "slug": "karimoku-commons-kyoto",
+      "name": "Karimoku Commons Kyoto",
+      "url": "https://commons.karimoku.com/location/kyoto/",
+      "current": null,
+      "handle": "karimoku_official"
+    },
+    {
+      "city": "kyoto",
+      "slug": "mori-yu-gallery",
+      "name": "MORI YU GALLERY",
+      "url": "https://www.moriyu-gallery.com/",
+      "current": null,
+      "handle": "moriyugallery"
+    },
+    {
+      "city": "kyoto",
+      "slug": "shibunkaku",
+      "name": "Shibunkaku",
+      "url": "https://www.shibunkaku.co.jp/",
+      "current": null,
+      "handle": "shibunkaku"
+    },
+    {
+      "city": "osaka",
+      "slug": "koji-kinutani-tenku-art-museum",
+      "name": "Koji Kinutani Tenku",
+      "url": "https://www.kinutani-tenku.jp/en/s_exhib/",
+      "current": null,
+      "handle": "kojikinutani_tenkuartmuseum"
+    },
+    {
+      "city": "osaka",
+      "slug": "yod-gallery",
+      "name": "YOD Gallery",
+      "url": "https://www.yodgallery.com/en/currentexhibition",
+      "current": null,
+      "handle": "yodgallery"
+    },
+    {
+      "city": "osaka",
+      "slug": "nakanoshima-museum-of-art-osaka",
+      "name": "Nakanoshima Museum of Art",
+      "url": "https://nakka-art.jp/en/exhibition-en/",
+      "current": null,
+      "handle": "nakkaart2022"
+    },
+    {
+      "city": "osaka",
+      "slug": "congres-square-grand-green-osaka",
+      "name": "Congres Square Grand Green Osaka",
+      "url": "https://osaka.congres-square.jp/grandgreen/",
+      "current": null,
+      "handle": "congre_csg"
+    },
+    {
+      "city": "osaka",
+      "slug": "art-and-space-gallery",
+      "name": "ART AND SPACE GALLERY",
+      "url": "https://art.andspace.net/exhibition/",
+      "current": null,
+      "handle": "artandspace_gallery"
+    },
+    {
+      "city": "osaka",
+      "slug": "i-gallery-osaka",
+      "name": "i GALLERY OSAKA",
+      "url": "https://www.igallery-osaka.com/",
+      "current": null,
+      "handle": "igallery_osaka"
+    },
+    {
+      "city": "osaka",
+      "slug": "new-pure-plus",
+      "name": "NEW PURE +",
+      "url": "https://newpureplus.com/exhibition",
+      "current": null,
+      "handle": "new_pure_plus"
+    },
+    {
+      "city": "osaka",
+      "slug": "gallery-nomart",
+      "name": "Gallery Nomart",
+      "url": "https://www.nomart.co.jp/exhibition/index.php",
+      "current": null,
+      "handle": "nomart_inc"
+    },
+    {
+      "city": "osaka",
+      "slug": "hitoto",
+      "name": "hitoto",
+      "url": "https://hitoto.info/next-exhibition/",
+      "current": null,
+      "handle": "hitoto_ten5"
+    },
+    {
+      "city": "osaka",
+      "slug": "jitsuzaisei",
+      "name": "JITSUZAISEI",
+      "url": "https://www.jitsuzaisei.com/exhibitions",
+      "current": null,
+      "handle": "jitsuzaisei"
+    },
+    {
+      "city": "osaka",
+      "slug": "kouichi-fine-arts",
+      "name": "KOUICHI FINE ARTS",
+      "url": "https://kouichifinearts.com/en/front-page/",
+      "current": null,
+      "handle": "kouichi_fine_arts"
+    },
+    {
+      "city": "osaka",
+      "slug": "plus-y-gallery",
+      "name": "+Y Gallery",
+      "url": "https://www.plus-y-gallery.com/",
+      "current": null,
+      "handle": "plus_y_gallery"
+    },
+    {
+      "city": "osaka",
+      "slug": "tezukayama-gallery",
+      "name": "Tezukayama Gallery",
+      "url": "https://www.tezukayama-g.com/exhibitions/status/current",
+      "current": null,
+      "handle": "tezukayama_g"
+    },
+    {
+      "city": "osaka",
+      "slug": "hill-top-gallery",
+      "name": "HILL TOP GALLERY",
+      "url": "https://www.hilltoposaka.com/",
+      "current": null,
+      "handle": "hill.top.gallery"
+    },
+    {
+      "city": "osaka",
+      "slug": "artcourt-gallery",
+      "name": "ARTCOURT Gallery",
+      "url": "https://www.artcourtgallery.com/eng/exhibitions/",
+      "current": null,
+      "handle": "artcourtgallery"
+    },
+    {
+      "city": "osaka",
+      "slug": "masaki-art-museum",
+      "name": "Masaki Art Museum",
+      "url": "https://masaki-art-museum.jp/",
+      "current": null,
+      "handle": "masaki_art_museum"
+    },
+    {
+      "city": "osaka",
+      "slug": "parco-hall-shinsaibashi",
+      "name": "PARCO HALL SHINSAIBASHI",
+      "url": "https://art.parco.jp/eventhall/",
+      "current": null,
+      "handle": "parco_art"
+    },
+    {
+      "city": "osaka",
+      "slug": "suchsize",
+      "name": "SUCHSIZE",
+      "url": "https://www.suchsize.com/",
+      "current": null,
+      "handle": "suchsize"
+    },
+    {
+      "city": "osaka",
+      "slug": "osaka-ukiyoe-museum",
+      "name": "Osaka Ukiyo-e Museum",
+      "url": "https://osaka-ukiyoe-museum.com/exhibition.html",
+      "current": null,
+      "handle": "osakaukiyoemuseum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "21-21-design-sight",
+      "name": "21_21 DESIGN SIGHT",
+      "url": "https://www.2121designsight.jp/en/program/",
+      "current": null,
+      "handle": "2121designsight"
+    },
+    {
+      "city": "tokyo",
+      "slug": "artizon-museum",
+      "name": "Artizon Museum",
+      "url": "https://www.artizon.museum/en/exhibition/",
+      "current": null,
+      "handle": "artizonmuseum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "museum-of-contemporary-art-tokyo",
+      "name": "Museum of Contemporary Art",
+      "url": "https://www.mot-art-museum.jp/en/exhibitions/",
+      "current": null,
+      "handle": "mot_museum_art_tokyo"
+    },
+    {
+      "city": "tokyo",
+      "slug": "national-art-center-tokyo",
+      "name": "The National Art Center",
+      "url": "https://www.nact.jp/english/exhibition_and_event/",
+      "current": null,
+      "handle": "thenationalartcentertokyo"
+    },
+    {
+      "city": "tokyo",
+      "slug": "tokyo-opera-city-art-gallery",
+      "name": "Opera City Art Gallery",
+      "url": "https://www.operacity.jp/ag/exh/current_exhibitions/",
+      "current": null,
+      "handle": "operacity_ag"
+    },
+    {
+      "city": "tokyo",
+      "slug": "tokyo-photographic-art-museum",
+      "name": "Photographic Art Museum",
+      "url": "https://topmuseum.jp/current/",
+      "current": null,
+      "handle": "topmuseum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "sumida-hokusai-museum",
+      "name": "The Sumida Hokusai Museum",
+      "url": "https://hokusai-museum.jp/modules/Exhibition/exhibitions?lang=en",
+      "current": null,
+      "handle": "hokusai_museum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "yayoi-kusama-museum",
+      "name": "Yayoi Kusama Museum",
+      "url": "https://yayoikusamamuseum.jp/en/exhibition/current/",
+      "current": null,
+      "handle": "yayoikusamamuseum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "scai-the-bathhouse",
+      "name": "SCAI The Bathhouse",
+      "url": "https://www.scaithebathhouse.com/en/",
+      "current": null,
+      "handle": "scaithebathhouse"
+    },
+    {
+      "city": "tokyo",
+      "slug": "scai-piramide",
+      "name": "SCAI Piramide",
+      "url": "https://www.scaithebathhouse.com/en/",
+      "current": null,
+      "handle": "scaithebathhouse"
+    },
+    {
+      "city": "tokyo",
+      "slug": "scai-park",
+      "name": "SCAI Park",
+      "url": "https://www.scaithebathhouse.com/en/",
+      "current": null,
+      "handle": "scaithebathhouse"
+    },
+    {
+      "city": "tokyo",
+      "slug": "ota-fine-arts",
+      "name": "OTA FINE ARTS",
+      "url": "https://www.otafinearts.com/exhibitions/",
+      "current": null,
+      "handle": "otafinearts"
+    },
+    {
+      "city": "tokyo",
+      "slug": "take-ninagawa",
+      "name": "Take Ninagawa",
+      "url": "https://www.takeninagawa.com/exhibitions/",
+      "current": null,
+      "handle": "takeninagawa"
+    },
+    {
+      "city": "tokyo",
+      "slug": "taro-okamoto-memorial-museum",
+      "name": "Taro Okamoto Memorial Museum",
+      "url": "https://taro-okamoto.or.jp/en/exhibition/",
+      "current": null,
+      "handle": "taro_okamoto_memorial_museum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "university-art-museum-tokyo-geidai",
+      "name": "Tokyo University of the Arts",
+      "url": "https://museum.geidai.ac.jp/en/exhibit/",
+      "current": null,
+      "handle": "geidai_museum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "yamatane-museum-of-art",
+      "name": "Yamatane Museum of Art",
+      "url": "https://www.yamatane-museum.jp/en/exhibitions/",
+      "current": null,
+      "handle": "yamatane_museum"
+    },
+    {
+      "city": "tokyo",
+      "slug": "japan-folk-crafts-museum",
+      "name": "Japan Folk Crafts Museum",
+      "url": "https://mingeikan.or.jp/exhibition/special/?lang=en",
+      "current": null,
+      "handle": "nihon_mingeikan"
+    },
+    {
+      "city": "tokyo",
+      "slug": "maho-kubota-gallery",
+      "name": "MAHO KUBOTA GALLERY",
+      "url": "https://www.mahokubota.com/en/exhibitions/",
+      "current": null,
+      "handle": "mahokubotagallery"
+    },
+    {
+      "city": "tokyo",
+      "slug": "lurf-museum",
+      "name": "Lurf MUSEUM",
+      "url": "https://lurfgallery.com/en/exhibitions",
+      "current": null,
+      "handle": "lurfgallery"
+    },
+    {
+      "city": "tokyo",
+      "slug": "gyre-gallery",
+      "name": "GYRE GALLERY",
+      "url": "https://en.gyre-omotesando.com/art/",
+      "current": null,
+      "handle": "gyre_omotesando"
+    },
+    {
+      "city": "tokyo",
+      "slug": "yutaka-kikutake-gallery",
+      "name": "Yutaka Kikutake Gallery",
+      "url": "https://www.yutakakikutakegallery.com/exhibitions/",
+      "current": null,
+      "handle": "yutakakikutakegallery"
+    },
+    {
+      "city": "tokyo",
+      "slug": "standing-pine-tokyo",
+      "name": "STANDING PINE Tokyo",
+      "url": "https://standingpine.jp/en/exhibitions",
+      "current": null,
+      "handle": "standing_pine"
+    },
+    {
+      "city": "tokyo",
+      "slug": "tokyo-node",
+      "name": "TOKYO NODE",
+      "url": "https://www.tokyonode.jp/events/index.html",
+      "current": null,
+      "handle": "tokyonode"
+    },
+    {
+      "city": "tokyo",
+      "slug": "play-museum",
+      "name": "PLAY! MUSEUM",
+      "url": "https://play2020.jp/en/",
+      "current": null,
+      "handle": "play_2020_04"
+    },
+    {
+      "city": "tokyo",
+      "slug": "anomaly-tokyo",
+      "name": "ANOMALY",
+      "url": "https://anomalytokyo.com/exhibition/",
+      "current": null,
+      "handle": "anomaly_tokyo"
+    },
+    {
+      "city": "tokyo",
+      "slug": "con-tokyo",
+      "name": "CON_",
+      "url": "https://www.contokyo.com/exhibition/",
+      "current": null,
+      "handle": "con_tokyo_"
+    },
+    {
+      "city": "tokyo",
+      "slug": "hagiwara-projects",
+      "name": "HAGIWARA PROJECTS",
+      "url": "https://www.hagiwaraprojects.com/",
+      "current": null,
+      "handle": "hagiwara_projects"
+    },
+    {
+      "city": "tokyo",
+      "slug": "kotaro-nukaga",
+      "name": "KOTARO NUKAGA",
+      "url": "https://kotaronukaga.com/exhibition/",
+      "current": null,
+      "handle": "kotaro_nukaga"
+    },
+    {
+      "city": "tokyo",
+      "slug": "misako-and-rosen",
+      "name": "MISAKO & ROSEN",
+      "url": "https://misakoandrosen.jp/",
+      "current": null,
+      "handle": "misakoandrosen"
+    },
+    {
+      "city": "tokyo",
+      "slug": "mizuma-art-gallery",
+      "name": "Mizuma Art Gallery",
+      "url": "https://mizuma-art.co.jp/exhibitions/",
+      "current": null,
+      "handle": "mizumaartgallery"
+    },
+    {
+      "city": "tokyo",
+      "slug": "sho-plus-1",
+      "name": "Sho+1",
+      "url": "https://shoplusone.com/en/gallery-top-en/exhibitions-en/",
+      "current": null,
+      "handle": "shoplus1"
+    },
+    {
+      "city": "tokyo",
+      "slug": "shugoarts",
+      "name": "ShugoArts",
+      "url": "https://shugoarts.com/en/exhibitions/",
+      "current": null,
+      "handle": "shugoarts"
+    },
+    {
+      "city": "tokyo",
+      "slug": "taka-ishii-gallery-tokyo",
+      "name": "Taka Ishii Gallery Roppongi",
+      "url": "https://www.takaishiigallery.com/en/exhibitions/tokyo/",
+      "current": null,
+      "handle": "takaishiigallery"
+    },
+    {
+      "city": "tokyo",
+      "slug": "takuro-someya-contemporary-art",
+      "name": "Takuro Someya Contemporary Art",
+      "url": "https://tsca.jp/exhibition/",
+      "current": null,
+      "handle": "tsca_tokyo"
+    },
+    {
+      "city": "tokyo",
+      "slug": "tokyo-gallery-btap",
+      "name": "Tokyo Gallery + BTAP",
+      "url": "https://www.tokyo-gallery.com/en/exhibitions",
+      "current": null,
+      "handle": "tokyogallery_btap"
+    },
+    {
+      "city": "tokyo",
+      "slug": "tomio-koyama-gallery",
+      "name": "Tomio Koyama Gallery",
+      "url": "https://www.tomiokoyamagallery.com/en/exhibitions/gallery/",
+      "current": null,
+      "handle": "tomiokoyamagallery"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "blindspot-gallery",
+      "name": "Blindspot Gallery",
+      "url": "https://blindspotgallery.com/exhibition/",
+      "current": null,
+      "handle": "blindspotgallery"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "rossi-and-rossi",
+      "name": "Rossi & Rossi",
+      "url": "https://www.rossirossi.com/contemporary-exhibitions",
+      "current": null,
+      "handle": "rossiandrossi"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "empty-gallery",
+      "name": "Empty Gallery",
+      "url": "https://emptygallery.com/",
+      "current": null,
+      "handle": "emptygallery.hk"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "hong-kong-art-school-gallery",
+      "name": "The Gallery of Hong Kong Art School",
+      "url": "https://gallery.hkas.edu.hk/",
+      "current": null,
+      "handle": "hongkongartschool"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "david-zwirner",
+      "name": "David Zwirner",
+      "url": "https://www.davidzwirner.com/galleries/hong-kong",
+      "current": null,
+      "handle": "davidzwirner"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "whitestone-gallery-hong-kong",
+      "name": "Whitestone Gallery Hong Kong",
+      "url": "https://www.whitestone-gallery.com/blogs/exhibitions/tagged/location_hong-kong+current",
+      "current": null,
+      "handle": "whitestonegallery.official"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "white-cube-hong-kong",
+      "name": "White Cube Hong Kong",
+      "url": "https://www.whitecube.com/exhibitions/hong-kong",
+      "current": null,
+      "handle": "whitecube"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "blue-lotus-gallery",
+      "name": "Blue Lotus Gallery",
+      "url": "https://bluelotus-gallery.com/new-events",
+      "current": null,
+      "handle": "bluelotusgallery"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "contemporary-by-angela-li",
+      "name": "Contemporary by Angela Li",
+      "url": "https://cbal.com.hk/exhibitions/",
+      "current": null,
+      "handle": "cbalhk"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "ben-brown",
+      "name": "Ben Brown",
+      "url": "https://www.benbrownfinearts.com/exhibitions/location/1/",
+      "current": null,
+      "handle": "benbrownfinearts"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "hong-kong-palace-museum",
+      "name": "Hong Kong Palace Museum",
+      "url": "https://www.hkpm.org.hk/en/exhibition",
+      "current": null,
+      "handle": "hongkongpalacemuseum"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "para-site",
+      "name": "Para Site",
+      "url": "https://www.para-site.art/exhibitions/",
+      "current": null,
+      "handle": "parasite.hk"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "oi-art-space",
+      "name": "Oi!",
+      "url": "https://www.apo.hk/en/web/apo/here_projects_and_programmes.html",
+      "current": null,
+      "handle": "apohere.hk"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "videotage",
+      "name": "Videotage",
+      "url": "https://www.videotage.org.hk/",
+      "current": null,
+      "handle": "videotage_hk"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "one-a-space",
+      "name": "1a space",
+      "url": "https://www.oneaspace.org.hk/exhibitions",
+      "current": null,
+      "handle": "1a_space"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "pmq",
+      "name": "PMQ",
+      "url": "https://www.pmq.org.hk/happenings/current-upcoming/",
+      "current": null,
+      "handle": "pmqhkdesign"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "gallery-exit",
+      "name": "Gallery EXIT",
+      "url": "https://www.galleryexit.com/exhibitions.html",
+      "current": null,
+      "handle": "galleryexit"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "sin-sin-fine-art",
+      "name": "Sin Sin Fine Art",
+      "url": "https://www.sinsinfineart.com/exhibitions.html",
+      "current": null,
+      "handle": "sinsinfineart"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "13a-new-street-art-gallery",
+      "name": "13A New Street Art Gallery",
+      "url": "https://www.13anewstreet.com/exhibitions-1",
+      "current": null,
+      "handle": "13anewstreet"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "jps-gallery-hong-kong",
+      "name": "JPS Gallery Hong Kong",
+      "url": "https://jpsgallery.com/exhibitions/",
+      "current": null,
+      "handle": "jpsgallery"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "10-chancery-lane-gallery",
+      "name": "10 Chancery Lane Gallery",
+      "url": "https://www.10chancerylanegallery.com/exhibitions/",
+      "current": null,
+      "handle": "10chancerylanegallery"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "hanart-tz-gallery",
+      "name": "Hanart TZ Gallery",
+      "url": "https://www.hanart.com/exhibitions/",
+      "current": null,
+      "handle": "hanarttzgallery"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "galerie-du-monde",
+      "name": "Galerie du Monde",
+      "url": "https://galeriedumonde.com/exhibitions/",
+      "current": null,
+      "handle": "galeriedumonde"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "ora-ora",
+      "name": "Ora-Ora",
+      "url": "https://www.ora-ora.com/exhibitions/",
+      "current": null,
+      "handle": "galerieoraora"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "grotto-fine-art",
+      "name": "Grotto Fine Art",
+      "url": "https://www.grottofineart.com/exhibitions",
+      "current": null,
+      "handle": "grottofineart"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "kwai-fung-hin",
+      "name": "Kwai Fung Hin Art Gallery",
+      "url": "https://www.kwaifunghin.com/exhibitions/",
+      "current": null,
+      "handle": "kwaifunghin"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "kiang-malingue",
+      "name": "Kiang Malingue",
+      "url": "https://kiangmalingue.com/exhibitions/",
+      "current": null,
+      "handle": "kiangmalingue"
+    },
+    {
+      "city": "hong-kong",
+      "slug": "soluna-fine-art",
+      "name": "Soluna Fine Art",
+      "url": "https://www.solunafineart.com/exhibitions",
+      "current": null,
+      "handle": "solunafineart"
+    }
+  ],
+  "several": [
+    {
+      "city": "kyoto",
+      "slug": "art-collaboration-kyoto",
+      "name": "Art Collaboration",
+      "url": "https://a-c-k.jp/en/whats-on/",
+      "current": null,
+      "handles": [
+        "_doppo_kitaoji_gallery",
+        "andrew.cranston",
+        "hotori_kyoto",
+        "lightseeing_kyoto_south",
+        "artcollaborationkyoto"
+      ]
+    },
+    {
+      "city": "kyoto",
+      "slug": "gallery-yamahon",
+      "name": "Gallery Yamahon",
+      "url": "https://gallery-yamahon.com/?page_id=1396",
+      "current": null,
+      "handles": [
+        "gallery_yamahon",
+        "cafe_and_library_noka",
+        "kyoto_yamahon",
+        "shiro_tsujimura_collection",
+        "yamahon_architects",
+        "kogei_towan",
+        "roca_natural_market",
+        "yamahon_online_store"
+      ]
+    },
+    {
+      "city": "kyoto",
+      "slug": "sibasi",
+      "name": "Sibasi",
+      "url": "https://sibasi.jp/events/",
+      "current": null,
+      "handles": [
+        "sibasikyoto",
+        "plankton_keitanoguchi",
+        "neutral_colors_magazine",
+        "baitarusain_kyoto",
+        "awo_fujimou",
+        "kisaragimamikouta",
+        "lemosandlehmann",
+        "sisi_rio"
+      ]
+    },
+    {
+      "city": "kyoto",
+      "slug": "gallery-unfold",
+      "name": "Gallery Unfold",
+      "url": "https://galleryunfold.com/archive",
+      "current": null,
+      "handles": [
+        "chuang_ho",
+        "uchihsiao"
+      ]
+    },
+    {
+      "city": "osaka",
+      "slug": "wa-gallery-osaka",
+      "name": "Wa.gallery",
+      "url": "https://wa-gallery.art/exhibitions-single2.html",
+      "current": null,
+      "handles": [
+        "wa_gallery_osaka",
+        "antiques_takei"
+      ]
+    },
+    {
+      "city": "tokyo",
+      "slug": "what-museum",
+      "name": "WHAT MUSEUM",
+      "url": "https://what.warehouseofart.org/exhibitions/",
+      "current": null,
+      "handles": [
+        "v",
+        "what_terrada"
+      ]
+    },
+    {
+      "city": "tokyo",
+      "slug": "pola-museum-annex",
+      "name": "Pola Museum Annex",
+      "url": "https://www.po-holdings.co.jp/m-annex/exhibition/index.html",
+      "current": null,
+      "handles": [
+        "pola_annex",
+        "pola_salon_plus_aoyama",
+        "wonderstock_photo"
+      ]
+    },
+    {
+      "city": "tokyo",
+      "slug": "koki-arts",
+      "name": "KOKI ARTS",
+      "url": "https://www.kokiarts.com/",
+      "current": null,
+      "handles": [
+        "kokiarts",
+        "russell_tyler"
+      ]
+    },
+    {
+      "city": "hong-kong",
+      "slug": "hkdi-gallery",
+      "name": "HKDI Gallery",
+      "url": "https://hkdi.edu.hk/en/hkdi_gallery/",
+      "current": null,
+      "handles": [
+        "hkdi_hongkongdesigninstitute",
+        "hkdi.gallery"
+      ]
+    },
+    {
+      "city": "hong-kong",
+      "slug": "hong-kong-arts-centre",
+      "name": "Hong Kong Arts Centre",
+      "url": "https://hkac.org.hk/en/artsatthecentre_exhibition/",
+      "current": null,
+      "handles": [
+        "hongkongartscentre",
+        "hongkongartschool"
+      ]
+    }
+  ],
+  "none": [
+    {
+      "city": "kyoto",
+      "slug": "museum-of-kyoto",
+      "name": "The Museum of Kyoto",
+      "url": "https://www.bunpaku.or.jp/en/exhi_special/",
+      "current": null,
+      "errors": [
+        "https://www.bunpaku.or.jp/en/exhi_special/: HTTP 503"
+      ]
+    },
+    {
+      "city": "kyoto",
+      "slug": "hosomi-museum",
+      "name": "Hosomi Museum",
+      "url": "https://www.emuseum.or.jp/eng/exhibition_eng/index.html",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "ko-gei-kyoto",
+      "name": "KO+GEI",
+      "url": "https://kogeigene.com/exhibition/",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "curation-fair-kyoto",
+      "name": "CURATION⇄FAIR",
+      "url": "https://curation-fair.com/en/kyoto2026/exhibitors",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "koen-kyoto",
+      "name": "koen",
+      "url": "https://koenkyoto.theshop.jp/p/00006",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "chushin-bijutsu",
+      "name": "Chushin Art Museum",
+      "url": "https://www.chushin.co.jp/bijyutu/exhibition/index.html",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "dnp-foundation-for-cultural-promotion-gallery-ddd",
+      "name": "ddd gallery",
+      "url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=2&l=2",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "hakusasonso",
+      "name": "Hakusa Son-so",
+      "url": "http://www.hakusasonso.jp/exhibition/index.html",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "artro",
+      "name": "Artro",
+      "url": "https://artro.jp/exhibition/",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "kankakari",
+      "name": "Kankakari",
+      "url": "https://www.kankakari.com/news",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "miho-museum",
+      "name": "MIHO Museum",
+      "url": "https://www.miho.jp/en/current_exhibition/",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "art-gallery-kitano",
+      "name": "Art Gallery Kitano",
+      "url": "https://www.gallery-kitano.com/exhibition.aspx",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "galerie16",
+      "name": "galerie16",
+      "url": "https://art16.net/exhibitions_en/",
+      "current": null
+    },
+    {
+      "city": "kyoto",
+      "slug": "issey-miyake-kyoto-kura",
+      "name": "ISSEY MIYAKE KYOTO | KURA",
+      "url": "https://www.isseymiyake.com/blogs/kyotokura",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "abeno-harukas-art-museum",
+      "name": "ABENO HARUKAS",
+      "url": "https://www.aham.jp/exhibition/future/",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "yoshimi-arts",
+      "name": "Yoshimi Arts",
+      "url": "https://www.yoshimiarts.com/en/exhibition.html",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "national-museum-of-art-osaka",
+      "name": "The National Museum of Art",
+      "url": "https://www.nmao.go.jp/en/exhibition/upcoming.html",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "nakanoshima-kosetsu-museum",
+      "name": "Nakanoshima Kosetsu Museum of Art",
+      "url": "https://www.kosetsu-museum.or.jp/nakanoshima/english/4246/",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "hyogo-prefectural-museum-of-art",
+      "name": "Hyogo Prefectural Museum of Art",
+      "url": "https://www.artm.pref.hyogo.jp/exhibition/",
+      "current": null,
+      "errors": [
+        "https://www.artm.pref.hyogo.jp/exhibition/: HTTP 503"
+      ]
+    },
+    {
+      "city": "osaka",
+      "slug": "ichion-contemporary",
+      "name": "ICHION CONTEMPORARY",
+      "url": "https://ichion-contemporary.com/exhibition/",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "itsuo-art-museum",
+      "name": "Itsuo Art Museum",
+      "url": "https://www.hankyu-bunka.or.jp/itsuo-museum/exhibition/",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "osaka-geidai-whatsnew",
+      "name": "Osaka University of Arts",
+      "url": "https://www.osaka-geidai.ac.jp/whatsnew",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "issey-miyake-semba-creation-space",
+      "name": "ISSEY MIYAKE SEMBA | CREATION SPACE",
+      "url": "https://www.isseymiyake.com/blogs/sembacreationspace",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "takeo-exhibitions",
+      "name": "TAKEO Exhibitions",
+      "url": "https://www.takeo.co.jp/en/exhibition/",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "osaka-nihon-mingeikan",
+      "name": "Osaka Nihon Mingeikan",
+      "url": "https://www.mingeikan-osaka.or.jp/",
+      "current": null
+    },
+    {
+      "city": "osaka",
+      "slug": "yoshiaki-inoue-gallery",
+      "name": "Yoshiaki Inoue Gallery",
+      "url": "https://gallery-inoue.com/",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "atelier-muji-ginza",
+      "name": "ATELIER MUJI GINZA",
+      "url": "https://atelier.muji.com/jp/exhibition/",
+      "current": null,
+      "errors": [
+        "https://atelier.muji.com/jp/exhibition/: HTTP 429"
+      ]
+    },
+    {
+      "city": "tokyo",
+      "slug": "ginza-graphic-gallery",
+      "name": "ginza graphic gallery",
+      "url": "https://www.dnpfcp.jp/CGI/gallery/schedule/list.cgi?t=1&l=2",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "mori-art-museum",
+      "name": "Mori Art Museum",
+      "url": "https://www.mori.art.museum/en/exhibitions/",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "national-museum-of-modern-art-tokyo",
+      "name": "The National Museum of Modern Art",
+      "url": "https://www.momat.go.jp/en/exhibitions",
+      "current": null,
+      "errors": [
+        "https://www.momat.go.jp/en/exhibitions: HTTP 403"
+      ]
+    },
+    {
+      "city": "tokyo",
+      "slug": "tokyo-metropolitan-art-museum",
+      "name": "Metropolitan Art Museum",
+      "url": "https://www.tobikan.jp/en/exhibition/",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "setagaya-art-museum",
+      "name": "Setagaya Art Museum",
+      "url": "https://www.setagayaartmuseum.or.jp/en/exhibition/special/",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "perrotin-tokyo",
+      "name": "Perrotin Tokyo",
+      "url": "https://www.perrotin.com/en/agenda",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "nanzuka",
+      "name": "NANZUKA",
+      "url": "https://nanzuka.com/en/exhibitions",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "kenji-taki-gallery",
+      "name": "KENJI TAKI GALLERY",
+      "url": "https://www.kenjitaki.com/pages/info.html",
+      "current": null,
+      "errors": [
+        "https://www.kenjitaki.com/pages/info.html: HTTP 404"
+      ]
+    },
+    {
+      "city": "tokyo",
+      "slug": "taro-nasu-gallery",
+      "name": "TARO NASU",
+      "url": "https://www.taronasugallery.com/en/",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "issey-miyake-ginza-cube",
+      "name": "ISSEY MIYAKE GINZA | CUBE",
+      "url": "https://www.isseymiyake.com/blogs/cube",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "issey-miyake-shinjuku-shikaku",
+      "name": "ISSEY MIYAKE SHINJUKU | SHIKAKU",
+      "url": "https://www.isseymiyake.com/blogs/shikaku",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "curation-fair-tokyo",
+      "name": "CURATION⇄FAIR Tokyo",
+      "url": "https://curation-fair.com/en/news/tokyo",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "18-murata",
+      "name": "18, Murata",
+      "url": "https://18murata.com/",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "4649",
+      "name": "4649",
+      "url": "https://4-6-4-9.jp/",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "kayokoyuki",
+      "name": "KAYOKOYUKI",
+      "url": "https://www.kayokoyuki.com/jp/exhibition.php",
+      "current": null
+    },
+    {
+      "city": "tokyo",
+      "slug": "parcel-tokyo",
+      "name": "PARCEL",
+      "url": "https://parceltokyo.jp/exhibition/",
+      "current": null
+    },
+    {
+      "city": "hong-kong",
+      "slug": "m-plus",
+      "name": "M+",
+      "url": "https://www.mplus.org.hk/en/exhibitions/",
+      "current": null
+    },
+    {
+      "city": "hong-kong",
+      "slug": "asia-society-hong-kong",
+      "name": "Asia Society Hong Kong Center",
+      "url": "https://asiasociety.org/hong-kong/exhibitions",
+      "current": null,
+      "errors": [
+        "https://asiasociety.org/hong-kong/exhibitions: HTTP 403"
+      ]
+    },
+    {
+      "city": "hong-kong",
+      "slug": "asia-art-archive",
+      "name": "Asia Art Archive",
+      "url": "https://aaa.org.hk/en/programmes/programmes",
+      "current": null
+    },
+    {
+      "city": "hong-kong",
+      "slug": "gagosian-hong-kong",
+      "name": "Gagosian Hong Kong",
+      "url": "https://gagosian.com/exhibitions/archive/?as_list=&locations=hong-kong",
+      "current": null,
+      "errors": [
+        "https://gagosian.com/exhibitions/archive/?as_list=&locations=hong-kong: HTTP 403"
+      ]
+    },
+    {
+      "city": "hong-kong",
+      "slug": "villepin",
+      "name": "Villepin",
+      "url": "https://www.villepinart.com/exhibitions-hong-kong",
+      "current": null
+    }
+  ]
+}

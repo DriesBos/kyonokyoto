@@ -4,6 +4,7 @@
   "sources": [
     {
       "slug": "blindspot-gallery",
+      "instagram": "blindspotgallery",
       "name": "Blindspot Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -80,6 +81,7 @@
     },
     {
       "slug": "rossi-and-rossi",
+      "instagram": "rossiandrossi",
       "name": "Rossi & Rossi",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -106,6 +108,7 @@
     },
     {
       "slug": "hkdi-gallery",
+      "instagram": "hkdi.gallery",
       "name": "HKDI Gallery",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -130,6 +133,7 @@
     },
     {
       "slug": "empty-gallery",
+      "instagram": "emptygallery.hk",
       "name": "Empty Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -152,6 +156,7 @@
     },
     {
       "slug": "hong-kong-art-school-gallery",
+      "instagram": "hongkongartschool",
       "name": "The Gallery of Hong Kong Art School",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -202,6 +207,7 @@
     },
     {
       "slug": "david-zwirner",
+      "instagram": "davidzwirner",
       "name": "David Zwirner",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -250,6 +256,7 @@
     },
     {
       "slug": "whitestone-gallery-hong-kong",
+      "instagram": "whitestonegallery.official",
       "landing_slider": true,
       "name": "Whitestone Gallery Hong Kong",
       "taxonomy": {
@@ -283,6 +290,7 @@
     },
     {
       "slug": "white-cube-hong-kong",
+      "instagram": "whitecube",
       "landing_slider": true,
       "name": "White Cube Hong Kong",
       "taxonomy": {
@@ -311,6 +319,7 @@
     },
     {
       "slug": "blue-lotus-gallery",
+      "instagram": "bluelotusgallery",
       "name": "Blue Lotus Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -333,6 +342,7 @@
     },
     {
       "slug": "contemporary-by-angela-li",
+      "instagram": "cbalhk",
       "name": "Contemporary by Angela Li",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -355,6 +365,7 @@
     },
     {
       "slug": "ben-brown",
+      "instagram": "benbrownfinearts",
       "name": "Ben Brown",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -377,6 +388,7 @@
     },
     {
       "slug": "hong-kong-palace-museum",
+      "instagram": "hongkongpalacemuseum",
       "landing_slider": true,
       "name": "Hong Kong Palace Museum",
       "taxonomy": {
@@ -406,6 +418,7 @@
     },
     {
       "slug": "para-site",
+      "instagram": "parasite.hk",
       "name": "Para Site",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -430,6 +443,7 @@
     },
     {
       "slug": "oi-art-space",
+      "instagram": "apohere.hk",
       "name": "Oi!",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -463,6 +477,7 @@
     },
     {
       "slug": "videotage",
+      "instagram": "videotage_hk",
       "name": "Videotage",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -487,6 +502,7 @@
     },
     {
       "slug": "one-a-space",
+      "instagram": "1a_space",
       "name": "1a space",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -517,6 +533,7 @@
     },
     {
       "slug": "hong-kong-arts-centre",
+      "instagram": "hongkongartscentre",
       "name": "Hong Kong Arts Centre",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -551,6 +568,7 @@
     },
     {
       "slug": "pmq",
+      "instagram": "pmqhkdesign",
       "name": "PMQ",
       "taxonomy": {
         "venue_category": ["institute", "gallery"],
@@ -582,6 +600,7 @@
     },
     {
       "slug": "gallery-exit",
+      "instagram": "galleryexit",
       "name": "Gallery EXIT",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -616,6 +635,7 @@
     },
     {
       "slug": "sin-sin-fine-art",
+      "instagram": "sinsinfineart",
       "name": "Sin Sin Fine Art",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -644,6 +664,7 @@
     },
     {
       "slug": "13a-new-street-art-gallery",
+      "instagram": "13anewstreet",
       "name": "13A New Street Art Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -678,6 +699,7 @@
     },
     {
       "slug": "jps-gallery-hong-kong",
+      "instagram": "jpsgallery",
       "name": "JPS Gallery Hong Kong",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -735,6 +757,7 @@
     },
     {
       "slug": "10-chancery-lane-gallery",
+      "instagram": "10chancerylanegallery",
       "landing_slider": true,
       "name": "10 Chancery Lane Gallery",
       "taxonomy": {
@@ -762,6 +785,7 @@
     },
     {
       "slug": "hanart-tz-gallery",
+      "instagram": "hanarttzgallery",
       "name": "Hanart TZ Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -788,6 +812,7 @@
     },
     {
       "slug": "galerie-du-monde",
+      "instagram": "galeriedumonde",
       "name": "Galerie du Monde",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -811,6 +836,7 @@
     },
     {
       "slug": "ora-ora",
+      "instagram": "galerieoraora",
       "name": "Ora-Ora",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -837,6 +863,7 @@
     },
     {
       "slug": "grotto-fine-art",
+      "instagram": "grottofineart",
       "name": "Grotto Fine Art",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -870,6 +897,7 @@
     },
     {
       "slug": "kwai-fung-hin",
+      "instagram": "kwaifunghin",
       "name": "Kwai Fung Hin Art Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -897,6 +925,7 @@
     },
     {
       "slug": "kiang-malingue",
+      "instagram": "kiangmalingue",
       "name": "Kiang Malingue",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -930,6 +959,7 @@
     },
     {
       "slug": "soluna-fine-art",
+      "instagram": "solunafineart",
       "name": "Soluna Fine Art",
       "taxonomy": {
         "venue_category": ["gallery"],

@@ -4,6 +4,7 @@
   "sources": [
     {
       "slug": "kyoto-art-center",
+      "instagram": "kyotoartcenter",
       "name": "Kyoto Art Center",
       "names": {
         "en": "Kyoto Art Center",
@@ -37,6 +38,7 @@
     },
     {
       "slug": "kyoto-national-museum",
+      "instagram": "kyotonatmuseum",
       "name": "Kyoto National Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -159,6 +161,7 @@
     },
     {
       "slug": "kyotographie",
+      "instagram": "kyotographie",
       "name": "KYOTOGRAPHIE",
       "taxonomy": {
         "venue_category": ["festival"],
@@ -188,6 +191,7 @@
     },
     {
       "slug": "art-rhizome-kyoto",
+      "instagram": "artrhizomekyoto",
       "name": "Art Rhizome",
       "names": {
         "en": "Art Rhizome",
@@ -243,6 +247,7 @@
     },
     {
       "slug": "kyoto-experiment",
+      "instagram": "kyotoexperiment",
       "name": "EXPERIMENT",
       "names": {
         "en": "EXPERIMENT 2026",
@@ -297,6 +302,7 @@
     },
     {
       "slug": "kyoto-youme-triennale",
+      "instagram": "youme_kyototriennale",
       "name": "YouMe Triennale",
       "names": {
         "en": "YouMe Triennale",
@@ -356,6 +362,7 @@
     },
     {
       "slug": "kyoto-modern-architecture-festival",
+      "instagram": "kenchikusai",
       "name": "Modern Architecture Festival",
       "names": {
         "en": "Modern Architecture Festival",
@@ -472,6 +479,7 @@
     },
     {
       "slug": "art-collaboration-kyoto",
+      "instagram": "artcollaborationkyoto",
       "name": "Art Collaboration",
       "taxonomy": {
         "venue_category": ["fair"],
@@ -595,6 +603,7 @@
     },
     {
       "slug": "hosoo-gallery",
+      "instagram": "hosoogallery",
       "name": "HOSOO GALLERY",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -624,6 +633,7 @@
     },
     {
       "slug": "huko",
+      "instagram": "huko_kyoto",
       "name": "HUKO",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -661,6 +671,7 @@
     },
     {
       "slug": "hakari-contemporary",
+      "instagram": "hakari_contemporary",
       "name": "hakari contemporary",
       "names": {
         "en": "hakari contemporary",
@@ -718,6 +729,7 @@
     },
     {
       "slug": "gallery-yamahon",
+      "instagram": "gallery_yamahon",
       "name": "Gallery Yamahon",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -748,6 +760,7 @@
     },
     {
       "slug": "gallery-baiken",
+      "instagram": "gallery_baiken_kyoto",
       "name": "Gallery Baiken",
       "names": {
         "en": "Gallery Baiken",
@@ -797,6 +810,7 @@
     },
     {
       "slug": "kyotophonie",
+      "instagram": "kyotophonie_",
       "name": "KYOTOPHONIE",
       "taxonomy": {
         "venue_category": ["festival"],
@@ -826,6 +840,7 @@
     },
     {
       "slug": "taka-ishii-gallery",
+      "instagram": "takaishiigallery",
       "name": "Taka Ishii Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -858,6 +873,7 @@
     },
     {
       "slug": "sibasi",
+      "instagram": "sibasikyoto",
       "name": "Sibasi",
       "taxonomy": {
         "venue_category": ["cafe"],
@@ -890,6 +906,7 @@
     },
     {
       "slug": "kojin",
+      "instagram": "kojin_kyoto",
       "name": "Kojin",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -978,6 +995,7 @@
     },
     {
       "slug": "zenbi",
+      "instagram": "zenbinokancho",
       "name": "ZENBI",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1037,6 +1055,7 @@
     },
     {
       "slug": "mtk",
+      "instagram": "mtkcontemporaryart",
       "name": "MTK",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1111,6 +1130,7 @@
     },
     {
       "slug": "kyoto-city-kyocera-museum-of-art",
+      "instagram": "kyotocitykyoceramuseum",
       "name": "KYOCERA Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1144,6 +1164,7 @@
     },
     {
       "slug": "momak",
+      "instagram": "momakyoto",
       "name": "MoMAK",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1234,6 +1255,7 @@
     },
     {
       "slug": "sen-oku-hakukokan",
+      "instagram": "senokuhakukokanmuseum",
       "name": "Sen-Oku Hakukokan",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1263,6 +1285,7 @@
     },
     {
       "slug": "gallery-morning-kyoto",
+      "instagram": "gallerymorningkyoto",
       "name": "Gallery Morning Kyoto",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1301,6 +1324,7 @@
     },
     {
       "slug": "nonaka-hill",
+      "instagram": "nonakahillgallery",
       "name": "Nonaka-Hill",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1330,6 +1354,7 @@
     },
     {
       "slug": "kcua",
+      "instagram": "gallery_akcua",
       "name": "KCUA",
       "taxonomy": {
         "venue_category": ["campus"],
@@ -1418,6 +1443,7 @@
     },
     {
       "slug": "the-terminal-kyoto",
+      "instagram": "theterminalkyoto",
       "name": "The Terminal Kyoto",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1511,6 +1537,7 @@
     },
     {
       "slug": "imura-art",
+      "instagram": "imuraartgallery",
       "name": "Imura Art",
       "names": {
         "en": "Imura Art",
@@ -1570,6 +1597,7 @@
     },
     {
       "slug": "purple-purple",
+      "instagram": "purple_kyoto",
       "name": "Purple Purple",
       "names": {
         "en": "Purple Purple",
@@ -1618,6 +1646,7 @@
     },
     {
       "slug": "kyotoba",
+      "instagram": "kyoto_ba",
       "name": "KyotoBa",
       "names": {
         "en": "KyotoBa",
@@ -1663,6 +1692,7 @@
     },
     {
       "slug": "sokyo-kyoto",
+      "instagram": "sokyo_gallery",
       "name": "Sokyo Kyoto",
       "names": {
         "en": "Sokyo Kyoto",
@@ -1720,6 +1750,7 @@
     },
     {
       "slug": "raku-museum",
+      "instagram": "rakumuseum_kyoto",
       "name": "Raku Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1753,6 +1784,7 @@
     },
     {
       "slug": "kusakabe-gallery",
+      "instagram": "kusakabegallery",
       "name": "Kusakabe Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1789,6 +1821,7 @@
     },
     {
       "slug": "kuramonzen",
+      "instagram": "kura.monzen",
       "name": "Kuramonzen",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1829,6 +1862,7 @@
     },
     {
       "slug": "oscaar-mouligne",
+      "instagram": "oscaar.mouligne",
       "name": "Oscaar Mouligne",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1889,6 +1923,7 @@
     },
     {
       "slug": "samac",
+      "instagram": "sabunkakan",
       "name": "SAMAC",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1940,6 +1975,7 @@
     },
     {
       "slug": "fukuda-art-museum",
+      "instagram": "fukuda_art_museum",
       "name": "Fukuda Art Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1978,6 +2014,7 @@
     },
     {
       "slug": "oyamazaki-villa-museum",
+      "instagram": "asahibeer.oyamazaki",
       "name": "Oyamazaki Villa Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -2153,6 +2190,7 @@
     },
     {
       "slug": "gallery-take-two",
+      "instagram": "gallery_taketwo",
       "name": "Gallery Take Two",
       "names": {
         "en": "Gallery Take Two",
@@ -2195,6 +2233,7 @@
     },
     {
       "slug": "arts-science-kyoto",
+      "instagram": "arts_and_science",
       "name": "ARTS&SCIENCE Kyoto",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -2338,6 +2377,7 @@
     },
     {
       "slug": "karimoku-commons-kyoto",
+      "instagram": "karimoku_official",
       "name": "Karimoku Commons Kyoto",
       "names": {
         "en": "Karimoku Commons Kyoto",
@@ -2574,6 +2614,7 @@
     },
     {
       "slug": "mori-yu-gallery",
+      "instagram": "moriyugallery",
       "name": "MORI YU GALLERY",
       "names": {
         "en": "MORI YU GALLERY",
@@ -2638,6 +2679,7 @@
     },
     {
       "slug": "shibunkaku",
+      "instagram": "shibunkaku",
       "name": "Shibunkaku",
       "names": {
         "en": "Shibunkaku",

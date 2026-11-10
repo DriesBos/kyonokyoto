@@ -4,6 +4,7 @@
   "sources": [
     {
       "slug": "21-21-design-sight",
+      "instagram": "2121designsight",
       "name": "21_21 DESIGN SIGHT",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -70,6 +71,7 @@
     },
     {
       "slug": "artizon-museum",
+      "instagram": "artizonmuseum",
       "name": "Artizon Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -259,6 +261,7 @@
     },
     {
       "slug": "museum-of-contemporary-art-tokyo",
+      "instagram": "mot_museum_art_tokyo",
       "name": "Museum of Contemporary Art",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -303,6 +306,7 @@
     },
     {
       "slug": "national-art-center-tokyo",
+      "instagram": "thenationalartcentertokyo",
       "name": "The National Art Center",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -433,6 +437,7 @@
     },
     {
       "slug": "tokyo-opera-city-art-gallery",
+      "instagram": "operacity_ag",
       "name": "Opera City Art Gallery",
       "names": {
         "en": "Opera City Art Gallery",
@@ -477,6 +482,7 @@
     },
     {
       "slug": "tokyo-photographic-art-museum",
+      "instagram": "topmuseum",
       "name": "Photographic Art Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -512,6 +518,7 @@
     },
     {
       "slug": "sumida-hokusai-museum",
+      "instagram": "hokusai_museum",
       "name": "The Sumida Hokusai Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -553,6 +560,7 @@
     },
     {
       "slug": "yayoi-kusama-museum",
+      "instagram": "yayoikusamamuseum",
       "name": "Yayoi Kusama Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -591,6 +599,7 @@
     },
     {
       "slug": "scai-the-bathhouse",
+      "instagram": "scaithebathhouse",
       "name": "SCAI The Bathhouse",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -639,6 +648,7 @@
     },
     {
       "slug": "scai-piramide",
+      "instagram": "scaithebathhouse",
       "name": "SCAI Piramide",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -686,6 +696,7 @@
     },
     {
       "slug": "scai-park",
+      "instagram": "scaithebathhouse",
       "name": "SCAI Park",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -734,6 +745,7 @@
     },
     {
       "slug": "ota-fine-arts",
+      "instagram": "otafinearts",
       "name": "OTA FINE ARTS",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -765,6 +777,7 @@
     },
     {
       "slug": "take-ninagawa",
+      "instagram": "takeninagawa",
       "name": "Take Ninagawa",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -792,6 +805,7 @@
     },
     {
       "slug": "taro-okamoto-memorial-museum",
+      "instagram": "taro_okamoto_memorial_museum",
       "name": "Taro Okamoto Memorial Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -854,6 +868,7 @@
     },
     {
       "slug": "university-art-museum-tokyo-geidai",
+      "instagram": "geidai_museum",
       "name": "Tokyo University of the Arts",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -939,6 +954,7 @@
     },
     {
       "slug": "yamatane-museum-of-art",
+      "instagram": "yamatane_museum",
       "name": "Yamatane Museum of Art",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -981,6 +997,7 @@
     },
     {
       "slug": "japan-folk-crafts-museum",
+      "instagram": "nihon_mingeikan",
       "name": "Japan Folk Crafts Museum",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1099,6 +1116,7 @@
     },
     {
       "slug": "maho-kubota-gallery",
+      "instagram": "mahokubotagallery",
       "name": "MAHO KUBOTA GALLERY",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1132,6 +1150,7 @@
     },
     {
       "slug": "lurf-museum",
+      "instagram": "lurfgallery",
       "name": "Lurf MUSEUM",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1166,6 +1185,7 @@
     },
     {
       "slug": "gyre-gallery",
+      "instagram": "gyre_omotesando",
       "name": "GYRE GALLERY",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1200,6 +1220,7 @@
     },
     {
       "slug": "yutaka-kikutake-gallery",
+      "instagram": "yutakakikutakegallery",
       "name": "Yutaka Kikutake Gallery",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1256,6 +1277,7 @@
     },
     {
       "slug": "standing-pine-tokyo",
+      "instagram": "standing_pine",
       "name": "STANDING PINE Tokyo",
       "taxonomy": {
         "venue_category": ["gallery"],
@@ -1314,6 +1336,7 @@
     },
     {
       "slug": "tokyo-node",
+      "instagram": "tokyonode",
       "name": "TOKYO NODE",
       "taxonomy": {
         "venue_category": ["institute"],
@@ -1392,6 +1415,7 @@
     },
     {
       "slug": "play-museum",
+      "instagram": "play_2020_04",
       "name": "PLAY! MUSEUM",
       "taxonomy": {
         "venue_category": ["museum"],
@@ -1426,6 +1450,7 @@
     },
     {
       "slug": "pola-museum-annex",
+      "instagram": "pola_annex",
       "name": "Pola Museum Annex",
       "taxonomy": {
         "venue_category": ["museum", "gallery"],
@@ -1755,6 +1780,7 @@
     },
     {
       "slug": "anomaly-tokyo",
+      "instagram": "anomaly_tokyo",
       "name": "ANOMALY",
       "names": {
         "en": "ANOMALY",
@@ -1816,6 +1842,7 @@
     },
     {
       "slug": "con-tokyo",
+      "instagram": "con_tokyo_",
       "name": "CON_",
       "names": {
         "en": "CON_",
@@ -1882,6 +1909,7 @@
     },
     {
       "slug": "hagiwara-projects",
+      "instagram": "hagiwara_projects",
       "name": "HAGIWARA PROJECTS",
       "names": {
         "en": "HAGIWARA PROJECTS",
@@ -1998,6 +2026,7 @@
     },
     {
       "slug": "koki-arts",
+      "instagram": "kokiarts",
       "name": "KOKI ARTS",
       "names": {
         "en": "KOKI ARTS"
@@ -2060,6 +2089,7 @@
     },
     {
       "slug": "kotaro-nukaga",
+      "instagram": "kotaro_nukaga",
       "name": "KOTARO NUKAGA",
       "names": {
         "en": "KOTARO NUKAGA",
@@ -2122,6 +2152,7 @@
     },
     {
       "slug": "misako-and-rosen",
+      "instagram": "misakoandrosen",
       "name": "MISAKO & ROSEN",
       "names": {
         "en": "MISAKO & ROSEN",
@@ -2184,6 +2215,7 @@
     },
     {
       "slug": "mizuma-art-gallery",
+      "instagram": "mizumaartgallery",
       "name": "Mizuma Art Gallery",
       "names": {
         "en": "Mizuma Art Gallery",
@@ -2304,6 +2336,7 @@
     },
     {
       "slug": "sho-plus-1",
+      "instagram": "shoplus1",
       "name": "Sho+1",
       "names": {
         "en": "Sho+1",
@@ -2366,6 +2399,7 @@
     },
     {
       "slug": "shugoarts",
+      "instagram": "shugoarts",
       "name": "ShugoArts",
       "names": {
         "en": "ShugoArts",
@@ -2427,6 +2461,7 @@
     },
     {
       "slug": "taka-ishii-gallery-tokyo",
+      "instagram": "takaishiigallery",
       "name": "Taka Ishii Gallery Roppongi",
       "names": {
         "en": "Taka Ishii Gallery Roppongi",
@@ -2489,6 +2524,7 @@
     },
     {
       "slug": "takuro-someya-contemporary-art",
+      "instagram": "tsca_tokyo",
       "name": "Takuro Someya Contemporary Art",
       "names": {
         "en": "Takuro Someya Contemporary Art",
@@ -2551,6 +2587,7 @@
     },
     {
       "slug": "tokyo-gallery-btap",
+      "instagram": "tokyogallery_btap",
       "name": "Tokyo Gallery + BTAP",
       "names": {
         "en": "Tokyo Gallery + BTAP",
@@ -2613,6 +2650,7 @@
     },
     {
       "slug": "tomio-koyama-gallery",
+      "instagram": "tomiokoyamagallery",
       "name": "Tomio Koyama Gallery",
       "names": {
         "en": "Tomio Koyama Gallery",
