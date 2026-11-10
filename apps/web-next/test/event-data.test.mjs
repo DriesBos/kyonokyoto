@@ -38,7 +38,7 @@ test('V2 event mapper preserves source, calendar, image and media contracts', as
   assert.match(source, /googleCalendarUrl:/);
   assert.match(source, /appleCalendar,/);
   assert.match(source, /mediaEmbeds: normalizeYouTubeEmbeds/);
-  assert.match(source, /group: eventDisplayGroup/);
+  assert.match(source, /const group = eventDisplayGroup/);
   assert.match(source, /sourceSlug: truth\.slug/);
   assert.match(source, /landingEligible: Boolean/);
   assert.match(source, /group: 'permanent'/);
@@ -76,7 +76,8 @@ test('Temples & Gardens taxonomy stays optional for existing configs and localiz
   const cityEvents = await readFile(new URL('cityEvents.ts', lib), 'utf8');
   const translations = await readFile(new URL('i18n.ts', lib), 'utf8');
   assert.match(categories, /'historic-site',[\s\S]*'garden'/);
-  assert.doesNotMatch(categories, /'temple'|'shrine'/);
+  // temple/shrine are filter sub-picks derived from venue names, never taxonomy tags
+  assert.doesNotMatch(categories.slice(0, categories.indexOf('export const CATEGORY_DIMENSIONS')), /'temple'|'shrine'/);
   assert.match(translations, /historicSite: 'Historic Site'/);
   assert.match(translations, /garden: '庭園'/);
   assert.match(cityEvents, /'venue_category:temple': 'venue_category:historic-site'/);

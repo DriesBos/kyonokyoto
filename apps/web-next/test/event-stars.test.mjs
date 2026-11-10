@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
+  parseStarredEntries,
   parseStarredIds,
+  toggleStarredEntry,
   toggleStarredId,
   STARRED_EVENTS_KEY,
   STARS_UPDATED_EVENT,
@@ -20,6 +22,49 @@ test('parseStarredIds tolerates junk and drops duplicates', () => {
   assert.deepEqual(parseStarredIds('not json'), []);
   assert.deepEqual(parseStarredIds('{"a":1}'), []);
   assert.deepEqual(parseStarredIds('["a", 2, "", "b", "a"]'), ['a', 'b']);
+});
+
+test('v1 string arrays still read as entries without dates', () => {
+  assert.deepEqual(parseStarredEntries('["a","b"]'), [
+    { id: 'a', savedAt: null, endsAt: null },
+    { id: 'b', savedAt: null, endsAt: null },
+  ]);
+});
+
+test('v2 entries read, mixed with v1 ids, junk and duplicates dropped', () => {
+  const raw = JSON.stringify([
+    { id: 'a', savedAt: '2026-11-01T00:00:00.000Z', endsAt: '2026-12-01' },
+    'b',
+    { id: 'c', savedAt: 5, endsAt: null },
+    { id: '' },
+    { nope: true },
+    null,
+    { id: 'a', endsAt: null },
+  ]);
+  assert.deepEqual(parseStarredEntries(raw, Date.parse('2026-11-10')), [
+    { id: 'a', savedAt: '2026-11-01T00:00:00.000Z', endsAt: '2026-12-01' },
+    { id: 'b', savedAt: null, endsAt: null },
+    { id: 'c', savedAt: null, endsAt: null },
+  ]);
+  assert.deepEqual(parseStarredIds(raw, Date.parse('2026-11-10')), ['a', 'b', 'c']);
+});
+
+test('entries whose event ended more than 30 days ago are pruned', () => {
+  const now = Date.parse('2026-11-10T00:00:00Z');
+  const raw = JSON.stringify([
+    { id: 'old', savedAt: null, endsAt: '2026-10-01' }, // 40 days ago
+    { id: 'recent', savedAt: null, endsAt: '2026-10-20' }, // 21 days ago
+    { id: 'edge', savedAt: null, endsAt: '2026-10-11T00:00:00Z' }, // exactly 30 days
+    { id: 'permanent', savedAt: null, endsAt: null },
+    { id: 'bad-date', savedAt: null, endsAt: 'soon' },
+  ]);
+  assert.deepEqual(parseStarredIds(raw, now), ['recent', 'edge', 'permanent', 'bad-date']);
+});
+
+test('toggleStarredEntry stores id, savedAt and endsAt, and removes', () => {
+  const added = toggleStarredEntry([], 'a', '2026-12-01', '2026-11-10T00:00:00.000Z');
+  assert.deepEqual(added, [{ id: 'a', savedAt: '2026-11-10T00:00:00.000Z', endsAt: '2026-12-01' }]);
+  assert.deepEqual(toggleStarredEntry(added, 'a', null), []);
 });
 
 test('toggleStarredId adds and removes', () => {

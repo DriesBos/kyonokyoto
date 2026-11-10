@@ -47,7 +47,11 @@
   // both sides match for normal cards. Only the back's dx along the offset is added; lifted (.tall,
   // hovered, expanded) fronts deliberately poke (depth - 1) * dx past the gap so they stand out.
   --grid-side-gap: calc(8 * var(--space))
-  padding: calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, var(--block-dx, var(--space-offset, 1.5rem)))) calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) calc(var(--grid-side-gap) + max(0px, -1 * var(--block-dx, var(--space-offset, 1.5rem))))
+  // ...but never past the panel edge: each side is at least a lifted+hovered tall front's poke
+  // ((lift + 0.25 - 1) * dx) plus half a space unit (Dries 2026-11-10, cards overflowed the viewport).
+  --grid-poke-left: calc((var(--block-lift, 2) - 0.75) * max(0px, var(--block-dx, var(--space-offset, 1.5rem))) + var(--space) / 2)
+  --grid-poke-right: calc((var(--block-lift, 2) - 0.75) * max(0px, -1 * var(--block-dx, var(--space-offset, 1.5rem))) + var(--space) / 2)
+  padding: calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) max(calc(var(--grid-side-gap) + max(0px, var(--block-dx, var(--space-offset, 1.5rem)))), var(--grid-poke-right)) calc(4 * var(--space) + max(var(--block-dy, var(--space-offset, 1.5rem)), -1 * var(--block-dy, var(--space-offset, 1.5rem))) * var(--block-lift, 2)) max(calc(var(--grid-side-gap) + max(0px, -1 * var(--block-dx, var(--space-offset, 1.5rem)))), var(--grid-poke-left))
 
 // Side gap: wide > 1728px, desktop <= 1728px, tablet <= 1280px, mobile <= 768px. Like the
 // columns, the container queries (events panel width) win over the viewport fallback.
@@ -171,14 +175,41 @@
   width: 100%
   margin-block: 5vmin
 
-.emptyState,
-.filteredEmpty
+.emptyState
   padding: 10vmin 2rem
   text-align: center
 
   h2,
   p
     margin: 0
+
+// Shown when the filters hide every card: centred in the space between header and footer,
+// heading in the venue pages' "NO EVENTS FOUND" style, then the "unset filters" button.
+.filteredEmpty
+  display: flex
+  flex: 1 0 auto
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  gap: var(--control-gap, 1rem)
+  min-height: 12rem
+  padding: 10vmin 2rem
+  text-align: center
+
+  &[hidden]
+    display: none
+
+  // every card hidden: drop the empty grid (and its padding) so the message sits mid-page
+  &:not([hidden]) ~ .grid
+    display: none
+
+  h2
+    margin: 0
+    font-size: var(--type-meta-size)
+    font-weight: inherit
+    line-height: normal
+    letter-spacing: -0.01em
+    text-transform: uppercase
 
 .block
   position: relative
@@ -355,6 +386,28 @@
 
   p
     margin: 0
+
+.venueLink
+  position: relative
+  z-index: 3
+  // the venue line sits above the card's disclosure button, so it opens the venue page
+
+  a
+    color: inherit
+    text-decoration: none
+    // WCAG 2.5.8 target size: a 24px-tall hit area without moving the line.
+    display: inline-block
+    padding-block: 7px
+    margin-block: -7px
+
+    @media (hover: hover)
+      &:hover
+        text-decoration: underline
+        text-underline-offset: 0.2em
+
+    &:focus-visible
+      text-decoration: underline
+      text-underline-offset: 0.2em
 
 .festivalMeta
   position: relative

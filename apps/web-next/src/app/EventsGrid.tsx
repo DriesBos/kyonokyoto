@@ -6,12 +6,15 @@ import type { AppCity } from '@/lib/cities';
 import { type CityEvent, mapLocationIdForEvent } from '@/lib/cityEvents';
 import { imageCdnEnabled } from '@/lib/env';
 import { festivalPathFor } from '@/lib/festivalRoutes';
+import { venuePathFor } from '@/lib/venueRoutes';
 import { withoutCalendarDetails } from '@/lib/appleCalendar';
 import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
 import { EventCardMediaDots, EventCardMediaPager } from './EventCardMediaPager';
 import BoxCluster from './BoxCluster';
 import EventStarButton from './EventStarButton';
+import UnsetFiltersButton from './UnsetFiltersButton';
+import { LastWeekPill } from './LastWeekBadge';
 import { BoxEdge, BoxSides } from './blocks/BoxFrame';
 import styles from './blocks/page.module.sass';
 
@@ -26,11 +29,14 @@ export default function EventsGrid({
   locale,
   cityLabel,
   city,
+  linkVenues = true,
 }: {
   events: CityEvent[];
   locale: AppLocale;
   cityLabel: string;
   city: AppCity;
+  // Off on a venue page, where every card is that venue.
+  linkVenues?: boolean;
 }) {
   const copy = uiText[locale];
   const groups = Object.fromEntries(
@@ -52,7 +58,7 @@ export default function EventsGrid({
     <>
       <div className={styles.filteredEmpty} data-filter-empty hidden>
         <h2>{copy.noEvents}</h2>
-        <p>{copy.unsetFilters}</p>
+        <UnsetFiltersButton label={copy.unsetFilters} />
       </div>
       <ExpandableGrid className={styles.grid} ariaLabel={`${cityLabel} events`}>
         {groupOrder.map((group, groupIndex) => {
@@ -99,7 +105,8 @@ export default function EventsGrid({
                       data-event-id={event.id}
                       data-event-group-name={event.group}
                       data-beta={event.beta || undefined}
-                      data-categories={event.categories.join('|')}
+                      data-filter-tags={(event.filterTags ?? []).join('|')}
+                      data-ends-soon={event.endsSoon || undefined}
                       data-source={event.sourceSlug ?? undefined}
                       data-map-location-id={mapLocationIdForEvent(event) ?? undefined}
                       key={event.id}
@@ -130,8 +137,10 @@ export default function EventsGrid({
                               title: `${event.title} video`,
                             }))}
                           />
+                          {event.endsSoon ? <LastWeekPill label={copy.lastWeek} /> : null}
                           <EventStarButton
                             eventId={event.id}
+                            endsAt={event.group === 'permanent' ? null : event.calendarEndsAt}
                             label={event.title}
                             starLabel={copy.starEvent}
                             unstarLabel={copy.unstarEvent}
@@ -139,11 +148,19 @@ export default function EventsGrid({
                           <div className={styles.content}>
                             <EventCardMediaDots label={locale === 'ja' ? '画像' : 'Image'} />
                             <div className={styles.meta}>
-                              <p>
-                                {event.festival
-                                  ? event.venue || event.institution
-                                  : event.institution}
-                              </p>
+                              {linkVenues && !event.festival && event.venueSlug ? (
+                                <p className={styles.venueLink}>
+                                  <a href={venuePathFor(city, locale, event.venueSlug)}>
+                                    {event.institution}
+                                  </a>
+                                </p>
+                              ) : (
+                                <p>
+                                  {event.festival
+                                    ? event.venue || event.institution
+                                    : event.institution}
+                                </p>
+                              )}
                               <p>
                                 {event.date}
                                 {event.eventKind === 'festival' ? ' — FESTIVAL' : null}

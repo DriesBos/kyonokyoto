@@ -123,13 +123,33 @@
 .group
   display: contents
 
+// Filter panel (Dries 2026-11-10): each row (when / type / sub-picks / venue) is its own block, a
+// gap apart; inside the sub-pick row each picked type's options get a smaller gap between them.
+[data-filter-options] > .group
+  display: flex
+  flex-wrap: wrap
+  justify-content: flex-end
+  flex: 0 0 100%
+
+  & + .group
+    margin-top: var(--control-gap)
+
+.subGroup
+  display: contents
+
+  & + .subGroup::before
+    content: ''
+    flex: 0 0 var(--control-gap)
+
 .cityButton [data-general-button-label]
   text-transform: capitalize
 
-// Testing aid (local builds only): images link, venues button + panel, desktop only. On phones the filter
+// Testing aid (local builds only): images link, venues button + panel, desktop only. The socials
+// link (local + preview builds) is desktop only too. On phones the filter
 // button is first again, so it takes back the edge padding.
 @media (max-width: $mobile-breakpoint)
   .imagesLink,
+  .socialsLink,
   .venuesToggle,
   .venuesPanel
     display: none !important
@@ -167,6 +187,14 @@
 
       > span:first-child
         flex: 1 1 auto
+
+  // the same justified rows inside each filter block
+  [data-filter-options] > .group
+    justify-content: flex-start
+
+    &::after
+      content: ''
+      flex: 1000 1 0
 
   .panel
     [data-filter-button],

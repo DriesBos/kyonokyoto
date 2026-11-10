@@ -12,7 +12,16 @@ import {
   type AppCity,
 } from '@/lib/cities';
 import { LOCALE_COOKIE, uiText, type AppLocale } from '@/lib/i18n';
-import { CATEGORY_DIMENSIONS } from '../../../../data/categories.mjs';
+import type { FilterOptions, FilterTiming } from '@/lib/cityEvents';
+import { FILTER_TYPES } from '../../../../data/categories.mjs';
+import {
+  FILTER_RESET_EVENT,
+  SAVED_FILTER_TOKEN,
+  filterStateFrom,
+  isFilterToken,
+  matchesCard,
+} from '@/lib/eventFilters';
+import { useStarredIds } from '@/lib/useStarredIds';
 import {
   fadeIn,
   fadeOut,
@@ -27,13 +36,13 @@ import {
 } from '@/lib/heightTransition';
 import { readLocaleHandoff, restoreLocaleHandoff, setLocaleHandoff } from '@/lib/localeHandoff';
 import { routePathFor } from '@/lib/routeState';
+import { SOCIALS_ENABLED } from '@/lib/socialPosts';
 import ColorSchemeToggle from './ColorSchemeToggle';
 import GeneralButton from './GeneralButton';
 import GridDensityControls from './GridDensityControls';
 import { BoxEdge, BoxSides, boxLift } from './blocks/BoxFrame';
 import styles from './SiteHeader.module.sass';
 
-export type HeaderCategory = { slug: string; label: string; dimension: string };
 // Local builds only (testing aid): filter the grid by source.
 export type HeaderVenue = { slug: string; label: string; count: number };
 
@@ -41,7 +50,7 @@ type SiteHeaderProps = {
   city: AppCity;
   locale: AppLocale;
   brandLabel: string;
-  categories?: HeaderCategory[];
+  filterOptions?: FilterOptions;
   venues?: HeaderVenue[];
   mapOpen: boolean;
   onMapToggle: () => void;
@@ -208,11 +217,19 @@ const sharesRootLayout = (a: AppCity, b: AppCity) => singleLocale(a) === singleL
 const localeForCity = (target: (typeof cityConfigs)[number], locale: AppLocale) =>
   target.locales.includes(locale) ? locale : defaultLocaleForCity(target);
 
+const NO_FILTER_OPTIONS: FilterOptions = {
+  timings: [],
+  types: [],
+  openTypes: [],
+  subs: {},
+  places: [],
+};
+
 export default function SiteHeader({
   city,
   locale,
   brandLabel,
-  categories = [],
+  filterOptions = NO_FILTER_OPTIONS,
   venues = [],
   mapOpen,
   onMapToggle,
@@ -221,31 +238,68 @@ export default function SiteHeader({
   // set when this page was reached through the language switch (lib/localeHandoff)
   const [handoff] = useState(() => readLocaleHandoff(locale));
   const [filterOpen, setFilterOpen] = useState(false);
+  const filterOpenRef = useRef(filterOpen);
+  filterOpenRef.current = filterOpen;
   const [citiesOpen, setCitiesOpen] = useState(false);
   const [venuesOpen, setVenuesOpen] = useState(false);
   const [activeVenues, setActiveVenues] = useState<Set<string>>(() => new Set());
-  const [activeCategories, setActiveCategories] = useState<Set<string>>(
-    () => new Set(handoff?.categories),
+  // Picked filters as tokens: type:<type>, sub:<type>:<sub>, place:<place> (data/categories.mjs).
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(
+    () => new Set(handoff?.categories.filter(isFilterToken)),
   );
   const [activeTiming, setActiveTiming] = useState(handoff?.timing ?? '');
+  // Saved (starred) filter: client-only, kept out of activeFilters so it never reaches the locale
+  // handoff or any URL. The block shows once a card on this page is starred (count from the DOM).
+  const starredIds = useStarredIds();
+  const [savedActive, setSavedActive] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
+  const showSaved = savedCount > 0;
   // apps/web keeps the header controls in English in every locale.
   const copy = uiText.en;
-  const timingFilters = [
-    { slug: 'ongoing', label: copy.ongoing },
-    { slug: 'upcoming', label: copy.upcoming },
-  ];
-  const categoryGroups = CATEGORY_DIMENSIONS.map((dimension) => ({
-    dimension,
-    categories: categories.filter((category) => category.dimension === dimension),
-  })).filter((group) => group.categories.length > 0);
-  const showFilterControls = categories.length > 0 || timingFilters.length > 0;
-  const filteringActive = activeCategories.size > 0 || Boolean(activeTiming);
+  const label = (value: string) => copy.filterLabels[value] ?? value;
+  const timingLabels: Record<FilterTiming, string> = {
+    ending: copy.endingThisWeek,
+    ongoing: copy.ongoing,
+    upcoming: copy.upcoming,
+    permanent: copy.permanent,
+  };
+  const pickedTypes = filterOptions.types.filter((type) => activeFilters.has(`type:${type}`));
+  // Sub-picks of every picked type, plus the types the whole page shares (no button of their own).
+  const subGroups = [...filterOptions.openTypes, ...pickedTypes]
+    .filter((type, index, list) => list.indexOf(type) === index)
+    .sort((a, b) => FILTER_TYPES.indexOf(a) - FILTER_TYPES.indexOf(b))
+    .map((type) => ({ type, subs: filterOptions.subs[type] ?? [] }))
+    .filter((group) => group.subs.length > 0);
+  const showFilterControls =
+    showSaved ||
+    filterOptions.timings.length > 0 ||
+    filterOptions.types.length > 0 ||
+    Object.keys(filterOptions.subs).length > 0 ||
+    filterOptions.places.length > 0;
+  const filteringActive = activeFilters.size > 0 || Boolean(activeTiming) || savedActive;
   const homeHref = routePathFor({ city, locale });
   const otherLocale = alternateLocaleForCity(city, locale);
   const currentCityLabel = cityConfigs.find((config) => config.slug === city)?.label ?? city;
   const filterPanelRef = useDisclosurePanel(filterOpen);
   const cityPanelRef = useDisclosurePanel(citiesOpen);
   const venuePanelRef = useDisclosurePanel(venuesOpen);
+  // Sub-picks appear while the panel is open (a type was picked): fade them in like the rest, since
+  // the panel's own fade only covers the buttons that were there when it opened.
+  const subGroupsKey = subGroups.map((group) => `${group.type}:${group.subs.join(',')}`).join('|');
+  const seenSubButtons = useRef(new WeakSet<HTMLElement>());
+  useLayoutEffect(() => {
+    const panel = filterPanelRef.current;
+    if (!panel) return;
+    const fresh = Array.from(
+      panel.querySelectorAll<HTMLElement>(
+        '[data-sub-filters] [data-panel-button], [data-saved-filter] [data-panel-button]',
+      ),
+    ).filter((button) => !seenSubButtons.current.has(button));
+    fresh.forEach((button) => seenSubButtons.current.add(button));
+    if (!filterOpenRef.current || fresh.length === 0) return;
+    setFadeHidden(fresh);
+    fadeIn(fresh);
+  }, [subGroupsKey, showSaved, filterPanelRef]);
   const showVenueControls = venues.length > 0;
   const mapOpenRef = useRef(mapOpen);
   mapOpenRef.current = mapOpen;
@@ -331,33 +385,28 @@ export default function SiteHeader({
   }, [filterOpen, citiesOpen, venuesOpen]);
 
   useEffect(() => {
-    const activeByDimension = new Map<string, Set<string>>();
-    categories.forEach(({ slug, dimension }) => {
-      if (!activeCategories.has(slug)) return;
-      const selected = activeByDimension.get(dimension) ?? new Set<string>();
-      selected.add(slug);
-      activeByDimension.set(dimension, selected);
-    });
+    const state = filterStateFrom(
+      savedActive ? [...activeFilters, SAVED_FILTER_TOKEN] : activeFilters,
+    );
     const groups = Array.from(document.querySelectorAll<HTMLElement>('[data-event-group]'));
     const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-event-card]'));
     let visibleGroups = 0;
+    // card[data-starred] is set by EventStarButton in a layout effect, so it is current here.
+    const starredOnPage = new Set<string>();
 
     cards.forEach((card) => {
-      const cardCategories = new Set(
-        (card.dataset.categories ?? '')
-          .split('|')
-          .map((item) => item.trim())
-          .filter(Boolean),
-      );
-      const timing =
-        card.dataset.timing ??
+      const starred = card.dataset.starred === 'true';
+      if (starred) starredOnPage.add(card.dataset.eventId ?? '');
+      const tags = new Set((card.dataset.filterTags ?? '').split('|').filter(Boolean));
+      const group =
+        card.dataset.eventGroupName ??
         card.closest<HTMLElement>('[data-event-group]')?.dataset.eventGroupName ??
         '';
-      const categoryMatches = Array.from(activeByDimension.values()).every((selected) =>
-        Array.from(selected).some((slug) => cardCategories.has(slug)),
-      );
+      const timingMatches =
+        !activeTiming ||
+        (activeTiming === 'ending' ? card.dataset.endsSoon === 'true' : group === activeTiming);
       const venueMatches = activeVenues.size === 0 || activeVenues.has(card.dataset.source ?? '');
-      const matches = categoryMatches && venueMatches && (!activeTiming || timing === activeTiming);
+      const matches = matchesCard({ tags, starred }, state) && venueMatches && timingMatches;
       card.toggleAttribute('hidden', !matches);
     });
     groups.forEach((group) => {
@@ -380,8 +429,11 @@ export default function SiteHeader({
     document
       .querySelector<HTMLElement>('[data-filter-empty]')
       ?.toggleAttribute('hidden', visibleGroups > 0);
+    setSavedCount(starredOnPage.size);
+    // Unstarring the last saved event switches the saved filter off (its block hides).
+    if (savedActive && starredOnPage.size === 0) setSavedActive(false);
     document.dispatchEvent(new CustomEvent('event-filter:updated'));
-  }, [activeCategories, activeTiming, activeVenues, categories]);
+  }, [activeFilters, activeTiming, activeVenues, savedActive, starredIds]);
 
   // After a language switch, put the reader back on the card they were looking at, once the
   // filter effect above (same commit, runs first) has hidden what it hides. React may keep this
@@ -391,13 +443,46 @@ export default function SiteHeader({
     if (pending) restoreLocaleHandoff(pending);
   }, [locale]);
 
-  const toggleCategory = (slug: string) => {
-    setActiveCategories((current) => {
+  // The empty state's "unset filters" button clears every row.
+  useEffect(() => {
+    const reset = () => {
+      setActiveFilters(new Set());
+      setActiveTiming('');
+      setActiveVenues(new Set());
+      setSavedActive(false);
+    };
+    document.addEventListener(FILTER_RESET_EVENT, reset);
+    return () => document.removeEventListener(FILTER_RESET_EVENT, reset);
+  }, []);
+
+  // Unpicking a type also drops its sub-picks.
+  const toggleFilter = (token: string) => {
+    setActiveFilters((current) => {
       const next = new Set(current);
-      next.has(slug) ? next.delete(slug) : next.add(slug);
+      if (next.has(token)) {
+        next.delete(token);
+        if (token.startsWith('type:')) {
+          const subPrefix = `sub:${token.slice('type:'.length)}:`;
+          next.forEach((item) => item.startsWith(subPrefix) && next.delete(item));
+        }
+      } else next.add(token);
       return next;
     });
   };
+  const filterButton = (token: string, buttonLabel: string) => (
+    <GeneralButton
+      key={token}
+      verticalPadding="full"
+      label={`#${buttonLabel}`}
+      showDot
+      pressed={activeFilters.has(token)}
+      tabIndex={filterOpen ? undefined : -1}
+      data-panel-button
+      data-filter-button
+      data-filter-token={token}
+      onClick={() => toggleFilter(token)}
+    />
+  );
   const persistPreference = (nextCity = city, nextLocale = locale) => {
     document.cookie = `${CITY_COOKIE}=${encodeURIComponent(nextCity)}; path=/; max-age=31536000; samesite=lax`;
     document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(nextLocale)}; path=/; max-age=31536000; samesite=lax`;
@@ -465,11 +550,21 @@ export default function SiteHeader({
                   }}
                 />
               )}
+              {SOCIALS_ENABLED && (
+                // local + preview builds: propose and approve Instagram posts at /dev/socials/
+                <GeneralButton
+                  className={styles.socialsLink}
+                  edge={showVenueControls ? undefined : 'first'}
+                  verticalPadding="full"
+                  label="socials"
+                  href={`/dev/socials/?city=${city}`}
+                />
+              )}
               {showFilterControls && (
                 <GeneralButton
                   className={styles.filterToggle}
-                  // the dev-only venues button takes the first slot on desktop (see the sass)
-                  edge={showVenueControls ? undefined : 'first'}
+                  // the dev-only venues / socials buttons take the first slot on desktop (see the sass)
+                  edge={showVenueControls || SOCIALS_ENABLED ? undefined : 'first'}
                   verticalPadding="full"
                   label={copy.filter}
                   showDot
@@ -531,7 +626,7 @@ export default function SiteHeader({
                     setLocaleHandoff({
                       locale: otherLocale,
                       mapOpen,
-                      categories: Array.from(activeCategories),
+                      categories: Array.from(activeFilters),
                       timing: activeTiming,
                     });
                   }}
@@ -587,52 +682,68 @@ export default function SiteHeader({
               aria-hidden={!filterOpen}
               inert={!filterOpen ? true : undefined}
             >
-              {categoryGroups.map((group) => (
-                <div
-                  className={styles.group}
-                  role="group"
-                  aria-label={
-                    group.dimension === 'collection'
-                      ? uiText[locale].collections
-                      : group.dimension.replace('_category', '')
-                  }
-                  key={group.dimension}
-                >
-                  {group.categories.map((category) => (
+              {showSaved && (
+                <div className={styles.group} role="group" aria-label="saved" data-saved-filter>
+                  <GeneralButton
+                    verticalPadding="full"
+                    label={`${label('saved')} (${savedCount})`}
+                    showDot
+                    pressed={savedActive}
+                    tabIndex={filterOpen ? undefined : -1}
+                    data-panel-button
+                    data-filter-button
+                    data-filter-token={SAVED_FILTER_TOKEN}
+                    onClick={() => setSavedActive((active) => !active)}
+                  />
+                </div>
+              )}
+              {filterOptions.timings.length > 0 && (
+                <div className={styles.group} role="group" aria-label="when">
+                  {filterOptions.timings.map((timing) => (
                     <GeneralButton
-                      key={category.slug}
+                      key={timing}
                       verticalPadding="full"
-                      label={`#${category.label}`}
+                      label={timingLabels[timing]}
                       showDot
-                      pressed={activeCategories.has(category.slug)}
+                      pressed={activeTiming === timing}
                       tabIndex={filterOpen ? undefined : -1}
                       data-panel-button
                       data-filter-button
-                      data-category-button
-                      data-category={category.slug}
-                      data-category-dimension={category.dimension}
-                      onClick={() => toggleCategory(category.slug)}
+                      data-timing-button
+                      data-timing={timing}
+                      onClick={() =>
+                        setActiveTiming((current) => (current === timing ? '' : timing))
+                      }
                     />
                   ))}
                 </div>
-              ))}
-              {timingFilters.map((timing) => (
-                <GeneralButton
-                  key={timing.slug}
-                  verticalPadding="full"
-                  label={timing.label}
-                  showDot
-                  pressed={activeTiming === timing.slug}
-                  tabIndex={filterOpen ? undefined : -1}
-                  data-panel-button
-                  data-filter-button
-                  data-timing-button
-                  data-timing={timing.slug}
-                  onClick={() =>
-                    setActiveTiming((current) => (current === timing.slug ? '' : timing.slug))
-                  }
-                />
-              ))}
+              )}
+              {filterOptions.types.length > 0 && (
+                <div className={styles.group} role="group" aria-label="type">
+                  {filterOptions.types.map((type) => filterButton(`type:${type}`, label(type)))}
+                </div>
+              )}
+              {subGroups.length > 0 && (
+                <div className={styles.group} role="group" aria-label="subtype" data-sub-filters>
+                  {subGroups.map((group) => (
+                    <div
+                      className={styles.subGroup}
+                      role="group"
+                      aria-label={label(group.type)}
+                      key={group.type}
+                    >
+                      {group.subs.map((sub) =>
+                        filterButton(`sub:${group.type}:${sub}`, label(sub)),
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {filterOptions.places.length > 0 && (
+                <div className={styles.group} role="group" aria-label="venue">
+                  {filterOptions.places.map((place) => filterButton(`place:${place}`, label(place)))}
+                </div>
+              )}
             </div>
           )}
           <div

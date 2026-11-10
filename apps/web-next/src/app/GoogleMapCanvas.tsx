@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { pressedFilterState } from '@/lib/eventFilters';
+import { STARS_UPDATED_EVENT } from '@/lib/eventStars';
 import { uiText, type AppLocale } from '@/lib/i18n';
 import { stickyMapOverlap } from '@/lib/mapOverlap';
+import { matchesFilterState } from '../../../../data/categories.mjs';
 import styles from './GoogleMapCanvas.module.sass';
 
 export type MapSource = {
@@ -117,23 +120,6 @@ const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
 
 const isVisible = (element: HTMLElement) =>
   !element.hidden && !element.closest('[hidden]') && element.getClientRects().length > 0;
-
-const activeCategoryGroups = () => {
-  const groups = new Map<string, string[]>();
-  document
-    .querySelectorAll<HTMLElement>("[data-category-button][aria-pressed='true']")
-    .forEach((button) => {
-      const category = button.dataset.category;
-      const dimension = button.dataset.categoryDimension;
-      if (category && dimension) {
-        groups.set(dimension, [...(groups.get(dimension) ?? []), category]);
-      }
-    });
-  return groups;
-};
-
-const matchesCategories = (categories: string[], groups: Map<string, string[]>) =>
-  [...groups.values()].every((group) => group.some((category) => categories.includes(category)));
 
 const sourceCards = (locationId: string) =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-event-card]')).filter(
@@ -290,16 +276,15 @@ export default function GoogleMapCanvas({
           highlighted.clear();
         };
         const applyFilters = () => {
-          const groups = activeCategoryGroups();
-          const starredOnly =
-            document.querySelector("[data-starred-button][aria-pressed='true']") !== null;
+          const filterState = pressedFilterState();
           markerRecords.forEach(({ marker, source, content }) => {
             const cards = sourceCards(source.id);
             const visibleCards = cards.filter(isVisible);
             const visible =
-              matchesCategories(source.categories, groups) &&
+              matchesFilterState(source.categories, filterState) &&
               (!cards.length || visibleCards.length > 0) &&
-              (!starredOnly || visibleCards.some((card) => card.dataset.starred === 'true'));
+              // saved on: only venues with a visible starred card
+              (!filterState.saved || visibleCards.some((card) => card.dataset.starred === 'true'));
             marker.map = visible ? map : null;
             content.toggleAttribute('data-hidden', !visible);
             content.toggleAttribute(
@@ -386,12 +371,15 @@ export default function GoogleMapCanvas({
         findMeButton.addEventListener('click', onFindMe);
         const onFilterUpdate: EventListener = () => applyFilters();
         const onActiveChange: EventListener = () => applyFilters();
+        // Cards update data-starred when React re-renders after the toggle, so read them a frame
+        // later (the header also re-applies filters and sends event-filter:updated).
+        const onStarsUpdate: EventListener = () => requestAnimationFrame(() => applyFilters());
         document.addEventListener('event-filter:updated', onFilterUpdate);
-        document.addEventListener('event-stars:updated', onFilterUpdate);
+        document.addEventListener(STARS_UPDATED_EVENT, onStarsUpdate);
         document.addEventListener('event-card:active-change', onActiveChange);
         listeners.push(
           ['event-filter:updated', onFilterUpdate],
-          ['event-stars:updated', onFilterUpdate],
+          [STARS_UPDATED_EVENT, onStarsUpdate],
           ['event-card:active-change', onActiveChange],
         );
         applyFilters();

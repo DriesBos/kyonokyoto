@@ -7,7 +7,7 @@ import MapExperience from '@/app/MapExperience';
 import SiteFooter from '@/app/SiteFooter';
 import { blocksLandingCandidatesForEvents, blocksLandingHeroOptions } from '@/lib/blocksLanding';
 import type { CityConfig } from '@/lib/cities';
-import { categoriesForEvents, fetchCityEvents, mapSourcesForEvents } from '@/lib/cityEvents';
+import { fetchCityEvents, filterOptionsForEvents, mapSourcesForEvents } from '@/lib/cityEvents';
 import { DEV_PAGE_ENABLED } from '@/lib/devPage';
 import { googleMapsEnv, imageCdnEnabled } from '@/lib/env';
 import { uiText, type AppLocale } from '@/lib/i18n';
@@ -25,7 +25,7 @@ export default async function CityEventsPage({
   const landingCandidates = blocksLandingCandidatesForEvents(events);
   const landingHeroes = blocksLandingHeroOptions(landingCandidates);
   const heroScript = landingHeroScript(landingHeroes, imageCdnEnabled());
-  const categories = categoriesForEvents(events, locale);
+  const filterOptions = filterOptionsForEvents(events);
   const mapSources = mapSourcesForEvents(events);
   // Testing aid (local builds only): the header's venue filter lists every source with events.
   const venues = DEV_PAGE_ENABLED
@@ -86,7 +86,7 @@ export default async function CityEventsPage({
             city={city.slug}
             locale={locale}
             brandLabel={city.brandLabel}
-            categories={categories}
+            filterOptions={filterOptions}
             venues={venues}
           />
         }

@@ -1,0 +1,37 @@
+// "Last week" badge (LastWeekBadge.tsx): filled oval in the city colour, top-right of the image (where the star sits on an
+// expanded card, so it steps left of the star there).
+.pill
+  position: absolute
+  z-index: 4
+  top: calc(0.5rem + 8px)
+  right: calc(0.5rem + 8px)
+  padding: 0.25em 0.7em 0.3em
+  border-radius: 999px
+  background: var(--color-text)
+  color: var(--color-background)
+  font-size: var(--type-meta-size)
+  line-height: 1
+  letter-spacing: -0.01em
+  text-transform: uppercase
+  white-space: nowrap
+  pointer-events: none
+  // Dries 2026-11-10: hard on/off blink (no fade), 0.6s on / 0.6s off, 3 times, then stays on.
+  // Capped so it never blinks past 5s (WCAG 2.2.2); use `infinite` for a constant blink.
+  animation: last-week-blink 1.2s steps(1, end) 3
+
+  @media (prefers-reduced-motion: reduce)
+    animation: none
+
+  @media (max-width: 768px)
+    top: 8px
+    right: 8px
+
+:global([data-event-card]):has([data-event-card-detail][data-expanded='true']) .pill
+  right: calc(0.5rem + 6px + 28px + 6px)
+
+  @media (max-width: 768px)
+    right: calc(6px + 28px + 6px)
+
+@keyframes last-week-blink
+  50%
+    opacity: 0
