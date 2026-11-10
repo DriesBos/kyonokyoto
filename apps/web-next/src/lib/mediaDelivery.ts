@@ -67,6 +67,35 @@ const requiresDirectImageDelivery = (source: string) =>
     source,
   );
 
+// The netlify.toml remote_images allowlist this build was deployed with (next.config.mjs).
+// Netlify Image CDN refuses other hosts, so images from hosts added since (a new source that went
+// live with the crawl) are served directly until the next deploy adds them to the allowlist.
+const parseRemoteImagePatterns = (raw: string | undefined): RegExp[] | null => {
+  if (!raw) return null;
+  try {
+    const patterns = JSON.parse(raw) as unknown;
+    if (!Array.isArray(patterns) || !patterns.length) return null;
+    return patterns
+      .filter((pattern): pattern is string => typeof pattern === 'string')
+      .map((pattern) => new RegExp(`^(?:${pattern})$`));
+  } catch {
+    return null;
+  }
+};
+const builtRemoteImagePatterns = parseRemoteImagePatterns(
+  process.env.NEXT_PUBLIC_REMOTE_IMAGE_PATTERNS,
+);
+
+// Same-site paths (self-hosted venue photos, the Yutaka proxy) never need the allowlist. Without
+// a known allowlist (tests, local dev) every host is assumed allowed.
+export const imageCdnAllowsSource = (
+  source: string,
+  patterns: RegExp[] | null = builtRemoteImagePatterns,
+) => !patterns || source.startsWith('/') || patterns.some((pattern) => pattern.test(source));
+
+const useCdnFor = (source: string, useImageCdn: boolean) =>
+  useImageCdn && !requiresDirectImageDelivery(source) && imageCdnAllowsSource(source);
+
 const netlifyImageUrl = (source: string, width: number) =>
   `/.netlify/images?${new URLSearchParams({
     url: source,
@@ -80,9 +109,7 @@ export const eventMediaDeliveryUrl = (
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  return useImageCdn && !requiresDirectImageDelivery(source)
-    ? netlifyImageUrl(source, 640)
-    : directImageSource(source);
+  return useCdnFor(source, useImageCdn) ? netlifyImageUrl(source, 640) : directImageSource(source);
 };
 
 export const eventMediaDeliverySrcSet = (
@@ -90,7 +117,7 @@ export const eventMediaDeliverySrcSet = (
   useImageCdn = imageCdnEnabled(),
 ): string | null => {
   const source = safeEventImageSource(value);
-  if (!source || !useImageCdn || requiresDirectImageDelivery(source)) return null;
+  if (!source || !useCdnFor(source, useImageCdn)) return null;
   return EVENT_IMAGE_WIDTHS.map((width) => `${netlifyImageUrl(source, width)} ${width}w`).join(
     ', ',
   );
@@ -104,10 +131,9 @@ export const eventShareImageUrl = (
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  const url =
-    useImageCdn && !requiresDirectImageDelivery(source)
-      ? netlifyImageUrl(source, 1200)
-      : directImageSource(source);
+  const url = useCdnFor(source, useImageCdn)
+    ? netlifyImageUrl(source, 1200)
+    : directImageSource(source);
   return new URL(url, origin).href;
 };
 
@@ -119,7 +145,7 @@ export const landingMediaDeliveryUrl = (
 ): string | null => {
   const source = safeEventImageSource(value);
   if (!source) return null;
-  if (!useNetlifyImageCdn) return directImageSource(source);
+  if (!useNetlifyImageCdn || !imageCdnAllowsSource(source)) return directImageSource(source);
   return `/.netlify/images?${new URLSearchParams({ url: source, fm: 'webp' })}`;
 };
 

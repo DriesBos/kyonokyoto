@@ -26,7 +26,7 @@ See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
 - Supabase is on the Free plan: plan every Supabase change within the limits in docs/supabase-free-plan.md.
 - Netlify is on the Personal plan (1,000 credits/month): plan every hosting, deploy and image change within docs/netlify-plan.md.
 - Crawls run only on the VPS systemd timers (`ops/systemd`). Never trigger crawls or add crawl/source-sync steps to CI, deploy scripts or push hooks; source changes take effect at the next scheduled crawl. To test a source, use `selectors:inspect --from=live` (fetch only), not `crawl:*` or `run-once`.
-- Deploys: push to the `preview` branch by default. Push or merge to `main` (production) only when specifically asked.
+- Deploys: push to the `preview` branch (free branch deploys) by default. Push or merge to `main` (production, 15 credits) only when specifically asked to publish to main.
 
 ## Next.js (apps/web-next)
 

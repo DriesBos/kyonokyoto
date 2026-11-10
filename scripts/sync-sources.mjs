@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 import { loadSourcesConfig, normalizeCity } from '../data/sources/source-config.mjs';
 import { primaryVenueCategory } from '../data/categories.mjs';
+import { sourceDisplayProfile } from '../data/sources/source-display.mjs';
 import {
   assertPruneAllowed,
   isLargePruneDiff,
@@ -90,15 +91,27 @@ const sources = selectedSources.map((source) => ({
   locales: source.locales ?? {},
   notes: source.notes ?? null,
   is_active: source.is_active ?? true,
+  // What the website shows for this source (read via public.source_profiles), so new sources
+  // go live with the crawl instead of a site deploy.
+  display: sourceDisplayProfile(source),
 }));
 
+const upsertSources = (body) =>
+  restRequest({
+    env,
+    path: 'sources?on_conflict=slug',
+    method: 'POST',
+    prefer: 'resolution=merge-duplicates,return=representation',
+    body,
+  });
+
+// Until migration 20261110120000_source_profiles adds sources.display, sync without it so the
+// crawl cycle keeps running; the site then falls back to the source JSON it was built with.
 const upsertedSources = sources.length
-  ? await restRequest({
-      env,
-      path: 'sources?on_conflict=slug',
-      method: 'POST',
-      prefer: 'resolution=merge-duplicates,return=representation',
-      body: sources,
+  ? await upsertSources(sources).catch((error) => {
+      if (!/\bdisplay\b/.test(String(error?.message))) throw error;
+      console.warn('sources.display missing (migration not applied); syncing without it.');
+      return upsertSources(sources.map(({ display: _display, ...source }) => source));
     })
   : [];
 

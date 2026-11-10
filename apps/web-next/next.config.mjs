@@ -1,4 +1,5 @@
 // @ts-check
+import { readFileSync } from 'node:fs';
 
 // ponytail: no images.remotePatterns — event images go through Netlify Image CDN
 // (/.netlify/images, allowlist in netlify.toml), same pipeline as apps/web.
@@ -40,12 +41,38 @@ export const securityHeaders = ({ dev = false } = {}) => [
 export const betaQaBuildFlag = (context, enabled) =>
   (context === 'deploy-preview' || context === 'branch-deploy') && enabled === '1' ? '1' : '0';
 
+// The netlify.toml [images] remote_images regexes, as written in the file (TOML escapes undone).
+/** @param {string} toml @returns {string[]} */
+export const remoteImagePatterns = (toml) => {
+  const block = toml.match(/^\s*remote_images\s*=\s*\[([\s\S]*?)\]/m)?.[1] ?? '';
+  return [...block.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(([, value]) =>
+    value.replace(/\\(.)/g, '$1'),
+  );
+};
+
+// Inlined at build so image URLs from hosts added after the deploy (new sources go live with the
+// crawl, not a deploy) load straight from the venue site instead of a failing Image CDN request.
+const builtRemoteImagePatterns = () => {
+  try {
+    return JSON.stringify(
+      remoteImagePatterns(readFileSync(new URL('../../netlify.toml', import.meta.url), 'utf8')),
+    );
+  } catch {
+    return '';
+  }
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Inlined at build time; only deploy-preview and branch-deploy (e.g. `preview` branch) contexts expose beta rows.
-  env: { NEXT_PUBLIC_BETA_QA: betaQaBuildFlag(process.env.CONTEXT, process.env.BETA_EVENTS_QA) },
+  env: {
+    NEXT_PUBLIC_BETA_QA: betaQaBuildFlag(process.env.CONTEXT, process.env.BETA_EVENTS_QA),
+    NEXT_PUBLIC_REMOTE_IMAGE_PATTERNS: builtRemoteImagePatterns(),
+  },
   // No x-powered-by: Next.js on responses.
   poweredByHeader: false,
+  // the Instagram post renderer (/dev/socials) measures text with fontkit; keep it unbundled
+  serverExternalPackages: ['fontkit'],
   allowedDevOrigins: ['127.0.0.1'],
   trailingSlash: true,
   // Several root layouts (src/app/[city]/..., src/app/dev), so unmatched URLs need

@@ -25,6 +25,10 @@ checked 2026-11-09.
 - Estimate the credits of the change: 1,000 credits is about 66 production deploys, 50 GB of
   bandwidth, or 5M requests a month, shared between them.
 - Batch production deploys: each costs 15 credits (the netlify.toml `ignore` rule already skips
-  crawler-only commits).
+  crawler-only commits and `data/sources` changes).
+- New or edited sources need no deploy: the site reads source details from Supabase
+  (`public.source_profiles`, synced by every scheduled crawl), so they go live after the next
+  crawl. Images from a host not yet in netlify.toml `remote_images` load directly from the
+  venue site (the build inlines the allowlist); add the host with the next normal publish.
 - Keep pages ISR/CDN-cached so visits don't run functions, and images small (Image CDN output
   counts as bandwidth).
