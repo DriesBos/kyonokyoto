@@ -4,6 +4,24 @@ Update this file whenever source JSON changes or test crawls run.
 
 ## Operations
 
+2026-11-10 venue Instagram handles: Added `"instagram"` to 130 of 182 sources in `data/sources/*-sources.json`, found by `scripts/find-instagram-handles.mjs` (scans each venue's homepage and first start URL for instagram.com links; run from the repo root on the Mac, report in `data/instagram-handles-report.json`). Used as `@handle` in Instagram post captions. Picked by hand where the site linked several accounts: art-collaboration-kyoto, gallery-yamahon, sibasi, wa-gallery-osaka, pola-museum-annex, koki-arts, hkdi-gallery, hong-kong-arts-centre.
+
+- Verify: `scai-piramide` and `scai-park` share @scaithebathhouse; `taka-ishii-gallery` and `taka-ishii-gallery-tokyo` share @takaishiigallery. Global brand accounts: `david-zwirner` @davidzwirner, `white-cube-hong-kong` @whitecube, `karimoku-commons-kyoto` @karimoku_official, `parco-hall-shinsaibashi` @parco_art. `oi-art-space` got @apohere.hk.
+- Left empty, needs a pick: `kyoto-art-month` (site only shows @lightseeing_kyoto_south), `leica-gallery-kyoto` (only global @leica_camera), `gallery-unfold` (@chuang_ho, @uchihsiao: artists), `what-museum` (@what_terrada?).
+- No handle found (48; JS-heavy sites, blocked scans or no link on the scanned page). Fill by hand or search other pages:
+  - Kyoto: `museum-of-kyoto`, `hosomi-museum`, `ko-gei-kyoto`, `curation-fair-kyoto`, `koen-kyoto`, `chushin-bijutsu`, `dnp-foundation-for-cultural-promotion-gallery-ddd`, `hakusasonso`, `artro`, `kankakari`, `miho-museum`, `art-gallery-kitano`, `galerie16`, `issey-miyake-kyoto-kura`.
+  - Osaka: `abeno-harukas-art-museum`, `yoshimi-arts`, `national-museum-of-art-osaka`, `nakanoshima-kosetsu-museum`, `hyogo-prefectural-museum-of-art`, `ichion-contemporary`, `itsuo-art-museum`, `osaka-geidai-whatsnew`, `issey-miyake-semba-creation-space`, `takeo-exhibitions`, `osaka-nihon-mingeikan`, `yoshiaki-inoue-gallery`.
+  - Tokyo: `atelier-muji-ginza`, `ginza-graphic-gallery`, `mori-art-museum`, `national-museum-of-modern-art-tokyo`, `tokyo-metropolitan-art-museum`, `setagaya-art-museum`, `perrotin-tokyo`, `nanzuka`, `kenji-taki-gallery`, `taro-nasu-gallery`, `issey-miyake-ginza-cube`, `issey-miyake-shinjuku-shikaku`, `curation-fair-tokyo`, `18-murata`, `4649`, `kayokoyuki`, `parcel-tokyo`.
+  - Hong Kong: `m-plus`, `asia-society-hong-kong`, `asia-art-archive`, `gagosian-hong-kong`, `villepin`.
+
+2026-11-10 venue page intros: Added `data/venue-descriptions.json` with EN/JA intros (HK EN only) for all 182 venues that get a venue page (Kyoto 59, Osaka 32, Tokyo 56, Hong Kong 35). About two thirds are based on the venue's own homepage, the rest on source config only (site blocked or empty). `test/venue-descriptions.test.mjs` fails if a venue page has no intro, so every new venue source needs one.
+
+- Needs rewrite: ~15 intros end on a similar filler line ("Exhibitions change regularly…"); vary or drop it.
+- Thin (no address found): `nanzuka`, `maho-kubota-gallery`, `lurf-museum`, `ota-fine-arts`, `wa-gallery-osaka`. Add `address_text` to the source and expand the intro.
+- JA length: some JA intros (60–80 characters) are shorter than their EN counterpart; bring to parity.
+- Verify facts not from the venue's own site: MOT in Kiba; Oi! in the former Royal Hong Kong Yacht Club building.
+- Venue names and categories still show in English on JA pages where sources have no `names.ja`.
+
 2026-11-09 ACK Art Fair galleries: Added 20 beta gallery sources from the ACK 2026 exhibitor list (already-present galleries skipped). Osaka `yoshiaki-inoue-gallery`; Kyoto `mori-yu-gallery`, `shibunkaku`; Tokyo `18-murata`, `4649`, `anomaly-tokyo`, `con-tokyo`, `hagiwara-projects`, `kayokoyuki`, `koki-arts`, `kotaro-nukaga`, `misako-and-rosen`, `mizuma-art-gallery`, `parcel-tokyo`, `sho-plus-1`, `shugoarts`, `taka-ishii-gallery-tokyo`, `takuro-someya-contemporary-art`, `tokyo-gallery-btap`, `tomio-koyama-gallery`. Added 17 new image hosts to Netlify `remote_images`. Kyoto `taka-ishii-gallery` JA listing moved to `/jp/exhibitions/kyoto-yada-cho/` (old URL redirected to EN home), detail patterns now `/jp/archives/` and `/en/archives/`; its extractor now parses JA `会期` and EN same-month ranges. Validated with `selectors:inspect --from=live` only (fetch, no Supabase writes); sources sync and crawl at the next scheduled timer run after they reach main (no manual crawls). All stay beta pending first crawl and QA.
 
 - Needs tuning: `parcel-tokyo` dates fail on every page (`2026 11.04 Wed 2026 12.12 Sat.`), needs source-specific extractor. `shibunkaku` end date equals start (no separator between dates) and listing mixes Ginza shows/fairs (venue only in detail `<h2>`: 思文閣 vs 思文閣銀座). `shugoarts` full archive only; date selector dropped, end dates unreliable, JA start-only. `4649` listing mixes fair/off-site pages, many without image/description.
