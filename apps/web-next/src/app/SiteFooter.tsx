@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { uiText, type AppLocale } from '@/lib/i18n';
 import { pressSpringHandlers } from '@/lib/pressSpring';
 import styles from './SiteFooter.module.sass';
@@ -28,6 +29,40 @@ export default function SiteFooter({
   cityLabel?: string;
   locale?: AppLocale;
 }) {
+  const scrollTopRef = useRef<HTMLButtonElement>(null);
+  // The scroll-up arrow only shows when its scroller (the events panel, or the page when the
+  // panel does not scroll) overflows; short pages such as a venue with few events have nothing
+  // to scroll back to. Rechecked on resize, content size changes and map layout updates.
+  const [canScroll, setCanScroll] = useState(true);
+
+  useEffect(() => {
+    const button = scrollTopRef.current;
+    if (!button) return;
+    const events = button.closest<HTMLElement>('[data-events-section]');
+    const root = document.documentElement;
+    let frame = 0;
+    const check = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const overflows = (element: HTMLElement) => element.scrollHeight > element.clientHeight + 1;
+        setCanScroll((events !== null && overflows(events)) || overflows(root));
+      });
+    };
+    const observer = new ResizeObserver(check);
+    for (const element of [root, document.body, events, ...(events ? events.children : [])]) {
+      if (element) observer.observe(element);
+    }
+    window.addEventListener('resize', check);
+    document.addEventListener('map-layout:updated', check);
+    check();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('resize', check);
+      document.removeEventListener('map-layout:updated', check);
+    };
+  }, []);
+
   return (
     <footer
       className={`${styles.footer}${className ? ` ${className}` : ''}`}
@@ -57,8 +92,10 @@ export default function SiteFooter({
           )}
           <p className={styles.note}>{uiText[locale].enjoyCulture(cityLabel)}</p>
           <button
+            ref={scrollTopRef}
             className={styles.scrollTop}
             type="button"
+            data-no-scroll={canScroll ? undefined : true}
             {...pressSpringHandlers}
             aria-label={uiText[locale].scrollTop}
             onClick={(event) => {

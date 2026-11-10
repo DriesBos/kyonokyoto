@@ -111,6 +111,11 @@
   color: currentColor
   cursor: pointer
 
+  // Nothing to scroll back to (SiteFooter overflow check): keep its place, drop it from view,
+  // focus and the accessibility tree.
+  &[data-no-scroll]
+    visibility: hidden
+
   &:focus-visible
     outline: var(--footer-stroke) solid currentColor
     outline-offset: 2px

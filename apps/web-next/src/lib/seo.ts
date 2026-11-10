@@ -6,6 +6,7 @@ import { faviconPath } from './favicon.ts';
 import { festivalPathFor } from './festivalRoutes.ts';
 import type { AppLocale } from './i18n.ts';
 import { eventShareImageUrl } from './mediaDelivery.ts';
+import { venuePathFor } from './venueRoutes.ts';
 
 const APP_NAME = 'KyōNoKyōto';
 const FALLBACK_ORIGIN = 'https://kyonokyoto.xyz';
@@ -200,6 +201,55 @@ export const festivalSitemapEntries = (festivals: { city: AppCity; slug: string 
     const config = cityConfigFor(city);
     if (!config) return [];
     const urlFor = (locale: AppLocale) => `${siteOrigin()}${festivalPathFor(city, locale, slug)}`;
+    const languages = Object.fromEntries(config.locales.map((locale) => [locale, urlFor(locale)]));
+    return config.locales.map((locale) => ({ url: urlFor(locale), languages }));
+  });
+
+// schema.org Place for a venue page, listing its dated events.
+export const venueStructuredData = ({
+  city,
+  locale,
+  slug,
+  venue,
+  events,
+}: {
+  city: AppCity;
+  locale: AppLocale;
+  slug: string;
+  venue: {
+    name: string;
+    address: string | null;
+    lat: number | null;
+    lng: number | null;
+    url: string | null;
+    image: string | null;
+  };
+  events: EventData[];
+}) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Place',
+  name: venue.name,
+  url: `${siteOrigin()}${venuePathFor(city, locale, slug)}`,
+  sameAs: venue.url ?? undefined,
+  address: venue.address ?? cityNames[city][locale],
+  image: eventShareImageUrl(venue.image, siteOrigin()) ?? undefined,
+  geo:
+    venue.lat !== null && venue.lng !== null
+      ? { '@type': 'GeoCoordinates', latitude: venue.lat, longitude: venue.lng }
+      : undefined,
+  event: events
+    .filter((event) => event.startDate)
+    .map((event) => {
+      const { inLanguage: _inLanguage, ...data } = eventStructuredData(city, locale, event);
+      return data;
+    }),
+});
+
+export const venueSitemapEntries = (venues: { city: AppCity; slug: string }[]) =>
+  venues.flatMap(({ city, slug }) => {
+    const config = cityConfigFor(city);
+    if (!config) return [];
+    const urlFor = (locale: AppLocale) => `${siteOrigin()}${venuePathFor(city, locale, slug)}`;
     const languages = Object.fromEntries(config.locales.map((locale) => [locale, urlFor(locale)]));
     return config.locales.map((locale) => ({ url: urlFor(locale), languages }));
   });

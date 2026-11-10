@@ -6,6 +6,7 @@ import {
   activeOrNextScheduleSegment,
   classifyEventTiming,
   eventDisplayGroup,
+  eventEndDateOnly,
   eventScheduleSegments,
   isEventWithinDisplayWindow,
   nextRelevantScheduleStartDateOnly,
@@ -14,6 +15,11 @@ import {
   assertTaxonomy,
   CATEGORY_DIMENSIONS,
   CATEGORY_REGISTRY,
+  FILTER_PLACES,
+  FILTER_SUBS,
+  FILTER_TYPES,
+  filterTagsFor,
+  filterToken,
   flattenTaxonomy,
   parseCategoryToken,
 } from '../../../../data/categories.mjs';
@@ -26,6 +32,7 @@ import kyotoSourcesPayload from '../../../../data/sources/kyoto-sources.json';
 import osakaSourcesPayload from '../../../../data/sources/osaka-sources.json';
 import tokyoSourcesPayload from '../../../../data/sources/tokyo-sources.json';
 import templeVenueNamesPayload from '../../../../data/temple-venue-names.json';
+import venueDescriptionsPayload from '../../../../data/venue-descriptions.json';
 import { type AppleCalendarEvent } from './appleCalendar';
 import {
   calendarDetailsFor,
@@ -55,6 +62,7 @@ import {
   rankImages,
 } from './imageRanking';
 import { sourceSlugForEvent } from './sourceMatching';
+import { fetchSourceProfiles, mergeSourceProfiles } from './sourceProfiles';
 import { normalizeYouTubeEmbeds, type YouTubeEmbed } from './youtubeEmbed';
 
 type Translation = {
@@ -140,6 +148,8 @@ type SourceConfig = {
   names?: Partial<Record<AppLocale, string>>;
   taxonomy?: Taxonomy;
   landing_slider?: boolean;
+  // the venue's Instagram handle, used in Instagram post captions (lib/socialPosts.ts)
+  instagram?: string;
   map_visibility?: boolean;
   is_active?: boolean;
   beta?: boolean;
@@ -167,6 +177,13 @@ type SourceConfig = {
   };
 };
 
+// YYYY-MM-DD plus whole days (UTC arithmetic, so no time zone shifts).
+const addDaysDateOnly = (dateOnly: string, days: number) => {
+  const date = new Date(`${dateOnly}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
 export type CityEvent = {
   id: string;
   group: 'ongoing' | 'upcoming' | 'permanent';
@@ -174,8 +191,14 @@ export type CityEvent = {
   // Beta sources only reach dev builds, where their cards render dimmed.
   beta: boolean;
   landingEligible: boolean;
+  // the venue's Instagram handle from the source config, for Instagram captions
+  venueInstagram?: string | null;
   mapVisible: boolean;
   categories: string[];
+  // Visitor filter tokens (data/categories.mjs filterTagsFor): type:, sub:, place:.
+  filterTags?: string[];
+  // Ongoing and closing within the next 7 days (the "ending soon!" filter).
+  endsSoon?: boolean;
   date: string;
   institution: string;
   venue: string | null;
@@ -214,6 +237,8 @@ export type CityEvent = {
   lng: number | null;
   eventKind?: 'event' | 'festival' | 'festival_program';
   festival?: { title: string; slug: string; year: string | null } | null;
+  // Set when the card's institution has its own venue page (lib/venueRoutes.ts).
+  venueSlug?: string | null;
 };
 
 export type FestivalDetail = {
@@ -313,6 +338,11 @@ const localized = (
 ) => values?.[locale] || values?.en || values?.ja || fallback;
 // Curated English names for Japanese aggregator venues (temples, shrines, palaces).
 const templeVenueNames = templeVenueNamesPayload as Record<string, string>;
+// Written venue introductions, keyed by source slug (data/venue-descriptions.json).
+const venueDescriptions = venueDescriptionsPayload as Record<
+  string,
+  Partial<Record<AppLocale, string>>
+>;
 function localizedVenueName(name: string, locale: AppLocale): string;
 function localizedVenueName(name: string | null | undefined, locale: AppLocale): string | null;
 function localizedVenueName(name: string | null | undefined, locale: AppLocale) {
@@ -354,8 +384,11 @@ const coordinatePair = (lat: unknown, lng: unknown) => {
 const showBeta = () =>
   process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_BETA_QA === '1';
 
-const activeSourcesFor = (city: AppCity) =>
-  sourcesByCity[city].filter((source) => source.is_active !== false);
+// Supabase source profiles (synced each crawl) over the source JSON bundled at build.
+const activeSourcesFor = async (city: AppCity) =>
+  mergeSourceProfiles(sourcesByCity[city], await fetchSourceProfiles(city)).filter(
+    (source) => source.is_active !== false,
+  );
 
 const sourceTruth = (
   event: Pick<
@@ -583,7 +616,7 @@ export async function fetchCityEvents({
   });
   if (!response.ok) throw new Error(`Supabase events request failed: ${response.status}`);
 
-  const sources = activeSourcesFor(city);
+  const sources = await activeSourcesFor(city);
   const visibleSource = (slug: string | null) => {
     const source = sources.find((candidate) => candidate.slug === slug);
     return Boolean(source && (showBeta() || !source.beta));
@@ -636,6 +669,8 @@ export async function fetchCityEvents({
         is_all_day: isAllDay,
       };
       const timing = classifyEventTiming(enriched, today);
+      const group = eventDisplayGroup({ ...enriched, timing }, today);
+      const endDate = eventEndDateOnly(event);
       const translatedDate = translation?.date_text || event.date_text;
       const date = formatEventScheduleDate(event, today, translatedDate, locale);
       const venue = translation?.venue_name ?? truth.venue;
@@ -654,12 +689,17 @@ export async function fetchCityEvents({
       const appleCalendar = calendarFor(calendarInput);
       return {
         id: event.id,
-        group: eventDisplayGroup({ ...enriched, timing }, today),
+        group,
         sourceSlug: truth.slug,
         beta: Boolean(truth.source?.beta),
         landingEligible: Boolean(truth.source?.landing_slider),
+        venueInstagram: truth.source?.instagram ?? null,
         mapVisible: event.event_kind !== 'festival' && truth.source?.map_visibility !== false,
         categories: truth.categories,
+        filterTags: filterTagsFor(truth.categories, {
+          venueNames: [event.venue_name, event.institution_name, venue, truth.institution],
+        }),
+        endsSoon: group === 'ongoing' && Boolean(endDate) && endDate <= addDaysDateOnly(today, 6),
         date,
         institution: truth.institution,
         venue,
@@ -687,6 +727,7 @@ export async function fetchCityEvents({
           event.event_kind === 'festival' && event.festival_slug
             ? festivalLinkFor(event, sources, locale)
             : null,
+        venueSlug: event.event_kind === 'festival' ? null : venueSlugFor(sources, truth.slug),
       };
     });
 
@@ -748,7 +789,7 @@ export async function fetchFestivalDetail({
   const [festival] = (await response.json()) as EventRow[];
   if (!festival) return null;
 
-  const sources = activeSourcesFor(city);
+  const sources = await activeSourcesFor(city);
   const sourceSlug = sourceSlugForEvent(festival, sources);
   const source = sources.find((candidate) => candidate.slug === sourceSlug);
   if (!source || (!showBeta() && source.beta)) return null;
@@ -831,6 +872,16 @@ type PermanentItem = {
   media_embeds?: unknown;
 };
 
+// A venue page exists for every visible source that is one venue (aggregators list many venues).
+const venueSourceFor = (sources: SourceConfig[], slug: string | null | undefined) => {
+  const source = slug ? sources.find((candidate) => candidate.slug === slug) : undefined;
+  return source && source.source_kind !== 'aggregator' && (showBeta() || !source.beta)
+    ? source
+    : undefined;
+};
+const venueSlugFor = (sources: SourceConfig[], slug: string | null | undefined) =>
+  venueSourceFor(sources, slug)?.slug ?? null;
+
 const permanentEventsFor = ({
   city,
   locale,
@@ -878,6 +929,10 @@ const permanentEventsFor = ({
           landingEligible: false,
           mapVisible: source?.map_visibility !== false,
           categories: taxonomyCategories(item.taxonomy ?? source?.taxonomy, item.slug),
+          filterTags: filterTagsFor(
+            taxonomyCategories(item.taxonomy ?? source?.taxonomy, item.slug),
+            { venueNames: [institution] },
+          ),
           date: locale === 'ja' ? 'あわせて' : 'also visit',
           institution,
           venue: null,
@@ -900,6 +955,7 @@ const permanentEventsFor = ({
           isAllDay: null,
           lat: pair?.lat ?? null,
           lng: pair?.lng ?? null,
+          venueSlug: venueSlugFor(sources, item.slug),
         },
       ];
     });
@@ -947,11 +1003,16 @@ export async function fetchFestivalSlugs(): Promise<{ city: AppCity; slug: strin
     festival_slug: string;
   })[];
 
+  const sourcesByCityNow = Object.fromEntries(
+    await Promise.all(
+      cityConfigs.map(async ({ slug }) => [slug, await activeSourcesFor(slug)] as const),
+    ),
+  ) as Record<AppCity, SourceConfig[]>;
   const seen = new Set<string>();
   return rows.flatMap((row) => {
     const city = normalizeCity(row.city);
     if (!city || city !== row.city) return [];
-    const sources = activeSourcesFor(city);
+    const sources = sourcesByCityNow[city];
     const source = sources.find(({ slug }) => slug === sourceSlugForEvent(row, sources));
     const key = `${city}/${row.festival_slug}`;
     if (!source || (!showBeta() && source.beta) || seen.has(key)) return [];
@@ -960,6 +1021,7 @@ export async function fetchFestivalSlugs(): Promise<{ city: AppCity; slug: strin
   });
 }
 
+// Venue pages list a venue's own taxonomy tags.
 export function categoriesForEvents(
   events: CityEvent[],
   locale: AppLocale = 'en',
@@ -989,6 +1051,63 @@ export function categoriesForEvents(
     .map(({ category: _category, ...option }) => option);
 }
 
+export type FilterTiming = 'ending' | 'ongoing' | 'upcoming' | 'permanent';
+export type FilterOptions = {
+  timings: FilterTiming[];
+  types: string[];
+  // Types every event on the page has: their button is hidden (it would filter nothing), but
+  // their sub-picks always show.
+  openTypes: string[];
+  subs: Record<string, string[]>;
+  places: string[];
+};
+
+const timingMatches = (event: CityEvent, timing: FilterTiming) =>
+  timing === 'ending' ? Boolean(event.endsSoon) : event.group === timing;
+
+// Header filter options for the events on this page. An option only shows when it would change
+// what is visible: some events in its scope have it, but not all of them.
+export function filterOptionsForEvents(events: CityEvent[]): FilterOptions {
+  const useful = <T extends string>(
+    scope: CityEvent[],
+    values: readonly T[],
+    has: (event: CityEvent, value: T) => boolean,
+  ) =>
+    values.filter((value) => {
+      const count = scope.filter((event) => has(event, value)).length;
+      return count > 0 && count < scope.length;
+    });
+  const tags = new Map(events.map((event) => [event, new Set(event.filterTags ?? [])]));
+  const hasTag = (event: CityEvent, tag: string) => Boolean(tags.get(event)?.has(tag));
+  const presentTypes = FILTER_TYPES.filter((type) =>
+    events.some((event) => hasTag(event, filterToken.type(type))),
+  );
+  const types = useful(events, presentTypes, (event, type) =>
+    hasTag(event, filterToken.type(type)),
+  );
+  const openTypes = presentTypes.filter((type) => !types.includes(type));
+  const subs = Object.fromEntries(
+    Object.entries(FILTER_SUBS)
+      .map(([type, values]) => {
+        const scope = events.filter((event) => hasTag(event, filterToken.type(type)));
+        return [
+          type,
+          useful(scope, values, (event, sub) => hasTag(event, filterToken.sub(type, sub))),
+        ];
+      })
+      .filter(([, values]) => values.length > 0),
+  );
+  return {
+    timings: useful(events, ['ending', 'ongoing', 'upcoming', 'permanent'] as const, timingMatches),
+    types,
+    openTypes,
+    subs,
+    places: useful(events, FILTER_PLACES, (event, place) =>
+      hasTag(event, filterToken.place(place)),
+    ),
+  };
+}
+
 export function mapSourcesForEvents(events: CityEvent[]): MapSource[] {
   const locations = new Map<string, MapSource>();
   events.forEach((event) => {
@@ -999,7 +1118,7 @@ export function mapSourcesForEvents(events: CityEvent[]): MapSource[] {
       id,
       sourceSlug: current?.sourceSlug ?? event.sourceSlug ?? event.id,
       name: current?.name ?? event.venue ?? event.institution,
-      categories: [...new Set([...(current?.categories ?? []), ...event.categories])],
+      categories: [...new Set([...(current?.categories ?? []), ...(event.filterTags ?? [])])],
       lat: event.lat,
       lng: event.lng,
     });
@@ -1011,3 +1130,86 @@ export const mapLocationIdForEvent = (event: Pick<CityEvent, 'lat' | 'lng'>) =>
   event.lat === null || event.lng === null
     ? null
     : `${event.lat.toFixed(6)},${event.lng.toFixed(6)}`;
+
+export type VenueDetail = {
+  slug: string;
+  name: string;
+  categories: CategoryOption[];
+  addressText: string | null;
+  mapsUrl: string;
+  website: string | null;
+  description: string | null;
+  lat: number | null;
+  lng: number | null;
+  image: { url: string; width: number | null; height: number | null } | null;
+  events: CityEvent[];
+};
+
+// Venue info comes from the source config; events reuse the cached city fetch (same URL and tag
+// as the city page), so a venue page adds no extra Supabase reads.
+export async function fetchVenueDetail({
+  city,
+  locale,
+  slug,
+}: {
+  city: AppCity;
+  locale: AppLocale;
+  slug: string;
+}): Promise<VenueDetail | null> {
+  const sources = await activeSourcesFor(city);
+  const source = venueSourceFor(sources, slug);
+  if (!source) return null;
+  const events = (await fetchCityEvents({ city, locale })).filter(
+    (event) => event.venueSlug === source.slug,
+  );
+  const permanent = permanentByCity[city].find(
+    (item) => item.slug === source.slug && item.is_active !== false,
+  );
+  const name = localized(source.names, locale, source.name);
+  const addressText = source.address_text ?? permanent?.address_text ?? null;
+  const directionsQuery = source.directions_query ?? permanent?.directions_query ?? null;
+  const pair = coordinatePair(source.lat ?? permanent?.lat, source.lng ?? permanent?.lng);
+  const written = venueDescriptions[source.slug];
+  const description =
+    written?.[locale] ??
+    written?.en ??
+    (typeof permanent?.description === 'string'
+      ? permanent.description
+      : (permanent?.description?.[locale] ??
+        permanent?.description?.en ??
+        permanent?.description?.ja ??
+        null));
+  const image =
+    events.flatMap((event) => event.images).find((candidate) => candidate.url) ??
+    (source.primary_image_url
+      ? { url: source.primary_image_url, width: null, height: null }
+      : null);
+  return {
+    slug: source.slug,
+    name,
+    categories: categoriesForEvents(
+      [{ categories: taxonomyCategories(source.taxonomy, source.slug) } as CityEvent],
+      locale,
+    ),
+    addressText,
+    mapsUrl: mapsUrl({ institution: name, venue: null, addressText, directionsQuery }),
+    website: safeHttpUrl(source.base_url ?? permanent?.base_url ?? null),
+    description,
+    lat: pair?.lat ?? null,
+    lng: pair?.lng ?? null,
+    image: image ? { url: image.url, width: image.width, height: image.height } : null,
+    events,
+  };
+}
+
+// Venue pages for the sitemap: the source configs (cached source profiles, no events request).
+export async function venueSlugs(): Promise<{ city: AppCity; slug: string }[]> {
+  const perCity = await Promise.all(
+    cityConfigs.map(async ({ slug: city }) =>
+      (await activeSourcesFor(city))
+        .filter((source) => venueSourceFor([source], source.slug))
+        .map((source) => ({ city, slug: source.slug })),
+    ),
+  );
+  return perCity.flat();
+}
