@@ -19,9 +19,10 @@ export const contentSecurityPolicy = ({ dev = false } = {}) =>
     "frame-ancestors 'none'",
     "form-action 'self'",
     `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''} https://www.googletagmanager.com https://www.youtube.com https://maps.googleapis.com`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
+    // Google Maps loads its control font (Google Sans / Roboto) from Google Fonts
+    "font-src 'self' data: https://fonts.gstatic.com",
     "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://maps.googleapis.com https://maps.gstatic.com https://www.google.com https://www.youtube.com",
     'frame-src https://www.youtube-nocookie.com',
     "worker-src 'self' blob:",

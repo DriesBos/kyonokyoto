@@ -127,8 +127,9 @@ const sourceCards = (locationId: string) =>
   );
 
 const markerContent = (source: MapSource) => {
-  const marker = document.createElement('button');
-  marker.type = 'button';
+  // not a <button>: AdvancedMarkerElement (gmpClickable) is the focusable, clickable element, and
+  // Maps warns about focusable children inside it
+  const marker = document.createElement('div');
   marker.className = styles.marker;
   marker.dataset.locationId = source.id;
   marker.dataset.sourceSlug = source.sourceSlug;
