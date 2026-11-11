@@ -227,6 +227,12 @@
     // open); the header stays only to hold the fixed bottom box
     padding: 0
 
+    // iOS home-screen app: the page runs under the status bar, where iOS 26 blurs whatever sits
+    // there, so the first cards start below it (Dries 2026-11-11). Scrolled cards still pass under
+    // the blur like in a native app. Safari keeps its own toolbar inset, so standalone only.
+    @media (display-mode: standalone)
+      padding-top: env(safe-area-inset-top)
+
     &::after
       display: none
 

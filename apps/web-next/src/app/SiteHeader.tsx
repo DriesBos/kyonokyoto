@@ -206,16 +206,42 @@ export default function SiteHeader({
 
   // Phones: the floating bottom box steps aside once the footer's content (credit, arrow) comes
   // within the box's reach of the screen bottom, so it never covers it (desktop ignores the flag).
+  // Only when scrolling back up would bring the box back: on a short page (filters down to one
+  // or no events) the footer is in reach from the very top, and hiding the box there left no way
+  // back to the filters (Dries 2026-11-11). Re-checked on scroll and whenever the page resizes.
   const [footerReached, setFooterReached] = useState(false);
   useEffect(() => {
     const content = document.querySelector<HTMLElement>('[data-site-footer] > *');
     if (!content) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setFooterReached(entry.isIntersecting || entry.boundingClientRect.top < 0),
-      { rootMargin: '0px 0px 240px 0px' },
-    );
-    observer.observe(content);
-    return () => observer.disconnect();
+    const reach = 240;
+    const update = () => {
+      const root = scrollRoot();
+      const scrolled = root ? root.scrollTop : window.scrollY;
+      const bottom = root ? root.getBoundingClientRect().bottom : window.innerHeight;
+      const top = content.getBoundingClientRect().top;
+      const near = top < bottom + reach;
+      const inReachAtTop = top + scrolled < bottom + reach;
+      setFooterReached(near && !inReachAtTop);
+    };
+    let frame = 0;
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        update();
+      });
+    };
+    update();
+    const resize = new ResizeObserver(schedule);
+    resize.observe(document.body);
+    document.addEventListener('scroll', schedule, { capture: true, passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resize.disconnect();
+      document.removeEventListener('scroll', schedule, { capture: true });
+      window.removeEventListener('resize', schedule);
+    };
   }, [mapOpen]);
 
   // Open panels close once the page has scrolled half a viewport away from where they opened.
