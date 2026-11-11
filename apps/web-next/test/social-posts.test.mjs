@@ -84,7 +84,7 @@ test('caption: title, dates, venue, then #category #subcategories #venue', () =>
   assert.equal(
     socialCaption(event({ venueInstagram: null })),
     [
-      'Clay, Fire, Time',
+      '"Clay, Fire, Time"',
       "Ongoing — 16 Nov '26",
       'Kyoto City KYOCERA Museum of Art',
       '',
@@ -95,6 +95,8 @@ test('caption: title, dates, venue, then #category #subcategories #venue', () =>
     socialCaption(event({ venueInstagram: 'kyotocitykyoceramuseum' })),
     /\n@kyotocitykyoceramuseum\n/,
   );
+  assert.match(socialCaption(event({ endsSoon: true })), /^Last week:\n"Clay, Fire, Time"\n/);
+  assert.match(socialCaption(event({ startsSoon: true })), /^Opening soon:\n"Clay, Fire, Time"\n/);
 });
 
 test('hashtags and handles are cleaned up', () => {

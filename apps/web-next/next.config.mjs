@@ -79,6 +79,10 @@ const nextConfig = {
   // Several root layouts (src/app/[city]/..., src/app/dev), so unmatched URLs need
   // src/app/global-not-found.tsx for a styled 404.
   experimental: { globalNotFound: true },
+  // Local dev only: on Netlify, netlify.toml redirects `/` at the edge before Next sees it.
+  async redirects() {
+    return [{ source: '/', destination: '/kyoto/en/', permanent: false }];
+  },
   async headers() {
     return [
       {

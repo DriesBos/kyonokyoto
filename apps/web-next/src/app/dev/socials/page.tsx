@@ -9,7 +9,6 @@ import { socialFont } from '@/lib/socialFont';
 import { rankSocialCandidates, SOCIALS_ENABLED, socialCaption } from '@/lib/socialPosts';
 import {
   layoutSocialPost,
-  measureSocialBadge,
   measureSocialPostText,
   SOCIAL_LAYOUTS,
 } from '../../../../../../packages/shared/social-post.mjs';
@@ -96,7 +95,6 @@ export default async function SocialsPage({
         previewSrc: eventMediaDeliveryUrl(candidate.imageUrl) ?? candidate.imageUrl,
         startDate: candidate.startDate,
         endDate: candidate.endDate,
-        lastWeek: candidate.lastWeek,
         caption: socialCaption(event),
         layouts,
         skipReason: verdict && !verdict.ok ? verdict.reason : null,
@@ -136,7 +134,6 @@ export default async function SocialsPage({
       <SocialsBoard
         city={city.slug}
         color={city.themeColor}
-        badge={measureSocialBadge(font)}
         items={items}
         posts={posts ?? []}
         supabase={{ url: url ?? '', key: key ?? '' }}

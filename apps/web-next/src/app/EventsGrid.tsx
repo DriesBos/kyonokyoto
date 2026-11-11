@@ -5,9 +5,10 @@ import { boxClusterLabels } from '@/lib/boxCluster';
 import type { AppCity } from '@/lib/cities';
 import { type CityEvent, mapLocationIdForEvent } from '@/lib/cityEvents';
 import { imageCdnEnabled } from '@/lib/env';
+import { filterStateFrom, matchesCard } from '@/lib/eventFilters';
 import { festivalPathFor } from '@/lib/festivalRoutes';
 import { venuePathFor } from '@/lib/venueRoutes';
-import { withoutCalendarDetails } from '@/lib/appleCalendar';
+import { eventDetailsPath } from '@/lib/eventDetails';
 import EventCardDetail, { EventCardMedia } from './EventCardDetail';
 import ExpandableGrid, { EventCardDisclosure } from './ExpandableGrid';
 import { EventCardMediaDots, EventCardMediaPager } from './EventCardMediaPager';
@@ -30,6 +31,7 @@ export default function EventsGrid({
   cityLabel,
   city,
   linkVenues = true,
+  initialFilters = [],
 }: {
   events: CityEvent[];
   locale: AppLocale;
@@ -37,7 +39,16 @@ export default function EventsGrid({
   city: AppCity;
   // Off on a venue page, where every card is that venue.
   linkVenues?: boolean;
+  // Filters the header starts with: cards they hide are hidden in the HTML already, so a fresh
+  // load shows no flash of them. SiteHeader's filter effect takes over after hydration.
+  initialFilters?: readonly string[];
 }) {
+  const initialState = filterStateFrom(initialFilters);
+  const startsHidden = (event: CityEvent) =>
+    initialFilters.length > 0 &&
+    !matchesCard({ tags: event.filterTags ?? [], starred: false }, initialState);
+  const groupStartsHidden = (group: (typeof groupOrder)[number]) =>
+    groups[group].every(startsHidden);
   const copy = uiText[locale];
   const groups = Object.fromEntries(
     groupOrder.map((group) => [group, events.filter((event) => event.group === group)]),
@@ -60,7 +71,11 @@ export default function EventsGrid({
         <h2>{copy.noEvents}</h2>
         <UnsetFiltersButton label={copy.unsetFilters} />
       </div>
-      <ExpandableGrid className={styles.grid} ariaLabel={`${cityLabel} events`}>
+      <ExpandableGrid
+        className={styles.grid}
+        ariaLabel={`${cityLabel} events`}
+        detailsUrl={eventDetailsPath(city, locale)}
+      >
         {groupOrder.map((group, groupIndex) => {
           const groupEvents = groups[group];
           if (groupEvents.length === 0) return null;
@@ -73,12 +88,13 @@ export default function EventsGrid({
               data-event-divider
               data-before-group={previousVisibleGroup}
               data-after-group={group}
+              hidden={groupStartsHidden(previousVisibleGroup) || groupStartsHidden(group)}
             >
               <BoxCluster
                 labels={boxClusterLabels(
                   group === 'permanent' ? copy.alsoVisit : copy[group],
                   group === 'upcoming' ? copy.getReady : copy.permanent,
-                  copy.comingSoon,
+                  copy.openingSoon,
                 )}
                 seed={`${city}-${group}`}
                 ariaLabel={`${copy[group]} events`}
@@ -94,6 +110,7 @@ export default function EventsGrid({
                 data-event-group
                 data-event-group-name={group}
                 aria-label={copy[group]}
+                hidden={groupStartsHidden(group)}
               >
                 {groupEvents.map((event, groupItemIndex) => {
                   const index = globalIndex++;
@@ -103,6 +120,7 @@ export default function EventsGrid({
                       className={`${styles.block} ${[0, 4, 9].includes(index) ? styles.tall : ''}`}
                       data-event-card
                       data-event-id={event.id}
+                      hidden={startsHidden(event)}
                       data-event-group-name={event.group}
                       data-beta={event.beta || undefined}
                       data-filter-tags={(event.filterTags ?? []).join('|')}
@@ -140,7 +158,7 @@ export default function EventsGrid({
                           {event.endsSoon ? (
                             <LastWeekPill label={copy.lastWeek} />
                           ) : event.startsSoon ? (
-                            <LastWeekPill label={copy.comingSoon} kind="coming-soon" />
+                            <LastWeekPill label={copy.openingSoon} kind="opening-soon" />
                           ) : null}
                           <EventStarButton
                             eventId={event.id}
@@ -197,19 +215,6 @@ export default function EventsGrid({
                           <EventCardDetail
                             className={styles.detail}
                             eventId={event.id}
-                            description={event.description}
-                            mapsUrl={event.mapsUrl}
-                            googleCalendarUrl={
-                              event.description && event.googleCalendarUrl
-                                ? withoutCalendarDetails(event.googleCalendarUrl)
-                                : event.googleCalendarUrl
-                            }
-                            appleCalendar={
-                              event.description && event.appleCalendar
-                                ? { ...event.appleCalendar, details: undefined }
-                                : event.appleCalendar
-                            }
-                            sourceUrl={event.sourceUrl}
                             locale={locale}
                           />
                         </EventCardMediaPager>

@@ -42,7 +42,6 @@ export default async function VenuePage({
             id: `${venue.lat.toFixed(6)},${venue.lng.toFixed(6)}`,
             sourceSlug: venue.slug,
             name: venue.name,
-            categories: venue.categories.map((category) => category.slug),
             lat: venue.lat,
             lng: venue.lng,
           },

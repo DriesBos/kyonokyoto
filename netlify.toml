@@ -338,6 +338,37 @@
     "https?://zenbi\\.kagizen\\.com/.*",
   ]
 
+# `/` goes straight to the Kyoto page at the edge (no function): the visitor's own language if
+# they picked one (kyo_pref_<locale> cookie, lib/preferenceCookies.ts), else their browser's.
+# 302 so a later language switch is never stuck in a browser cache. Production is Kyoto only;
+# the other cities keep their own URLs.
+[[redirects]]
+  from = "/"
+  to = "/kyoto/ja/"
+  status = 302
+  force = true
+  conditions = {Cookie = ["kyo_pref_ja"]}
+
+[[redirects]]
+  from = "/"
+  to = "/kyoto/en/"
+  status = 302
+  force = true
+  conditions = {Cookie = ["kyo_pref_en"]}
+
+[[redirects]]
+  from = "/"
+  to = "/kyoto/ja/"
+  status = 302
+  force = true
+  conditions = {Language = ["ja"]}
+
+[[redirects]]
+  from = "/"
+  to = "/kyoto/en/"
+  status = 302
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]

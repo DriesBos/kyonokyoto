@@ -9,7 +9,8 @@ import {
 import { LOCALE_COOKIE, normalizeLocale } from '@/lib/i18n';
 import { routePathFor } from '@/lib/routeState';
 
-// Only the cookie-driven entry redirects (/, /en/, /ja/) run here. City and festival pages read
+// Only the cookie-driven /en/ and /ja/ entry redirects run here; `/` is redirected at the edge by
+// netlify.toml (language preference cookie, then Accept-Language), with no function call. City and festival pages read
 // nothing per request, so they stay static and cacheable on the CDN.
 export function proxy(request: NextRequest) {
   const [segment] = request.nextUrl.pathname.split('/').filter(Boolean);
@@ -30,5 +31,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/en', '/en/', '/ja', '/ja/'],
+  matcher: ['/en', '/en/', '/ja', '/ja/'],
 };

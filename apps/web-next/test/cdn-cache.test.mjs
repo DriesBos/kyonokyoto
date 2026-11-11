@@ -32,14 +32,27 @@ test('city and festival pages stay static: no request headers or cookies', async
     assert.doesNotMatch(source, /next\/headers|cookies\(\)|headers\(\)/, file);
   }
   for (const file of files.filter((name) => name.endsWith('page.tsx') && name.startsWith('['))) {
-    assert.match(await readFile(new URL(file, app), 'utf8'), /export const revalidate = 300/, file);
+    assert.match(await readFile(new URL(file, app), 'utf8'), /export const revalidate = 3600/, file);
   }
 });
 
 test('the proxy only runs the cookie redirects and never caches them', async () => {
   const proxy = await readFile(new URL('../src/proxy.ts', import.meta.url), 'utf8');
 
-  assert.match(proxy, /matcher: \['\/', '\/en', '\/en\/', '\/ja', '\/ja\/'\]/);
+  assert.match(proxy, /matcher: \['\/en', '\/en\/', '\/ja', '\/ja\/'\]/);
   assert.match(proxy, /'Cache-Control', 'private, no-store'/);
   assert.doesNotMatch(proxy, /Netlify-CDN-Cache-Control/);
+});
+
+test('`/` is redirected at the edge by netlify.toml, preference cookie first', async () => {
+  const toml = await readFile(new URL('../../../netlify.toml', import.meta.url), 'utf8');
+  const rules = [...toml.matchAll(/\[\[redirects\]\]\n  from = "\/"\n  to = "([^"]+)"[\s\S]*?(?=\n\n|$)/g)];
+  assert.deepEqual(
+    rules.map(([, to]) => to),
+    ['/kyoto/ja/', '/kyoto/en/', '/kyoto/ja/', '/kyoto/en/'],
+  );
+  assert.match(rules[0][0], /Cookie = \["kyo_pref_ja"\]/);
+  assert.match(rules[1][0], /Cookie = \["kyo_pref_en"\]/);
+  assert.match(rules[2][0], /Language = \["ja"\]/);
+  rules.forEach(([rule]) => assert.match(rule, /force = true/));
 });

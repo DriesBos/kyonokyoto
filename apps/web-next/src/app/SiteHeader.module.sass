@@ -253,10 +253,8 @@
       --space-offset: var(--space)
       --block-lift: 1.5
 
-    // iOS home-screen app (black-translucent status bar + viewport-fit=cover) anchors fixed
-    // bottom elements too low by the status bar height (Dries 2026-11-05). Lift the dock by it.
-    @media (display-mode: standalone)
-      bottom: calc(0.75rem + var(--space-offset) + env(safe-area-inset-bottom) + env(safe-area-inset-top))
+    // No extra standalone lift: in the iOS home-screen app fixed bottom: 0 already sits at the
+    // screen edge, and adding safe-area-inset-top floated the dock ~60px up (Dries 2026-11-11).
 
     &:has(.panel[data-open])
       --block-depth: var(--block-lift)

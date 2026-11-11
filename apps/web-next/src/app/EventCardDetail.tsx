@@ -10,7 +10,7 @@ import { EVENT_CARD_IMAGE_SIZES } from '@/lib/gridDensity';
 import { uiText, type AppLocale } from '@/lib/i18n';
 import { eventMediaDeliverySrcSet, eventMediaDeliveryUrl } from '@/lib/mediaDelivery';
 import { AmbientYouTube } from './AmbientYouTube';
-import { useEventCardExpansion } from './ExpandableGrid';
+import { useEventCardDetail, useEventCardExpansion } from './ExpandableGrid';
 import { useMediaPager } from './EventCardMediaPager';
 import styles from './EventCardDetail.module.sass';
 
@@ -43,10 +43,8 @@ export type EventCardActionsProps = {
   appleCalendar?: AppleCalendarEvent | null;
 };
 
-type EventCardDetailProps = Omit<EventCardActionsProps, 'appleCalendar'> & {
-  appleCalendar?: EventCardCalendar | null;
+type EventCardDetailProps = {
   eventId: string;
-  description: string | null;
   className?: string;
   locale?: AppLocale;
 };
@@ -348,19 +346,20 @@ export function EventCardActions({
   );
 }
 
+// The expanded card's description and links. They load from the city's details route on first
+// open (ExpandableGrid useEventCardDetail) and fade in once there (EventCardDetail.module.sass).
 export default function EventCardDetail({
   eventId,
-  description,
-  mapsUrl,
-  googleCalendarUrl,
-  sourceUrl,
-  appleCalendar,
   className,
   locale = 'en',
 }: EventCardDetailProps) {
   const { expanded } = useEventCardExpansion(eventId);
+  const detail = useEventCardDetail(eventId, expanded);
   const detailId = `event-card-detail-${eventId}`;
+  const description = detail?.description ?? null;
   const details = description ?? '';
+  const googleCalendarUrl = detail?.googleCalendarUrl ?? null;
+  const appleCalendar = detail?.appleCalendar ?? null;
 
   return (
     <div
@@ -368,12 +367,14 @@ export default function EventCardDetail({
       className={`${styles.detail}${className ? ` ${className}` : ''}`}
       data-event-card-detail
       data-expanded={expanded}
+      data-loading={(expanded && detail === undefined) || undefined}
       aria-hidden={!expanded}
+      aria-busy={expanded && detail === undefined}
     >
       {expanded && description && <p data-event-card-part="description">{description}</p>}
-      {expanded && (
+      {expanded && detail && (
         <EventCardActions
-          mapsUrl={mapsUrl}
+          mapsUrl={detail.mapsUrl}
           googleCalendarUrl={
             googleCalendarUrl && details && !new URL(googleCalendarUrl).searchParams.has('details')
               ? withCalendarDetails(googleCalendarUrl, details)
@@ -382,7 +383,7 @@ export default function EventCardDetail({
           appleCalendar={
             appleCalendar ? { ...appleCalendar, details: appleCalendar.details ?? details } : null
           }
-          sourceUrl={sourceUrl}
+          sourceUrl={detail.sourceUrl}
           locale={locale}
         />
       )}

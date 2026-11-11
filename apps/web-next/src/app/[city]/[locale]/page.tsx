@@ -15,7 +15,7 @@ const routeState = async (params: RouteProps['params']) => {
   return city && locale && citySupportsLocale(city, locale) ? { city, locale } : null;
 };
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 // Rendered on first request, not at build (CI builds without Supabase); each page is then cached
 // (ISR, CDN-tagged city-<slug>), and a failed render is never stored.

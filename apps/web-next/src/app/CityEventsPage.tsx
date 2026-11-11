@@ -9,6 +9,7 @@ import SiteFooter from '@/app/SiteFooter';
 import { blocksLandingCandidatesForEvents, blocksLandingHeroOptions } from '@/lib/blocksLanding';
 import type { CityConfig } from '@/lib/cities';
 import { fetchCityEvents, filterOptionsForEvents, mapSourcesForEvents } from '@/lib/cityEvents';
+import { defaultCityFilterTokens } from '@/lib/eventFilters';
 import { DEV_PAGE_ENABLED } from '@/lib/devPage';
 import { googleMapsEnv, imageCdnEnabled } from '@/lib/env';
 import { uiText, type AppLocale } from '@/lib/i18n';
@@ -27,6 +28,7 @@ export default async function CityEventsPage({
   const landingHeroes = blocksLandingHeroOptions(landingCandidates);
   const heroScript = landingHeroScript(landingHeroes, imageCdnEnabled());
   const filterOptions = filterOptionsForEvents(events);
+  const defaultFilters = defaultCityFilterTokens(filterOptions);
   const mapSources = mapSourcesForEvents(events);
   // Testing aid (local builds only): the header's venue filter lists every source with events.
   const venues = DEV_PAGE_ENABLED
@@ -88,6 +90,7 @@ export default async function CityEventsPage({
             locale={locale}
             brandLabel={city.brandLabel}
             filterOptions={filterOptions}
+            defaultFilters={defaultFilters}
             venues={venues}
           />
         }
@@ -101,7 +104,13 @@ export default async function CityEventsPage({
         <main className={styles.main} id="events" tabIndex={-1} data-main-content>
           <h1 className={styles.visuallyHidden}>{copy.pageHeading(city.label)}</h1>
           <BlockControls />
-          <EventsGrid events={events} locale={locale} cityLabel={city.label} city={city.slug} />
+          <EventsGrid
+            events={events}
+            locale={locale}
+            cityLabel={city.label}
+            city={city.slug}
+            initialFilters={defaultFilters}
+          />
           <SiteFooter
             compact
             className={styles.blocksFooter}

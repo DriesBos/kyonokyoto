@@ -77,3 +77,8 @@ export const alternateLocaleForCity = (city: AppCity, locale: AppLocale) =>
 
 export const dateOnlyInTimeZone = (value: Date, timeZone: string) =>
   new Intl.DateTimeFormat('sv-SE', { timeZone }).format(value);
+
+// Production focuses on Kyoto only: the header's cities tab shows on local dev and on preview
+// (branch-deploy / deploy-preview) builds only, like beta events (NEXT_PUBLIC_BETA_QA, next.config.mjs).
+export const CITY_SWITCHER_ENABLED =
+  process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_BETA_QA === '1';

@@ -2,6 +2,14 @@
   display: grid
   gap: 1rem
 
+  // details arrive after the card opens (loaded on demand): a plain fade, no movement
+  > *
+    animation: detailFadeIn 240ms ease-out both
+
+  @media (prefers-reduced-motion: reduce)
+    > *
+      animation: none
+
   > p
     margin: 0
     display: -webkit-box
@@ -191,3 +199,9 @@
   flex: 0 0 auto
   width: 1em
   height: 1em
+
+@keyframes detailFadeIn
+  from
+    opacity: 0
+  to
+    opacity: 1

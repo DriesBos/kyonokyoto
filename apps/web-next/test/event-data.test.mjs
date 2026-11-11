@@ -250,7 +250,7 @@ test('lead image owns media ratio and becomes the scrollable track only while op
   const eventCardBlockStyles = blockStyles.slice(0, blockStyles.indexOf('.landing'));
   assert.doesNotMatch(eventCardBlockStyles, /aspect-ratio: 3 \/ 2|object-fit: cover/);
   assert.match(mediaStyles, /-webkit-line-clamp: 5/);
-  assert.match(blocks, /<EventsGrid events=\{events\} locale=\{locale\}/);
+  assert.match(blocks, /<EventsGrid\s+events=\{events\}\s+locale=\{locale\}/);
   assert.match(blocks, /<MapExperience/);
   assert.match(detail, /buildAppleCalendarIcs/);
   assert.match(detail, /rel: 'noopener noreferrer'/);

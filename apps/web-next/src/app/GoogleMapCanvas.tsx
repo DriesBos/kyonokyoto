@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { pressedFilterState } from '@/lib/eventFilters';
-import { STARS_UPDATED_EVENT } from '@/lib/eventStars';
+import { useEffect, useRef, useState } from 'react';
+import { COLOR_SCHEME_ATTRIBUTE } from '@/lib/colorScheme';
+import { getAppliedFilters, subscribeAppliedFilters } from '@/lib/filterStore';
 import { uiText, type AppLocale } from '@/lib/i18n';
+import {
+  ensureGoogleMapsLoader,
+  MAP_CLOSED_EVENT,
+  type MapsWindow as BaseMapsWindow,
+} from '@/lib/googleMapsLoader';
 import { scrollHeaderOverlap } from '@/lib/mapOverlap';
-import { matchesFilterState } from '../../../../data/categories.mjs';
 import styles from './GoogleMapCanvas.module.sass';
 
 export type MapSource = {
   id: string;
   sourceSlug: string;
   name: string;
-  categories: string[];
   lat: number;
   lng: number;
 };
@@ -20,9 +23,14 @@ export type MapSource = {
 type MapPosition = { lat: number; lng: number };
 
 type MapInstance = {
+  addListener?: (eventName: string, callback: () => void) => { remove: () => void };
   panTo?: (position: MapPosition) => void;
   setZoom?: (zoom: number) => void;
+  fitBounds?: (bounds: unknown, padding?: number) => void;
 };
+
+type LatLngBoundsInstance = { extend: (position: MapPosition) => void };
+type LatLngBoundsConstructor = new () => LatLngBoundsInstance;
 
 type GoogleMapConstructor = new (
   element: HTMLElement,
@@ -45,17 +53,9 @@ type AdvancedMarkerConstructor = new (options: {
   gmpClickable?: boolean;
 }) => AdvancedMarkerInstance;
 
-type MapsWindow = Window &
-  typeof globalThis & {
-    google?: {
-      maps?: {
-        importLibrary?: (libraryName: string) => Promise<unknown>;
-        Map?: GoogleMapConstructor;
-        __ib__?: () => void;
-      };
-    };
-    __kyoGoogleMapsLoader?: Promise<void>;
-  };
+type MapsWindow = BaseMapsWindow & {
+  google?: { maps?: { Map?: GoogleMapConstructor } };
+};
 
 export type GoogleMapCanvasProps = {
   cityLabel: string;
@@ -68,63 +68,47 @@ export type GoogleMapCanvasProps = {
 
 const defaultCenter = { lat: 35.0240977, lng: 135.7621436 };
 
-const ensureGoogleMapsLoader = (apiKey: string, mapId: string) => {
-  const mapWindow = window as MapsWindow;
-  mapWindow.google ??= {};
-  mapWindow.google.maps ??= {};
-
-  if (mapWindow.google.maps.importLibrary) return;
-
-  const requestedLibraries = new Set<string>();
-  const bootstrapImportLibrary = (libraryName: string) => {
-    requestedLibraries.add(libraryName);
-
-    if (!mapWindow.__kyoGoogleMapsLoader) {
-      mapWindow.__kyoGoogleMapsLoader = new Promise((resolve, reject) => {
-        const maps = mapWindow.google?.maps;
-        if (!maps) {
-          reject(new Error('Google Maps namespace unavailable.'));
-          return;
-        }
-
-        const parameters = new URLSearchParams({
-          key: apiKey,
-          v: 'weekly',
-          libraries: Array.from(requestedLibraries).join(','),
-          callback: 'google.maps.__ib__',
-        });
-        if (mapId) parameters.set('map_ids', mapId);
-
-        maps.__ib__ = resolve;
-        queueMicrotask(() => {
-          parameters.set('libraries', Array.from(requestedLibraries).join(','));
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?${parameters.toString()}`;
-          script.async = true;
-          script.onerror = () => reject(new Error('Google Maps JavaScript API could not load.'));
-          document.head.append(script);
-        });
-      });
-    }
-
-    return mapWindow.__kyoGoogleMapsLoader.then(() => {
-      const importLibrary = mapWindow.google?.maps?.importLibrary;
-      return importLibrary && importLibrary !== bootstrapImportLibrary
-        ? importLibrary(libraryName)
-        : (mapWindow.google?.maps ?? {});
-    });
-  };
-
-  mapWindow.google.maps.importLibrary = bootstrapImportLibrary;
-};
-
 const isVisible = (element: HTMLElement) =>
   !element.hidden && !element.closest('[hidden]') && element.getClientRects().length > 0;
 
-const sourceCards = (locationId: string) =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-event-card]')).filter(
-    (card) => card.dataset.mapLocationId === locationId,
-  );
+// Cards hidden by the filters (or in a hidden group) are out; cheap, no layout read.
+const isFilteredIn = (card: HTMLElement) => !card.hidden && !card.closest('[hidden]');
+
+// Every card on the page by map location, in one query (data-map-location-id, EventsGrid).
+const cardsByLocation = () => {
+  const index = new Map<string, HTMLElement[]>();
+  document
+    .querySelectorAll<HTMLElement>('[data-event-card][data-map-location-id]')
+    .forEach((card) => {
+      const id = card.dataset.mapLocationId ?? '';
+      const cards = index.get(id);
+      if (cards) cards.push(card);
+      else index.set(id, [card]);
+    });
+  return index;
+};
+
+const sourceCards = (locationId: string) => cardsByLocation().get(locationId) ?? [];
+
+// The map follows the site's colour scheme (the header toggle, lib/colorScheme). Cloud styling
+// for the mapId needs a dark variant set up, else Google uses its default dark style.
+const readDarkScheme = () =>
+  document.documentElement.getAttribute(COLOR_SCHEME_ATTRIBUTE) === 'dark';
+const useDarkScheme = () => {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const update = () => setDark(readDarkScheme());
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributeFilter: [COLOR_SCHEME_ATTRIBUTE] });
+    return () => observer.disconnect();
+  }, []);
+  return dark;
+};
+
+// Filter changes zoom the map to the venues left, up to this zoom (a single venue).
+const FIT_MAX_ZOOM = 15;
+const FIT_PADDING = 48;
 
 const markerContent = (source: MapSource) => {
   // not a <button>: AdvancedMarkerElement (gmpClickable) is the focusable, clickable element, and
@@ -159,13 +143,17 @@ export default function GoogleMapCanvas({
   const statusRef = useRef<HTMLParagraphElement>(null);
   const findMeButtonRef = useRef<HTMLButtonElement>(null);
   const placeholderRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const copy = uiText[locale];
+  // the map is built for one scheme (colorScheme is fixed per Map), so a toggle rebuilds it
+  const dark = useDarkScheme();
 
   useEffect(() => {
     const viewport = viewportRef.current;
     const placeholder = placeholderRef.current;
     const findMeButton = findMeButtonRef.current;
-    if (!viewport || !placeholder || !findMeButton) return;
+    const canvas = canvasRef.current;
+    if (!viewport || !placeholder || !findMeButton || !canvas) return;
 
     const showPlaceholder = (message: string, detail?: string) => {
       placeholder.hidden = false;
@@ -194,6 +182,14 @@ export default function GoogleMapCanvas({
       content: HTMLElement;
     }[] = [];
     const listeners: [string, EventListener][] = [];
+    // The panel shows the city colour until the first tiles are in, then the map fades in over it
+    // (data-map-ready, GoogleMapCanvas.module.sass). The timeout covers maps that never report
+    // tilesloaded, e.g. when Google rejects the key and draws its own error box.
+    let revealTimeout: number | undefined;
+    const reveal = () => {
+      window.clearTimeout(revealTimeout);
+      canvas.setAttribute('data-map-ready', '');
+    };
 
     const setStatus = (message = '') => {
       if (statusRef.current) statusRef.current.textContent = message;
@@ -223,7 +219,11 @@ export default function GoogleMapCanvas({
         const AdvancedMarkerElement = (
           markerLibrary as { AdvancedMarkerElement?: AdvancedMarkerConstructor }
         )?.AdvancedMarkerElement;
-        const ColorScheme = (coreLibrary as { ColorScheme?: { LIGHT?: unknown } })?.ColorScheme;
+        const { ColorScheme, LatLngBounds } = (coreLibrary ?? {}) as {
+          ColorScheme?: { LIGHT?: unknown; DARK?: unknown };
+          LatLngBounds?: LatLngBoundsConstructor;
+        };
+        const colorScheme = dark ? ColorScheme?.DARK : ColorScheme?.LIGHT;
         if (!MapConstructor || !AdvancedMarkerElement)
           throw new Error('Google Maps constructors unavailable.');
 
@@ -231,14 +231,20 @@ export default function GoogleMapCanvas({
           center: mapCenter,
           zoom: window.matchMedia('(max-width: 768px)').matches ? 13 : 14,
           mapId,
-          mapTypeId: 'terrain',
-          ...(ColorScheme?.LIGHT ? { colorScheme: ColorScheme.LIGHT } : {}),
+          // roadmap: the only type vector maps (smooth zoom, cloud styling) render; terrain forced raster
+          mapTypeId: 'roadmap',
+          ...(colorScheme ? { colorScheme } : {}),
           disableDefaultUI: true,
           clickableIcons: false,
           gestureHandling: 'greedy',
           keyboardShortcuts: true,
         });
         placeholder.hidden = true;
+        const tilesListener = map.addListener?.('tilesloaded', () => {
+          tilesListener?.remove();
+          reveal();
+        });
+        revealTimeout = window.setTimeout(reveal, 3000);
 
         // Scroll the venue's first visible card to the top of whatever scrolls the list (the events
         // panel, or the page under the sticky header or phone map). The card's scroll-margin
@@ -280,22 +286,32 @@ export default function GoogleMapCanvas({
           });
           highlighted.clear();
         };
+        // A venue's marker shows while one of its cards does (the header's filters already decided
+        // which cards show); with saved on, only venues with a visible starred card. A marker with
+        // no cards on the page (a venue page's own pin) always shows, saved aside.
+        const visibleMarkerIds = () => {
+          const { saved } = getAppliedFilters();
+          const index = cardsByLocation();
+          const visible = new Set<string>();
+          const starred = new Set<string>();
+          markerRecords.forEach(({ source: { id } }) => {
+            const cards = index.get(id) ?? [];
+            if (cards.some((card) => card.dataset.starred === 'true')) starred.add(id);
+            const shown = cards.filter(isFilteredIn);
+            const show = saved
+              ? shown.some((card) => card.dataset.starred === 'true')
+              : cards.length === 0 || shown.length > 0;
+            if (show) visible.add(id);
+          });
+          return { visible, starred };
+        };
         const applyFilters = () => {
-          const filterState = pressedFilterState();
+          const { visible, starred } = visibleMarkerIds();
           markerRecords.forEach(({ marker, source, content }) => {
-            const cards = sourceCards(source.id);
-            const visibleCards = cards.filter(isVisible);
-            const visible =
-              matchesFilterState(source.categories, filterState) &&
-              (!cards.length || visibleCards.length > 0) &&
-              // saved on: only venues with a visible starred card
-              (!filterState.saved || visibleCards.some((card) => card.dataset.starred === 'true'));
-            marker.map = visible ? map : null;
-            content.toggleAttribute('data-hidden', !visible);
-            content.toggleAttribute(
-              'data-starred',
-              cards.some((card) => card.dataset.starred === 'true'),
-            );
+            const shown = visible.has(source.id);
+            marker.map = shown ? map : null;
+            content.toggleAttribute('data-hidden', !shown);
+            content.toggleAttribute('data-starred', starred.has(source.id));
           });
           clearHighlight();
           const id = selectedId;
@@ -306,6 +322,48 @@ export default function GoogleMapCanvas({
             highlighted.set(id, record);
           }
         };
+
+        // Filter changes fit the map to the venues still shown, unless the visitor has moved the
+        // map themselves. A fit while the panel is collapsed (zero size) waits for it to open.
+        let userMoved = false;
+        let fitPending = false;
+        const fitToVisible = () => {
+          if (userMoved) return;
+          if (viewport.clientWidth === 0 || viewport.clientHeight === 0) {
+            fitPending = true;
+            return;
+          }
+          fitPending = false;
+          const shown = markerRecords.filter(({ content }) => !content.hasAttribute('data-hidden'));
+          if (shown.length === 0) return;
+          if (shown.length === 1 || !LatLngBounds || !map.fitBounds) {
+            map.panTo?.({ lat: shown[0].source.lat, lng: shown[0].source.lng });
+            map.setZoom?.(FIT_MAX_ZOOM);
+            return;
+          }
+          const bounds = new LatLngBounds();
+          shown.forEach(({ source }) => bounds.extend({ lat: source.lat, lng: source.lng }));
+          map.fitBounds(bounds, FIT_PADDING);
+          const zoomListener = map.addListener?.('idle', () => {
+            zoomListener?.remove();
+            const zoom = (map as { getZoom?: () => number }).getZoom?.();
+            if (typeof zoom === 'number' && zoom > FIT_MAX_ZOOM) map.setZoom?.(FIT_MAX_ZOOM);
+          });
+        };
+        const markUserMoved = () => {
+          userMoved = true;
+        };
+        const dragListener = map.addListener?.('dragstart', markUserMoved);
+        viewport.addEventListener('wheel', markUserMoved, { passive: true });
+        viewport.addEventListener('keydown', markUserMoved);
+        const onTouchMove = (event: TouchEvent) => {
+          if (event.touches.length > 1) userMoved = true;
+        };
+        viewport.addEventListener('touchmove', onTouchMove, { passive: true });
+        const resizeObserver = new ResizeObserver(() => {
+          if (fitPending) fitToVisible();
+        });
+        resizeObserver.observe(viewport);
 
         sources.forEach((source) => {
           const content = markerContent(source);
@@ -374,10 +432,23 @@ export default function GoogleMapCanvas({
           );
         };
         findMeButton.addEventListener('click', onFindMe);
-        const onFilterUpdate: EventListener = () => {
+        // The header applied new picks (or stars changed what shows): only a change of the picks
+        // themselves refits the view.
+        let lastPicks = '';
+        const picksKey = () => {
+          const { tokens, timing, venues, saved } = getAppliedFilters();
+          return JSON.stringify([[...tokens].sort(), timing, [...venues].sort(), saved]);
+        };
+        lastPicks = picksKey();
+        const unsubscribeFilters = subscribeAppliedFilters(() => {
           applyFilters();
           markTargetCards();
-        };
+          const picks = picksKey();
+          if (picks !== lastPicks) {
+            lastPicks = picks;
+            fitToVisible();
+          }
+        });
         // Any new click/tap (on a card, the map, the header) or Escape ends the venue highlight.
         // A marker click lands after this pointerdown, so picking another venue still works.
         const onPointerDown: EventListener = () => {
@@ -386,20 +457,23 @@ export default function GoogleMapCanvas({
         const onKeyDown = (event: KeyboardEvent) => {
           if (event.key === 'Escape' && selectedId) selectSource(null);
         };
-        // Cards update data-starred when React re-renders after the toggle, so read them a frame
-        // later (the header also re-applies filters and sends event-filter:updated).
-        const onStarsUpdate: EventListener = () => requestAnimationFrame(() => applyFilters());
-        document.addEventListener('event-filter:updated', onFilterUpdate);
-        document.addEventListener(STARS_UPDATED_EVENT, onStarsUpdate);
+        const onMapClosed: EventListener = () => {
+          stopUserTracking();
+          if (selectedId) selectSource(null);
+        };
         document.addEventListener('pointerdown', onPointerDown, true);
         document.addEventListener('keydown', onKeyDown);
-        listeners.push(
-          ['event-filter:updated', onFilterUpdate],
-          [STARS_UPDATED_EVENT, onStarsUpdate],
-        );
+        document.addEventListener(MAP_CLOSED_EVENT, onMapClosed);
+        listeners.push([MAP_CLOSED_EVENT, onMapClosed]);
         applyFilters();
 
         return () => {
+          unsubscribeFilters();
+          dragListener?.remove();
+          viewport.removeEventListener('wheel', markUserMoved);
+          viewport.removeEventListener('keydown', markUserMoved);
+          viewport.removeEventListener('touchmove', onTouchMove);
+          resizeObserver.disconnect();
           findMeButton.removeEventListener('click', onFindMe);
           document.removeEventListener('pointerdown', onPointerDown, true);
           document.removeEventListener('keydown', onKeyDown);
@@ -409,6 +483,7 @@ export default function GoogleMapCanvas({
       } catch (error) {
         console.error(error);
         showPlaceholder(copy.mapFailed);
+        reveal();
       }
     };
 
@@ -418,6 +493,7 @@ export default function GoogleMapCanvas({
     });
     return () => {
       cancelled = true;
+      window.clearTimeout(revealTimeout);
       dispose?.();
       stopUserTracking();
       markerRecords.forEach(({ marker }) => {
@@ -425,10 +501,15 @@ export default function GoogleMapCanvas({
       });
       listeners.forEach(([name, listener]) => document.removeEventListener(name, listener));
     };
-  }, [apiKey, copy, mapCenter, mapId, sources]);
+  }, [apiKey, copy, dark, mapCenter, mapId, sources]);
 
   return (
-    <div className={styles.canvas} role="region" aria-label={copy.culturalMap(cityLabel)}>
+    <div
+      className={styles.canvas}
+      ref={canvasRef}
+      role="region"
+      aria-label={copy.culturalMap(cityLabel)}
+    >
       <div className={styles.viewport} ref={viewportRef} />
       <div className={styles.controls}>
         <button

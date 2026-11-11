@@ -5,7 +5,6 @@ import { layoutSocialPost, socialPostSvg } from '../../../../../../packages/shar
 import styles from './page.module.sass';
 
 type SocialLayout = 'inset' | 'flush';
-type SocialBadge = { path: string; width: number };
 type MeasuredText = {
   meta: { lines: number } | null;
   metaPaths: string[];
@@ -24,7 +23,6 @@ export type SocialItem = {
   previewSrc: string;
   startDate: string | null;
   endDate: string | null;
-  lastWeek: boolean;
   caption: string;
   layouts: Record<SocialLayout, MeasuredText>;
   skipReason: string | null;
@@ -56,13 +54,11 @@ function SocialPreview({
   item,
   layout,
   color,
-  badge,
   onFit,
 }: {
   item: SocialItem;
   layout: SocialLayout;
   color: string;
-  badge: SocialBadge | null;
   onFit: (fit: string | null, reason: string | null) => void;
 }) {
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
@@ -102,7 +98,6 @@ function SocialPreview({
     imageHref: item.previewSrc,
     metaPaths: text.metaPaths,
     titlePaths: text.titlePaths,
-    badge,
   });
   return (
     <figure className={styles.preview}>
@@ -115,7 +110,6 @@ function SocialCard({
   item,
   layout,
   color,
-  badge,
   live,
   busy,
   caption,
@@ -125,7 +119,6 @@ function SocialCard({
   item: SocialItem;
   layout: SocialLayout;
   color: string;
-  badge: SocialBadge;
   live: SocialPostRow | undefined;
   busy: boolean;
   caption: string;
@@ -144,7 +137,6 @@ function SocialCard({
         item={item}
         layout={shownLayout}
         color={color}
-        badge={item.lastWeek ? badge : null}
         onFit={(label, reason) =>
           setFit((current) =>
             current.label === label && current.reason === reason ? current : { label, reason },
@@ -185,14 +177,12 @@ function SocialCard({
 export default function SocialsBoard({
   city,
   color,
-  badge,
   items,
   posts: initialPosts,
   supabase,
 }: {
   city: string;
   color: string;
-  badge: SocialBadge;
   items: SocialItem[];
   posts: SocialPostRow[];
   supabase: { url: string; key: string };
@@ -354,7 +344,6 @@ export default function SocialsBoard({
             item={item}
             layout={layout}
             color={color}
-            badge={badge}
             live={livePostFor(item.eventId)}
             busy={busy === item.eventId}
             caption={captions[item.eventId] ?? item.caption}

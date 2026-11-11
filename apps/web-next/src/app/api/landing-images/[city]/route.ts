@@ -7,7 +7,7 @@ import { landingWarmUrls } from '@/lib/landingWarm';
 // (scripts/run-crawl-cycle.mjs). Cached like the city pages: rendered on first request, not at
 // build (CI builds without Supabase); the crawl purge drops it through the city-<slug> fetch tag,
 // and the warm request then renders the fresh list.
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return [];

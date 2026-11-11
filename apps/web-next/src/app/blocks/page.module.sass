@@ -596,6 +596,11 @@
   height: 100svh
   overflow: hidden
   isolation: isolate
+  // iOS home-screen app: 100svh leaves out the status bar while the overlay starts at the very
+  // top, so it stopped ~60px short and cards peeked in below (Dries 2026-11-11). inset: 0 alone
+  // fills the whole screen there.
+  @media (display-mode: standalone)
+    height: auto
   // Black while the first image loads. iOS 26 Safari tints the status bar with this fixed
   // overlay's background (no theme-color), so black keeps it in line with the dim layer and boxes.
   background: #000

@@ -118,7 +118,6 @@ export const resolveBlocksLandingSlides = ({
 };
 
 export type BlocksLandingHeroOption = { id: string; sourceSlug: string; files: LandingFiles };
-export type BlocksLandingHero = BlocksLandingHeroOption;
 
 // One possible first slide per source: its first landing event. The page's inline script
 // (lib/landingHero.ts) picks one of these per visit, before first paint.

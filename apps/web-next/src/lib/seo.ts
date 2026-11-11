@@ -133,6 +133,8 @@ const eventStructuredData = (city: AppCity, locale: AppLocale, event: EventData)
   inLanguage: locale,
 });
 
+export const CITY_STRUCTURED_DATA_LIMIT = 20;
+
 export const structuredData = ({
   city,
   locale,
@@ -143,8 +145,10 @@ export const structuredData = ({
   events?: (EventData & { startDate: string | null })[];
 }) => {
   const { title, description } = seoCopy(city, locale);
-  // Google requires a start date; permanent collections have none.
-  const dated = events.filter((event) => event.startDate);
+  // Google requires a start date; permanent collections have none. The list stops at the first
+  // CITY_STRUCTURED_DATA_LIMIT events (page order: ongoing first), which keeps the page HTML small;
+  // every event is still a card on the page and on its venue page.
+  const dated = events.filter((event) => event.startDate).slice(0, CITY_STRUCTURED_DATA_LIMIT);
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',

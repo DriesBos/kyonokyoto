@@ -35,6 +35,7 @@ export type SocialEventInput = Pick<
   | 'calendarStartsAt'
   | 'calendarEndsAt'
   | 'endsSoon'
+  | 'startsSoon'
   | 'images'
   | 'eventKind'
 > &
@@ -49,8 +50,6 @@ export type SocialCandidate = {
   imageHeight: number | null;
   startDate: string | null;
   endDate: string | null;
-  // ongoing and ending within 6 days: the post gets the LAST WEEK badge
-  lastWeek: boolean;
 };
 
 const addDays = (dateOnly: string, days: number) => {
@@ -114,7 +113,6 @@ export function scoreSocialEvent(event: SocialEventInput, today: string): Social
     imageHeight: image.height ?? null,
     startDate: start,
     endDate: dateOnly(event.calendarEndsAt),
-    lastWeek: Boolean(event.endsSoon),
   };
 }
 
@@ -156,13 +154,20 @@ export const instagramHandle = (value: string | null | undefined) => {
 
 // Same content as the event card: title, dates, venue (@instagram when the source config has
 // one), then #category #subcategories #venue.
+// Status lead line instead of a badge on the image (Dries, 2026-11-11): the site's "Opening soon" /
+// "Last week" pills.
+export const socialStatusLine = (event: Pick<SocialEventInput, 'endsSoon' | 'startsSoon'>) =>
+  event.endsSoon ? 'Last week:' : event.startsSoon ? 'Opening soon:' : null;
+
 export function socialCaption(event: SocialEventInput) {
   const venue = event.institution || event.venue || '';
   const tags = [
     ...new Set([...categoryHashtags(event.filterTags), hashtagFor(venue)].filter(Boolean)),
   ];
+  const status = socialStatusLine(event);
   return [
-    event.title,
+    ...(status ? [status] : []),
+    `"${event.title}"`,
     event.date,
     instagramHandle(event.venueInstagram) ?? venue,
     '',

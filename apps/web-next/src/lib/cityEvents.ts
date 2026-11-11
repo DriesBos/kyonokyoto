@@ -48,7 +48,8 @@ import {
   normalizeCity,
   type AppCity,
 } from './cities';
-import { cityCacheTag } from './cdnCache';
+import { CITY_DATA_REVALIDATE_SECONDS, cityCacheTag } from './cdnCache';
+import { withEventMediums } from './eventMediums';
 import { supabaseEnv } from './env';
 import { formatEventDateRange, formatEventScheduleDate } from './eventDates';
 import { uiText, type AppLocale } from './i18n';
@@ -199,7 +200,7 @@ export type CityEvent = {
   filterTags?: string[];
   // Ongoing and closing within the next 7 days (the "ending soon!" filter).
   endsSoon?: boolean;
-  // Upcoming and starting within the next 7 days (the "Coming soon" pill). Never overlaps endsSoon.
+  // Upcoming and starting within the next 7 days (the "Opening soon" pill). Never overlaps endsSoon.
   startsSoon?: boolean;
   date: string;
   institution: string;
@@ -274,7 +275,6 @@ export type MapSource = {
   id: string;
   sourceSlug: string;
   name: string;
-  categories: string[];
   lat: number;
   lng: number;
 };
@@ -492,7 +492,7 @@ const sourceTruth = (
           event.directions_query ??
           addressText)) ?? null,
     categories: source
-      ? taxonomyCategories(source.taxonomy, source.slug)
+      ? withEventMediums(taxonomyCategories(source.taxonomy, source.slug), event.categories)
       : [...new Set((event.categories ?? []).map(normalizedText).filter(Boolean))],
     lat: pair?.lat ?? null,
     lng: pair?.lng ?? null,
@@ -612,13 +612,16 @@ export async function fetchCityEvents({
     // end_date is the schedule envelope, so rows that ended before today can never display.
     or: `(end_date.is.null,end_date.gte.${today})`,
   }).toString();
-  const response = await fetch(endpoint, {
-    headers: { apikey: key },
-    next: { revalidate: 300, tags: [cityCacheTag(city)] },
-  });
+  // events and source profiles in parallel (cold renders and revalidations wait for both)
+  const [response, sources] = await Promise.all([
+    fetch(endpoint, {
+      headers: { apikey: key },
+      next: { revalidate: CITY_DATA_REVALIDATE_SECONDS, tags: [cityCacheTag(city)] },
+    }),
+    activeSourcesFor(city),
+  ]);
   if (!response.ok) throw new Error(`Supabase events request failed: ${response.status}`);
 
-  const sources = await activeSourcesFor(city);
   const visibleSource = (slug: string | null) => {
     const source = sources.find((candidate) => candidate.slug === slug);
     return Boolean(source && (showBeta() || !source.beta));
@@ -705,7 +708,8 @@ export async function fetchCityEvents({
         // Date-only in the city's time zone, so ISR (5 min) can only lag the flip by one revalidation.
         startsSoon:
           group === 'upcoming' &&
-          (nextRelevantScheduleStartDateOnly(enriched, today) ?? '9999-12-31') <= addDaysDateOnly(today, 7),
+          (nextRelevantScheduleStartDateOnly(enriched, today) ?? '9999-12-31') <=
+            addDaysDateOnly(today, 7),
         date,
         institution: truth.institution,
         venue,
@@ -789,15 +793,17 @@ export async function fetchFestivalDetail({
     event_kind: 'eq.festival',
     limit: '1',
   }).toString();
-  const response = await fetch(endpoint, {
-    headers: { apikey: key },
-    next: { revalidate: 300, tags: [cityCacheTag(city)] },
-  });
+  const [response, sources] = await Promise.all([
+    fetch(endpoint, {
+      headers: { apikey: key },
+      next: { revalidate: CITY_DATA_REVALIDATE_SECONDS, tags: [cityCacheTag(city)] },
+    }),
+    activeSourcesFor(city),
+  ]);
   if (!response.ok) throw new Error(`Supabase festival request failed: ${response.status}`);
   const [festival] = (await response.json()) as EventRow[];
   if (!festival) return null;
 
-  const sources = await activeSourcesFor(city);
   const sourceSlug = sourceSlugForEvent(festival, sources);
   const source = sources.find((candidate) => candidate.slug === sourceSlug);
   if (!source || (!showBeta() && source.beta)) return null;
@@ -1126,7 +1132,6 @@ export function mapSourcesForEvents(events: CityEvent[]): MapSource[] {
       id,
       sourceSlug: current?.sourceSlug ?? event.sourceSlug ?? event.id,
       name: current?.name ?? event.venue ?? event.institution,
-      categories: [...new Set([...(current?.categories ?? []), ...(event.filterTags ?? [])])],
       lat: event.lat,
       lng: event.lng,
     });
@@ -1164,12 +1169,13 @@ export async function fetchVenueDetail({
   locale: AppLocale;
   slug: string;
 }): Promise<VenueDetail | null> {
-  const sources = await activeSourcesFor(city);
+  const [sources, cityEvents] = await Promise.all([
+    activeSourcesFor(city),
+    fetchCityEvents({ city, locale }),
+  ]);
   const source = venueSourceFor(sources, slug);
   if (!source) return null;
-  const events = (await fetchCityEvents({ city, locale })).filter(
-    (event) => event.venueSlug === source.slug,
-  );
+  const events = cityEvents.filter((event) => event.venueSlug === source.slug);
   const permanent = permanentByCity[city].find(
     (item) => item.slug === source.slug && item.is_active !== false,
   );

@@ -11,12 +11,14 @@ export default function ExperienceHeader({
   locale,
   brandLabel,
   filterOptions,
+  defaultFilters,
   venues,
 }: {
   city: AppCity;
   locale: AppLocale;
   brandLabel: string;
   filterOptions: FilterOptions;
+  defaultFilters?: readonly string[];
   venues?: HeaderVenue[];
 }) {
   const { mapOpen, toggleMap } = useMapExperience();
@@ -26,6 +28,7 @@ export default function ExperienceHeader({
       locale={locale}
       brandLabel={brandLabel}
       filterOptions={filterOptions}
+      defaultFilters={defaultFilters}
       venues={venues}
       mapOpen={mapOpen}
       onMapToggle={toggleMap}

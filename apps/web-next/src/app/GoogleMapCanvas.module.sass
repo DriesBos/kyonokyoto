@@ -4,12 +4,21 @@
   height: 100%
   min-height: 0
   overflow: hidden
-  background: var(--color-background)
+  // City (type) colour until the tiles are in, so opening reads as a panel arriving, not a line
+  // sliding over an empty page (Dries 2026-11-11). The map fades in on data-map-ready.
+  background: var(--color-text)
   color: var(--color-text)
 
 .viewport
   position: absolute
   inset: 0
+  opacity: 0
+  transition: opacity 240ms ease-out
+
+.canvas[data-map-ready]
+  .viewport,
+  .controls
+    opacity: 1
 
 .placeholder
   position: absolute
@@ -38,6 +47,8 @@
   align-items: flex-end
   gap: .25rem
   pointer-events: none
+  opacity: 0
+  transition: opacity 240ms ease-out
 
 .findMe
   padding: 1rem
@@ -144,6 +155,24 @@
 .marker[data-highlighted] .markerLabel
   display: block
 
+// Desktop: hovering a marker (or focusing it from the keyboard) names the venue, as a pick does.
+@media (hover: hover)
+  .marker:hover
+    .markerDot,
+    .markerStar
+      display: none
+
+    .markerLabel
+      display: block
+
+:global(gmp-advanced-marker):focus-visible .marker
+  .markerDot,
+  .markerStar
+    display: none
+
+  .markerLabel
+    display: block
+
 .userMarker
   --map-user-heading: 0deg
   position: relative
@@ -183,3 +212,8 @@
   to
     opacity: 0
     transform: scale(1.75)
+
+@media (prefers-reduced-motion: reduce)
+  .viewport,
+  .controls
+    transition: none
