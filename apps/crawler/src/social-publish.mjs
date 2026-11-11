@@ -13,9 +13,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseEnv } from 'node:util';
 import {
-  isLastWeek,
   layoutSocialPost,
-  measureSocialBadge,
   measureSocialPostText,
   SOCIAL_CITY_COLORS,
   socialPostSvg,
@@ -82,13 +80,6 @@ export async function renderSocialImage({ post, imageBytes, font, sharpImpl }) {
     imageHref: `data:image/jpeg;base64,${photo.toString('base64')}`,
     metaPaths: text.metaPaths,
     titlePaths: text.titlePaths,
-    badge: isLastWeek({
-      startDate: post.event_start_date,
-      endDate: post.event_end_date,
-      today: todayInTokyo(),
-    })
-      ? measureSocialBadge(resolvedFont)
-      : null,
   });
   return sharp(Buffer.from(svg)).jpeg({ quality: 90, chromaSubsampling: '4:4:4' }).toBuffer();
 }

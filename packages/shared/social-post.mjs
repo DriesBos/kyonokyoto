@@ -146,18 +146,11 @@ const escapeAttribute = (value) =>
 // (measureSocialText). imageHref: URL or data: URI of the photo.
 /**
  * @param {SocialLayoutFit} layoutResult
- * @param {{ color: string, background?: string, imageHref: string, metaPaths?: string[], titlePaths?: string[], badge?: { path: string, width: number } | null }} options
+ * @param {{ color: string, background?: string, imageHref: string, metaPaths?: string[], titlePaths?: string[] }} options
  */
 export function socialPostSvg(
   layoutResult,
-  {
-    color,
-    background = SOCIAL_BACKGROUND,
-    imageHref,
-    metaPaths = [],
-    titlePaths = [],
-    badge = null,
-  },
+  { color, background = SOCIAL_BACKGROUND, imageHref, metaPaths = [], titlePaths = [] },
 ) {
   const { depth: d, stroke: s } = SOCIAL_STYLE;
   const { width: W, height: H } = SOCIAL_SIZE;
@@ -207,49 +200,7 @@ export function socialPostSvg(
     `<image x="${photo.x}" y="${photo.y}" width="${photo.width}" height="${photo.height}" preserveAspectRatio="xMidYMid meet" href="${escapeAttribute(imageHref)}" xlink:href="${escapeAttribute(imageHref)}"/>`,
     layoutResult.showMeta ? text(metaPaths, layoutResult.metaBaselines) : '',
     layoutResult.showTitle ? text(titlePaths, layoutResult.titleBaselines) : '',
-    badge ? badgeSvg(badge, photo, color, background) : '',
     '</svg>',
-  ].join('');
-}
-
-// "LAST WEEK" pill, as the site's event cards (LastWeekBadge): filled oval in the city colour with
-// background-coloured uppercase meta text, at the photo's top-right.
-export const SOCIAL_BADGE = {
-  label: 'LAST WEEK!',
-  inset: 24, // from the photo's top and right edges
-  padTop: 12, // 0.25em
-  padBottom: 15, // 0.3em
-  padX: 34, // 0.7em
-};
-
-// Ongoing (started) and ending within today + 6 days, like CityEvent.endsSoon. Dates YYYY-MM-DD.
-export function isLastWeek({ startDate, endDate, today }) {
-  if (!endDate || endDate < today) return false;
-  if (startDate && startDate > today) return false;
-  const weekEnd = new Date(`${today}T00:00:00Z`);
-  weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
-  return endDate <= weekEnd.toISOString().slice(0, 10);
-}
-
-// The badge label as a glyph path (baseline at 0) plus its advance width.
-export function measureSocialBadge(font, label = SOCIAL_BADGE.label) {
-  const size = SOCIAL_STYLE.metaSize;
-  const width = Math.round(lineWidth(font, label, size) * 10) / 10;
-  return { path: linePath(font, label, size), width };
-}
-
-function badgeSvg(badge, photo, color, background) {
-  const size = SOCIAL_STYLE.metaSize;
-  const { inset, padTop, padBottom, padX } = SOCIAL_BADGE;
-  const height = size + padTop + padBottom;
-  const width = badge.width + 2 * padX;
-  const x = photo.x + photo.width - inset - width;
-  const y = photo.y + inset;
-  // line-height 1: the baseline sits where GT Walsheim's ascent puts it inside a 1em box
-  const baseline = y + padTop + Math.round(size * 0.828);
-  return [
-    `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${height / 2}" fill="${color}"/>`,
-    `<path d="${badge.path}" fill="${background}" transform="translate(${x + padX} ${baseline})"/>`,
   ].join('');
 }
 

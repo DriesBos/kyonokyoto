@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import sharp from 'sharp';
 import {
-  isLastWeek,
   layoutSocialPost,
   measureSocialPostText,
   socialGeometry,
@@ -120,15 +119,6 @@ test('renders a 1080 x 1350 JPEG with the photo inside the box', async () => {
     }),
     /too wide/,
   );
-});
-
-test('LAST WEEK only for started events ending within 6 days', () => {
-  const today = '2026-11-10';
-  assert.equal(isLastWeek({ startDate: '2026-10-01', endDate: '2026-11-16', today }), true);
-  assert.equal(isLastWeek({ startDate: '2026-10-01', endDate: '2026-11-17', today }), false);
-  assert.equal(isLastWeek({ startDate: '2026-11-12', endDate: '2026-11-14', today }), false);
-  assert.equal(isLastWeek({ startDate: null, endDate: '2026-11-09', today }), false);
-  assert.equal(isLastWeek({ startDate: null, endDate: null, today }), false);
 });
 
 test('queue posts the soonest-ending event first and expires ended ones', () => {

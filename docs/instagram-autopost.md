@@ -42,13 +42,13 @@ up to 0.8 → meta + title, up to 1.05 → title, up to 1.08 → meta, taller �
 wider than 2:1 are not proposed either. Titles longer than 3 lines end in "…"; text with
 characters GT Walsheim lacks (Japanese) is left out.
 
-Events that have started and end within 6 days get a **LAST WEEK!** pill at the photo's top-right
-(city colour, like the site's card badge). The publisher decides this on the day it posts, from
-the stored start and end dates.
+Posts carry no badges or labels (no LAST WEEK!, opening soon, etc.).
 
 ## Caption
 
-Like the event card: title, dates, venue (`@handle` when the source has `"instagram": "<handle>"`
+Status line first, instead of a badge on the image: `Last week:` (ongoing, ends within 6 days) or
+`Opening soon:` (starts within 7 days), set when the post is proposed. Then, like the event card:
+"title" in quotes, dates, venue (`@handle` when the source has `"instagram": "<handle>"`
 in `data/sources/<city>-sources.json`, else the venue name), then `#category #subcategories
 #venuename` from the event's filter tags.
 

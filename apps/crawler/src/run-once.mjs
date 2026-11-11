@@ -20,6 +20,7 @@ import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { checkLandingImages } from './landing-image-check.mjs';
+import { checkEventMediums, mediumsFromCategories, MEDIUM_CHECK_PREFIX } from './event-medium-check.mjs';
 import { attachLandingMedia, LANDING_MEDIA_BUCKET } from './landing-media.mjs';
 import { createTempleSourceAdapters } from './temple-sources.mjs';
 import { createTemplePlaceEnricher, isKyotoTempleSource } from './temple-place-loader.mjs';
@@ -10058,6 +10059,16 @@ async function storedImageMetadata(env, imageUrl) {
   return null;
 }
 
+// An earlier crawl's medium check for the same source, title and description (event-medium-check.mjs).
+async function storedEventMediums(env, key) {
+  const marker = `${MEDIUM_CHECK_PREFIX}${key}`;
+  const rows = await supabaseRequest({
+    env,
+    path: `events?select=categories&categories=cs.${encodeURIComponent(`{"${marker}"}`)}&limit=1`,
+  });
+  return rows?.[0] ? mediumsFromCategories(rows[0].categories ?? []) : null;
+}
+
 // Earlier crawls' image check tags for this image URL, so each image is only sent once.
 async function storedLandingVerdict(env, imageUrl) {
   const rows = await supabaseRequest({
@@ -10837,6 +10848,12 @@ async function crawlSource({
         });
         continue;
       }
+
+      extractedEvent = await checkEventMediums(extractedEvent, crawlSourceConfig, {
+        env,
+        lookupFn: (key) => storedEventMediums(env, key),
+        log: (message) => console.log(message),
+      });
 
       const nativeTranslations = {};
       for (const targetLocale of localesForCity(source.city)) {
