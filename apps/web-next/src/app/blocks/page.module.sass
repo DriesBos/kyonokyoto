@@ -553,7 +553,7 @@
 
 // Venue picked on the map (GoogleMapCanvas sets data-map-target on its cards until the next
 // click/tap or Escape): the front inverts, city colour as background and the page background as
-// type, so the scrolled-to card stands out among the others. Links, dots and the star follow
+// type, so the scrolled-to cards (every visible event at that venue) stand out among the others. Links, dots and the star follow
 // through currentColor; the pill flips in LastWeekBadge.module.sass.
 .block[data-map-target] .front
   background: var(--color-text)
@@ -561,6 +561,12 @@
 
 .block[data-map-target] .star
   color: var(--color-background)
+
+// ...and its side faces shade much deeper (same top-left light: bottom darker than side), so the
+// whole box reads as picked, still lighter than the solid front so the depth stays visible.
+.block[data-map-target]
+  --block-shade-x: 45%
+  --block-shade-y: 65%
 
 // Beta sources only render in dev; dim them so they read as unreleased.
 .block[data-beta]
