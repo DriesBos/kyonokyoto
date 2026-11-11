@@ -11,3 +11,23 @@ export function stickyMapOverlap(): number {
     resizer?.getBoundingClientRect().bottom ?? 0,
   );
 }
+
+// How much of the scroll container's top the sticky header covers: all of it on the page, none
+// when the cards scroll in their own panel below the header (map open). On phones with the map
+// open the sticky map covers the top instead.
+export function scrollHeaderOverlap(card: HTMLElement): number {
+  const header = document.querySelector<HTMLElement>('[data-main-header]');
+  if (!header) return stickyMapOverlap();
+  let scrollerTop = 0;
+  for (let node = card.parentElement; node && node !== document.body; node = node.parentElement) {
+    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) {
+      scrollerTop = node.getBoundingClientRect().top;
+      break;
+    }
+  }
+  return Math.max(
+    0,
+    header.getBoundingClientRect().bottom - scrollerTop,
+    stickyMapOverlap() - scrollerTop,
+  );
+}

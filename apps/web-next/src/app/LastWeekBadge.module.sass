@@ -32,6 +32,23 @@
   @media (max-width: 768px)
     right: calc(6px + 28px + 6px)
 
+// No image: the pill would sit on the venue/date lines, so it takes its own line at the top right
+// instead (in the .front column, above the content).
+:global([data-event-card]):not(:has([data-event-card-part='media'])) .pill
+  position: relative
+  top: auto
+  right: auto
+  align-self: flex-end
+  margin: 8px 8px -0.25rem
+
+:global([data-event-card]):not(:has([data-event-card-part='media'])):has([data-event-card-detail][data-expanded='true']) .pill
+  margin-right: calc(6px + 28px + 6px)
+
+// Map-picked card (data-map-target): the front inverts, so the pill does too.
+:global([data-event-card][data-map-target]) .pill
+  background: var(--color-background)
+  color: var(--color-text)
+
 @keyframes last-week-blink
   50%
     opacity: 0

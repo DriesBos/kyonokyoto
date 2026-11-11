@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { pressedFilterState } from '@/lib/eventFilters';
 import { STARS_UPDATED_EVENT } from '@/lib/eventStars';
 import { uiText, type AppLocale } from '@/lib/i18n';
-import { stickyMapOverlap } from '@/lib/mapOverlap';
+import { scrollHeaderOverlap } from '@/lib/mapOverlap';
 import { matchesFilterState } from '../../../../data/categories.mjs';
 import styles from './GoogleMapCanvas.module.sass';
 
@@ -239,29 +239,33 @@ export default function GoogleMapCanvas({
         });
         placeholder.hidden = true;
 
+        // Scroll the venue's first visible card to the top of whatever scrolls the list (the events
+        // panel, or the page under the sticky header or phone map). The card's scroll-margin
+        // (.block in page.module.sass) keeps it clear of the header, the lifted front and the map.
         const scrollToSource = (locationId: string) => {
           const card = sourceCards(locationId).find(isVisible);
           if (!card) return;
-          const events = card.closest<HTMLElement>('[data-events-section]');
-          if (events && events.scrollHeight > events.clientHeight) {
-            events.scrollTo({
-              top: Math.max(0, card.offsetTop - events.offsetTop),
-              behavior: 'smooth',
-            });
-          } else if (stickyMapOverlap() > 0) {
-            // phones: the list scrolls as the document under the sticky map, so land below it
-            const rem =
-              Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-            window.scrollTo({
-              top: Math.max(
-                0,
-                card.getBoundingClientRect().top + window.scrollY - stickyMapOverlap() - rem,
-              ),
-              behavior: 'smooth',
-            });
-          } else {
-            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
+          card.style.setProperty('--scroll-header', `${scrollHeaderOverlap(card)}px`);
+          const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          card.scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
+        };
+
+        // The venue picked on the map: its marker shows the venue name and its visible cards get the
+        // inverted front (data-map-target), until the next click/tap anywhere or Escape.
+        let selectedId: string | null = null;
+        const markTargetCards = () => {
+          document
+            .querySelectorAll<HTMLElement>('[data-event-card][data-map-target]')
+            .forEach((card) => card.removeAttribute('data-map-target'));
+          if (!selectedId) return;
+          sourceCards(selectedId)
+            .filter(isVisible)
+            .forEach((card) => card.setAttribute('data-map-target', ''));
+        };
+        const selectSource = (locationId: string | null) => {
+          selectedId = locationId;
+          markTargetCards();
+          applyFilters();
         };
 
         const highlighted = new Map<
@@ -293,10 +297,7 @@ export default function GoogleMapCanvas({
             );
           });
           clearHighlight();
-          const activeCard = document.querySelector<HTMLElement>(
-            "[data-event-card][data-active='true']",
-          );
-          const id = activeCard?.dataset.mapLocationId;
+          const id = selectedId;
           const record = id ? markerRecords.find(({ source }) => source.id === id) : undefined;
           if (id && record && !record.content.hasAttribute('data-hidden')) {
             record.content.setAttribute('data-highlighted', '');
@@ -315,7 +316,10 @@ export default function GoogleMapCanvas({
             anchorLeft: '-0.625rem',
             gmpClickable: true,
           });
-          marker.addEventListener?.('gmp-click', () => scrollToSource(source.id));
+          marker.addEventListener?.('gmp-click', () => {
+            selectSource(source.id);
+            scrollToSource(source.id);
+          });
           markerRecords.push({ marker, source, content });
         });
 
@@ -369,22 +373,38 @@ export default function GoogleMapCanvas({
           );
         };
         findMeButton.addEventListener('click', onFindMe);
-        const onFilterUpdate: EventListener = () => applyFilters();
-        const onActiveChange: EventListener = () => applyFilters();
+        const onFilterUpdate: EventListener = () => {
+          applyFilters();
+          markTargetCards();
+        };
+        // Any new click/tap (on a card, the map, the header) or Escape ends the venue highlight.
+        // A marker click lands after this pointerdown, so picking another venue still works.
+        const onPointerDown: EventListener = () => {
+          if (selectedId) selectSource(null);
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+          if (event.key === 'Escape' && selectedId) selectSource(null);
+        };
         // Cards update data-starred when React re-renders after the toggle, so read them a frame
         // later (the header also re-applies filters and sends event-filter:updated).
         const onStarsUpdate: EventListener = () => requestAnimationFrame(() => applyFilters());
         document.addEventListener('event-filter:updated', onFilterUpdate);
         document.addEventListener(STARS_UPDATED_EVENT, onStarsUpdate);
-        document.addEventListener('event-card:active-change', onActiveChange);
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('keydown', onKeyDown);
         listeners.push(
           ['event-filter:updated', onFilterUpdate],
           [STARS_UPDATED_EVENT, onStarsUpdate],
-          ['event-card:active-change', onActiveChange],
         );
         applyFilters();
 
-        return () => findMeButton.removeEventListener('click', onFindMe);
+        return () => {
+          findMeButton.removeEventListener('click', onFindMe);
+          document.removeEventListener('pointerdown', onPointerDown, true);
+          document.removeEventListener('keydown', onKeyDown);
+          selectedId = null;
+          markTargetCards();
+        };
       } catch (error) {
         console.error(error);
         showPlaceholder(copy.mapFailed);
