@@ -26,8 +26,8 @@ See [docs/skills/caveman.md](docs/skills/caveman.md) for full reference.
 - Supabase is on the Free plan: plan every Supabase change within the limits in docs/supabase-free-plan.md.
 - Netlify is on the Personal plan (1,000 credits/month): plan every hosting, deploy and image change within docs/netlify-plan.md.
 - Crawls run only on the VPS systemd timers (`ops/systemd`). Never trigger crawls or add crawl/source-sync steps to CI, deploy scripts or push hooks; source changes take effect at the next scheduled crawl. To test a source, use `selectors:inspect --from=live` (fetch only), not `crawl:*` or `run-once`.
-- Deploys: push to the `preview` branch (free branch deploys) by default. Push or merge to `main` (production, 15 credits) only when specifically asked to publish to main.
-- Pushing: commit in the local checkout (/Users/driesbos/Code/kyonokyoto) and push from there, so nothing that is on origin stays behind as uncommitted local changes. After a push to `main`, the local tree holds only work not yet on origin. If work reached origin another way (cloud clone, PR), pull it and discard the matching local uncommitted copies (`git restore <files>`) after checking they match. Commit all uncommitted work in the checkout with the push (after tsc + tests pass), so the tree ends clean.
+- Deploys: a plain "push" means push to `preview` (free branch deploys). Never touch `main` (production, 15 credits): no merge, no push, unless Dries explicitly starts a preview-to-main process.
+- Pushing: commit in the local checkout (/Users/driesbos/Code/kyonokyoto) and push to `preview` from there, so nothing that is on origin stays behind as uncommitted local changes. After a push, the local tree holds only work not yet on origin. If work reached origin another way (cloud clone, PR), pull it and discard the matching local uncommitted copies (`git restore <files>`) after checking they match. Commit all uncommitted work in the checkout with the push (after tsc + tests pass), so the tree ends clean.
 
 ## Next.js (apps/web-next)
 
