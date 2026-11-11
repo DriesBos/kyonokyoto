@@ -3,6 +3,7 @@ import BlocksLanding from '@/app/blocks/BlocksLanding';
 import styles from '@/app/blocks/page.module.sass';
 import EventsGrid from '@/app/EventsGrid';
 import ExperienceHeader from '@/app/ExperienceHeader';
+import InlineBootScript from '@/app/InlineBootScript';
 import MapExperience from '@/app/MapExperience';
 import SiteFooter from '@/app/SiteFooter';
 import { blocksLandingCandidatesForEvents, blocksLandingHeroOptions } from '@/lib/blocksLanding';
@@ -69,7 +70,7 @@ export default async function CityEventsPage({
       </a>
       {landingCandidates.length > 0 && heroScript && (
         // picks this visit's first slide and preloads it before hydration (lib/landingHero.ts)
-        <script dangerouslySetInnerHTML={{ __html: heroScript }} />
+        <InlineBootScript html={heroScript} />
       )}
       {landingCandidates.length > 0 && (
         <BlocksLanding

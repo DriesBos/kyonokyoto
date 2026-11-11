@@ -48,7 +48,7 @@ test('V2 event mapper preserves source, calendar, image and media contracts', as
   );
   assert.match(source, /translationFor\(event, locale\)/);
   assert.match(source, /dateOnlyInTimeZone/);
-  assert.match(source, /events\.filter\(\(event\) => event\.group === 'ongoing'\)/);
+  assert.match(source, /events\.filter\(\(event\) => event\.group === 'ongoing' && event\.endsSoon\)/);
   assert.match(source, /lat: truth\.lat/);
   assert.match(source, /lng: truth\.lng/);
   assert.match(

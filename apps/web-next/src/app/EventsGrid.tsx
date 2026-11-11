@@ -137,7 +137,11 @@ export default function EventsGrid({
                               title: `${event.title} video`,
                             }))}
                           />
-                          {event.endsSoon ? <LastWeekPill label={copy.lastWeek} /> : null}
+                          {event.endsSoon ? (
+                            <LastWeekPill label={copy.lastWeek} />
+                          ) : event.startsSoon ? (
+                            <LastWeekPill label={copy.comingSoon} kind="coming-soon" />
+                          ) : null}
                           <EventStarButton
                             eventId={event.id}
                             endsAt={event.group === 'permanent' ? null : event.calendarEndsAt}

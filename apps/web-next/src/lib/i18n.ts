@@ -18,6 +18,7 @@ export const uiText = {
     permanent: 'permanent',
     endingThisWeek: 'ending soon!',
     lastWeek: 'Last week',
+    comingSoon: 'Coming soon',
     // Header filter labels (data/categories.mjs FILTER_TYPES / FILTER_SUBS / FILTER_PLACES).
     filterLabels: {
       saved: 'saved',
@@ -106,6 +107,7 @@ export const uiText = {
     permanent: '常設',
     endingThisWeek: '今週まで',
     lastWeek: '最終週',
+    comingSoon: 'まもなく開催',
     filterLabels: {
       saved: '保存済み',
       art: 'アート',

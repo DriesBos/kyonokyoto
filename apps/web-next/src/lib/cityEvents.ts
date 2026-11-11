@@ -199,6 +199,8 @@ export type CityEvent = {
   filterTags?: string[];
   // Ongoing and closing within the next 7 days (the "ending soon!" filter).
   endsSoon?: boolean;
+  // Upcoming and starting within the next 7 days (the "Coming soon" pill). Never overlaps endsSoon.
+  startsSoon?: boolean;
   date: string;
   institution: string;
   venue: string | null;
@@ -700,6 +702,10 @@ export async function fetchCityEvents({
           venueNames: [event.venue_name, event.institution_name, venue, truth.institution],
         }),
         endsSoon: group === 'ongoing' && Boolean(endDate) && endDate <= addDaysDateOnly(today, 6),
+        // Date-only in the city's time zone, so ISR (5 min) can only lag the flip by one revalidation.
+        startsSoon:
+          group === 'upcoming' &&
+          (nextRelevantScheduleStartDateOnly(enriched, today) ?? '9999-12-31') <= addDaysDateOnly(today, 7),
         date,
         institution: truth.institution,
         venue,
@@ -733,7 +739,9 @@ export async function fetchCityEvents({
 
   const permanent = permanentEventsFor({ city, locale, sources });
   return [
-    ...events.filter((event) => event.group === 'ongoing'),
+    // "Last week" events lead the ongoing section (Dries, 2026-11-11), keeping their order otherwise.
+    ...events.filter((event) => event.group === 'ongoing' && event.endsSoon),
+    ...events.filter((event) => event.group === 'ongoing' && !event.endsSoon),
     ...events.filter((event) => event.group === 'upcoming'),
     ...events.filter((event) => event.group === 'permanent'),
     ...permanent,
