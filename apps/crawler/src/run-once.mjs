@@ -20,7 +20,11 @@ import { flattenTaxonomy } from '../../../data/categories.mjs';
 import { buildCrawlQaReport } from './crawl-qa.mjs';
 import { buildScheduleSegmentRows, upsertEventScheduleSegments } from './schedule-segments.mjs';
 import { checkLandingImages } from './landing-image-check.mjs';
-import { checkEventMediums, mediumsFromCategories, MEDIUM_CHECK_PREFIX } from './event-medium-check.mjs';
+import {
+  checkEventMediums,
+  mediumsFromCategories,
+  MEDIUM_CHECK_PREFIX,
+} from './event-medium-check.mjs';
 import { attachLandingMedia, LANDING_MEDIA_BUCKET } from './landing-media.mjs';
 import { createTempleSourceAdapters } from './temple-sources.mjs';
 import { createTemplePlaceEnricher, isKyotoTempleSource } from './temple-place-loader.mjs';

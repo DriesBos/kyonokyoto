@@ -48,7 +48,10 @@ test('V2 event mapper preserves source, calendar, image and media contracts', as
   );
   assert.match(source, /translationFor\(event, locale\)/);
   assert.match(source, /dateOnlyInTimeZone/);
-  assert.match(source, /events\.filter\(\(event\) => event\.group === 'ongoing' && event\.endsSoon\)/);
+  assert.match(
+    source,
+    /events\.filter\(\(event\) => event\.group === 'ongoing' && event\.endsSoon\)/,
+  );
   assert.match(source, /lat: truth\.lat/);
   assert.match(source, /lng: truth\.lng/);
   assert.match(
@@ -77,7 +80,10 @@ test('Temples & Gardens taxonomy stays optional for existing configs and localiz
   const translations = await readFile(new URL('i18n.ts', lib), 'utf8');
   assert.match(categories, /'historic-site',[\s\S]*'garden'/);
   // temple/shrine are filter sub-picks derived from venue names, never taxonomy tags
-  assert.doesNotMatch(categories.slice(0, categories.indexOf('export const CATEGORY_DIMENSIONS')), /'temple'|'shrine'/);
+  assert.doesNotMatch(
+    categories.slice(0, categories.indexOf('export const CATEGORY_DIMENSIONS')),
+    /'temple'|'shrine'/,
+  );
   assert.match(translations, /historicSite: 'Historic Site'/);
   assert.match(translations, /garden: '庭園'/);
   assert.match(cityEvents, /'venue_category:temple': 'venue_category:historic-site'/);
@@ -117,7 +123,10 @@ test('aggregator events use event-owned location and taxonomy, with beta filtere
       source.indexOf("if (source?.source_kind === 'aggregator')"),
     ),
   );
-  assert.match(aggregatorTruth, /institution: localizedVenueName\(event\.institution_name, locale\)/);
+  assert.match(
+    aggregatorTruth,
+    /institution: localizedVenueName\(event\.institution_name, locale\)/,
+  );
   assert.match(aggregatorTruth, /venue: localizedVenueName\(event\.venue_name, locale\)/);
   assert.match(aggregatorTruth, /addressText: event\.address_text/);
   assert.match(aggregatorTruth, /event\.categories/);

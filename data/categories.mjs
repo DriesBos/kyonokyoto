@@ -162,7 +162,11 @@ export const filterToken = {
  * @returns {string[]}
  */
 export function filterTagsFor(categoryTokens = [], { venueNames = [] } = {}) {
-  const byDimension = { venue_category: new Set(), display_category: new Set(), event_category: new Set() };
+  const byDimension = {
+    venue_category: new Set(),
+    display_category: new Set(),
+    event_category: new Set(),
+  };
   for (const token of categoryTokens) {
     const parsed = parseCategoryToken(token);
     if (parsed && byDimension[parsed.dimension]) byDimension[parsed.dimension].add(parsed.category);

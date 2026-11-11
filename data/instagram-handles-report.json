@@ -1049,10 +1049,7 @@
       "name": "Gallery Unfold",
       "url": "https://galleryunfold.com/archive",
       "current": null,
-      "handles": [
-        "chuang_ho",
-        "uchihsiao"
-      ]
+      "handles": ["chuang_ho", "uchihsiao"]
     },
     {
       "city": "osaka",
@@ -1060,10 +1057,7 @@
       "name": "Wa.gallery",
       "url": "https://wa-gallery.art/exhibitions-single2.html",
       "current": null,
-      "handles": [
-        "wa_gallery_osaka",
-        "antiques_takei"
-      ]
+      "handles": ["wa_gallery_osaka", "antiques_takei"]
     },
     {
       "city": "tokyo",
@@ -1071,10 +1065,7 @@
       "name": "WHAT MUSEUM",
       "url": "https://what.warehouseofart.org/exhibitions/",
       "current": null,
-      "handles": [
-        "v",
-        "what_terrada"
-      ]
+      "handles": ["v", "what_terrada"]
     },
     {
       "city": "tokyo",
@@ -1082,11 +1073,7 @@
       "name": "Pola Museum Annex",
       "url": "https://www.po-holdings.co.jp/m-annex/exhibition/index.html",
       "current": null,
-      "handles": [
-        "pola_annex",
-        "pola_salon_plus_aoyama",
-        "wonderstock_photo"
-      ]
+      "handles": ["pola_annex", "pola_salon_plus_aoyama", "wonderstock_photo"]
     },
     {
       "city": "tokyo",
@@ -1094,10 +1081,7 @@
       "name": "KOKI ARTS",
       "url": "https://www.kokiarts.com/",
       "current": null,
-      "handles": [
-        "kokiarts",
-        "russell_tyler"
-      ]
+      "handles": ["kokiarts", "russell_tyler"]
     },
     {
       "city": "hong-kong",
@@ -1105,10 +1089,7 @@
       "name": "HKDI Gallery",
       "url": "https://hkdi.edu.hk/en/hkdi_gallery/",
       "current": null,
-      "handles": [
-        "hkdi_hongkongdesigninstitute",
-        "hkdi.gallery"
-      ]
+      "handles": ["hkdi_hongkongdesigninstitute", "hkdi.gallery"]
     },
     {
       "city": "hong-kong",
@@ -1116,10 +1097,7 @@
       "name": "Hong Kong Arts Centre",
       "url": "https://hkac.org.hk/en/artsatthecentre_exhibition/",
       "current": null,
-      "handles": [
-        "hongkongartscentre",
-        "hongkongartschool"
-      ]
+      "handles": ["hongkongartscentre", "hongkongartschool"]
     }
   ],
   "none": [
@@ -1129,9 +1107,7 @@
       "name": "The Museum of Kyoto",
       "url": "https://www.bunpaku.or.jp/en/exhi_special/",
       "current": null,
-      "errors": [
-        "https://www.bunpaku.or.jp/en/exhi_special/: HTTP 503"
-      ]
+      "errors": ["https://www.bunpaku.or.jp/en/exhi_special/: HTTP 503"]
     },
     {
       "city": "kyoto",
@@ -1258,9 +1234,7 @@
       "name": "Hyogo Prefectural Museum of Art",
       "url": "https://www.artm.pref.hyogo.jp/exhibition/",
       "current": null,
-      "errors": [
-        "https://www.artm.pref.hyogo.jp/exhibition/: HTTP 503"
-      ]
+      "errors": ["https://www.artm.pref.hyogo.jp/exhibition/: HTTP 503"]
     },
     {
       "city": "osaka",
@@ -1317,9 +1291,7 @@
       "name": "ATELIER MUJI GINZA",
       "url": "https://atelier.muji.com/jp/exhibition/",
       "current": null,
-      "errors": [
-        "https://atelier.muji.com/jp/exhibition/: HTTP 429"
-      ]
+      "errors": ["https://atelier.muji.com/jp/exhibition/: HTTP 429"]
     },
     {
       "city": "tokyo",
@@ -1341,9 +1313,7 @@
       "name": "The National Museum of Modern Art",
       "url": "https://www.momat.go.jp/en/exhibitions",
       "current": null,
-      "errors": [
-        "https://www.momat.go.jp/en/exhibitions: HTTP 403"
-      ]
+      "errors": ["https://www.momat.go.jp/en/exhibitions: HTTP 403"]
     },
     {
       "city": "tokyo",
@@ -1379,9 +1349,7 @@
       "name": "KENJI TAKI GALLERY",
       "url": "https://www.kenjitaki.com/pages/info.html",
       "current": null,
-      "errors": [
-        "https://www.kenjitaki.com/pages/info.html: HTTP 404"
-      ]
+      "errors": ["https://www.kenjitaki.com/pages/info.html: HTTP 404"]
     },
     {
       "city": "tokyo",
@@ -1452,9 +1420,7 @@
       "name": "Asia Society Hong Kong Center",
       "url": "https://asiasociety.org/hong-kong/exhibitions",
       "current": null,
-      "errors": [
-        "https://asiasociety.org/hong-kong/exhibitions: HTTP 403"
-      ]
+      "errors": ["https://asiasociety.org/hong-kong/exhibitions: HTTP 403"]
     },
     {
       "city": "hong-kong",
@@ -1469,9 +1435,7 @@
       "name": "Gagosian Hong Kong",
       "url": "https://gagosian.com/exhibitions/archive/?as_list=&locations=hong-kong",
       "current": null,
-      "errors": [
-        "https://gagosian.com/exhibitions/archive/?as_list=&locations=hong-kong: HTTP 403"
-      ]
+      "errors": ["https://gagosian.com/exhibitions/archive/?as_list=&locations=hong-kong: HTTP 403"]
     },
     {
       "city": "hong-kong",

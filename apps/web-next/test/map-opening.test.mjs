@@ -8,7 +8,10 @@ test('map panel opens as a city-colour block and the map fades in once tiles loa
   const layout = await read('../src/app/MapExperience.module.sass');
   const canvas = await read('../src/app/GoogleMapCanvas.module.sass');
   const map = await read('../src/app/GoogleMapCanvas.tsx');
-  const mapBlock = layout.slice(layout.indexOf('\n.map\n'), layout.indexOf('.content[data-map-visible]'));
+  const mapBlock = layout.slice(
+    layout.indexOf('\n.map\n'),
+    layout.indexOf('.content[data-map-visible]'),
+  );
   assert.match(mapBlock, /background: var\(--color-text\)/);
   assert.match(canvas, /\.canvas\n[\s\S]*?background: var\(--color-text\)/);
   assert.match(canvas, /\.canvas\[data-map-ready\]\n  \.viewport,\n  \.controls\n    opacity: 1/);
@@ -18,7 +21,10 @@ test('map panel opens as a city-colour block and the map fades in once tiles loa
 
 test('map open always animates from the laid-out closed state', async () => {
   const experience = await read('../src/app/MapExperience.tsx');
-  assert.match(experience, /useLayoutEffect\(\(\) => \{\n    if \(!mapOpen \|\| !mapMounted \|\| mapVisible\) return;\n    mapSectionRef\.current\?\.getBoundingClientRect\(\);\n    setMapVisible\(true\);/);
+  assert.match(
+    experience,
+    /useLayoutEffect\(\(\) => \{\n    if \(!mapOpen \|\| !mapMounted \|\| mapVisible\) return;\n    mapSectionRef\.current\?\.getBoundingClientRect\(\);\n    setMapVisible\(true\);/,
+  );
   assert.doesNotMatch(experience, /requestAnimationFrame\(\(\) => setMapVisible/);
 });
 
@@ -52,14 +58,26 @@ test('card details load on demand from the city details route, JSON-LD is capped
   assert.doesNotMatch(grid, /description=\{event\.description\}/);
   assert.match(detail, /useEventCardDetail\(eventId, expanded\)/);
   const data = eventCardDetailFor({
-    id: 'a', description: 'Text', mapsUrl: 'm', sourceUrl: 's', appleCalendar: null,
+    id: 'a',
+    description: 'Text',
+    mapsUrl: 'm',
+    sourceUrl: 's',
+    appleCalendar: null,
     googleCalendarUrl: 'https://calendar.google.com/calendar/render?action=TEMPLATE&details=Text',
   });
   assert.equal(new URL(data.googleCalendarUrl).searchParams.has('details'), false);
   const { structuredData, CITY_STRUCTURED_DATA_LIMIT } = await import(
     new URL('../src/lib/seo.ts', import.meta.url)
   );
-  const events = Array.from({ length: 30 }, (_, i) => ({ name: `E${i}`, startDate: '2026-11-11', endDate: null, place: null, address: null, image: null, url: null }));
+  const events = Array.from({ length: 30 }, (_, i) => ({
+    name: `E${i}`,
+    startDate: '2026-11-11',
+    endDate: null,
+    place: null,
+    address: null,
+    image: null,
+    url: null,
+  }));
   assert.equal(
     structuredData({ city: 'kyoto', locale: 'en', events }).mainEntity.itemListElement.length,
     CITY_STRUCTURED_DATA_LIMIT,
