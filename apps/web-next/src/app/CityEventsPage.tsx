@@ -83,7 +83,10 @@ export default async function CityEventsPage({
           todayCount={events.filter((event) => event.group === 'ongoing').length}
         />
       )}
+      {/* keyed by city: switching cities starts fresh, so filters, venue picks and the map reset
+          to the new city's defaults instead of carrying over (Dries 2026-11-11) */}
       <MapExperience
+        key={city.slug}
         header={
           <ExperienceHeader
             city={city.slug}
