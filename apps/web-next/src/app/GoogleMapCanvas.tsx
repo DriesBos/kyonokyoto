@@ -110,6 +110,47 @@ const useDarkScheme = () => {
 const FIT_MAX_ZOOM = 15;
 const FIT_PADDING = 48;
 
+// Venue labels (picked or hovered) stay this far inside the visible map, clear of the phone's
+// notch/status bar and home indicator.
+const LABEL_EDGE = 8;
+
+const safeAreaInsets = (host: HTMLElement) => {
+  const probe = document.createElement('div');
+  probe.style.cssText =
+    'position:absolute;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+  host.append(probe);
+  const style = getComputedStyle(probe);
+  const insets = {
+    top: parseFloat(style.paddingTop) || 0,
+    right: parseFloat(style.paddingRight) || 0,
+    bottom: parseFloat(style.paddingBottom) || 0,
+    left: parseFloat(style.paddingLeft) || 0,
+  };
+  probe.remove();
+  return insets;
+};
+
+// Shifts a shown marker label (CSS translate) so all of it sits inside the part of the map that is
+// on screen; a label near an edge slides back in instead of being cut off.
+const clampMarkerLabel = (content: HTMLElement, viewport: HTMLElement) => {
+  const label = content.querySelector<HTMLElement>(`.${styles.markerLabel}`);
+  if (!label) return;
+  label.style.translate = '';
+  const rect = label.getBoundingClientRect();
+  if (rect.width === 0) return;
+  const bounds = viewport.getBoundingClientRect();
+  const safe = safeAreaInsets(viewport);
+  const left = Math.max(bounds.left, safe.left) + LABEL_EDGE;
+  const right = Math.min(bounds.right, window.innerWidth - safe.right) - LABEL_EDGE;
+  const top = Math.max(bounds.top, safe.top) + LABEL_EDGE;
+  const bottom = Math.min(bounds.bottom, window.innerHeight - safe.bottom) - LABEL_EDGE;
+  const shift = (start: number, end: number, min: number, max: number) =>
+    start < min ? min - start : end > max ? Math.max(max - end, min - start) : 0;
+  const dx = shift(rect.left, rect.right, left, right);
+  const dy = shift(rect.top, rect.bottom, top, bottom);
+  if (dx || dy) label.style.translate = `${dx}px ${dy}px`;
+};
+
 const markerContent = (source: MapSource) => {
   // not a <button>: AdvancedMarkerElement (gmpClickable) is the focusable, clickable element, and
   // Maps warns about focusable children inside it
@@ -320,8 +361,30 @@ export default function GoogleMapCanvas({
             record.content.setAttribute('data-highlighted', '');
             record.marker.zIndex = 1000;
             highlighted.set(id, record);
+            clampMarkerLabel(record.content, viewport);
           }
         };
+
+        // Keep shown labels inside the map: the picked one while the map moves, and a hovered or
+        // keyboard-focused one when it appears.
+        const hoveredMarker = () => viewport.querySelector<HTMLElement>(`.${styles.marker}:hover`);
+        const clampShownLabels = () => {
+          highlighted.forEach(({ content }) => clampMarkerLabel(content, viewport));
+          const hovered = hoveredMarker();
+          if (hovered) clampMarkerLabel(hovered, viewport);
+        };
+        const boundsListener = map.addListener?.('bounds_changed', clampShownLabels);
+        const onLabelShown = (event: Event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          const content =
+            target?.closest<HTMLElement>(`.${styles.marker}`) ??
+            target?.querySelector<HTMLElement>(`.${styles.marker}`);
+          if (!content) return;
+          // after the :hover / :focus-visible styles have shown the label
+          requestAnimationFrame(() => clampMarkerLabel(content, viewport));
+        };
+        viewport.addEventListener('pointerover', onLabelShown);
+        viewport.addEventListener('focusin', onLabelShown);
 
         // Filter changes fit the map to the venues still shown, unless the visitor has moved the
         // map themselves. A fit while the panel is collapsed (zero size) waits for it to open.
@@ -470,6 +533,9 @@ export default function GoogleMapCanvas({
         return () => {
           unsubscribeFilters();
           dragListener?.remove();
+          boundsListener?.remove();
+          viewport.removeEventListener('pointerover', onLabelShown);
+          viewport.removeEventListener('focusin', onLabelShown);
           viewport.removeEventListener('wheel', markUserMoved);
           viewport.removeEventListener('keydown', markUserMoved);
           viewport.removeEventListener('touchmove', onTouchMove);
